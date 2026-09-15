@@ -1,11 +1,12 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { RouterProvider } from '@tanstack/react-router';
 import './theme/theme.css';
-import App from './App.jsx';
+import { router } from './routes/router';
 
-// Point d'entrée React de TOKPa
+// Point d'entrée React de TOKPa — routage TanStack Router
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <RouterProvider router={router} />
   </StrictMode>,
 );
