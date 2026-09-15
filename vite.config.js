@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
-// Configuration de base Vite + React
+// Configuration de base Vite + React + Tailwind v4
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
     host: true, // accessible depuis le réseau (preview distante)
     port: 5173,
