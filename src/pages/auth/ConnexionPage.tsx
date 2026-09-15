@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { Link , useNavigate } from '@tanstack/react-router';
 import { IconMail, IconShieldCheck, IconLock } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import AuthSplitLayout from '../../components/auth/AuthSplitLayout';
@@ -83,6 +83,9 @@ export default function ConnexionPage() {
         {authError && <Alert>Email ou mot de passe incorrect</Alert>}
 
         <Divider label="OU CONTINUER AVEC" />
+        <p className='mt-lg flex items-center justify-center gap-sm text-[13px] text-ink-3'> Si vous n'avez pas encore de compte
+          <Link to="/inscription">Inscrivez-vous</Link>
+        </p>
 
         <button
           type="button"
