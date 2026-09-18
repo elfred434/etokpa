@@ -242,28 +242,27 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ---- Negotiation Module ---- */}
+        {/* ---- Negotiation Module Placeholder ---- */}
         <section className="mb-xl flex flex-col items-center justify-between gap-lg rounded-[14px] border-l-[3px] border-secondary-container bg-white p-lg md:flex-row">
-          <div className="max-w-xl">
+          <div className="max-w-lg">
             <div className="mb-sm inline-flex items-center gap-2 rounded-full bg-secondary-container/10 px-3 py-1 text-on-secondary-container">
               <MIcon name="handshake" className="text-[18px]" />
               <span className="text-label uppercase tracking-wider">Nouveau : La Négociation Directe</span>
             </div>
             <h2 className="mb-xs font-h2 text-h1 text-on-surface">Trop cher ? Propose ton prix !</h2>
-            <p className="text-body text-ink-2">
-              Comme au marché physique, vous pouvez désormais proposer un prix au vendeur pour certains produits.
-              Recevez une réponse en temps réel.
+            <p className="text-body text-secondary">
+              Comme au marché physique, vous pouvez désormais proposer un prix au vendeur pour certains produits. Recevez une réponse en temps réel.
             </p>
           </div>
           <div className="w-full min-w-[300px] rounded-xl bg-page p-md md:w-auto">
             <div className="flex flex-col gap-sm">
               <div className="flex items-center justify-between">
-                <span className="text-label text-ink-2">Prix Vendeur</span>
+                <span className="text-label text-secondary">Prix Vendeur</span>
                 <span className="font-bold text-on-surface">2.500 FCFA</span>
               </div>
               <div className="h-[1.5px] w-full bg-line" />
               <div className="flex items-center justify-between">
-                <span className="text-label text-ink-2">Votre Offre</span>
+                <span className="text-label text-secondary">Votre Offre</span>
                 <input
                   type="text"
                   value={offre}
