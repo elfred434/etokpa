@@ -242,17 +242,19 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ---- Negotiation Module Placeholder ---- */}
-        <section className="mb-xl bg-white rounded-[14px] border-l-[3px] border-secondary-container p-lg flex flex-col md:flex-row items-center justify-between gap-lg">
-          <div className="max-w-lg">
-            <div className="inline-flex items-center gap-2 bg-secondary-container/10 text-on-secondary-container px-3 py-1 rounded-full mb-sm">
-              <span className="material-symbols-outlined text-[18px]">handshake</span>
-              <span className="text-label uppercase tracking-wider">Nouveau : La Négociation Directe</span>
+        {/* ---- Negotiation Module Placeholder (Design Stitch v2) ---- */}
+        <section className="mb-xl bg-white rounded-[14px] border-l-[3px] border-secondary-container p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-6 max-h-[390px] overflow-hidden">
+          <div className="max-w-lg min-w-0">
+            <div className="inline-flex items-center gap-2 bg-secondary-container/10 text-on-secondary-container px-3 py-1 rounded-full mb-sm whitespace-nowrap shrink-0">
+              <span className="material-symbols-outlined text-[18px] shrink-0">handshake</span>
+              <span className="text-label uppercase tracking-wider whitespace-nowrap">Nouveau : La Négociation Directe</span>
             </div>
-            <h2 className="font-h2 text-h1 text-on-surface mb-xs">Trop cher ? Propose ton prix !</h2>
-            <p className="text-secondary text-body">Comme au marché physique, vous pouvez désormais proposer un prix au vendeur pour certains produits. Recevez une réponse en temps réel.</p>
+            <h2 className="font-h2 text-h1 text-on-surface mb-xs leading-tight">Trop cher ? Propose ton prix !</h2>
+            <p className="text-secondary text-body leading-relaxed line-clamp-3 max-w-lg">
+              Comme au marché physique, vous pouvez désormais proposer un prix au vendeur pour certains produits. Recevez une réponse en temps réel.
+            </p>
           </div>
-          <div className="bg-bg-app p-md rounded-xl w-full md:w-auto min-w-[300px]">
+          <div className="bg-bg-app p-4 rounded-xl w-full md:w-[300px] shrink-0">
             <div className="flex flex-col gap-sm">
               <div className="flex justify-between items-center">
                 <span className="text-secondary text-label">Prix Vendeur</span>
