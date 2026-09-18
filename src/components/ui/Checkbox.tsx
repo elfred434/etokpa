@@ -1,9 +1,10 @@
 import { useId } from 'react';
+import type { ReactNode } from 'react';
 import clsx from 'clsx';
 import { IconCheck } from '@tabler/icons-react';
 
 interface CheckboxProps {
-  label: string;
+  label: ReactNode;
   checked: boolean;
   onChange: (checked: boolean) => void;
   className?: string;

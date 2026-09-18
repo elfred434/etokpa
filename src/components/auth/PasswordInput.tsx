@@ -7,10 +7,18 @@ interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
   label: string;
   error?: boolean;
   labelRight?: ReactNode;
+  /** Maquette inscription étape 2 : champ sans cadenas à gauche */
+  showLockIcon?: boolean;
 }
 
-/** Champ mot de passe : cadenas à gauche, bascule œil / œil barré à droite (design.md §4.2). */
-export default function PasswordInput({ label, error, labelRight, ...rest }: PasswordInputProps) {
+/** Champ mot de passe : cadenas à gauche (optionnel), bascule œil / œil barré à droite. */
+export default function PasswordInput({
+  label,
+  error,
+  labelRight,
+  showLockIcon = true,
+  ...rest
+}: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
 
   return (
@@ -19,7 +27,7 @@ export default function PasswordInput({ label, error, labelRight, ...rest }: Pas
       labelRight={labelRight}
       error={error}
       type={visible ? 'text' : 'password'}
-      iconLeft={<IconLock size={20} />}
+      iconLeft={showLockIcon ? <IconLock size={20} /> : undefined}
       rightSlot={
         <button
           type="button"
