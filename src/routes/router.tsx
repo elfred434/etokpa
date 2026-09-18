@@ -4,6 +4,8 @@ import { Toaster } from 'react-hot-toast';
 import ConnexionPage from '../pages/auth/ConnexionPage';
 import InscriptionPage from '../pages/auth/InscriptionPage';
 import Verification2faPage from '../pages/auth/Verification2faPage';
+import NotificationsPage from '../pages/client/notifications/NotificationsPage';
+import PreviewPage from '../pages/preview/PreviewPage';
 
 /** Placeholder temporaire post-connexion (les écrans client arrivent au Sprint 1). */
 // function PlaceholderHome() {
@@ -50,8 +52,18 @@ const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', com
 const connexionRoute = createRoute({ getParentRoute: () => rootRoute, path: '/connexion', component: ConnexionPage });
 const inscriptionRoute = createRoute({ getParentRoute: () => rootRoute, path: '/inscription', component: InscriptionPage });
 const verificationRoute = createRoute({ getParentRoute: () => rootRoute, path: '/verification-2fa', component: Verification2faPage });
+const notificationsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/notifications', component: NotificationsPage });
+// Route temporaire de review des composants Sprint 1 (retirée à l'assemblage des pages).
+const previewRoute = createRoute({ getParentRoute: () => rootRoute, path: '/preview', component: PreviewPage });
 
-const routeTree = rootRoute.addChildren([indexRoute, connexionRoute, inscriptionRoute, verificationRoute]);
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  connexionRoute,
+  inscriptionRoute,
+  verificationRoute,
+  notificationsRoute,
+  previewRoute,
+]);
 
 export const router = createRouter({ routeTree });
 
