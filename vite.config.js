@@ -8,5 +8,6 @@ export default defineConfig({
   server: {
     host: true, // accessible depuis le réseau (preview distante)
     port: 5173,
+    allowedHosts: true,
   },
 });

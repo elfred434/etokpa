@@ -160,9 +160,8 @@ export default function CatalogPage() {
   );
 
   return (
-    <div className="min-h-screen bg-page font-body text-on-surface">
+    <div className="min-h-screen bg-page pt-[52px] font-body text-on-surface">
       <ClientNavbar
-        variant="catalog"
         search={search}
         onSearch={(v) => {
           touch();

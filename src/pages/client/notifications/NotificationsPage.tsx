@@ -35,7 +35,7 @@ export default function NotificationsPage() {
   const markAllRead = () => setNotifications((list) => list.map((n) => ({ ...n, unread: false })));
 
   return (
-    <div className="min-h-screen bg-page">
+    <div className="min-h-screen bg-page pt-[52px]">
       <ClientNavbar searchPlaceholder="Search notifications…" />
 
       <div className="mx-auto flex max-w-[1400px]">
