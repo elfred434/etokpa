@@ -62,7 +62,7 @@ export default function PreviewPage() {
   const subtotal = cart.reduce((sum, item) => sum + item.product.prix * item.quantite, 0);
 
   return (
-    <div className="min-h-screen bg-page">
+    <div className="min-h-screen bg-page pt-[52px]">
       <ClientNavbar />
 
       <main className="mx-auto max-w-[1200px] space-y-lg p-lg">

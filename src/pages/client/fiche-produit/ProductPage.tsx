@@ -68,10 +68,9 @@ export default function ProductPage() {
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#fcfaf8] font-body text-ink">
-      <div className="flex flex-1 justify-center px-4 py-5 md:px-20 lg:px-40">
+      <ClientNavbar />
+      <div className="flex flex-1 justify-center px-4 pb-5 pt-[72px] md:px-20 lg:px-40">
         <div className="flex w-full max-w-[1200px] flex-1 flex-col">
-          <ClientNavbar variant="product" />
-
           {/* ---- Breadcrumbs ---- */}
           <div className="flex flex-wrap gap-2 p-4 md:px-10">
             <Link to="/" className="text-sm font-medium leading-normal text-[#9e6b47]">
@@ -86,7 +85,7 @@ export default function ProductPage() {
           </div>
 
           {/* ---- Main Product Content ---- */}
-          <main className="grid grid-cols-1 gap-8 rounded-b-xl bg-white p-4 pb-12 shadow-sm md:px-10 lg:grid-cols-2">
+          <main className="grid grid-cols-1 gap-8 rounded-xl bg-white p-4 pb-12 shadow-sm md:px-10 lg:grid-cols-2">
             {/* LEFT COLUMN: Images */}
             <div className="flex flex-col gap-6">
               <div className="relative flex h-[400px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-[#FFF7ED] to-[#FED7AA]">

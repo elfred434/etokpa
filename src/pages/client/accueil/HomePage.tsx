@@ -109,7 +109,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-page font-body text-on-surface">
-      <ClientNavbar variant="home" />
+      <ClientNavbar />
 
       <main className="mx-auto w-full max-w-[1200px] px-4 pb-[80px] pt-[52px] lg:pb-0">
         {/* ---- Hero ---- */}

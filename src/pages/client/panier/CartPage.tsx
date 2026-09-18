@@ -40,9 +40,9 @@ export default function CartPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-page">
-      <ClientNavbar variant="cart" />
+      <ClientNavbar />
 
-      <main className="mx-auto mt-[64px] w-full max-w-[1200px] flex-1 px-md py-xl md:px-lg">
+      <main className="mx-auto mt-[52px] w-full max-w-[1200px] flex-1 px-md py-xl md:px-lg">
         <CheckoutStepper current={1} />
 
         <div className="flex flex-col gap-lg lg:flex-row">
