@@ -122,7 +122,7 @@ export default function HomePage() {
             />
             <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent" />
           </div>
-          <div className="relative z-10 max-w-xl p-xl">
+          <div className="relative z-10 max-w-3xl p-xl">
             <h1 className="mb-md font-h1 text-[42px] font-bold leading-tight text-primary-darker">Ton marché, ta façon.</h1>
             <p className="mb-lg text-lg leading-relaxed text-on-surface-variant">
               Les produits les plus frais de Cotonou, livrés directement chez vous sans intermédiaire inutile.
@@ -244,7 +244,7 @@ export default function HomePage() {
 
         {/* ---- Negotiation Module ---- */}
         <section className="mb-xl flex flex-col items-center justify-between gap-lg rounded-[14px] border-l-[3px] border-secondary-container bg-white p-lg md:flex-row">
-          <div className="max-w-lg">
+          <div className="max-w-xl">
             <div className="mb-sm inline-flex items-center gap-2 rounded-full bg-secondary-container/10 px-3 py-1 text-on-secondary-container">
               <MIcon name="handshake" className="text-[18px]" />
               <span className="text-label uppercase tracking-wider">Nouveau : La Négociation Directe</span>
