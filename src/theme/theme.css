@@ -47,8 +47,27 @@
   --color-surface: #f9fafb;
   --color-line: #e5e7eb;
 
+  /* --- Tokens Stitch (pages conformes code.html) --- */
+  --color-on-surface: #251913;
+  --color-on-surface-variant: #584237;
+  --color-surface-variant: #f6ded3;
+  --color-warm: #fff8f6;              /* surface Stitch (blanc chaud) */
+  --color-warm-low: #fff1eb;          /* surface-container-low */
+  --color-warm-container: #ffeae0;    /* surface-container */
+  --color-secondary: #855300;
+  --color-secondary-container: #fea619;
+  --color-on-secondary-container: #684000;
+
   /* --- Typographie (Inter) --- */
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-h1: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-h2: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-h3: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-label: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-micro: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-price: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-secondary: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --text-h1: 1.75rem;            /* 28px */
   --text-h1--font-weight: 700;
   --text-h2: 1.25rem;            /* 20px */
@@ -62,8 +81,10 @@
   --text-label--font-weight: 500;
   --text-micro: 0.6875rem;       /* 11px */
   --text-micro--font-weight: 500;
-  --text-price: 1.125rem;        /* 18px (fourchette 16–20px) */
+  --text-micro--letter-spacing: 0.06em;
+  --text-price: 1.25rem;         /* 20px (Stitch) */
   --text-price--font-weight: 700;
+  --text-price--line-height: 1;
 
   /* --- Rayons (border-radius) --- */
   --radius-btn: 10px;
@@ -420,5 +441,49 @@
     background-color: var(--color-line);
     border-radius: 10px;
     animation: var(--animate-skeleton);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. UTILITAIRES STITCH (micro-interactions des code.html)
+   -------------------------------------------------------------------------- */
+@layer components {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+  }
+  .scale-interaction {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .scale-interaction:active {
+    transform: scale(0.97);
+  }
+  .bento-hover:hover {
+    transform: translateY(-4px);
+    transition: all 0.3s ease;
+  }
+  .active-tab {
+    border-bottom: 2px solid #f97316;
+    color: #111827;
+  }
+  /* Slider prix du catalogue (thumb orange Stitch) */
+  .range-tokpa::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    background: #f97316;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+  }
+  .range-tokpa::-moz-range-thumb {
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    background: #f97316;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
   }
 }

@@ -1,298 +1,345 @@
 import { useState } from 'react';
-import { Link, useParams } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import clsx from 'clsx';
-import {
-  IconStarFilled,
-  IconMapPin,
-  IconCircleCheck,
-  IconRefresh,
-  IconCash,
-  IconShoppingCart,
-} from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
-import ClientFooter from '../../../components/layout/client/ClientFooter';
-import Badge from '../../../components/shared/Badge';
-import QuantityPicker from '../../../components/client/cart/QuantityPicker';
-import ProductPlaceholder from '../../../components/client/catalog/ProductPlaceholder';
-import { CATEGORIES, PRODUCTS, PRODUCT_DETAILS, SELLER } from '../../../constants/mockData';
-import { formatFCFA } from '../../../utils/format';
+import MIcon from '../../../components/shared/MIcon';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
-import { useNavigate } from '@tanstack/react-router';
+import type { Product } from '../../../types/models';
 
-const TABS = ['Description', 'Vendeur', 'Avis (127)'] as const;
+/* ---- Fiche exacte du code.html « fiche_produit_tokpa » ---- */
 
-/** Fiche produit — copie conforme de la maquette fiche produit. */
+const PRODUCT: Product = {
+  id: 'p1',
+  nom: 'Tomates fraîches du jour',
+  origine: 'Marché Dantokpa',
+  quantite: '500g',
+  prix: 450,
+  prixMinimum: 350,
+  categorie: 'vegetable',
+  stock: 'available',
+  badges: [],
+};
+
+const DETAILS = [
+  { label: 'Origine', value: 'Dantokpa / Ouidah' },
+  { label: 'Fraîcheur', value: 'Récolte du jour' },
+  { label: 'Poids moyen', value: '~80g par pièce' },
+  { label: 'Conservation', value: '5-7 jours au frais' },
+];
+
+const AVIS = [
+  {
+    id: 'r1',
+    auteur: 'Kossi A.',
+    note: 5,
+    date: 'Il y a 2 jours',
+    texte: 'Tomates très fraîches, livrées en moins d’une heure. La négociation a fonctionné, je recommande !',
+  },
+  {
+    id: 'r2',
+    auteur: 'Mariam D.',
+    note: 4,
+    date: 'Il y a 1 semaine',
+    texte: 'Bonne qualité globale, quelques tomates un peu mûres mais la vendeuse a été arrangeante.',
+  },
+];
+
+type TabId = 'description' | 'vendeur' | 'avis';
+
+/** Fiche produit — copie conforme du code.html Stitch « fiche_produit_tokpa ». */
 export default function ProductPage() {
-  const { productId } = useParams({ from: '/produit/$productId' });
-  const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const [qty, setQty] = useState(2);
-  const [tab, setTab] = useState<(typeof TABS)[number]>('Description');
-
-  const product = PRODUCTS.find((p) => p.id === productId);
-  if (!product) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-page">
-        <p className="text-ink-2">Produit introuvable.</p>
-      </div>
-    );
-  }
-
-  const category = CATEGORIES.find((c) => c.id === product.categorie);
-  const details = PRODUCT_DETAILS[product.id] ?? {
-    paras: [
-      `${product.nom} sélectionné au ${product.origine} par nos vendeurs partenaires certifiés. Qualité contrôlée à la main, fraîcheur garantie du marché à votre porte.`,
-      `Conditionné en ${product.quantite}, ce produit respecte les circuits courts TOKPa : producteurs locaux, prix juste, négociation possible.`,
-    ],
-    origine: product.origine.replace('Marché ', ''),
-    fraicheur: 'Arrivage du jour',
-    poids: product.quantite,
-    conservation: 'Selon produit, au frais',
-  };
-  const offre = Math.round((product.prix * 0.85) / 10) * 10;
+  const navigate = useNavigate();
+  const [quantity, setQuantity] = useState(2);
+  const [offre, setOffre] = useState('380 FCFA');
+  const [tab, setTab] = useState<TabId>('description');
 
   const addToCart = () => {
-    dispatch(add({ product, quantity: qty }));
-    toast.success(`${product.nom} × ${qty} ajouté au panier`);
+    dispatch(add({ product: PRODUCT, quantity }));
+    toast.success('Ajouté au panier');
+  };
+
+  const buyNow = () => {
+    dispatch(add({ product: PRODUCT, quantity }));
+    navigate({ to: '/panier' });
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-page">
-      <ClientNavbar />
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#fcfaf8] font-body text-ink">
+      <div className="flex flex-1 justify-center px-4 py-5 md:px-20 lg:px-40">
+        <div className="flex w-full max-w-[1200px] flex-1 flex-col">
+          <ClientNavbar variant="product" />
 
-      <main className="mx-auto w-full max-w-[1200px] flex-1 px-md py-lg md:px-lg">
-        {/* Fil d'Ariane */}
-        <nav className="mb-md flex items-center gap-sm text-[13px]" aria-label="Fil d'Ariane">
-          <Link to="/" className="text-ink-2 hover:text-primary">Accueil</Link>
-          <span className="text-ink-3">/</span>
-          <Link to="/catalogue" className="text-ink-2 hover:text-primary">
-            {category?.nom ?? 'Marché'}
-          </Link>
-          <span className="text-ink-3">/</span>
-          <span className="font-medium text-ink">{product.nom}</span>
-        </nav>
+          {/* ---- Breadcrumbs ---- */}
+          <div className="flex flex-wrap gap-2 p-4 md:px-10">
+            <Link to="/" className="text-sm font-medium leading-normal text-[#9e6b47]">
+              Accueil
+            </Link>
+            <span className="text-sm font-medium leading-normal text-[#9e6b47]">/</span>
+            <Link to="/catalogue" className="text-sm font-medium leading-normal text-[#9e6b47]">
+              Légumes
+            </Link>
+            <span className="text-sm font-medium leading-normal text-[#9e6b47]">/</span>
+            <span className="text-sm font-medium leading-normal text-[#1c130d]">Tomates fraîches du jour</span>
+          </div>
 
-        <div className="card grid grid-cols-1 gap-xl p-lg md:p-xl lg:grid-cols-2">
-          {/* Galerie */}
-          <div>
-            <div className="relative">
-              <Badge variant={product.stock} className="absolute left-md top-md z-10" />
-              {product.image ? (
-                <img src={product.image} alt={product.nom} className="h-[420px] w-full rounded-[10px] object-cover" />
-              ) : (
-                <ProductPlaceholder categorie={product.categorie} className="h-[420px]!" />
-              )}
+          {/* ---- Main Product Content ---- */}
+          <main className="grid grid-cols-1 gap-8 rounded-b-xl bg-white p-4 pb-12 shadow-sm md:px-10 lg:grid-cols-2">
+            {/* LEFT COLUMN: Images */}
+            <div className="flex flex-col gap-6">
+              <div className="relative flex h-[400px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-[#FFF7ED] to-[#FED7AA]">
+                <div className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full border border-success bg-success-light px-3 py-1 shadow-sm">
+                  <span className="h-2 w-2 rounded-full bg-success" />
+                  <span className="text-xs font-semibold text-success-dark">Disponible</span>
+                </div>
+                <div className="flex flex-col items-center gap-4 text-primary-hover">
+                  <MIcon name="flag_2" style={{ fontSize: 64 }} />
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="flex h-[60px] w-[60px] cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-primary bg-primary-lighter">
+                  <MIcon name="image" className="text-primary-dark" />
+                </div>
+                {[2, 3, 4].map((n) => (
+                  <div
+                    key={n}
+                    className="flex h-[60px] w-[60px] cursor-pointer items-center justify-center rounded-lg border border-line bg-warm-container transition-colors hover:border-primary"
+                  >
+                    <MIcon name="image" className="text-ink-3" />
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="mt-md flex gap-sm">
-              {[0, 1, 2, 3].map((i) => (
+
+            {/* RIGHT COLUMN: Details */}
+            <div className="flex flex-col gap-6">
+              <div>
+                <p className="mb-1 text-micro uppercase tracking-widest text-ink-3">LÉGUMES FRAIS</p>
+                <h1 className="text-h1 text-ink">Tomates fraîches du jour</h1>
+                <div className="mt-3 flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-1">
+                    <MIcon name="star" filled className="text-[#F59E0B]" />
+                    <span className="font-semibold text-ink">4.5/5</span>
+                    <span className="text-ink-2">(127 avis)</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-primary">
+                    <MIcon name="location_on" className="text-sm" />
+                    <span className="text-ink">Marché Dantokpa, Zone Akpakpa</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl bg-surface p-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-lighter font-bold text-primary-dark">
+                    AM
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Afi Mensah</p>
+                    <div className="flex items-center gap-1">
+                      <MIcon name="verified" className="text-[14px] text-success" />
+                      <span className="text-micro text-success">Vendeur vérifié</span>
+                    </div>
+                  </div>
+                </div>
                 <button
-                  key={i}
                   type="button"
-                  aria-label={`Visuel ${i + 1}`}
+                  onClick={() => toast('Profil vendeur — Sprint 2')}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  Voir profil
+                </button>
+              </div>
+
+              <hr className="border-line" />
+
+              <div className="flex items-end gap-3">
+                <span className="text-[28px] font-bold leading-none text-primary">450 FCFA</span>
+                <span className="mb-1 text-ink-2">/ 500g</span>
+              </div>
+
+              {/* Quantity Selector */}
+              <div className="flex items-center gap-4">
+                <span className="text-label text-ink">Quantité</span>
+                <div className="flex items-center rounded-lg border border-line">
+                  <button
+                    type="button"
+                    aria-label="Diminuer"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    className="border-r border-line p-2 text-ink transition-colors hover:bg-surface"
+                  >
+                    <MIcon name="remove" className="text-[18px]" />
+                  </button>
+                  <span className="px-6 py-1 font-semibold text-ink">{quantity}</span>
+                  <button
+                    type="button"
+                    aria-label="Augmenter"
+                    onClick={() => setQuantity((q) => q + 1)}
+                    className="border-l border-line p-2 text-ink transition-colors hover:bg-surface"
+                  >
+                    <MIcon name="add" className="text-[18px]" />
+                  </button>
+                </div>
+              </div>
+
+              {/* NEGOTIATION MODULE */}
+              <div className="flex flex-col gap-4 rounded-lg border-l-[3px] border-[#F59E0B] bg-[#FFFBEB] p-4">
+                <div className="flex items-center gap-2">
+                  <MIcon name="payments" className="text-[#F59E0B]" />
+                  <h3 className="text-sm font-semibold uppercase tracking-tight text-[#92400E]">Proposer votre budget</h3>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 rounded-lg bg-page p-3 text-center">
+                    <p className="mb-1 text-[10px] uppercase text-ink-2">Prix vendeur</p>
+                    <p className="font-bold text-ink">450 FCFA</p>
+                  </div>
+                  <MIcon name="sync" className="rotate-90 text-[#F59E0B]" />
+                  <div className="flex-1 rounded-lg border border-dashed border-[#F59E0B] bg-amber-light p-3 text-center">
+                    <p className="mb-1 text-[10px] uppercase text-amber-text">Votre offre</p>
+                    <input
+                      type="text"
+                      value={offre}
+                      onChange={(e) => setOffre(e.target.value)}
+                      className="w-full border-none bg-transparent p-0 text-center font-bold text-ink focus:outline-none focus:ring-0"
+                    />
+                  </div>
+                </div>
+                <p className="text-[12px] italic text-[#92400E]">Budget min. accepté par le vendeur : 350 FCFA</p>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toast('Négociation — Sprint 2')}
+                    className="w-full transform rounded-[10px] bg-success py-2.5 font-bold text-white transition-all hover:bg-success-dark active:scale-[0.98]"
+                  >
+                    Envoyer l'offre
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toast('Négociation annulée')}
+                    className="text-center text-xs text-ink-2 hover:text-ink"
+                  >
+                    Annuler la négociation
+                  </button>
+                </div>
+              </div>
+
+              {/* Main Action Buttons */}
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={addToCart}
+                  className="flex w-full transform items-center justify-center gap-2 rounded-[10px] bg-primary py-3.5 font-bold text-white transition-all hover:bg-primary-hover active:scale-[0.98]"
+                >
+                  <MIcon name="shopping_cart" />
+                  Ajouter au panier
+                </button>
+                <button
+                  type="button"
+                  onClick={buyNow}
+                  className="w-full rounded-[10px] border border-primary bg-white py-3.5 font-bold text-primary transition-all hover:bg-primary-lighter"
+                >
+                  Acheter maintenant
+                </button>
+              </div>
+            </div>
+          </main>
+
+          {/* ---- Bottom Section: Tabs ---- */}
+          <section className="mx-auto mt-8 mb-20 w-full max-w-[1200px] overflow-hidden rounded-xl bg-white shadow-sm">
+            <div className="flex border-b border-line">
+              {(
+                [
+                  ['description', 'Description'],
+                  ['vendeur', 'Vendeur'],
+                  ['avis', 'Avis (127)'],
+                ] as [TabId, string][]
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setTab(id)}
                   className={clsx(
-                    'flex h-16 w-16 items-center justify-center rounded-[10px] transition-all',
-                    i === 0 ? 'border-2 border-primary bg-card' : 'bg-primary-lighter opacity-70 hover:opacity-100',
+                    'px-8 py-4 text-sm',
+                    tab === id ? 'active-tab font-semibold' : 'font-medium text-ink-2 hover:text-ink',
                   )}
                 >
-                  {product.image && i === 0 ? (
-                    <img src={product.image} alt="" className="h-full w-full rounded-[8px] object-cover" />
-                  ) : (
-                    <ProductPlaceholder categorie={product.categorie} size="thumb" className="h-full w-full!" />
-                  )}
+                  {label}
                 </button>
               ))}
             </div>
-          </div>
 
-          {/* Infos */}
-          <div>
-            <p className="micro">{category?.nom ?? 'Légumes frais'}</p>
-            <h1 className="mt-xs text-h1 text-ink">{product.nom}</h1>
-
-            <div className="mt-md flex flex-wrap items-center gap-lg">
-              <span className="flex items-center gap-sm text-[15px]">
-                <IconStarFilled size={20} className="text-amber" />
-                <span className="font-bold text-ink">4.5/5</span>
-                <span className="text-[13px] text-ink-2">(127 avis)</span>
-              </span>
-              <span className="flex items-center gap-sm text-[14px] text-ink-2">
-                <IconMapPin size={18} className="text-primary" />
-                {product.origine}, Zone Akpakpa
-              </span>
-            </div>
-
-            {/* Vendeur */}
-            <div className="mt-lg flex items-center justify-between rounded-[12px] bg-page p-md">
-              <div className="flex items-center gap-sm">
-                <span className="avatar avatar-client">{SELLER.initiales}</span>
-                <div>
-                  <p className="text-[14px] font-semibold text-ink">{SELLER.nom}</p>
-                  <p className="flex items-center gap-xs text-[13px] text-success-dark">
-                    <IconCircleCheck size={16} />
-                    Vendeur vérifié
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => toast('Profil vendeur — Sprint 2')}
-                className="text-[13px] font-medium text-primary hover:underline"
-              >
-                Voir profil
-              </button>
-            </div>
-
-            <div className="my-lg h-px bg-line" aria-hidden="true" />
-
-            <div className="flex items-baseline gap-sm">
-              <span className="text-[28px] font-bold text-primary">{formatFCFA(product.prix)}</span>
-              <span className="text-[14px] text-ink-2">/ {product.quantite}</span>
-            </div>
-
-            <div className="mt-md flex items-center gap-md">
-              <span className="text-[14px] text-ink-2">Quantité</span>
-              <QuantityPicker quantity={qty} onChange={setQty} />
-            </div>
-
-            {/* Module négociation */}
-            <div className="mt-lg rounded-r-[12px] border-l-[3px] border-amber bg-amber-light p-lg">
-              <p className="flex items-center gap-sm text-micro font-bold tracking-wider text-amber-text uppercase">
-                <IconCash size={18} className="text-amber" />
-                Proposer votre budget
-              </p>
-              <div className="mt-md grid grid-cols-[1fr_auto_1fr] items-center gap-sm">
-                <div className="rounded-[10px] bg-page p-md text-center">
-                  <p className="micro">Prix vendeur</p>
-                  <p className="mt-xs font-bold text-ink">{formatFCFA(product.prix)}</p>
-                </div>
-                <IconRefresh size={20} className="text-amber" />
-                <div className="rounded-[10px] border border-dashed border-amber bg-[#FEF3C7] p-md text-center">
-                  <p className="micro">Votre offre</p>
-                  <p className="mt-xs font-bold text-amber-text">{formatFCFA(offre)}</p>
-                </div>
-              </div>
-              <p className="mt-sm text-[12px] italic text-amber-text">
-                Budget min. accepté par le vendeur : {formatFCFA(product.prixMinimum)}
-              </p>
-              <button
-                type="button"
-                onClick={() => toast('Négociation — disponible au Sprint 2')}
-                className="btn btn-success mt-md w-full"
-              >
-                Envoyer l'offre
-              </button>
-              <button
-                type="button"
-                onClick={() => toast('Négociation annulée')}
-                className="mx-auto mt-sm block text-[12px] text-ink-2 hover:text-ink"
-              >
-                Annuler la négociation
-              </button>
-            </div>
-
-            <button type="button" onClick={addToCart} className="btn btn-primary mt-lg w-full">
-              <IconShoppingCart size={20} />
-              Ajouter au panier
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                addToCart();
-                navigate({ to: '/panier' });
-              }}
-              className="btn btn-ghost mt-md w-full"
-            >
-              Acheter maintenant
-            </button>
-          </div>
-        </div>
-
-        {/* Onglets */}
-        <div className="card mt-lg p-0">
-          <div className="flex border-b border-line">
-            {TABS.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTab(t)}
-                className={clsx(
-                  '-mb-px border-b-2 px-lg py-md text-[14px] transition-colors',
-                  tab === t ? 'border-primary font-semibold text-ink' : 'border-transparent text-ink-2 hover:text-ink',
-                )}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-
-          <div className="p-xl">
-            {tab === 'Description' && (
-              <>
+            {tab === 'description' && (
+              <div className="flex flex-col gap-4 p-8">
                 <h3 className="text-h3 text-ink">Détails du produit</h3>
-                {details.paras.map((p) => (
-                  <p key={p.slice(0, 24)} className="mt-md text-[15px] leading-relaxed text-ink-2">
-                    {p}
-                  </p>
-                ))}
-                <div className="mt-xl grid grid-cols-2 gap-lg md:grid-cols-4">
-                  {[
-                    ['Origine', details.origine],
-                    ['Fraîcheur', details.fraicheur],
-                    ['Poids moyen', details.poids],
-                    ['Conservation', details.conservation],
-                  ].map(([label, value]) => (
-                    <div key={label}>
-                      <p className="micro">{label}</p>
-                      <p className="mt-xs text-[14px] font-medium text-ink">{value}</p>
+                <p className="max-w-3xl text-body leading-relaxed text-ink-2">
+                  Ces tomates fraîches proviennent directement du cœur du marché Dantokpa à Cotonou. Cultivées
+                  localement avec soin, elles sont récoltées à maturité pour garantir une saveur intense et une
+                  texture ferme idéale pour vos sauces, salades et plats traditionnels béninois.
+                  <br />
+                  <br />
+                  Afi Mensah, notre vendeuse partenaire certifiée, s'approvisionne quotidiennement auprès des
+                  producteurs locaux de la zone de Ouidah pour vous offrir le meilleur de la terre. Nos tomates sont
+                  triées à la main pour éviter tout produit abîmé.
+                </p>
+                <div className="mt-4 grid grid-cols-2 gap-6 md:grid-cols-4">
+                  {DETAILS.map((d) => (
+                    <div key={d.label} className="flex flex-col">
+                      <span className="text-micro uppercase text-ink-3">{d.label}</span>
+                      <span className="text-sm font-medium text-ink">{d.value}</span>
                     </div>
                   ))}
                 </div>
-              </>
-            )}
-            {tab === 'Vendeur' && (
-              <div className="flex items-center gap-md">
-                <span className="avatar avatar-lg avatar-client">{SELLER.initiales}</span>
-                <div>
-                  <p className="text-[15px] font-semibold text-ink">{SELLER.nom}</p>
-                  <p className="flex items-center gap-xs text-[13px] text-success-dark">
-                    <IconCircleCheck size={16} />
-                    Vendeuse partenaire certifiée — {product.origine}
-                  </p>
-                  <p className="mt-sm max-w-[520px] text-[13px] leading-relaxed text-ink-2">
-                    S'approvisionne quotidiennement auprès des producteurs locaux de la zone de Ouidah
-                    pour vous offrir le meilleur de la terre.
-                  </p>
-                </div>
               </div>
             )}
-            {tab === 'Avis (127)' && (
-              <div className="space-y-lg">
-                {[
-                  { nom: 'Kossi A.', note: 5, texte: 'Très frais, livré rapidement à Cadjehoun. Je recommande !' },
-                  { nom: 'Mariam D.', note: 4, texte: 'Bonne qualité, négociation acceptée en 10 minutes.' },
-                ].map((a) => (
-                  <div key={a.nom} className="flex items-start gap-md">
-                    <span className="avatar avatar-client">{a.nom[0]}</span>
-                    <div>
-                      <p className="flex items-center gap-sm text-[14px] font-semibold text-ink">
-                        {a.nom}
-                        <span className="flex items-center gap-xs text-[12px] font-normal text-amber">
-                          <IconStarFilled size={14} /> {a.note}/5
-                        </span>
-                      </p>
-                      <p className="mt-xs text-[13px] text-ink-2">{a.texte}</p>
+
+            {tab === 'vendeur' && (
+              <div className="flex flex-col gap-4 p-8">
+                <h3 className="text-h3 text-ink">À propos du vendeur</h3>
+                <div className="flex items-center gap-3 rounded-xl bg-surface p-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-lighter font-bold text-primary-dark">
+                    AM
+                  </div>
+                  <div>
+                    <p className="font-semibold text-ink">Afi Mensah</p>
+                    <div className="flex items-center gap-1">
+                      <MIcon name="verified" className="text-[14px] text-success" />
+                      <span className="text-micro text-success">Vendeur vérifié · Marché Dantokpa</span>
                     </div>
+                  </div>
+                </div>
+                <p className="max-w-3xl text-body leading-relaxed text-ink-2">
+                  Vendeuse partenaire certifiée TOKPa depuis 2024, Afi Mensah s'approvisionne quotidiennement auprès
+                  des producteurs locaux de la zone de Ouidah. Note moyenne : 4.5/5 sur 127 avis.
+                </p>
+              </div>
+            )}
+
+            {tab === 'avis' && (
+              <div className="flex flex-col gap-4 p-8">
+                <h3 className="text-h3 text-ink">Avis clients (127)</h3>
+                {AVIS.map((a) => (
+                  <div key={a.id} className="rounded-xl border border-line p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-ink">{a.auteur}</span>
+                        <span className="flex items-center gap-0.5 text-[#F59E0B]">
+                          {Array.from({ length: a.note }, (_, i) => (
+                            <MIcon key={i} name="star" filled className="text-[14px]" />
+                          ))}
+                        </span>
+                      </div>
+                      <span className="text-micro text-ink-3">{a.date}</span>
+                    </div>
+                    <p className="mt-2 text-body text-ink-2">{a.texte}</p>
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </section>
         </div>
-      </main>
-
-      <ClientFooter />
+      </div>
     </div>
   );
 }

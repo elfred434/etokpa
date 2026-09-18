@@ -1,117 +1,468 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
-import ClientFooter from '../../../components/layout/client/ClientFooter';
-import FilterSidebar from '../../../components/client/catalog/FilterSidebar';
-import type { CatalogFilters } from '../../../components/client/catalog/FilterSidebar';
-import CatalogToolbar from '../../../components/client/catalog/CatalogToolbar';
-import type { SortKey, ViewMode } from '../../../components/client/catalog/CatalogToolbar';
-import ProductCard from '../../../components/client/catalog/ProductCard';
-import Pagination from '../../../components/shared/Pagination';
-import EmptyState from '../../../components/shared/EmptyState';
-import { IconSearch } from '@tabler/icons-react';
-import { MARKETS, PRODUCTS } from '../../../constants/mockData';
+import MIcon from '../../../components/shared/MIcon';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
+import type { CategoryId, Product } from '../../../types/models';
+
+/* ---- Données exactes du code.html « catalogue_tokpa » ---- */
+
+type CatFilter = 'all' | CategoryId;
+
+const CATEGORIES: { id: CatFilter; icon: string; nom: string }[] = [
+  { id: 'all', icon: 'grid_view', nom: 'Tous les produits' },
+  { id: 'vegetable', icon: 'eco', nom: 'Légumes & Fruits' },
+  { id: 'fish', icon: 'restaurant', nom: 'Poissons & Viandes' },
+  { id: 'grain', icon: 'grain', nom: 'Céréales & Graines' },
+  { id: 'spice', icon: 'soup_kitchen', nom: 'Épices & Condiments' },
+  { id: 'pack', icon: 'shopping_basket', nom: 'Packs & Bundles' },
+];
+
+const ZONES = [
+  { id: 'dantokpa', nom: 'Marché Dantokpa' },
+  { id: 'ganhi', nom: 'Marché Ganhi' },
+  { id: 'missebo', nom: 'Marché Missèbo' },
+  { id: 'gbegamey', nom: 'Gbégamey' },
+];
+
+interface CatalogProduct {
+  id: string;
+  nom: string;
+  zoneId: string;
+  meta: string; // « Marché Dantokpa · 1kg »
+  quantite: string;
+  prix: number;
+  prixLabel: string;
+  prixAncienLabel?: string;
+  promo?: string;
+  stock: 'available' | 'low' | 'none';
+  icon: string;
+  cat: CategoryId;
+}
+
+const PRODUCTS: CatalogProduct[] = [
+  { id: 'c1', nom: 'Tomates fraîches (Local)', zoneId: 'dantokpa', meta: 'Marché Dantokpa · 1kg', quantite: '1kg', prix: 450, prixLabel: '450 FCFA', stock: 'available', icon: 'eco', cat: 'vegetable' },
+  { id: 'c2', nom: 'Oignons violets', zoneId: 'ganhi', meta: 'Marché Ganhi · 2kg', quantite: '2kg', prix: 800, prixLabel: '800 FCFA', prixAncienLabel: '1 000 FCFA', promo: 'Promo −20%', stock: 'available', icon: 'nutrition', cat: 'vegetable' },
+  { id: 'c3', nom: 'Poivrons verts', zoneId: 'missebo', meta: 'Marché Missèbo · 500g', quantite: '500g', prix: 600, prixLabel: '600 FCFA', stock: 'low', icon: 'eco', cat: 'vegetable' },
+  { id: 'c4', nom: 'Carottes bio', zoneId: 'gbegamey', meta: 'Marché Gbégamey · 1kg', quantite: '1kg', prix: 350, prixLabel: '350 FCFA', stock: 'none', icon: 'restaurant', cat: 'vegetable' },
+  { id: 'c5', nom: 'Pommes de terre', zoneId: 'dantokpa', meta: 'Dantokpa · Filet 2kg', quantite: 'Filet 2kg', prix: 1200, prixLabel: '1 200 FCFA', stock: 'none', icon: 'lunch_dining', cat: 'grain' },
+  { id: 'c6', nom: 'Chou vert blanc', zoneId: 'ganhi', meta: 'Marché Ganhi · Pièce', quantite: 'Pièce', prix: 400, prixLabel: '400 FCFA', stock: 'none', icon: 'local_florist', cat: 'vegetable' },
+  { id: 'c7', nom: 'Concombres frais', zoneId: 'dantokpa', meta: 'Marché Dantokpa · Lot de 3', quantite: 'Lot de 3', prix: 300, prixLabel: '300 FCFA', stock: 'none', icon: 'eco', cat: 'vegetable' },
+  { id: 'c8', nom: 'Gombo frais', zoneId: 'missebo', meta: 'Marché Missèbo · 500g', quantite: '500g', prix: 250, prixLabel: '250 FCFA', stock: 'none', icon: 'nutrition', cat: 'vegetable' },
+  { id: 'c9', nom: 'Ail violet local', zoneId: 'dantokpa', meta: 'Dantokpa · 250g', quantite: '250g', prix: 500, prixLabel: '500 FCFA', stock: 'none', icon: 'spa', cat: 'spice' },
+];
+
+const CAT_TITLES: Record<CatFilter, string> = {
+  all: 'Légumes frais',
+  vegetable: 'Légumes & Fruits',
+  fish: 'Poissons & Viandes',
+  grain: 'Céréales & Graines',
+  spice: 'Épices & Condiments',
+  pack: 'Packs & Bundles',
+};
 
 const PER_PAGE = 9;
 
-/** Page catalogue — copie conforme de la maquette catalogue (filtres + grille + pagination). */
+/** Catalogue — copie conforme du code.html Stitch « catalogue_tokpa ». */
 export default function CatalogPage() {
-  const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState<CatalogFilters>({
-    category: 'all',
-    zones: [],
-    maxPrice: 10000,
-    availableOnly: false,
-  });
-  const [sort, setSort] = useState<SortKey>('popular');
-  const [view, setView] = useState<ViewMode>('grid');
+  const navigate = useNavigate();
+  const q = useRouterState({ select: (s) => (s.location.search as { q?: string }).q ?? '' });
+
+  // État initial = snapshot exact du design (Dantokpa coché, 7500, dispo ON, 9 cartes).
+  const [search, setSearch] = useState(q);
+  const [cat, setCat] = useState<CatFilter>('all');
+  const [zones, setZones] = useState<string[]>(['dantokpa']);
+  const [maxPrice, setMaxPrice] = useState(7500);
+  const [dispoOnly, setDispoOnly] = useState(true);
+  const [touched, setTouched] = useState(false);
+  const [sort, setSort] = useState('pop');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
   const [page, setPage] = useState(1);
 
+  const touch = () => setTouched(true);
+
   const filtered = useMemo(() => {
-    let list = PRODUCTS.filter((p) => {
-      if (filters.category !== 'all' && p.categorie !== filters.category) return false;
-      if (filters.zones.length && !filters.zones.some((id) => MARKETS.find((m) => m.id === id)?.nom === p.origine))
-        return false;
-      if (p.prix > filters.maxPrice) return false;
-      if (filters.availableOnly && p.stock === 'out') return false;
-      if (search && !p.nom.toLowerCase().includes(search.toLowerCase())) return false;
-      return true;
-    });
-    if (sort === 'price-asc') list = [...list].sort((a, b) => a.prix - b.prix);
-    if (sort === 'price-desc') list = [...list].sort((a, b) => b.prix - a.prix);
-    if (sort === 'new') list = [...list].sort((a, b) => Number(b.badges.includes('new')) - Number(a.badges.includes('new')));
-    return list;
-  }, [filters, search, sort]);
+    let items = [...PRODUCTS];
+    const needle = search.trim().toLowerCase();
+    if (needle) items = items.filter((p) => p.nom.toLowerCase().includes(needle) || p.meta.toLowerCase().includes(needle));
+    if (touched) {
+      if (cat !== 'all') items = items.filter((p) => p.cat === cat);
+      if (zones.length > 0) items = items.filter((p) => zones.includes(p.zoneId));
+      items = items.filter((p) => p.prix <= maxPrice);
+      if (dispoOnly) items = items.filter((p) => p.stock === 'available');
+    }
+    if (sort === 'asc') items.sort((a, b) => a.prix - b.prix);
+    if (sort === 'desc') items.sort((a, b) => b.prix - a.prix);
+    if (sort === 'new') items.reverse();
+    return items;
+  }, [search, touched, cat, zones, maxPrice, dispoOnly, sort]);
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const current = Math.min(page, pageCount);
-  const visible = filtered.slice((current - 1) * PER_PAGE, current * PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const visible = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+  const isDesignSnapshot = !touched && !search.trim();
 
-  const addToCart = (product: (typeof PRODUCTS)[number]) => {
-    dispatch(add({ product }));
-    toast.success(`${product.nom} ajouté au panier`);
+  const resetFilters = () => {
+    setCat('all');
+    setZones(['dantokpa']);
+    setMaxPrice(7500);
+    setDispoOnly(true);
+    setTouched(false);
+    setSearch('');
+    setSort('pop');
+    setPage(1);
+    if (q) navigate({ to: '/catalogue', search: {} });
   };
 
+  const toggleZone = (zoneId: string) => {
+    touch();
+    setZones((z) => (z.includes(zoneId) ? z.filter((id) => id !== zoneId) : [...z, zoneId]));
+    setPage(1);
+  };
+
+  const addToCart = (p: CatalogProduct) => {
+    const product: Product = {
+      id: p.id,
+      nom: p.nom,
+      origine: ZONES.find((z) => z.id === p.zoneId)?.nom ?? p.zoneId,
+      quantite: p.quantite,
+      prix: p.prix,
+      prixMinimum: Math.round(p.prix * 0.8),
+      categorie: p.cat,
+      stock: p.stock === 'none' ? 'out' : p.stock === 'low' ? 'low' : 'available',
+      badges: p.promo ? ['promo'] : [],
+      negotiated: p.prixAncienLabel ? { oldPrice: 1000 } : undefined,
+    };
+    dispatch(add({ product }));
+    toast.success(`${p.nom} ajouté au panier`);
+  };
+
+  const openProduct = () => navigate({ to: '/produit/$productId', params: { productId: 'p1' } });
+
+  const badges = (p: CatalogProduct) => (
+    <div className="absolute left-2 top-2 flex flex-col gap-1">
+      {p.stock === 'available' && (
+        <span className="flex items-center gap-1 rounded-full bg-success px-2 py-0.5 text-[10px] font-bold text-white">
+          <span className="h-1.5 w-1.5 rounded-full bg-white" /> Disponible
+        </span>
+      )}
+      {p.promo && <span className="rounded-full bg-amber px-2 py-0.5 text-[10px] font-bold text-white">{p.promo}</span>}
+      {p.stock === 'low' && (
+        <span className="flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">
+          <span className="h-1.5 w-1.5 rounded-full bg-white" /> Stock faible
+        </span>
+      )}
+    </div>
+  );
+
   return (
-    <div className="flex min-h-screen flex-col bg-page">
-      <ClientNavbar search={search} onSearch={(v) => { setSearch(v); setPage(1); }} />
+    <div className="min-h-screen bg-page font-body text-on-surface">
+      <ClientNavbar
+        variant="catalog"
+        search={search}
+        onSearch={(v) => {
+          touch();
+          setSearch(v);
+          setPage(1);
+        }}
+      />
 
-      <main className="mx-auto w-full max-w-[1200px] flex-1 px-md py-lg md:px-lg">
-        <div className="grid grid-cols-1 gap-lg lg:grid-cols-[260px_1fr]">
-          <FilterSidebar
-            filters={filters}
-            onChange={(f) => {
-              setFilters(f);
-              setPage(1);
-            }}
-          />
+      <main className="mx-auto flex w-full max-w-[1200px] gap-4 px-4 py-lg">
+        {/* ---- Sidebar Filters ---- */}
+        <aside className="hidden w-[260px] flex-shrink-0 space-y-md md:block">
+          <div className="rounded-xl border-[0.5px] border-line bg-white p-md shadow-sm">
+            <h3 className="mb-md font-h3 text-h3">Catégories</h3>
+            <nav className="space-y-1">
+              {CATEGORIES.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    touch();
+                    setCat(c.id);
+                    setPage(1);
+                  }}
+                  className={clsx(
+                    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all',
+                    cat === c.id && touched
+                      ? 'bg-primary-lighter font-semibold text-primary'
+                      : 'text-on-surface-variant hover:bg-primary-lighter hover:text-primary',
+                    cat === c.id && !touched && 'bg-primary-lighter font-semibold text-primary',
+                  )}
+                >
+                  <MIcon name={c.icon} className="text-[20px]" />
+                  <span className="text-label">{c.nom}</span>
+                </button>
+              ))}
+            </nav>
 
-          <div>
-            <CatalogToolbar count={filtered.length} sort={sort} onSort={setSort} view={view} onView={setView} />
-
-            {visible.length === 0 ? (
-              <EmptyState
-                icon={IconSearch}
-                title="Aucun produit trouvé"
-                description="Essayez de modifier vos filtres ou votre recherche."
-                action={
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => {
-                      setFilters({ category: 'all', zones: [], maxPrice: 10000, availableOnly: false });
-                      setSearch('');
-                    }}
-                  >
-                    Réinitialiser
-                  </button>
-                }
-              />
-            ) : (
-              <div className={clsx('grid gap-md', view === 'grid' ? 'grid-cols-2 xl:grid-cols-3' : 'grid-cols-1')}>
-                {visible.map((p) => (
-                  <ProductCard
-                    key={p.id}
-                    product={p}
-                    onAdd={addToCart}
-                    onOpen={(prod) => navigate({ to: '/produit/$productId', params: { productId: prod.id } })}
-                  />
+            <div className="mt-8 border-t border-line pt-6">
+              <h3 className="mb-md font-h3 text-h3">Zone du marché</h3>
+              <div className="space-y-3">
+                {ZONES.map((z) => (
+                  <label key={z.id} className="group flex cursor-pointer items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={zones.includes(z.id)}
+                      onChange={() => toggleZone(z.id)}
+                      className="h-4 w-4 rounded border-line accent-primary"
+                    />
+                    <span className="text-label text-on-surface-variant group-hover:text-on-surface">{z.nom}</span>
+                  </label>
                 ))}
               </div>
-            )}
+            </div>
 
-            <Pagination page={current} pageCount={pageCount} onChange={setPage} className="mt-xl" />
+            <div className="mt-8 border-t border-line pt-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-h3 text-h3">Prix (FCFA)</h3>
+                <span className="text-micro font-bold text-primary">10 000 max</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={10000}
+                step={50}
+                value={maxPrice}
+                onChange={(e) => {
+                  touch();
+                  setMaxPrice(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="range-tokpa h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-warm-container accent-primary"
+              />
+              <div className="mt-2 flex justify-between text-micro text-ink-3">
+                <span>0</span>
+                <span>10k</span>
+              </div>
+            </div>
+
+            <div className="mt-8 border-t border-line pt-6">
+              <div className="flex items-center justify-between">
+                <span className="text-label font-semibold">Disponible uniquement</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={dispoOnly}
+                  onClick={() => {
+                    touch();
+                    setDispoOnly((v) => !v);
+                    setPage(1);
+                  }}
+                  className={clsx(
+                    'relative h-5 w-10 rounded-full shadow-inner transition-all',
+                    dispoOnly ? 'bg-primary' : 'bg-ink-3',
+                  )}
+                >
+                  <span
+                    className={clsx(
+                      'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow',
+                      dispoOnly ? 'right-0.5' : 'left-0.5',
+                    )}
+                  />
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="mt-8 w-full rounded-lg py-2 text-label font-semibold text-primary transition-colors hover:bg-primary-lighter active:scale-95"
+            >
+              Réinitialiser les filtres
+            </button>
           </div>
-        </div>
+        </aside>
+
+        {/* ---- Main Content Area ---- */}
+        <section className="flex-grow">
+          <div className="mb-lg flex items-center justify-between">
+            <div>
+              <h2 className="font-h1 text-h1 text-on-surface">{isDesignSnapshot ? 'Légumes frais' : CAT_TITLES[cat]}</h2>
+              <p className="mt-1 text-ink-2">
+                {isDesignSnapshot ? '148 produits trouvés' : `${filtered.length} produits trouvés`}
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-1.5">
+                <span className="text-ink-2">Trier par :</span>
+                <select
+                  value={sort}
+                  onChange={(e) => {
+                    touch();
+                    setSort(e.target.value);
+                  }}
+                  className="cursor-pointer border-none bg-transparent p-0 pr-6 text-label font-semibold focus:ring-0"
+                >
+                  <option value="pop">Popularité</option>
+                  <option value="asc">Prix croissant</option>
+                  <option value="desc">Prix décroissant</option>
+                  <option value="new">Nouveautés</option>
+                </select>
+              </div>
+              <div className="flex overflow-hidden rounded-lg border border-line bg-white">
+                <button
+                  type="button"
+                  aria-label="Vue grille"
+                  onClick={() => setView('grid')}
+                  className={clsx('p-2', view === 'grid' ? 'border-r border-line bg-warm text-primary' : 'text-ink-3 hover:bg-surface')}
+                >
+                  <MIcon name="grid_view" className="text-[20px]" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Vue liste"
+                  onClick={() => setView('list')}
+                  className={clsx('p-2', view === 'list' ? 'bg-warm text-primary' : 'text-ink-3 hover:bg-surface')}
+                >
+                  <MIcon name="view_list" className="text-[20px]" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {visible.length === 0 ? (
+            <div className="rounded-xl border-[0.5px] border-line bg-white p-xl text-center text-ink-2">
+              Aucun produit ne correspond à ces filtres.
+            </div>
+          ) : view === 'grid' ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {visible.map((p) => (
+                <div
+                  key={p.id}
+                  onClick={openProduct}
+                  className="group cursor-pointer overflow-hidden rounded-xl border-[0.5px] border-line bg-white transition-all hover:shadow-md"
+                >
+                  <div className="relative flex h-[110px] items-center justify-center bg-gradient-to-br from-primary-lighter to-primary-light">
+                    <MIcon name={p.icon} className="text-[40px] text-primary-hover" />
+                    {badges(p)}
+                  </div>
+                  <div className="p-md">
+                    <h4 className="line-clamp-1 text-label font-semibold text-ink">{p.nom}</h4>
+                    <p className="mt-1 text-ink-2">{p.meta}</p>
+                    <div className="mt-4 flex items-center justify-between">
+                      <div>
+                        <span className="font-price text-price text-primary">{p.prixLabel}</span>
+                        {p.prixAncienLabel && (
+                          <span className="block text-micro text-ink-3 line-through">{p.prixAncienLabel}</span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        aria-label={`Ajouter ${p.nom}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToCart(p);
+                        }}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white transition-all hover:bg-primary-hover active:scale-95"
+                      >
+                        <MIcon name="add" className="text-[20px]" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {visible.map((p) => (
+                <div
+                  key={p.id}
+                  onClick={openProduct}
+                  className="group flex cursor-pointer items-center gap-md rounded-xl border-[0.5px] border-line bg-white p-md transition-all hover:shadow-md"
+                >
+                  <div className="relative flex h-[80px] w-[110px] flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary-lighter to-primary-light">
+                    <MIcon name={p.icon} className="text-[32px] text-primary-hover" />
+                  </div>
+                  <div className="flex-grow">
+                    <h4 className="text-label font-semibold text-ink">{p.nom}</h4>
+                    <p className="mt-1 text-ink-2">{p.meta}</p>
+                  </div>
+                  <div className="flex items-center gap-md">
+                    <div className="text-right">
+                      <span className="font-price text-price text-primary">{p.prixLabel}</span>
+                      {p.prixAncienLabel && <span className="block text-micro text-ink-3 line-through">{p.prixAncienLabel}</span>}
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`Ajouter ${p.nom}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addToCart(p);
+                      }}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white transition-all hover:bg-primary-hover active:scale-95"
+                    >
+                      <MIcon name="add" className="text-[20px]" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ---- Pagination ---- */}
+          <div className="mt-xl flex items-center justify-center gap-2">
+            <button
+              type="button"
+              aria-label="Page précédente"
+              disabled={currentPage === 1}
+              onClick={() => setPage(currentPage - 1)}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-on-surface-variant transition-all hover:border-line hover:bg-white disabled:opacity-40"
+            >
+              <MIcon name="chevron_left" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setPage(n)}
+                className={clsx(
+                  'flex h-10 w-10 items-center justify-center rounded-lg transition-all',
+                  n === currentPage
+                    ? 'bg-primary font-bold text-white shadow-sm'
+                    : 'border border-transparent text-on-surface-variant hover:border-line hover:bg-white',
+                )}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              type="button"
+              aria-label="Page suivante"
+              disabled={currentPage === totalPages}
+              onClick={() => setPage(currentPage + 1)}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-on-surface-variant transition-all hover:border-line hover:bg-white disabled:opacity-40"
+            >
+              <MIcon name="chevron_right" />
+            </button>
+          </div>
+        </section>
       </main>
 
-      <ClientFooter />
+      {/* ---- Footer catalogue ---- */}
+      <footer className="mt-xl border-t border-line bg-white py-lg">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 text-ink-2">
+          <div className="flex items-center gap-2">
+            <span className="font-h3 text-primary">TOKPa</span>
+            <span className="text-micro">© 2024 - Le Marché Béninois en ligne</span>
+          </div>
+          <div className="hidden gap-lg sm:flex">
+            <Link to="/" className="text-label transition-colors hover:text-primary">
+              Aide & Support
+            </Link>
+            <button type="button" onClick={() => toast('Vendre sur TOKPa — Sprint 2')} className="text-label transition-colors hover:text-primary">
+              Vendre sur TOKPa
+            </button>
+            <button type="button" onClick={() => toast('Livraison — Sprint 3')} className="text-label transition-colors hover:text-primary">
+              Livraison
+            </button>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

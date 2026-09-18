@@ -38,7 +38,14 @@ const connexionRoute = createRoute({ getParentRoute: () => rootRoute, path: '/co
 const inscriptionRoute = createRoute({ getParentRoute: () => rootRoute, path: '/inscription', component: InscriptionPage });
 const verificationRoute = createRoute({ getParentRoute: () => rootRoute, path: '/verification-2fa', component: Verification2faPage });
 const notificationsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/notifications', component: NotificationsPage });
-const catalogueRoute = createRoute({ getParentRoute: () => rootRoute, path: '/catalogue', component: CatalogPage });
+const catalogueRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/catalogue',
+  component: CatalogPage,
+  validateSearch: (search: Record<string, unknown>): { q?: string } => ({
+    q: typeof search.q === 'string' ? search.q : undefined,
+  }),
+});
 const produitRoute = createRoute({ getParentRoute: () => rootRoute, path: '/produit/$productId', component: ProductPage });
 const panierRoute = createRoute({ getParentRoute: () => rootRoute, path: '/panier', component: CartPage });
 const confirmationRoute = createRoute({ getParentRoute: () => rootRoute, path: '/confirmation', component: ConfirmationPage });

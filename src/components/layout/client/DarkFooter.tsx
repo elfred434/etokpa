@@ -1,63 +1,86 @@
 import toast from 'react-hot-toast';
-import { IconMessageCircle, IconShare3 } from '@tabler/icons-react';
+import MIcon from '../../shared/MIcon';
 
-const COLS = [
-  { title: 'Plateforme', links: ['Comment ça marche', 'Devenir Vendeur', 'Devenir Livreur'] },
-  { title: 'Aide', links: ['Support Client', "Conditions d'utilisation", 'Politique de confidentialité'] },
-];
+const soon = (label: string) => () => toast(`${label} — bientôt disponible`);
 
-/** Footer sombre 4 colonnes de la maquette d'accueil. */
+/** Footer sombre de l'accueil — copie conforme du code.html Stitch. */
 export default function DarkFooter() {
   return (
-    <footer className="mt-xl bg-[#2A1E17] px-lg py-xl text-white">
-      <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-xl md:grid-cols-4">
-        <div>
-          <span className="text-h3 font-bold text-white">TOKPa</span>
-          <p className="mt-sm text-[13px] leading-relaxed text-white/70">
+    <footer className="mt-xl bg-on-surface py-xl text-warm">
+      <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-xl px-4 md:grid-cols-4">
+        <div className="col-span-1">
+          <h2 className="mb-md font-h2 text-h2 text-primary-light">TOKPa</h2>
+          <p className="text-body text-surface-variant">
             Le meilleur du marché béninois dans votre poche. Fraîcheur garantie et prix négociables.
           </p>
         </div>
-        {COLS.map(({ title, links }) => (
-          <div key={title}>
-            <h3 className="text-[14px] font-semibold text-white">{title}</h3>
-            <ul className="mt-md space-y-sm">
-              {links.map((l) => (
-                <li key={l}>
-                  <button
-                    type="button"
-                    onClick={() => toast(`${l} — à venir`)}
-                    className="text-[13px] text-white/70 transition-colors hover:text-white"
-                  >
-                    {l}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+
         <div>
-          <h3 className="text-[14px] font-semibold text-white">Suivez-nous</h3>
-          <div className="mt-md flex gap-sm">
+          <h4 className="mb-md font-bold">Plateforme</h4>
+          <ul className="flex flex-col gap-sm text-body text-surface-variant">
+            <li>
+              <button type="button" onClick={soon('Comment ça marche')} className="hover:text-white">
+                Comment ça marche
+              </button>
+            </li>
+            <li>
+              <button type="button" onClick={soon('Devenir Vendeur')} className="hover:text-white">
+                Devenir Vendeur
+              </button>
+            </li>
+            <li>
+              <button type="button" onClick={soon('Devenir Livreur')} className="hover:text-white">
+                Devenir Livreur
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="mb-md font-bold">Aide</h4>
+          <ul className="flex flex-col gap-sm text-body text-surface-variant">
+            <li>
+              <button type="button" onClick={soon('Support Client')} className="hover:text-white">
+                Support Client
+              </button>
+            </li>
+            <li>
+              <button type="button" onClick={soon("Conditions d'utilisation")} className="hover:text-white">
+                Conditions d'utilisation
+              </button>
+            </li>
+            <li>
+              <button type="button" onClick={soon('Politique de confidentialité')} className="hover:text-white">
+                Politique de confidentialité
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="mb-md font-bold">Suivez-nous</h4>
+          <div className="flex gap-md">
             <button
               type="button"
-              aria-label="Nous écrire"
-              onClick={() => toast('Réseaux sociaux — à venir')}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+              onClick={soon('Facebook')}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface-variant transition-colors hover:bg-primary"
+              aria-label="Facebook"
             >
-              <IconMessageCircle size={18} />
+              <MIcon name="face_nod" />
             </button>
             <button
               type="button"
+              onClick={soon('Partager')}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface-variant transition-colors hover:bg-primary"
               aria-label="Partager"
-              onClick={() => toast('Partage — à venir')}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
             >
-              <IconShare3 size={18} />
+              <MIcon name="share" />
             </button>
           </div>
         </div>
       </div>
-      <div className="mx-auto mt-xl max-w-[1200px] border-t border-white/10 pt-lg text-center text-[12px] text-white/60">
+
+      <div className="mx-auto mt-xl max-w-[1200px] border-t border-on-surface-variant px-4 pt-lg text-center text-label text-surface-variant">
         © 2024 TOKPa. Tous droits réservés. Cotonou, Bénin.
       </div>
     </footer>
