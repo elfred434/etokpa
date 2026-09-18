@@ -143,7 +143,7 @@ export default function HomePage() {
           {ATOUTS.map((a) => (
             <div key={a.titre} className="flex items-start gap-md rounded-[14px] border border-line bg-card p-lg">
               <div className="rounded-xl bg-primary-lighter p-sm">
-                <MIcon name={a.icon} className="text-[32px] text-primary" />
+                <MIcon name={a.icon} className="text-[32px] text-primary-shade" />
               </div>
               <div>
                 <h3 className="font-h3 font-bold text-on-surface">{a.titre}</h3>
@@ -157,7 +157,7 @@ export default function HomePage() {
         <section className="mb-xl">
           <div className="mb-lg flex items-end justify-between">
             <h2 className="font-h1 text-h1 text-on-surface">Explorer les catégories</h2>
-            <Link to="/catalogue" className="flex items-center gap-1 font-bold text-primary hover:underline">
+            <Link to="/catalogue" className="flex items-center gap-1 font-bold text-primary-shade hover:underline">
               Voir tout <MIcon name="chevron_right" className="text-[18px]" />
             </Link>
           </div>
@@ -168,7 +168,7 @@ export default function HomePage() {
                 onClick={() => navigate({ to: '/catalogue' })}
                 className="bento-hover group flex cursor-pointer flex-col items-center gap-sm rounded-[14px] border border-transparent bg-warm-low p-lg hover:border-primary-light"
               >
-                <MIcon name={c.icon} className="text-[48px] text-primary transition-transform group-hover:scale-110" />
+                <MIcon name={c.icon} className="text-[48px] text-primary-shade transition-transform group-hover:scale-110" />
                 <span className="font-h3 text-on-surface">{c.nom}</span>
               </div>
             ))}
@@ -223,7 +223,7 @@ export default function HomePage() {
                   <span className="text-label text-ink-2">{item.lieu}</span>
                   <h3 className="font-h3 font-bold text-on-surface">{item.nom}</h3>
                   <div className="mt-sm flex items-center justify-between">
-                    <span className="font-price text-price text-primary">{item.prixLabel}</span>
+                    <span className="font-price text-price text-primary-shade">{item.prixLabel}</span>
                     <button
                       type="button"
                       aria-label={`Ajouter ${item.nom}`}
@@ -268,7 +268,7 @@ export default function HomePage() {
                   type="text"
                   value={offre}
                   onChange={(e) => setOffre(e.target.value)}
-                  className="w-24 rounded-lg border-none bg-white p-1 text-right font-bold text-primary focus:ring-1 focus:ring-primary"
+                  className="w-24 rounded-lg border-none bg-white p-1 text-right font-bold text-primary-shade focus:ring-1 focus:ring-primary-shade"
                 />
               </div>
               <button
@@ -289,7 +289,7 @@ export default function HomePage() {
       <nav className="fixed bottom-0 left-0 z-50 flex w-full items-center justify-around border-t border-line bg-warm px-2 py-2 shadow-lg lg:hidden">
         <Link
           to="/"
-          className="scale-interaction flex flex-col items-center justify-center rounded-xl bg-primary-lighter px-3 py-1 text-primary"
+          className="scale-interaction flex flex-col items-center justify-center rounded-xl bg-primary-lighter px-3 py-1 text-primary-shade"
         >
           <MIcon name="home" />
           <span className="font-micro text-micro">Home</span>

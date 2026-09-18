@@ -63,7 +63,7 @@ export default function DarkFooter() {
             <button
               type="button"
               onClick={soon('Facebook')}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface-variant transition-colors hover:bg-primary"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface-variant transition-colors hover:bg-primary-shade"
               aria-label="Facebook"
             >
               <MIcon name="face_nod" />
@@ -71,7 +71,7 @@ export default function DarkFooter() {
             <button
               type="button"
               onClick={soon('Partager')}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface-variant transition-colors hover:bg-primary"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface-variant transition-colors hover:bg-primary-shade"
               aria-label="Partager"
             >
               <MIcon name="share" />
