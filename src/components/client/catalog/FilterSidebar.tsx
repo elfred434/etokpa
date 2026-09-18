@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { IconLayoutGrid, IconLeaf, IconTools, IconGrain, IconSalt, IconBasket } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
-import { CATEGORIES, ZONES } from '../../../constants/mockData';
+import { CATEGORIES, MARKETS } from '../../../constants/mockData';
 import type { CategoryId } from '../../../types/models';
 
 const CAT_ICONS: Record<string, TablerIcon> = {
@@ -65,19 +65,19 @@ export default function FilterSidebar({ filters, onChange }: FilterSidebarProps)
 
       <div className="h-px bg-line" aria-hidden="true" />
 
-      {/* Zones */}
+      {/* Zones de marché */}
       <div>
         <h2 className="mb-md text-h3 text-ink">Zone du marché</h2>
         <ul className="space-y-sm">
-          {ZONES.map((zone) => {
-            const checked = filters.zones.includes(zone.id);
+          {MARKETS.map((market) => {
+            const checked = filters.zones.includes(market.id);
             return (
-              <li key={zone.id}>
+              <li key={market.id}>
                 <label className="flex cursor-pointer items-center gap-sm text-[14px] text-ink-2 select-none">
                   <input
                     type="checkbox"
                     checked={checked}
-                    onChange={() => toggleZone(zone.id)}
+                    onChange={() => toggleZone(market.id)}
                     className="peer sr-only"
                   />
                   <span
@@ -92,7 +92,7 @@ export default function FilterSidebar({ filters, onChange }: FilterSidebarProps)
                       </svg>
                     )}
                   </span>
-                  {zone.nom}
+                  {market.nom}
                 </label>
               </li>
             );

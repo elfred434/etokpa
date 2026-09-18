@@ -1,31 +1,28 @@
 import { useState } from 'react';
 import clsx from 'clsx';
-import { IconLock, IconBrandMastercard } from '@tabler/icons-react';
+import { IconCreditCard } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
-import { formatFCFA } from '../../../utils/format';
 
 interface FedaPayButtonProps {
-  amount: number;
-  /** Appelé après un paiement mock réussi */
   onPaid?: () => void;
+  disabled?: boolean;
   className?: string;
 }
 
 /**
- * Bouton de paiement FedaPay — MOCK (décision validée) :
- * loading 1,2 s puis succès (ou échec 1 fois sur 5 pour tester les états).
- * À remplacer par FedaPay Checkout.js + mutation backend au branchement (F-18).
+ * Bouton « Payer avec FedaPay » (maquette panier) — MOCK validé :
+ * loading 1,2 s puis succès (échec 1/5 pour tester les états).
+ * Branchement FedaPay Checkout.js + backend au Sprint suivant (F-18).
  */
-export default function FedaPayButton({ amount, onPaid, className }: FedaPayButtonProps) {
+export default function FedaPayButton({ onPaid, disabled, className }: FedaPayButtonProps) {
   const [loading, setLoading] = useState(false);
 
   const handlePay = () => {
     setLoading(true);
     window.setTimeout(() => {
       setLoading(false);
-      const success = Math.random() > 0.2;
-      if (success) {
-        toast.success(`Paiement FedaPay accepté : ${formatFCFA(amount)}`);
+      if (Math.random() > 0.2) {
+        toast.success('Paiement accepté par FedaPay');
         onPaid?.();
       } else {
         toast.error('Paiement refusé par FedaPay. Réessayez.');
@@ -36,19 +33,15 @@ export default function FedaPayButton({ amount, onPaid, className }: FedaPayButt
   return (
     <button
       type="button"
-      className={clsx('btn btn-primary w-full', className)}
-      disabled={loading || amount <= 0}
+      disabled={disabled || loading}
       onClick={handlePay}
-    >
-      {loading ? (
-        'Traitement du paiement…'
-      ) : (
-        <>
-          <IconLock size={18} />
-          Payer {formatFCFA(amount)} avec FedaPay
-          <IconBrandMastercard size={20} className="opacity-80" />
-        </>
+      className={clsx(
+        'flex w-full items-center justify-center gap-sm rounded-lg bg-primary py-4 text-h3 text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-[0.95] disabled:opacity-60',
+        className,
       )}
+    >
+      <IconCreditCard size={22} />
+      {loading ? 'Traitement…' : 'Payer avec FedaPay'}
     </button>
   );
 }

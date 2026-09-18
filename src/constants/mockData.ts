@@ -1,9 +1,8 @@
-import type { AppNotification, Category, LandMark, Product, Zone } from '../types/models';
+import type { AppNotification, CartItem, Category, LandMark, Market, Product, Zone } from '../types/models';
 
 /**
- * Fixtures Sprint 1 (backend absent) — produits repris de la maquette catalogue,
- * zones / points de repère conformes CDC §4.2, notifications de la maquette dédiée.
- * À remplacer par les endpoints RTK Query / TanStack Query au branchement backend.
+ * Fixtures Sprint 1 (backend absent) — reprises des maquettes Stitch.
+ * À remplacer par TanStack Query au branchement backend.
  */
 
 export const CATEGORIES: Category[] = [
@@ -14,8 +13,16 @@ export const CATEGORIES: Category[] = [
   { id: 'pack', nom: 'Packs & Bundles' },
 ];
 
+/** Zones de marché (filtres catalogue, maquette catalogue). */
+export const MARKETS: Market[] = [
+  { id: 'm1', nom: 'Marché Dantokpa' },
+  { id: 'm2', nom: 'Marché Ganhi' },
+  { id: 'm3', nom: 'Marché Missèbo' },
+  { id: 'm4', nom: 'Marché Gbégamey' },
+];
+
 export const PRODUCTS: Product[] = [
-  { id: 'p1', nom: 'Tomates fraîches (Local)', origine: 'Marché Dantokpa', quantite: '1kg', prix: 450, prixMinimum: 380, categorie: 'vegetable', stock: 'available', badges: [] },
+  { id: 'p1', nom: 'Tomates fraîches du jour', origine: 'Marché Dantokpa', quantite: '500g', prix: 450, prixMinimum: 350, categorie: 'vegetable', stock: 'available', badges: [], image: '/images/brand/photo-tomates.png' },
   { id: 'p2', nom: 'Oignons violets', origine: 'Marché Ganhi', quantite: '2kg', prix: 800, prixMinimum: 700, categorie: 'vegetable', stock: 'available', badges: ['promo'] },
   { id: 'p3', nom: 'Poivrons verts', origine: 'Marché Missèbo', quantite: '500g', prix: 600, prixMinimum: 520, categorie: 'vegetable', stock: 'low', badges: [] },
   { id: 'p4', nom: 'Carottes bio', origine: 'Marché Gbégamey', quantite: '1kg', prix: 350, prixMinimum: 300, categorie: 'vegetable', stock: 'available', badges: [] },
@@ -25,30 +32,40 @@ export const PRODUCTS: Product[] = [
   { id: 'p8', nom: 'Gombo frais', origine: 'Marché Missèbo', quantite: '500g', prix: 250, prixMinimum: 220, categorie: 'vegetable', stock: 'out', badges: [] },
   { id: 'p9', nom: 'Ail violet local', origine: 'Marché Dantokpa', quantite: '250g', prix: 500, prixMinimum: 430, categorie: 'spice', stock: 'available', badges: ['new'] },
   { id: 'p10', nom: 'Pack Soupe du week-end', origine: 'Marché Dantokpa', quantite: 'Tomates + oignons + piment', prix: 1500, prixMinimum: 1300, categorie: 'pack', stock: 'available', badges: ['pack'] },
+  { id: 'p11', nom: 'Poisson fumé', origine: 'Marché Ganhi', quantite: 'Entier', prix: 800, prixMinimum: 700, categorie: 'fish', stock: 'available', badges: [] },
+  { id: 'p12', nom: 'Pack légumes', origine: 'Marché Missèbo', quantite: 'Panier 5 variétés', prix: 380, prixMinimum: 350, categorie: 'pack', stock: 'available', badges: ['pack'], negotiated: { oldPrice: 500 } },
 ];
 
+/** Panier initial de démo = articles de la maquette panier/caisse. */
+export const INITIAL_CART: CartItem[] = [
+  { product: PRODUCTS[0], quantite: 2 },
+  { product: PRODUCTS[10], quantite: 1 },
+  { product: PRODUCTS[11], quantite: 1 },
+];
+
+/** Zones de livraison (maquette panier) + points de repère (CDC §4.2). */
 export const ZONES: Zone[] = [
-  { id: 'z1', nom: 'Cadjehoun' },
-  { id: 'z2', nom: 'Akpakpa' },
-  { id: 'z3', nom: 'Gbégamey' },
-  { id: 'z4', nom: 'Calavi' },
+  { id: 'z1', nom: 'Zone Cadjehoun' },
+  { id: 'z2', nom: 'Zone Akpakpa' },
+  { id: 'z3', nom: 'Zone Fidjrossè' },
+  { id: 'z4', nom: 'Zone Calavi' },
 ];
 
 export const LANDMARKS: LandMark[] = [
   { id: 'l1', zoneId: 'z1', nom: 'Carrefour Cadjehoun' },
-  { id: 'l2', zoneId: 'z1', nom: 'Pharmacie Cadjehoun Centre' },
+  { id: 'l2', zoneId: 'z1', nom: 'Pharmacie Sainte-Marie' },
   { id: 'l3', zoneId: 'z2', nom: 'Marché Dantokpa Nord' },
   { id: 'l4', zoneId: 'z2', nom: 'Pont Akpakpa' },
-  { id: 'l5', zoneId: 'z3', nom: 'Carrefour Gbégamey' },
+  { id: 'l5', zoneId: 'z3', nom: 'Carrefour Fidjrossè' },
   { id: 'l6', zoneId: 'z4', nom: 'Place Maro Abomey-Calavi' },
 ];
 
-/** Frais de livraison mock par zone (F-19 — calcul réel backend au Sprint 2/3). */
+/** Frais de livraison par zone (F-19 — calcul réel backend plus tard). */
 export const DELIVERY_FEES: Record<string, number> = {
-  z1: 1000,
-  z2: 1200,
-  z3: 1500,
-  z4: 2000,
+  z1: 500,
+  z2: 700,
+  z3: 600,
+  z4: 1000,
 };
 
 export const NOTIFICATIONS: AppNotification[] = [
@@ -58,3 +75,20 @@ export const NOTIFICATIONS: AppNotification[] = [
   { id: 'n4', type: 'order', title: 'Commande confirmée', message: 'Le vendeur a accepté votre offre pour le pack de tomates. La livraison est en préparation.', time: 'Hier', unread: false },
   { id: 'n5', type: 'info', title: 'Mise à jour TOKPa', message: 'Découvrez les nouveaux points de repère dans la zone Akpakpa pour faciliter vos livraisons.', time: '2 jours', unread: false },
 ];
+
+/** Vendeur partenaire (maquette fiche produit). */
+export const SELLER = { nom: 'Afi Mensah', initiales: 'AM', verified: true };
+
+/** Détails longs (maquette fiche produit) — fallback générique sinon. */
+export const PRODUCT_DETAILS: Record<string, { paras: string[]; origine: string; fraicheur: string; poids: string; conservation: string }> = {
+  p1: {
+    paras: [
+      "Ces tomates fraîches proviennent directement du cœur du marché Dantokpa à Cotonou. Cultivées localement avec soin, elles sont récoltées à maturité pour garantir une saveur intense et une texture ferme idéale pour vos sauces, salades et plats traditionnels béninois.",
+      "Afi Mensah, notre vendeuse partenaire certifiée, s'approvisionne quotidiennement auprès des producteurs locaux de la zone de Ouidah pour vous offrir le meilleur de la terre. Nos tomates sont triées à la main pour éviter tout produit abîmé.",
+    ],
+    origine: 'Dantokpa / Ouidah',
+    fraicheur: 'Récolte du jour',
+    poids: '~80g par pièce',
+    conservation: '5-7 jours au frais',
+  },
+};

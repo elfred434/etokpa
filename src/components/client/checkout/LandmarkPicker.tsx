@@ -1,73 +1,76 @@
-import { useId } from 'react';
-import SelectField from '../../ui/SelectField';
-import { LANDMARKS, ZONES } from '../../../constants/mockData';
+import { IconMapPin, IconMap } from '@tabler/icons-react';
+import { ZONES } from '../../../constants/mockData';
+import { formatFCFA } from '../../../utils/format';
 
 interface LandmarkPickerProps {
+  landmark: string;
+  onLandmarkChange: (value: string) => void;
   zoneId: string;
   onZoneChange: (zoneId: string) => void;
-  landmarkId: string;
-  onLandmarkChange: (landmarkId: string) => void;
-  description: string;
-  onDescriptionChange: (description: string) => void;
-  errors?: { landmark?: string; description?: string };
+  deliveryFee: number;
+  error?: boolean;
 }
 
 /**
- * Adresse de livraison TOKPa (CDC §4.2 / F-25) :
- * zone → point de repère + description courte du lieu exact.
+ * « Lieu de livraison » de la maquette panier :
+ * input point de repère (requis) + select zone + encart frais de livraison.
  */
 export default function LandmarkPicker({
+  landmark,
+  onLandmarkChange,
   zoneId,
   onZoneChange,
-  landmarkId,
-  onLandmarkChange,
-  description,
-  onDescriptionChange,
-  errors,
+  deliveryFee,
+  error,
 }: LandmarkPickerProps) {
-  const descId = useId();
-  const landmarks = LANDMARKS.filter((l) => l.zoneId === zoneId);
-
   return (
-    <div className="space-y-5">
-      <SelectField label="Zone de livraison" value={zoneId} onChange={(e) => onZoneChange(e.target.value)}>
-        {ZONES.map((z) => (
-          <option key={z.id} value={z.id}>
-            {z.nom}
-          </option>
-        ))}
-      </SelectField>
-
-      <SelectField
-        label="Point de repère"
-        value={landmarkId}
-        onChange={(e) => onLandmarkChange(e.target.value)}
-        error={Boolean(errors?.landmark)}
-      >
-        <option value="">Choisir un point de repère</option>
-        {landmarks.map((l) => (
-          <option key={l.id} value={l.id}>
-            {l.nom}
-          </option>
-        ))}
-      </SelectField>
-      {errors?.landmark && <p className="-mt-3 text-[13px] font-medium text-error-dark">{errors.landmark}</p>}
-
+    <div className="space-y-md">
       <div>
-        <label htmlFor={descId} className="label">
-          Description courte du lieu exact
+        <label htmlFor="landmark" className="label">
+          Point de repère (requis)
         </label>
-        <textarea
-          id={descId}
-          rows={2}
-          placeholder="Ex : maison bleue juste après le carrefour, portail vert…"
-          className="input resize-none"
-          value={description}
-          onChange={(e) => onDescriptionChange(e.target.value)}
-        />
-        {errors?.description && (
-          <p className="mt-xs text-[13px] font-medium text-error-dark">{errors.description}</p>
-        )}
+        <div className="relative">
+          <IconMapPin
+            size={20}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3"
+          />
+          <input
+            id="landmark"
+            type="text"
+            value={landmark}
+            onChange={(e) => onLandmarkChange(e.target.value)}
+            placeholder="Face au carrefour Cadjehoun, en face de la pharmacie Sainte-Marie"
+            className={`input py-3 pl-10 ${error ? 'border-error' : ''}`}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 items-end gap-md md:grid-cols-2">
+        <div>
+          <label htmlFor="zone" className="label">
+            Zone de livraison
+          </label>
+          <div className="relative">
+            <IconMap size={20} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" />
+            <select
+              id="zone"
+              value={zoneId}
+              onChange={(e) => onZoneChange(e.target.value)}
+              className="input appearance-none py-3 pl-10"
+            >
+              {ZONES.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.nom}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between rounded-lg border border-primary-light bg-primary-lighter p-lg">
+          <span className="text-body font-medium text-primary-darker">Frais de livraison</span>
+          <span className="price">{formatFCFA(deliveryFee)}</span>
+        </div>
       </div>
     </div>
   );

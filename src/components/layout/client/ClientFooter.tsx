@@ -1,31 +1,27 @@
-import { Link } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 
-const LINKS = ['Aide & Support', 'Vendre sur TOKPa', 'Livraison'];
+const LINKS = ['Aide', "Conditions d'utilisation", 'Politique de confidentialité', 'Contact'];
 
-/** Footer clair des pages marchandes (maquette catalogue). */
+/** Footer clair des pages marchandes (maquette panier/caisse). */
 export default function ClientFooter() {
   return (
-    <footer className="mt-xl border-t border-line bg-surface">
-      <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-md p-lg md:flex-row">
-        <p className="text-[13px] text-ink-2">
-          <span className="mr-sm text-[15px] font-bold text-primary">TOKPa</span>
-          © 2026 - Le Marché Béninois en ligne
-        </p>
-        <nav className="flex flex-wrap items-center justify-center gap-lg">
+    <footer className="mt-auto w-full border-t border-line bg-surface px-lg py-xl">
+      <div className="mx-auto flex max-w-[1200px] flex-col justify-between gap-lg md:flex-row md:items-center">
+        <div className="flex flex-col gap-sm">
+          <span className="text-h3 font-medium text-primary">TOKPa</span>
+          <p className="text-secondary text-ink-2">© 2024 TOKPa. Tous droits réservés.</p>
+        </div>
+        <nav className="flex flex-wrap gap-lg">
           {LINKS.map((label) => (
             <button
               key={label}
               type="button"
               onClick={() => toast(`${label} — à venir`)}
-              className="text-[13px] font-medium text-ink-2 transition-colors hover:text-primary"
+              className="text-secondary text-ink-2 opacity-80 transition-all hover:text-primary hover:opacity-100"
             >
               {label}
             </button>
           ))}
-          <Link to="/notifications" className="text-[13px] font-medium text-ink-2 transition-colors hover:text-primary">
-            Notifications
-          </Link>
         </nav>
       </div>
     </footer>
