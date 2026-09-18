@@ -111,7 +111,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-page font-body text-on-surface">
       <ClientNavbar />
 
-      <main className="mx-auto w-full max-w-[1200px] px-4 pb-[80px] pt-[52px] lg:pb-0">
+      <main className="mx-auto w-full max-w-[1200px] overflow-x-hidden px-4 pb-[80px] pt-[52px] lg:pb-0">
         {/* ---- Hero ---- */}
         <section className="relative mt-lg flex min-h-[500px] items-center overflow-hidden rounded-[24px] border border-line bg-white shadow-sm">
           <div className="absolute inset-0 z-0">
@@ -122,7 +122,7 @@ export default function HomePage() {
             />
             <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent" />
           </div>
-          <div className="relative z-10 max-w-3xl p-xl">
+          <div className="relative z-10 max-w-3xl p-md md:p-xl">
             <h1 className="mb-md font-h1 text-[42px] font-bold leading-tight text-primary-darker">Ton marché, ta façon.</h1>
             <p className="mb-lg text-lg leading-relaxed text-on-surface-variant">
               Les produits les plus frais de Cotonou, livrés directement chez vous sans intermédiaire inutile.
@@ -243,10 +243,10 @@ export default function HomePage() {
         </section>
 
         {/* ---- Negotiation Module Placeholder ---- */}
-        <section className="mb-xl flex flex-col items-center justify-between gap-lg rounded-[14px] border-l-[3px] border-secondary-container bg-white p-lg md:flex-row">
-          <div className="max-w-lg">
-            <div className="mb-sm inline-flex items-center gap-2 rounded-full bg-secondary-container/10 px-3 py-1 text-on-secondary-container">
-              <MIcon name="handshake" className="text-[18px]" />
+        <section className="mb-xl flex w-full max-w-full flex-col items-start justify-between gap-lg overflow-hidden rounded-[14px] border-l-[3px] border-secondary-container bg-white p-md md:flex-row md:items-center md:p-lg">
+          <div className="w-full min-w-0 max-w-lg">
+            <div className="mb-sm inline-flex max-w-full flex-wrap items-center gap-2 rounded-full bg-secondary-container/10 px-3 py-1 text-on-secondary-container">
+              <MIcon name="handshake" className="text-[18px] shrink-0" />
               <span className="text-label uppercase tracking-wider">Nouveau : La Négociation Directe</span>
             </div>
             <h2 className="mb-xs font-h2 text-h1 text-on-surface">Trop cher ? Propose ton prix !</h2>
@@ -254,20 +254,20 @@ export default function HomePage() {
               Comme au marché physique, vous pouvez désormais proposer un prix au vendeur pour certains produits. Recevez une réponse en temps réel.
             </p>
           </div>
-          <div className="w-full min-w-[300px] rounded-xl bg-page p-md md:w-auto">
+          <div className="w-full min-w-0 sm:min-w-[280px] md:min-w-[300px] md:w-auto rounded-xl bg-page p-md">
             <div className="flex flex-col gap-sm">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-label text-secondary">Prix Vendeur</span>
                 <span className="font-bold text-on-surface">2.500 FCFA</span>
               </div>
               <div className="h-[1.5px] w-full bg-line" />
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-label text-secondary">Votre Offre</span>
                 <input
                   type="text"
                   value={offre}
                   onChange={(e) => setOffre(e.target.value)}
-                  className="w-24 rounded-lg border-none bg-white p-1 text-right font-bold text-primary-shade focus:ring-1 focus:ring-primary-shade"
+                  className="w-20 sm:w-24 rounded-lg border-none bg-white p-1 text-right font-bold text-primary-shade focus:ring-1 focus:ring-primary-shade"
                 />
               </div>
               <button

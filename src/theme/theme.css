@@ -129,12 +129,15 @@
 @layer base {
   html {
     font-family: var(--font-sans);
+    overflow-x: hidden;
   }
   body {
     background-color: var(--color-page);
     color: var(--color-ink);
     font-size: var(--text-body);
     line-height: 1.5;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
   /* Focus visible WCAG AA sur tous les éléments interactifs */
   :focus-visible {
