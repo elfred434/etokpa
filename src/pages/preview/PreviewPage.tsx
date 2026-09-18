@@ -57,14 +57,13 @@ export default function PreviewPage() {
   const [checked, setChecked] = useState(true);
   const [page, setPage] = useState(1);
   const [zoneId, setZoneId] = useState('z1');
-  const [landmarkId, setLandmarkId] = useState('');
-  const [lieu, setLieu] = useState('');
+    const [lieu, setLieu] = useState('');
 
   const subtotal = cart.reduce((sum, item) => sum + item.product.prix * item.quantite, 0);
 
   return (
     <div className="min-h-screen bg-page">
-      <ClientNavbar cartCount={cart.reduce((s, i) => s + i.quantite, 0)} />
+      <ClientNavbar />
 
       <main className="mx-auto max-w-[1200px] space-y-lg p-lg">
         <div className="card bg-primary-lighter p-lg">
@@ -200,7 +199,7 @@ export default function PreviewPage() {
             )}
           </Section>
           <Section title="Caisse : récapitulatif">
-            <CartSummary subtotal={subtotal} deliveryFee={1000} zoneLabel="Cadjehoun" />
+            <CartSummary subtotal={subtotal} savings={0} deliveryFee={500} onPaid={() => {}} onContinueShopping={() => {}} />
           </Section>
         </div>
 
@@ -208,17 +207,13 @@ export default function PreviewPage() {
         <div className="grid grid-cols-1 gap-lg lg:grid-cols-2">
           <Section title="Commande : zone & point de repère (F-11, F-25)">
             <LandmarkPicker
+              landmark={lieu}
+              onLandmarkChange={setLieu}
               zoneId={zoneId}
-              onZoneChange={(z) => {
-                setZoneId(z);
-                setLandmarkId('');
-              }}
-              landmarkId={landmarkId}
-              onLandmarkChange={setLandmarkId}
-              description={lieu}
-              onDescriptionChange={setLieu}
+              onZoneChange={setZoneId}
+              deliveryFee={500}
             />
-            <FedaPayButton amount={subtotal + 1000} />
+            <FedaPayButton onPaid={() => {}} />
           </Section>
           <Section title="Progression de commande (F-13)">
             <OrderStepper status="preparing" className="py-md" />
