@@ -1,5 +1,5 @@
-import { Fragment } from 'react';
 import clsx from 'clsx';
+import { IconCheck } from '@tabler/icons-react';
 
 interface StepperProps {
   steps: string[];
@@ -8,11 +8,12 @@ interface StepperProps {
 }
 
 /**
- * Stepper horizontal du wizard d'inscription (maquette Stitch) :
- * pastilles 32px, ligne de progression orange derrière, libellés 13px.
+ * Stepper horizontal (maquettes Stitch v2 — inscription 2 étapes) :
+ * pastille 32px avec halo crème, étape faite = coche blanche,
+ * ligne de progression orange derrière, libellés 13px.
  */
 export default function Stepper({ steps, current }: StepperProps) {
-  // Largeur de la ligne orange calibrée sur la maquette (étape 1 ≈ 33 %).
+  // Largeur de la ligne orange calibrée sur les maquettes.
   const progress = Math.min(100, ((current - 0.3) / steps.length) * 100 + 10);
 
   return (
@@ -28,28 +29,28 @@ export default function Stepper({ steps, current }: StepperProps) {
           const n = i + 1;
           const state = n < current ? 'done' : n === current ? 'active' : 'todo';
           return (
-            <Fragment key={label}>
-              <div className="z-10 flex flex-col items-center gap-sm">
-                <span
-                  className={clsx(
-                    'flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold',
-                    state === 'todo' ? 'bg-line text-ink-2' : 'bg-primary text-white shadow-sm',
-                  )}
-                >
-                  {n}
-                </span>
-                <span
-                  className={clsx(
-                    'text-[13px]',
-                    state === 'active' && 'font-semibold text-primary',
-                    state === 'done' && 'font-medium text-primary',
-                    state === 'todo' && 'font-medium text-ink-2',
-                  )}
-                >
-                  {label}
-                </span>
-              </div>
-            </Fragment>
+            <div key={label} className="z-10 flex flex-col items-center gap-sm">
+              <span
+                className={clsx(
+                  'flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold',
+                  state === 'todo'
+                    ? 'bg-line text-ink-2'
+                    : 'bg-primary text-white shadow-[0_0_0_4px_var(--color-primary-lighter)]',
+                )}
+              >
+                {state === 'done' ? <IconCheck size={16} stroke={3} /> : n}
+              </span>
+              <span
+                className={clsx(
+                  'text-[13px]',
+                  state === 'active' && 'font-semibold text-primary',
+                  state === 'done' && 'font-medium text-ink',
+                  state === 'todo' && 'font-medium text-ink-2',
+                )}
+              >
+                {label}
+              </span>
+            </div>
           );
         })}
       </div>

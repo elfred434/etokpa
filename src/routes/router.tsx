@@ -1,4 +1,4 @@
-import { createRootRoute, createRoute, createRouter, Outlet, Link } from '@tanstack/react-router';
+import { createRootRoute, createRoute, createRouter, Outlet } from '@tanstack/react-router';
 import { Toaster } from 'react-hot-toast';
 // import { IconLogout } from '@tabler/icons-react';
 import ConnexionPage from '../pages/auth/ConnexionPage';
