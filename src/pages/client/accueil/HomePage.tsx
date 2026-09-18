@@ -243,37 +243,35 @@ export default function HomePage() {
         </section>
 
         {/* ---- Negotiation Module Placeholder ---- */}
-        <section className="mb-xl flex w-full max-w-full flex-col items-start justify-between gap-lg overflow-hidden rounded-[14px] border-l-[3px] border-secondary-container bg-white p-md md:flex-row md:items-center md:p-lg">
-          <div className="w-full min-w-0 max-w-lg">
-            <div className="mb-sm inline-flex max-w-full flex-wrap items-center gap-2 rounded-full bg-secondary-container/10 px-3 py-1 text-on-secondary-container">
-              <MIcon name="handshake" className="text-[18px] shrink-0" />
+        <section className="mb-xl bg-white rounded-[14px] border-l-[3px] border-secondary-container p-lg flex flex-col md:flex-row items-center justify-between gap-lg">
+          <div className="max-w-lg">
+            <div className="inline-flex items-center gap-2 bg-secondary-container/10 text-on-secondary-container px-3 py-1 rounded-full mb-sm">
+              <span className="material-symbols-outlined text-[18px]">handshake</span>
               <span className="text-label uppercase tracking-wider">Nouveau : La Négociation Directe</span>
             </div>
-            <h2 className="mb-xs font-h2 text-h1 text-on-surface">Trop cher ? Propose ton prix !</h2>
-            <p className="text-body text-secondary">
-              Comme au marché physique, vous pouvez désormais proposer un prix au vendeur pour certains produits. Recevez une réponse en temps réel.
-            </p>
+            <h2 className="font-h2 text-h1 text-on-surface mb-xs">Trop cher ? Propose ton prix !</h2>
+            <p className="text-secondary text-body">Comme au marché physique, vous pouvez désormais proposer un prix au vendeur pour certains produits. Recevez une réponse en temps réel.</p>
           </div>
-          <div className="w-full min-w-0 sm:min-w-[280px] md:min-w-[300px] md:w-auto rounded-xl bg-page p-md">
+          <div className="bg-bg-app p-md rounded-xl w-full md:w-auto min-w-[300px]">
             <div className="flex flex-col gap-sm">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-label text-secondary">Prix Vendeur</span>
+              <div className="flex justify-between items-center">
+                <span className="text-secondary text-label">Prix Vendeur</span>
                 <span className="font-bold text-on-surface">2.500 FCFA</span>
               </div>
-              <div className="h-[1.5px] w-full bg-line" />
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-label text-secondary">Votre Offre</span>
+              <div className="h-[1.5px] bg-border-default w-full"></div>
+              <div className="flex justify-between items-center">
+                <span className="text-secondary text-label">Votre Offre</span>
                 <input
+                  className="w-24 text-right border-none bg-white rounded-lg p-1 font-bold text-primary focus:ring-1 focus:ring-primary"
                   type="text"
                   value={offre}
                   onChange={(e) => setOffre(e.target.value)}
-                  className="w-20 sm:w-24 rounded-lg border-none bg-white p-1 text-right font-bold text-primary-shade focus:ring-1 focus:ring-primary-shade"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => toast('Négociation — Sprint 2')}
-                className="scale-interaction mt-2 w-full rounded-lg bg-secondary py-2 font-bold text-white"
+                className="w-full bg-secondary text-white font-bold py-2 rounded-lg mt-2 scale-interaction"
               >
                 Envoyer l'offre
               </button>
