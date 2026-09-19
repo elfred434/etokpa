@@ -510,11 +510,29 @@ export default function CatalogPage() {
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className="relative flex h-[70px] w-[90px] sm:h-[80px] sm:w-[110px] shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary-lighter to-primary-light">
                       <MIcon name={p.icon} className="text-[28px] sm:text-[32px] text-primary-hover" />
-                      {badges(p)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <h4 className="text-xs sm:text-label font-semibold text-ink line-clamp-1">{p.nom}</h4>
                       <p className="mt-0.5 text-xs text-ink-2">{p.meta}</p>
+
+                      {/* Badges affichés APRÈS le marché (meta) uniquement en vue liste */}
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {p.stock === 'available' && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-success-light px-2 py-0.5 text-[10px] font-bold text-success-dark">
+                            <span className="h-1.5 w-1.5 rounded-full bg-success" /> Disponible
+                          </span>
+                        )}
+                        {p.promo && (
+                          <span className="inline-flex items-center rounded-full bg-amber-light px-2 py-0.5 text-[10px] font-bold text-amber-text">
+                            {p.promo}
+                          </span>
+                        )}
+                        {p.stock === 'low' && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-primary-lighter px-2 py-0.5 text-[10px] font-bold text-primary-dark">
+                            <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Stock faible
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 

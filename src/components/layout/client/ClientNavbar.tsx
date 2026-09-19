@@ -93,14 +93,13 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
             <MIcon name="shopping_cart" />
             {cartCount > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />}
           </Link>
-          <button
-            type="button"
-            onClick={() => toast('Profil — Sprint 3')}
+          <Link
+            to="/profil"
             className="scale-interaction"
             aria-label="Profil"
           >
             <MIcon name="account_circle" />
-          </button>
+          </Link>
         </div>
       </div>
     </header>
