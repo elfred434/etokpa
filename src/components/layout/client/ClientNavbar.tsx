@@ -71,7 +71,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
         </div>
 
         {/* Recherche (pillule) */}
-        <form onSubmit={submitSearch} className="mx-8 hidden max-w-md flex-1 lg:block">
+        <form onSubmit={submitSearch} className="mx-8 hidden max-w-1xl flex-1 lg:block">
           <div className="relative flex items-center rounded-full border border-line bg-warm-low px-4 py-1.5">
             <MIcon name="search" className="mr-2 text-ink-3" />
             <input
