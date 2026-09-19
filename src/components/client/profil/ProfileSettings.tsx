@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
+import { useLanguage } from '../../../context/LanguageContext';
 
 /**
  * ProfileSettings — Encart Paramètres & Sécurité (mot de passe, notifications, langue, déconnexion).
  */
 export default function ProfileSettings() {
   const navigate = useNavigate();
+  const { language, toggleLanguage, t } = useLanguage();
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [pwForm, setPwForm] = useState({ oldPw: '', newPw: '', confirmPw: '' });
 
@@ -30,7 +32,7 @@ export default function ProfileSettings() {
   return (
     <>
       <section className="mb-xl">
-        <h3 className="mb-sm font-h3 text-h3 text-ink">Paramètres & Sécurité</h3>
+        <h3 className="mb-sm font-h3 text-h3 text-ink">{t('profile.settingsAndSecurity')}</h3>
 
         <div className="overflow-hidden rounded-[14px] border border-line bg-white shadow-sm">
           {/* Changer mot de passe */}
@@ -41,7 +43,7 @@ export default function ProfileSettings() {
           >
             <div className="flex items-center gap-md">
               <MIcon name="lock" className="text-ink-2" />
-              <span className="text-body font-medium text-ink">Changer le mot de passe</span>
+              <span className="text-body font-medium text-ink">{t('profile.changePassword')}</span>
             </div>
             <MIcon name="chevron_right" className="text-ink-3" />
           </button>
@@ -54,24 +56,27 @@ export default function ProfileSettings() {
           >
             <div className="flex items-center gap-md">
               <MIcon name="notifications_active" className="text-ink-2" />
-              <span className="text-body font-medium text-ink">Notifications SMS & App</span>
+              <span className="text-body font-medium text-ink">{t('profile.notificationsSms')}</span>
             </div>
             <span className="text-xs font-semibold text-success">Activées</span>
           </button>
 
-          {/* Langue */}
+          {/* Langue (Interrupteur FR / EN) */}
           <button
             type="button"
-            onClick={() => toast('Langue : Français (Bénin)')}
+            onClick={() => {
+              toggleLanguage();
+              toast.success(language === 'fr' ? 'Language switched to English' : 'Langue passée en Français');
+            }}
             className="scale-interaction flex w-full items-center justify-between border-t border-line p-md text-left transition-colors hover:bg-surface"
           >
             <div className="flex items-center gap-md">
               <MIcon name="language" className="text-ink-2" />
-              <span className="text-body font-medium text-ink">Langue</span>
+              <span className="text-body font-medium text-ink">{t('profile.language')}</span>
             </div>
-            <div className="flex items-center gap-1 text-ink-3">
-              <span className="text-xs font-medium">Français (FR)</span>
-              <MIcon name="chevron_right" />
+            <div className="flex items-center gap-1.5 text-primary font-bold">
+              <span className="text-xs">{language === 'fr' ? 'Français (FR)' : 'English (EN)'}</span>
+              <MIcon name="sync" className="text-xs" />
             </div>
           </button>
 
@@ -82,7 +87,7 @@ export default function ProfileSettings() {
             className="scale-interaction flex w-full items-center gap-md border-t border-line p-md font-medium text-error transition-colors hover:bg-error-light"
           >
             <MIcon name="logout" className="text-error" />
-            Déconnexion
+            {t('profile.logout')}
           </button>
         </div>
       </section>

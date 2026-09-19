@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface ProfileData {
   prenom: string;
@@ -15,6 +16,7 @@ interface ProfileData {
  * ProfileHeader — En-tête de profil utilisateur (avatar, nom, statut vérifié, édition).
  */
 export default function ProfileHeader() {
+  const { t, isFr } = useLanguage();
   const [user, setUser] = useState<ProfileData>({
     prenom: 'Kossi',
     nom: 'Ouédraogo',
@@ -31,7 +33,7 @@ export default function ProfileHeader() {
     e.preventDefault();
     setUser(form);
     setEditOpen(false);
-    toast.success('Profil mis à jour avec succès');
+    toast.success(isFr ? 'Profil mis à jour avec succès' : 'Profile updated successfully');
   };
 
   const initials = `${user.prenom[0] ?? ''}${user.nom[0] ?? ''}`.toUpperCase();
@@ -50,7 +52,7 @@ export default function ProfileHeader() {
               </h1>
               <span className="inline-flex items-center gap-1 rounded-full bg-success-light px-2.5 py-0.5 text-micro font-bold uppercase tracking-wider text-success-dark">
                 <MIcon name="verified_user" className="!text-[14px]" />
-                Client vérifié
+                {t('profile.verifiedClient')}
               </span>
             </div>
             <div className="mt-1 flex items-center text-ink-2">
@@ -71,7 +73,7 @@ export default function ProfileHeader() {
           className="scale-interaction flex items-center justify-center gap-2 rounded-lg border border-line bg-white px-4 py-2.5 text-xs font-bold text-ink-2 transition-colors hover:bg-surface hover:text-ink sm:text-sm"
         >
           <MIcon name="edit" className="text-sm" />
-          Modifier le profil
+          {t('profile.editProfile')}
         </button>
       </section>
 
@@ -80,7 +82,7 @@ export default function ProfileHeader() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-[500px] rounded-2xl bg-white p-lg shadow-xl">
             <div className="mb-md flex items-center justify-between border-b border-line pb-sm">
-              <h3 className="font-h2 text-h2 text-ink">Modifier le profil</h3>
+              <h3 className="font-h2 text-h2 text-ink">{t('profile.editProfile')}</h3>
               <button
                 type="button"
                 onClick={() => setEditOpen(false)}
@@ -93,7 +95,7 @@ export default function ProfileHeader() {
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Prénom</label>
+                  <label className="label">{isFr ? 'Prénom' : 'First Name'}</label>
                   <input
                     type="text"
                     value={form.prenom}
@@ -103,7 +105,7 @@ export default function ProfileHeader() {
                   />
                 </div>
                 <div>
-                  <label className="label">Nom</label>
+                  <label className="label">{isFr ? 'Nom' : 'Last Name'}</label>
                   <input
                     type="text"
                     value={form.nom}
@@ -126,7 +128,7 @@ export default function ProfileHeader() {
               </div>
 
               <div>
-                <label className="label">Téléphone</label>
+                <label className="label">{isFr ? 'Téléphone' : 'Phone'}</label>
                 <input
                   type="tel"
                   value={form.telephone}
@@ -138,7 +140,7 @@ export default function ProfileHeader() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Ville</label>
+                  <label className="label">{isFr ? 'Ville' : 'City'}</label>
                   <input
                     type="text"
                     value={form.ville}
@@ -148,7 +150,7 @@ export default function ProfileHeader() {
                   />
                 </div>
                 <div>
-                  <label className="label">Quartier</label>
+                  <label className="label">{isFr ? 'Quartier' : 'Neighborhood'}</label>
                   <input
                     type="text"
                     value={form.quartier}
@@ -165,13 +167,13 @@ export default function ProfileHeader() {
                   onClick={() => setEditOpen(false)}
                   className="w-1/2 rounded-lg border border-line py-2.5 text-xs font-bold text-ink-2"
                 >
-                  Annuler
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="w-1/2 rounded-lg bg-primary py-2.5 text-xs font-bold text-white shadow-sm"
                 >
-                  Enregistrer
+                  {t('common.save')}
                 </button>
               </div>
             </form>

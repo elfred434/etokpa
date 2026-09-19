@@ -8,6 +8,7 @@ import MIcon from '../../../components/shared/MIcon';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import type { Product } from '../../../types/models';
+import { useLanguage } from '../../../context/LanguageContext';
 
 /* ---- Données exactes du code.html « accueil_tokpa » ---- */
 
@@ -89,7 +90,21 @@ const SELECTION: SelectionItem[] = [
 export default function HomePage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { t, isFr } = useLanguage();
   const [offre, setOffre] = useState('2.100');
+
+  const atoutsList = [
+    { icon: 'payments', titre: t('home.atouts.a1Title'), texte: t('home.atouts.a1Text') },
+    { icon: 'local_shipping', titre: t('home.atouts.a2Title'), texte: t('home.atouts.a2Text') },
+    { icon: 'location_on', titre: t('home.atouts.a3Title'), texte: t('home.atouts.a3Text') },
+  ];
+
+  const categoriesList = [
+    { icon: 'potted_plant', nom: t('categories.vegetables') },
+    { icon: 'set_meal', nom: t('categories.fish') },
+    { icon: 'liquor', nom: t('categories.spices') },
+    { icon: 'shopping_basket', nom: t('categories.packs') },
+  ];
 
   const addToCart = (item: SelectionItem) => {
     const product: Product = {
@@ -105,7 +120,7 @@ export default function HomePage() {
       image: item.image,
     };
     dispatch(add({ product }));
-    toast.success(`${item.nom} ajouté au panier`);
+    toast.success(isFr ? `${item.nom} ajouté au panier` : `${item.nom} added to cart`);
   };
 
   return (
@@ -124,16 +139,18 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent" />
           </div>
           <div className="relative z-10 max-w-3xl p-4 sm:p-8 md:p-xl">
-            <h1 className="mb-sm sm:mb-md font-h1 text-[26px] sm:text-[36px] md:text-[42px] font-bold leading-tight text-primary-darker">Ton marché, ta façon.</h1>
+            <h1 className="mb-sm sm:mb-md font-h1 text-[26px] sm:text-[36px] md:text-[42px] font-bold leading-tight text-primary-darker">
+              {t('home.heroTitle')}
+            </h1>
             <p className="mb-md sm:mb-lg text-sm sm:text-base md:text-lg leading-relaxed text-on-surface-variant">
-              Les produits les plus frais de Cotonou, livrés directement chez vous sans intermédiaire inutile.
+              {t('home.heroSub')}
             </p>
             <button
               type="button"
               onClick={() => navigate({ to: '/catalogue' })}
               className="scale-interaction flex items-center gap-2 rounded-[10px] bg-primary px-4 py-3 sm:px-lg sm:py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-primary-hover"
             >
-              Commencer mes achats
+              {t('home.heroCta')}
               <MIcon name="arrow_forward" />
             </button>
           </div>
@@ -141,7 +158,7 @@ export default function HomePage() {
 
         {/* ---- Value Propositions ---- */}
         <section className="my-lg sm:my-xl grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-3">
-          {ATOUTS.map((a) => (
+          {atoutsList.map((a) => (
             <div key={a.titre} className="flex items-start gap-md rounded-[14px] border border-line bg-card p-4 sm:p-lg">
               <div className="rounded-xl bg-primary-lighter p-2 sm:p-sm">
                 <MIcon name={a.icon} className="text-[24px] sm:text-[32px] text-primary-shade" />
@@ -157,13 +174,13 @@ export default function HomePage() {
         {/* ---- Categories Grid ---- */}
         <section className="mb-lg sm:mb-xl">
           <div className="mb-md sm:mb-lg flex items-end justify-between">
-            <h2 className="font-h1 text-lg sm:text-h1 text-on-surface">Explorer les catégories</h2>
+            <h2 className="font-h1 text-lg sm:text-h1 text-on-surface">{t('home.exploreCategories')}</h2>
             <Link to="/catalogue" className="flex items-center gap-1 text-xs sm:text-sm font-bold text-primary-shade hover:underline">
-              Voir tout <MIcon name="chevron_right" className="text-[18px]" />
+              {t('common.seeAll')} <MIcon name="chevron_right" className="text-[18px]" />
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-md md:grid-cols-4">
-            {CATEGORIES.map((c) => (
+            {categoriesList.map((c) => (
               <div
                 key={c.nom}
                 onClick={() => navigate({ to: '/catalogue' })}
@@ -179,7 +196,7 @@ export default function HomePage() {
         {/* ---- Featured Products (1 par espace sur mobile) ---- */}
         <section className="mb-lg sm:mb-xl">
           <div className="mb-md sm:mb-lg flex items-end justify-between">
-            <h2 className="font-h1 text-lg sm:text-h1 text-on-surface">Sélection du jour</h2>
+            <h2 className="font-h1 text-lg sm:text-h1 text-on-surface">{t('home.selectionTitle')}</h2>
             <div className="flex gap-2 sm:gap-sm">
               <button
                 type="button"
@@ -213,11 +230,11 @@ export default function HomePage() {
                   />
                   {item.badge === 'Disponible' ? (
                     <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-success px-2 py-0.5 text-micro text-white">
-                      <span className="h-1.5 w-1.5 rounded-full bg-white" /> Disponible
+                      <span className="h-1.5 w-1.5 rounded-full bg-white" /> {t('common.available')}
                     </span>
                   ) : (
                     <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-secondary-container px-2 py-0.5 text-micro text-on-secondary-container">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-text" /> Stock Limité
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-text" /> {t('common.lowStock')}
                     </span>
                   )}
                 </div>
@@ -244,27 +261,27 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ---- Negotiation Module Placeholder (Design Stitch v2 adaptatif) ---- */}
+        {/* ---- Negotiation Module Placeholder ---- */}
         <section className="mb-lg sm:mb-xl bg-white rounded-[14px] border-l-[3px] border-secondary-container p-4 sm:p-lg flex flex-col md:flex-row items-center justify-between gap-md sm:gap-lg">
           <div className="w-full md:w-[70%]">
             <div className="inline-flex max-w-full items-center gap-2 bg-secondary-container/10 text-on-secondary-container px-2.5 py-1 rounded-full mb-sm text-xs sm:text-label font-medium uppercase tracking-wider overflow-hidden">
               <span className="material-symbols-outlined text-[16px] sm:text-[18px] shrink-0">handshake</span>
-              <span className="truncate sm:whitespace-normal">Nouveau : La Négociation Directe</span>
+              <span className="truncate sm:whitespace-normal">{t('home.negoBadge')}</span>
             </div>
-            <h2 className="font-h1 text-lg sm:text-h1 text-on-surface mb-xs">Trop cher ? Propose ton prix !</h2>
+            <h2 className="font-h1 text-lg sm:text-h1 text-on-surface mb-xs">{t('home.negoTitle')}</h2>
             <p className="text-secondary text-xs sm:text-body leading-relaxed max-w-2xl">
-              Comme au marché physique, vous pouvez désormais proposer un prix au vendeur pour certains produits. Recevez une réponse en temps réel.
+              {t('home.negoText')}
             </p>
           </div>
           <div className="w-full md:w-[30%] bg-bg-app p-4 rounded-xl">
             <div className="flex flex-col gap-sm">
               <div className="flex justify-between items-center text-xs sm:text-label">
-                <span className="text-secondary">Prix Vendeur</span>
+                <span className="text-secondary">{t('home.sellerPrice')}</span>
                 <span className="font-bold text-on-surface">2.500 FCFA</span>
               </div>
               <div className="h-[1.5px] bg-border-default w-full"></div>
               <div className="flex justify-between items-center text-xs sm:text-label">
-                <span className="text-secondary">Votre Offre</span>
+                <span className="text-secondary">{t('home.yourOffer')}</span>
                 <input
                   className="w-20 sm:w-24 text-right border-none bg-white rounded-lg p-1 font-bold text-primary focus:ring-1 focus:ring-primary text-xs sm:text-sm"
                   type="text"
@@ -274,10 +291,10 @@ export default function HomePage() {
               </div>
               <button
                 type="button"
-                onClick={() => toast('Négociation — Sprint 2')}
+                onClick={() => toast(`${t('home.sendOffer')} — Sprint 2`)}
                 className="w-full bg-secondary text-white font-bold py-2 rounded-lg mt-2 text-xs sm:text-sm scale-interaction"
               >
-                Envoyer l'offre
+                {t('home.sendOffer')}
               </button>
             </div>
           </div>

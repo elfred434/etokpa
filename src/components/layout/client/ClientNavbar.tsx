@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface ClientNavbarProps {
   search?: string;
@@ -15,12 +16,13 @@ interface ClientNavbarProps {
 /**
  * Navbar cliente unique — copie conforme de la TopNavBar du code.html « accueil_tokpa »
  * (utilisée sur toutes les pages client : accueil, catalogue, fiche produit, panier…).
- * fixed 52px, fond #fff8f6, logo + liens, recherche pillule #fff1eb, icônes #9d4300.
+ * fixed 52px, fond #fff8f6, logo + liens, recherche pillule #fff1eb, icônes #9d4300, sélecteur de langue FR/EN.
  */
 export default function ClientNavbar({ search, onSearch, searchPlaceholder }: ClientNavbarProps) {
   const cartCount = useAppSelector((s) => selectCount(s.cart.items));
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { language, toggleLanguage, t } = useLanguage();
   const [localSearch, setLocalSearch] = useState('');
   const onMarket = pathname === '/' || pathname.startsWith('/catalogue') || pathname.startsWith('/produit');
 
@@ -48,24 +50,24 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
                   : 'rounded px-2 text-on-surface-variant hover:bg-primary-lighter',
               )}
             >
-              Marché
+              {t('nav.market')}
             </Link>
             <button
               type="button"
-              onClick={() => toast('Négociations — Sprint 2')}
+              onClick={() => toast(`${t('nav.negotiations')} — Sprint 2`)}
               className={clsx(
                 'rounded px-2 py-3 font-body text-body transition-colors hover:bg-primary-lighter',
                 pathname === '/notifications' ? 'font-bold text-primary-shade' : 'text-on-surface-variant',
               )}
             >
-              Négociations
+              {t('nav.negotiations')}
             </button>
             <button
               type="button"
-              onClick={() => toast('Commandes — Sprint 3')}
+              onClick={() => toast(`${t('nav.orders')} — Sprint 3`)}
               className="rounded px-2 py-3 font-body text-body text-on-surface-variant transition-colors hover:bg-primary-lighter"
             >
-              Commandes
+              {t('nav.orders')}
             </button>
           </nav>
         </div>
@@ -78,14 +80,25 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
               type="text"
               value={search ?? localSearch}
               onChange={(e) => (onSearch ? onSearch(e.target.value) : setLocalSearch(e.target.value))}
-              placeholder={searchPlaceholder ?? 'Rechercher des produits...'}
-              className="w-full border-none bg-transparent p-0 text-ink-2 focus:outline-none focus:ring-0"
+              placeholder={searchPlaceholder ?? t('common.searchPlaceholder')}
+              className="w-full border-none bg-transparent p-0 text-ink-2 focus:outline-none focus:ring-0 text-xs sm:text-sm"
             />
           </div>
         </form>
 
-        {/* Icônes */}
-        <div className="flex items-center gap-md text-primary-shade">
+        {/* Icônes & Sélecteur de langue */}
+        <div className="flex items-center gap-3 sm:gap-md text-primary-shade">
+          {/* Bouton de bascule de langue FR / EN */}
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            title={language === 'fr' ? 'Switch to English' : 'Passer en Français'}
+            className="flex items-center gap-1 rounded-full border border-primary-light bg-primary-lighter px-2.5 py-1 text-xs font-bold text-primary-shade transition-transform active:scale-95"
+          >
+            <MIcon name="language" className="text-[16px]" />
+            <span className="uppercase">{language}</span>
+          </button>
+
           <Link to="/notifications" className="scale-interaction" aria-label="Notifications">
             <MIcon name="notifications" />
           </Link>
