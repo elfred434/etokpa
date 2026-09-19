@@ -10,6 +10,7 @@ import CatalogPage from '../pages/client/catalogue/CatalogPage';
 import ProductPage from '../pages/client/fiche-produit/ProductPage';
 import CartPage from '../pages/client/panier/CartPage';
 import ConfirmationPage from '../pages/client/confirmation-commande/ConfirmationPage';
+import ProfilePage from '../pages/client/profil/ProfilePage';
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -49,6 +50,7 @@ const catalogueRoute = createRoute({
 const produitRoute = createRoute({ getParentRoute: () => rootRoute, path: '/produit/$productId', component: ProductPage });
 const panierRoute = createRoute({ getParentRoute: () => rootRoute, path: '/panier', component: CartPage });
 const confirmationRoute = createRoute({ getParentRoute: () => rootRoute, path: '/confirmation', component: ConfirmationPage });
+const profilRoute = createRoute({ getParentRoute: () => rootRoute, path: '/profil', component: ProfilePage });
 // Route temporaire de review des composants (retirée à la fin du Sprint 1).
 const previewRoute = createRoute({ getParentRoute: () => rootRoute, path: '/preview', component: PreviewPage });
 
@@ -62,6 +64,7 @@ const routeTree = rootRoute.addChildren([
   produitRoute,
   panierRoute,
   confirmationRoute,
+  profilRoute,
   previewRoute,
 ]);
 

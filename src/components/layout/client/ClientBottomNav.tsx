@@ -15,6 +15,7 @@ export default function ClientBottomNav() {
   const isHome = pathname === '/';
   const isCatalogue = pathname.startsWith('/catalogue');
   const isPanier = pathname.startsWith('/panier');
+  const isProfil = pathname.startsWith('/profil');
 
   return (
     <nav className="fixed bottom-0 left-0 z-50 flex w-full items-center justify-around border-t border-line bg-warm px-2 py-2 shadow-lg lg:hidden">
@@ -38,15 +39,6 @@ export default function ClientBottomNav() {
         <span className="font-micro text-micro">Catégories</span>
       </Link>
 
-      <button
-        type="button"
-        onClick={() => toast('Historique des commandes — Sprint 3')}
-        className="scale-interaction flex flex-col items-center justify-center rounded-xl px-3 py-1 text-on-surface-variant transition-colors hover:text-on-surface"
-      >
-        <MIcon name="receipt_long" className="text-[20px]" />
-        <span className="font-micro text-micro">Commandes</span>
-      </button>
-
       <Link
         to="/panier"
         className={`scale-interaction relative flex flex-col items-center justify-center rounded-xl px-3 py-1 transition-colors ${
@@ -62,6 +54,16 @@ export default function ClientBottomNav() {
           )}
         </div>
         <span className="font-micro text-micro">Panier</span>
+      </Link>
+
+      <Link
+        to="/profil"
+        className={`scale-interaction flex flex-col items-center justify-center rounded-xl px-3 py-1 transition-colors ${
+          isProfil ? 'bg-primary-lighter text-primary-shade font-semibold' : 'text-on-surface-variant hover:text-on-surface'
+        }`}
+      >
+        <MIcon name="person" className="text-[20px]" />
+        <span className="font-micro text-micro">Profil</span>
       </Link>
     </nav>
   );
