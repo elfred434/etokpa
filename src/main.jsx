@@ -7,12 +7,15 @@ import 'material-symbols/outlined.css';
 import './theme/theme.css';
 import { store } from './store';
 import { router } from './routes/router';
+import { LanguageProvider } from './context/LanguageContext';
 
-// Point d'entrée React de TOKPa — Redux + TanStack Router
+// Point d'entrée React de TOKPa — Redux + TanStack Router + Language Context
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Provider store={store}>
-      <RouterProvider router={router} />
+      <LanguageProvider>
+        <RouterProvider router={router} />
+      </LanguageProvider>
     </Provider>
   </StrictMode>,
 );

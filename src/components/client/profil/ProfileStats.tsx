@@ -1,29 +1,32 @@
 import MIcon from '../../shared/MIcon';
+import { useLanguage } from '../../../context/LanguageContext';
 
 /**
  * ProfileStats — Cartes de statistiques utilisateur (Commandes, Repères, Négociations).
  */
 export default function ProfileStats() {
+  const { t, isFr } = useLanguage();
+
   const stats = [
     {
       icon: 'shopping_bag',
-      label: 'Commandes',
+      label: t('profile.ordersCount'),
       value: '12',
-      sub: 'effectuées',
+      sub: isFr ? 'effectuées' : 'completed',
       iconBg: 'bg-primary-lighter text-primary-dark',
     },
     {
       icon: 'location_on',
-      label: 'Points de repère',
+      label: t('profile.landmarksCount'),
       value: '3',
-      sub: 'enregistrés',
+      sub: isFr ? 'enregistrés' : 'saved',
       iconBg: 'bg-success-light text-success-dark',
     },
     {
       icon: 'handshake',
-      label: 'Négociations',
+      label: t('profile.negotiations'),
       value: '14 500 F',
-      sub: 'économies réalisées',
+      sub: isFr ? 'économies réalisées' : 'savings made',
       iconBg: 'bg-amber-light text-amber-text',
     },
   ];

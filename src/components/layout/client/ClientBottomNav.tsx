@@ -1,8 +1,8 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
+import { useLanguage } from '../../../context/LanguageContext';
 
 /**
  * ClientBottomNav — Composant commun de navigation mobile pour toutes les pages client.
@@ -11,6 +11,7 @@ import { selectCount } from '../../../store/slices/cart/cartSlice';
 export default function ClientBottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const cartCount = useAppSelector((s) => selectCount(s.cart.items));
+  const { t } = useLanguage();
 
   const isHome = pathname === '/';
   const isCatalogue = pathname.startsWith('/catalogue');
@@ -26,7 +27,7 @@ export default function ClientBottomNav() {
         }`}
       >
         <MIcon name="home" className="text-[20px]" />
-        <span className="font-micro text-micro">Home</span>
+        <span className="font-micro text-micro">{t('nav.home')}</span>
       </Link>
 
       <Link
@@ -36,7 +37,7 @@ export default function ClientBottomNav() {
         }`}
       >
         <MIcon name="category" className="text-[20px]" />
-        <span className="font-micro text-micro">Catégories</span>
+        <span className="font-micro text-micro">{t('nav.categories')}</span>
       </Link>
 
       <Link
@@ -53,7 +54,7 @@ export default function ClientBottomNav() {
             </span>
           )}
         </div>
-        <span className="font-micro text-micro">Panier</span>
+        <span className="font-micro text-micro">{t('nav.cart')}</span>
       </Link>
 
       <Link
@@ -63,7 +64,7 @@ export default function ClientBottomNav() {
         }`}
       >
         <MIcon name="person" className="text-[20px]" />
-        <span className="font-micro text-micro">Profil</span>
+        <span className="font-micro text-micro">{t('nav.profile')}</span>
       </Link>
     </nav>
   );
