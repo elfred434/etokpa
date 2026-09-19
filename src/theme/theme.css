@@ -133,12 +133,14 @@
 }
 
 /* --------------------------------------------------------------------------
-   2. BASE — fond de page, police, accessibilité
+   2. BASE — fond de page, police, accessibilité, barre de défilement
    -------------------------------------------------------------------------- */
 @layer base {
   html {
     font-family: var(--font-sans);
     overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-primary) var(--color-page);
   }
   body {
     background-color: var(--color-page);
@@ -148,6 +150,24 @@
     overflow-x: hidden;
     max-width: 100vw;
   }
+
+  /* Barre de défilement personnalisée TOKPa (Webkit Chrome, Edge, Safari) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-page);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-primary-light);
+    border-radius: 9999px;
+    border: 2px solid var(--color-page);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary);
+  }
+
   /* Focus visible WCAG AA sur tous les éléments interactifs */
   :focus-visible {
     outline: none;

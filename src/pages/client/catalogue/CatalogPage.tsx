@@ -500,24 +500,30 @@ export default function CatalogPage() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3 sm:gap-4">
               {visible.map((p) => (
                 <div
                   key={p.id}
                   onClick={openProduct}
-                  className="group flex cursor-pointer items-center gap-md rounded-xl border-[0.5px] border-line bg-white p-md transition-all hover:shadow-md"
+                  className="group flex flex-col sm:flex-row cursor-pointer items-start sm:items-center justify-between gap-3 sm:gap-md rounded-xl border-[0.5px] border-line bg-white p-3 sm:p-md transition-all hover:shadow-md"
                 >
-                  <div className="relative flex h-[80px] w-[110px] flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary-lighter to-primary-light">
-                    <MIcon name={p.icon} className="text-[32px] text-primary-hover" />
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="relative flex h-[70px] w-[90px] sm:h-[80px] sm:w-[110px] shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary-lighter to-primary-light">
+                      <MIcon name={p.icon} className="text-[28px] sm:text-[32px] text-primary-hover" />
+                      {badges(p)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs sm:text-label font-semibold text-ink line-clamp-1">{p.nom}</h4>
+                      <p className="mt-0.5 text-xs text-ink-2">{p.meta}</p>
+                    </div>
                   </div>
-                  <div className="flex-grow">
-                    <h4 className="text-label font-semibold text-ink">{p.nom}</h4>
-                    <p className="mt-1 text-ink-2">{p.meta}</p>
-                  </div>
-                  <div className="flex items-center gap-md">
-                    <div className="text-right">
-                      <span className="font-price text-price text-primary">{p.prixLabel}</span>
-                      {p.prixAncienLabel && <span className="block text-micro text-ink-3 line-through">{p.prixAncienLabel}</span>}
+
+                  <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-md border-t sm:border-t-0 border-line/60 pt-2 sm:pt-0">
+                    <div className="text-left sm:text-right">
+                      <span className="font-price text-sm sm:text-price text-primary">{p.prixLabel}</span>
+                      {p.prixAncienLabel && (
+                        <span className="block text-micro text-ink-3 line-through">{p.prixAncienLabel}</span>
+                      )}
                     </div>
                     <button
                       type="button"
@@ -526,9 +532,9 @@ export default function CatalogPage() {
                         e.stopPropagation();
                         addToCart(p);
                       }}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white transition-all hover:bg-primary-hover active:scale-95"
+                      className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-primary text-white transition-all hover:bg-primary-hover active:scale-95 shrink-0"
                     >
-                      <MIcon name="add" className="text-[20px]" />
+                      <MIcon name="add" className="text-[18px] sm:text-[20px]" />
                     </button>
                   </div>
                 </div>
