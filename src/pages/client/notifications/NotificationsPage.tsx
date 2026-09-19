@@ -76,18 +76,36 @@ export default function NotificationsPage() {
         </aside>
 
         {/* Liste */}
-        <main className="min-w-0 flex-1 p-lg md:p-xl">
-          <div className="mb-lg flex flex-wrap items-start justify-between gap-md">
+        <main className="min-w-0 flex-1 p-md md:p-xl">
+          <div className="mb-md flex flex-wrap items-start justify-between gap-md md:mb-lg">
             <div>
-              <h1 className="text-h1 text-ink">Historique des notifications</h1>
+              <h1 className="text-h2 text-ink md:text-h1">Historique des notifications</h1>
               <p className="mt-xs text-[13px] text-ink-2">
                 {unread > 0 ? `Vous avez ${unread} notifications non lues` : 'Aucune notification non lue'}
               </p>
             </div>
-            <button type="button" onClick={markAllRead} className="btn btn-ghost" disabled={unread === 0}>
+            <button type="button" onClick={markAllRead} className="btn btn-ghost text-xs md:text-sm" disabled={unread === 0}>
               <IconChecks size={18} />
               Tout marquer comme lu
             </button>
+          </div>
+
+          {/* Mobile Filter Tabs */}
+          <div className="mb-md flex gap-2 overflow-x-auto pb-1 md:hidden">
+            {FILTERS.map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setFilter(key)}
+                className={clsx(
+                  'flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                  filter === key ? 'bg-primary font-semibold text-white' : 'bg-white text-ink-2 border border-line',
+                )}
+              >
+                <Icon size={16} />
+                {label}
+              </button>
+            ))}
           </div>
 
           <div className="space-y-md">

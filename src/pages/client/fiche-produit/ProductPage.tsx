@@ -69,26 +69,26 @@ export default function ProductPage() {
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#fcfaf8] font-body text-ink">
       <ClientNavbar />
-      <div className="flex flex-1 justify-center px-4 pb-5 pt-[72px] md:px-20 lg:px-40">
+      <div className="flex flex-1 justify-center px-3 pb-[80px] pt-[64px] sm:px-6 md:px-12 md:pb-8 md:pt-[72px] lg:px-20 xl:px-40">
         <div className="flex w-full max-w-[1200px] flex-1 flex-col">
           {/* ---- Breadcrumbs ---- */}
-          <div className="flex flex-wrap gap-2 p-4 md:px-10">
-            <Link to="/" className="text-sm font-medium leading-normal text-[#9e6b47]">
+          <div className="flex flex-wrap gap-2 py-3 md:px-10">
+            <Link to="/" className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">
               Accueil
             </Link>
-            <span className="text-sm font-medium leading-normal text-[#9e6b47]">/</span>
-            <Link to="/catalogue" className="text-sm font-medium leading-normal text-[#9e6b47]">
+            <span className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">/</span>
+            <Link to="/catalogue" className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">
               Légumes
             </Link>
-            <span className="text-sm font-medium leading-normal text-[#9e6b47]">/</span>
-            <span className="text-sm font-medium leading-normal text-[#1c130d]">Tomates fraîches du jour</span>
+            <span className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">/</span>
+            <span className="text-xs font-medium leading-normal text-[#1c130d] sm:text-sm">Tomates fraîches du jour</span>
           </div>
 
           {/* ---- Main Product Content ---- */}
-          <main className="grid grid-cols-1 gap-8 rounded-xl bg-white p-4 pb-12 shadow-sm md:px-10 lg:grid-cols-2">
+          <main className="grid grid-cols-1 gap-6 rounded-xl bg-white p-4 pb-8 shadow-sm md:gap-8 md:px-10 md:pb-12 lg:grid-cols-2">
             {/* LEFT COLUMN: Images */}
-            <div className="flex flex-col gap-6">
-              <div className="relative flex h-[400px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-[#FFF7ED] to-[#FED7AA]">
+            <div className="flex flex-col gap-4 md:gap-6">
+              <div className="relative flex h-[260px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-[#FFF7ED] to-[#FED7AA] sm:h-[320px] md:h-[400px]">
                 <div className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full border border-success bg-success-light px-3 py-1 shadow-sm">
                   <span className="h-2 w-2 rounded-full bg-success" />
                   <span className="text-xs font-semibold text-success-dark">Disponible</span>
@@ -97,14 +97,14 @@ export default function ProductPage() {
                   <MIcon name="flag_2" style={{ fontSize: 64 }} />
                 </div>
               </div>
-              <div className="flex gap-4">
-                <div className="flex h-[60px] w-[60px] cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-primary bg-primary-lighter">
+              <div className="flex gap-2.5 overflow-x-auto pb-1 sm:gap-4">
+                <div className="flex h-[54px] w-[54px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-primary bg-primary-lighter sm:h-[60px] sm:w-[60px]">
                   <MIcon name="image" className="text-primary-dark" />
                 </div>
                 {[2, 3, 4].map((n) => (
                   <div
                     key={n}
-                    className="flex h-[60px] w-[60px] cursor-pointer items-center justify-center rounded-lg border border-line bg-warm-container transition-colors hover:border-primary"
+                    className="flex h-[54px] w-[54px] shrink-0 cursor-pointer items-center justify-center rounded-lg border border-line bg-warm-container transition-colors hover:border-primary sm:h-[60px] sm:w-[60px]"
                   >
                     <MIcon name="image" className="text-ink-3" />
                   </div>
@@ -316,7 +316,7 @@ export default function ProductPage() {
             )}
 
             {tab === 'avis' && (
-              <div className="flex flex-col gap-4 p-8">
+              <div className="flex flex-col gap-4 p-4 md:p-8">
                 <h3 className="text-h3 text-ink">Avis clients (127)</h3>
                 {AVIS.map((a) => (
                   <div key={a.id} className="rounded-xl border border-line p-4">
@@ -337,6 +337,31 @@ export default function ProductPage() {
               </div>
             )}
           </section>
+        </div>
+      </div>
+
+      {/* ---- Mobile Floating Bottom Action Bar ---- */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-between gap-3 border-t border-line bg-white p-3 shadow-lg md:hidden">
+        <div>
+          <span className="text-micro text-ink-2">Prix total</span>
+          <p className="text-base font-bold text-primary">{(450 * quantity).toLocaleString('fr-FR')} FCFA</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={addToCart}
+            className="flex items-center gap-1 rounded-lg border border-primary bg-primary-lighter px-3 py-2.5 text-xs font-bold text-primary"
+          >
+            <MIcon name="shopping_cart" className="text-[16px]" />
+            Panier
+          </button>
+          <button
+            type="button"
+            onClick={buyNow}
+            className="rounded-lg bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm"
+          >
+            Acheter
+          </button>
         </div>
       </div>
     </div>

@@ -82,6 +82,7 @@ export default function CatalogPage() {
   const [sort, setSort] = useState('pop');
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [page, setPage] = useState(1);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   const touch = () => setTouched(true);
 
@@ -277,25 +278,156 @@ export default function CatalogPage() {
           </div>
         </aside>
 
+        {/* ---- Mobile Filter Drawer ---- */}
+        {mobileFilterOpen && (
+          <div className="fixed inset-0 z-50 flex flex-col bg-black/50 md:hidden">
+            <div className="mt-auto max-h-[85vh] w-full overflow-y-auto rounded-t-2xl bg-white p-lg shadow-xl">
+              <div className="mb-md flex items-center justify-between border-b border-line pb-sm">
+                <h3 className="font-h2 text-h2 text-on-surface">Filtres du catalogue</h3>
+                <button
+                  type="button"
+                  onClick={() => setMobileFilterOpen(false)}
+                  className="rounded-full p-2 text-ink-2 hover:bg-page"
+                >
+                  <MIcon name="close" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="mb-sm font-h3 text-h3 text-on-surface">Catégories</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {CATEGORIES.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          touch();
+                          setCat(c.id);
+                          setPage(1);
+                        }}
+                        className={clsx(
+                          'flex items-center gap-2 rounded-lg p-2 text-left text-xs transition-all',
+                          cat === c.id ? 'bg-primary-lighter font-bold text-primary' : 'bg-page text-ink-2',
+                        )}
+                      >
+                        <MIcon name={c.icon} className="text-[18px]" />
+                        <span className="truncate">{c.nom}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-line pt-4">
+                  <h4 className="mb-sm font-h3 text-h3 text-on-surface">Zone du marché</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {ZONES.map((z) => (
+                      <label key={z.id} className="flex cursor-pointer items-center gap-2 rounded-lg bg-page p-2 text-xs">
+                        <input
+                          type="checkbox"
+                          checked={zones.includes(z.id)}
+                          onChange={() => toggleZone(z.id)}
+                          className="h-4 w-4 rounded border-line accent-primary"
+                        />
+                        <span className="truncate">{z.nom}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-line pt-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h4 className="font-h3 text-h3 text-on-surface">Prix max</h4>
+                    <span className="text-xs font-bold text-primary">{maxPrice.toLocaleString('fr-FR')} FCFA</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={10000}
+                    step={500}
+                    value={maxPrice}
+                    onChange={(e) => {
+                      touch();
+                      setMaxPrice(Number(e.target.value));
+                      setPage(1);
+                    }}
+                    className="range-tokpa h-2 w-full cursor-pointer appearance-none rounded-lg bg-page"
+                  />
+                </div>
+
+                <div className="border-t border-line pt-4 flex items-center justify-between">
+                  <span className="text-sm font-medium text-on-surface">Disponible uniquement</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      touch();
+                      setDispoOnly(!dispoOnly);
+                      setPage(1);
+                    }}
+                    className={clsx(
+                      'relative h-5 w-10 rounded-full shadow-inner transition-all',
+                      dispoOnly ? 'bg-primary' : 'bg-ink-3',
+                    )}
+                  >
+                    <span
+                      className={clsx(
+                        'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow',
+                        dispoOnly ? 'right-0.5' : 'left-0.5',
+                      )}
+                    />
+                  </button>
+                </div>
+
+                <div className="pt-2 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="w-1/2 rounded-lg border border-line py-3 text-xs font-bold text-ink-2"
+                  >
+                    Réinitialiser
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileFilterOpen(false)}
+                    className="w-1/2 rounded-lg bg-primary py-3 text-xs font-bold text-white shadow-sm"
+                  >
+                    Voir ({filtered.length})
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ---- Main Content Area ---- */}
-        <section className="flex-grow">
-          <div className="mb-lg flex items-center justify-between">
+        <section className="min-w-0 flex-grow">
+          <div className="mb-md flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:mb-lg">
             <div>
               <h2 className="font-h1 text-h1 text-on-surface">{isDesignSnapshot ? 'Légumes frais' : CAT_TITLES[cat]}</h2>
               <p className="mt-1 text-ink-2">
                 {isDesignSnapshot ? '148 produits trouvés' : `${filtered.length} produits trouvés`}
               </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+              {/* Mobile Filter Button */}
+              <button
+                type="button"
+                onClick={() => setMobileFilterOpen(true)}
+                className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-1.5 text-xs font-semibold text-primary shadow-sm md:hidden"
+              >
+                <MIcon name="tune" className="text-[18px]" />
+                Filtres
+              </button>
+
               <div className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-1.5">
-                <span className="text-ink-2">Trier par :</span>
+                <span className="hidden text-xs text-ink-2 sm:inline">Trier :</span>
                 <select
                   value={sort}
                   onChange={(e) => {
                     touch();
                     setSort(e.target.value);
                   }}
-                  className="cursor-pointer border-none bg-transparent p-0 pr-6 text-label font-semibold focus:ring-0"
+                  className="cursor-pointer border-none bg-transparent p-0 text-xs font-semibold focus:ring-0"
                 >
                   <option value="pop">Popularité</option>
                   <option value="asc">Prix croissant</option>
