@@ -146,7 +146,7 @@ export const TRANSLATIONS = {
       confirmPassword: 'Confirmer le nouveau mot de passe',
     },
     auth: {
-      welcomeBack: 'Bon retour 👋',
+      welcomeBack: 'Bon retour',
       connectSub: 'Connectez-vous à votre compte TOKPa',
       emailLabel: 'Adresse email',
       passwordLabel: 'Mot de passe',
@@ -337,7 +337,7 @@ export const TRANSLATIONS = {
       confirmPassword: 'Confirm new password',
     },
     auth: {
-      welcomeBack: 'Welcome back 👋',
+      welcomeBack: 'Welcome back',
       connectSub: 'Log in to your TOKPa account',
       emailLabel: 'Email address',
       passwordLabel: 'Password',

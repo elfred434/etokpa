@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link,useNavigate } from '@tanstack/react-router';
-import { IconMail, IconShieldCheck, IconLock } from '@tabler/icons-react';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { IconMail, IconLock } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import AuthSplitLayout from '../../components/auth/AuthSplitLayout';
 import PasswordInput from '../../components/auth/PasswordInput';
 import TextField from '../../components/ui/TextField';
 import Checkbox from '../../components/ui/Checkbox';
 import Alert from '../../components/ui/Alert';
-import Divider from '../../components/ui/Divider';
+import MIcon from '../../components/shared/MIcon';
 
 /**
  * Page Connexion — reproduction fidèle de la maquette Stitch `connexion_tokpa`.
@@ -39,7 +39,10 @@ export default function ConnexionPage() {
 
   return (
     <AuthSplitLayout>
-      <h1 className="text-h1 text-ink">Bon retour 👋</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-h1 text-ink">Bon retour</h1>
+        <MIcon name="waving_hand" className="text-[24px] text-primary" />
+      </div>
       <p className="mt-sm text-ink-2">Connectez-vous à votre compte TOKPa</p>
 
       <form className="mt-xl space-y-lg" onSubmit={handleSubmit} noValidate>

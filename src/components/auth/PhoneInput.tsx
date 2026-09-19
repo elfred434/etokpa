@@ -18,7 +18,7 @@ interface PhoneInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 't
   error?: boolean;
 }
 
-/** Téléphone béninois : préfixe 🇧🇯 +229 séparé par une bordure verticale (maquette inscription). */
+/** Téléphone béninois : préfixe +229 séparé par une bordure verticale (maquette inscription). */
 export default function PhoneInput({ label, error, className, id, ...rest }: PhoneInputProps) {
   const autoId = useId();
   const inputId = id ?? autoId;

@@ -230,10 +230,10 @@ export default function ProfileLandmarks() {
                   onChange={(e) => setForm({ ...form, icon: e.target.value })}
                   className="input"
                 >
-                  <option value="location_on">📍 {isFr ? 'Repère général' : 'General landmark'}</option>
-                  <option value="home">🏠 {isFr ? 'Domicile' : 'Home'}</option>
-                  <option value="work">💼 {isFr ? 'Bureau' : 'Office'}</option>
-                  <option value="storefront">🏪 {isFr ? 'Magasin' : 'Store'}</option>
+                  <option value="location_on">{isFr ? 'Repère général' : 'General landmark'}</option>
+                  <option value="home">{isFr ? 'Domicile' : 'Home'}</option>
+                  <option value="work">{isFr ? 'Bureau' : 'Office'}</option>
+                  <option value="storefront">{isFr ? 'Magasin' : 'Store'}</option>
                 </select>
               </div>
 
