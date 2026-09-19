@@ -29,13 +29,13 @@ export default function DarkFooter() {
               </button>
             </li>
             <li>
-              <button type="button" onClick={soon(isFr ? 'Devenir Vendeur' : 'Become a Seller')} className="hover:text-white">
-                {isFr ? 'Devenir Vendeur' : 'Become a Seller'}
+              <button type="button" onClick={soon(isFr ? 'Devenir Livreur' : 'Become a Delivery Driver')} className="hover:text-white">
+                {isFr ? 'Devenir Livreur' : 'Become a Delivery Driver'}
               </button>
             </li>
             <li>
-              <button type="button" onClick={soon(isFr ? 'Devenir Livreur' : 'Become a Delivery Driver')} className="hover:text-white">
-                {isFr ? 'Devenir Livreur' : 'Become a Delivery Driver'}
+              <button type="button" onClick={soon(isFr ? 'Espace Manager' : 'Manager Area')} className="hover:text-white">
+                {isFr ? 'Espace Manager' : 'Manager Area'}
               </button>
             </li>
           </ul>

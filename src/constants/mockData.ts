@@ -72,12 +72,12 @@ export const NOTIFICATIONS: AppNotification[] = [
   { id: 'n1', type: 'order', title: 'Commande livrée !', message: 'Votre commande #TOK-2847 a été remise à Kossi.', time: 'Il y a 10 min.', unread: true },
   { id: 'n2', type: 'promo', title: 'Promotion exclusive', message: "Profitez de -20% sur les ignames du marché Dantokpa ce weekend. Ne ratez pas l'occasion !", time: 'Il y a 2h.', unread: true },
   { id: 'n3', type: 'security', title: 'Nouvelle connexion', message: "Une connexion a été détectée depuis un nouvel appareil à Cotonou, Benin. Si ce n'est pas vous, changez votre mot de passe.", time: 'Ce matin', unread: true },
-  { id: 'n4', type: 'order', title: 'Commande confirmée', message: 'Le vendeur a accepté votre offre pour le pack de tomates. La livraison est en préparation.', time: 'Hier', unread: false },
+  { id: 'n4', type: 'order', title: 'Commande confirmée', message: 'Votre offre pour le pack de tomates a été acceptée. La livraison est en préparation.', time: 'Hier', unread: false },
   { id: 'n5', type: 'info', title: 'Mise à jour TOKPa', message: 'Découvrez les nouveaux points de repère dans la zone Akpakpa pour faciliter vos livraisons.', time: '2 jours', unread: false },
 ];
 
-/** Vendeur partenaire (maquette fiche produit). */
-export const SELLER = { nom: 'Afi Mensah', initiales: 'AM', verified: true };
+/** Origine certifiée (maquette fiche produit). */
+export const MARKET_SOURCE = { nom: 'Marché Dantokpa', initiales: 'DK', verified: true };
 
 /** Détails longs (maquette fiche produit) — fallback générique sinon. */
 export const PRODUCT_DETAILS: Record<string, { paras: string[]; origine: string; fraicheur: string; poids: string; conservation: string }> = {

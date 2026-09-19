@@ -3,11 +3,12 @@ import {
   IconUser,
   IconMotorbike,
   IconLayoutDashboard,
-  IconShoppingBag,
+  IconShieldCheck,
+  IconBuildingStore,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
 
-export type RoleId = 'client' | 'livreur' | 'manager' | 'vendeur';
+export type RoleId = 'client' | 'livreur' | 'manager' | 'admin' | 'super_admin';
 
 interface Role {
   id: RoleId;
@@ -20,8 +21,9 @@ interface Role {
 const ROLES: Role[] = [
   { id: 'client', title: 'Client', description: "J'achète des produits frais du marché", icon: IconUser },
   { id: 'livreur', title: 'Livreur', description: 'Je livre des commandes à moto', icon: IconMotorbike },
-  { id: 'manager', title: 'Manager', description: 'Je gère une zone ou un stand', icon: IconLayoutDashboard },
-  { id: 'vendeur', title: 'Vendeur', description: 'Je vends mes produits en gros', icon: IconShoppingBag, disabled: true },
+  { id: 'manager', title: 'Manager', description: 'Je gère une zone ou des livraisons', icon: IconLayoutDashboard },
+  { id: 'admin', title: 'Admin', description: "Gestion globale de la plateforme", icon: IconShieldCheck },
+  { id: 'super_admin', title: 'Super Admin', description: 'Administration système & infrastructure', icon: IconBuildingStore },
 ];
 
 interface RoleSelectorProps {
@@ -31,8 +33,8 @@ interface RoleSelectorProps {
 }
 
 /**
- * Panneau « Je suis… » de l'inscription : fond orange très clair,
- * 4 cartes rôles 2×2, sélection = bordure orange, Vendeur désactivé (gris).
+ * Panneau « Je suis… » de l'inscription :
+ * Cartes rôles (Client, Livreur, Manager, Admin, Super Admin).
  */
 export default function RoleSelector({ value, onChange, error }: RoleSelectorProps) {
   return (

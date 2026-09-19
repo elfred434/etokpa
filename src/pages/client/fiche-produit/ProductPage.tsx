@@ -47,9 +47,9 @@ const AVIS = [
   },
 ];
 
-type TabId = 'description' | 'vendeur' | 'avis';
+type TabId = 'description' | 'origine' | 'avis';
 
-/** Fiche produit — copie conforme du code.html Stitch « fiche_produit_tokpa ». */
+/** Fiche produit — mise à jour sans vendeur. */
 export default function ProductPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -134,23 +134,16 @@ export default function ProductPage() {
               <div className="flex items-center justify-between rounded-xl bg-surface p-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-lighter font-bold text-primary-dark">
-                    AM
+                    DK
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-ink">Afi Mensah</p>
+                    <p className="text-sm font-semibold text-ink">Marché Dantokpa</p>
                     <div className="flex items-center gap-1">
                       <MIcon name="verified" className="text-[14px] text-success" />
-                      <span className="text-micro text-success">Vendeur vérifié</span>
+                      <span className="text-micro text-success">Provenance vérifiée</span>
                     </div>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => toast('Profil vendeur — Sprint 2')}
-                  className="text-xs font-medium text-primary hover:underline"
-                >
-                  Voir profil
-                </button>
               </div>
 
               <hr className="border-line" />
@@ -192,7 +185,7 @@ export default function ProductPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex-1 rounded-lg bg-page p-3 text-center">
-                    <p className="mb-1 text-[10px] uppercase text-ink-2">Prix vendeur</p>
+                    <p className="mb-1 text-[10px] uppercase text-ink-2">Prix référence</p>
                     <p className="font-bold text-ink">450 FCFA</p>
                   </div>
                   <MIcon name="sync" className="rotate-90 text-[#F59E0B]" />
@@ -206,7 +199,7 @@ export default function ProductPage() {
                     />
                   </div>
                 </div>
-                <p className="text-[12px] italic text-[#92400E]">Budget min. accepté par le vendeur : 350 FCFA</p>
+                <p className="text-[12px] italic text-[#92400E]">Budget min. accepté sur ce lot : 350 FCFA</p>
                 <div className="flex flex-col gap-2">
                   <button
                     type="button"
@@ -252,7 +245,7 @@ export default function ProductPage() {
               {(
                 [
                   ['description', 'Description'],
-                  ['vendeur', 'Vendeur'],
+                  ['origine', 'Origine & Qualité'],
                   ['avis', 'Avis (127)'],
                 ] as [TabId, string][]
               ).map(([id, label]) => (
@@ -279,9 +272,7 @@ export default function ProductPage() {
                   texture ferme idéale pour vos sauces, salades et plats traditionnels béninois.
                   <br />
                   <br />
-                  Afi Mensah, notre vendeuse partenaire certifiée, s'approvisionne quotidiennement auprès des
-                  producteurs locaux de la zone de Ouidah pour vous offrir le meilleur de la terre. Nos tomates sont
-                  triées à la main pour éviter tout produit abîmé.
+                  Sourcing quotidien auprès des producteurs locaux de la zone de Ouidah pour vous offrir le meilleur de la terre. Nos tomates sont triées à la main pour éviter tout produit abîmé.
                 </p>
                 <div className="mt-4 grid grid-cols-2 gap-6 md:grid-cols-4">
                   {DETAILS.map((d) => (
@@ -294,24 +285,23 @@ export default function ProductPage() {
               </div>
             )}
 
-            {tab === 'vendeur' && (
+            {tab === 'origine' && (
               <div className="flex flex-col gap-4 p-8">
-                <h3 className="text-h3 text-ink">À propos du vendeur</h3>
+                <h3 className="text-h3 text-ink">Origine & Traçabilité</h3>
                 <div className="flex items-center gap-3 rounded-xl bg-surface p-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-lighter font-bold text-primary-dark">
-                    AM
+                    DK
                   </div>
                   <div>
-                    <p className="font-semibold text-ink">Afi Mensah</p>
+                    <p className="font-semibold text-ink">Marché Dantokpa</p>
                     <div className="flex items-center gap-1">
                       <MIcon name="verified" className="text-[14px] text-success" />
-                      <span className="text-micro text-success">Vendeur vérifié · Marché Dantokpa</span>
+                      <span className="text-micro text-success">Produit certifié frais · Origine Ouidah / Cotonou</span>
                     </div>
                   </div>
                 </div>
                 <p className="max-w-3xl text-body leading-relaxed text-ink-2">
-                  Vendeuse partenaire certifiée TOKPa depuis 2024, Afi Mensah s'approvisionne quotidiennement auprès
-                  des producteurs locaux de la zone de Ouidah. Note moyenne : 4.5/5 sur 127 avis.
+                  Tous les lots sont contrôlés dès leur arrivée au stand de regroupement avant la livraison finale chez vous. Note moyenne : 4.5/5 sur 127 avis clients.
                 </p>
               </div>
             )}
