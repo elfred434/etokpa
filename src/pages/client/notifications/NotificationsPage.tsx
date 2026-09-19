@@ -9,6 +9,7 @@ import {
   IconBulb,
 } from '@tabler/icons-react';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
+import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import NotificationItem from '../../../components/shared/NotificationItem';
 import Pagination from '../../../components/shared/Pagination';
 import { NOTIFICATIONS } from '../../../constants/mockData';
@@ -117,6 +118,8 @@ export default function NotificationsPage() {
           <Pagination page={page} pageCount={8} onChange={setPage} className="mt-xl" />
         </main>
       </div>
+
+      <ClientBottomNav />
     </div>
   );
 }

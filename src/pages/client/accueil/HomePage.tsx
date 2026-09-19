@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
+import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import DarkFooter from '../../../components/layout/client/DarkFooter';
 import MIcon from '../../../components/shared/MIcon';
 import { useAppDispatch } from '../../../hooks/useStore';
@@ -111,9 +112,9 @@ export default function HomePage() {
     <div className="min-h-screen bg-page font-body text-on-surface">
       <ClientNavbar />
 
-      <main className="mx-auto w-full max-w-[1200px] overflow-x-hidden px-4 pb-[80px] pt-[52px] lg:pb-0">
+      <main className="mx-auto w-full max-w-[1200px] overflow-x-hidden px-3 sm:px-4 pb-[80px] pt-[52px] lg:pb-0">
         {/* ---- Hero ---- */}
-        <section className="relative mt-lg flex min-h-[500px] items-center overflow-hidden rounded-[24px] border border-line bg-white shadow-sm">
+        <section className="relative mt-md sm:mt-lg flex min-h-[380px] sm:min-h-[460px] md:min-h-[500px] items-center overflow-hidden rounded-[20px] sm:rounded-[24px] border border-line bg-white shadow-sm">
           <div className="absolute inset-0 z-0">
             <img
               alt="Marché TOKPa Illustration"
@@ -122,15 +123,15 @@ export default function HomePage() {
             />
             <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent" />
           </div>
-          <div className="relative z-10 max-w-3xl p-md md:p-xl">
-            <h1 className="mb-md font-h1 text-[42px] font-bold leading-tight text-primary-darker">Ton marché, ta façon.</h1>
-            <p className="mb-lg text-lg leading-relaxed text-on-surface-variant">
+          <div className="relative z-10 max-w-3xl p-4 sm:p-8 md:p-xl">
+            <h1 className="mb-sm sm:mb-md font-h1 text-[26px] sm:text-[36px] md:text-[42px] font-bold leading-tight text-primary-darker">Ton marché, ta façon.</h1>
+            <p className="mb-md sm:mb-lg text-sm sm:text-base md:text-lg leading-relaxed text-on-surface-variant">
               Les produits les plus frais de Cotonou, livrés directement chez vous sans intermédiaire inutile.
             </p>
             <button
               type="button"
               onClick={() => navigate({ to: '/catalogue' })}
-              className="scale-interaction flex items-center gap-2 rounded-[10px] bg-primary px-lg py-3.5 font-bold text-white hover:bg-primary-hover"
+              className="scale-interaction flex items-center gap-2 rounded-[10px] bg-primary px-4 py-3 sm:px-lg sm:py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-primary-hover"
             >
               Commencer mes achats
               <MIcon name="arrow_forward" />
@@ -139,71 +140,72 @@ export default function HomePage() {
         </section>
 
         {/* ---- Value Propositions ---- */}
-        <section className="my-xl grid grid-cols-1 gap-lg md:grid-cols-3">
+        <section className="my-lg sm:my-xl grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-3">
           {ATOUTS.map((a) => (
-            <div key={a.titre} className="flex items-start gap-md rounded-[14px] border border-line bg-card p-lg">
-              <div className="rounded-xl bg-primary-lighter p-sm">
-                <MIcon name={a.icon} className="text-[32px] text-primary-shade" />
+            <div key={a.titre} className="flex items-start gap-md rounded-[14px] border border-line bg-card p-4 sm:p-lg">
+              <div className="rounded-xl bg-primary-lighter p-2 sm:p-sm">
+                <MIcon name={a.icon} className="text-[24px] sm:text-[32px] text-primary-shade" />
               </div>
               <div>
-                <h3 className="font-h3 font-bold text-on-surface">{a.titre}</h3>
-                <p className="mt-xs text-body text-ink-2">{a.texte}</p>
+                <h3 className="font-h3 text-sm sm:text-base font-bold text-on-surface">{a.titre}</h3>
+                <p className="mt-xs text-xs sm:text-body text-ink-2">{a.texte}</p>
               </div>
             </div>
           ))}
         </section>
 
         {/* ---- Categories Grid ---- */}
-        <section className="mb-xl">
-          <div className="mb-lg flex items-end justify-between">
-            <h2 className="font-h1 text-h1 text-on-surface">Explorer les catégories</h2>
-            <Link to="/catalogue" className="flex items-center gap-1 font-bold text-primary-shade hover:underline">
+        <section className="mb-lg sm:mb-xl">
+          <div className="mb-md sm:mb-lg flex items-end justify-between">
+            <h2 className="font-h1 text-lg sm:text-h1 text-on-surface">Explorer les catégories</h2>
+            <Link to="/catalogue" className="flex items-center gap-1 text-xs sm:text-sm font-bold text-primary-shade hover:underline">
               Voir tout <MIcon name="chevron_right" className="text-[18px]" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-md md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-md md:grid-cols-4">
             {CATEGORIES.map((c) => (
               <div
                 key={c.nom}
                 onClick={() => navigate({ to: '/catalogue' })}
-                className="bento-hover group flex cursor-pointer flex-col items-center gap-sm rounded-[14px] border border-transparent bg-warm-low p-lg hover:border-primary-light"
+                className="bento-hover group flex cursor-pointer flex-col items-center gap-sm rounded-[14px] border border-transparent bg-warm-low p-4 sm:p-lg hover:border-primary-light"
               >
-                <MIcon name={c.icon} className="text-[48px] text-primary-shade transition-transform group-hover:scale-110" />
-                <span className="font-h3 text-on-surface">{c.nom}</span>
+                <MIcon name={c.icon} className="text-[36px] sm:text-[48px] text-primary-shade transition-transform group-hover:scale-110" />
+                <span className="font-h3 text-xs sm:text-base text-on-surface">{c.nom}</span>
               </div>
             ))}
           </div>
         </section>
 
-        {/* ---- Featured Products ---- */}
-        <section className="mb-xl">
-          <div className="mb-lg flex items-end justify-between">
-            <h2 className="font-h1 text-h1 text-on-surface">Sélection du jour</h2>
-            <div className="flex gap-sm">
+        {/* ---- Featured Products (1 par espace sur mobile) ---- */}
+        <section className="mb-lg sm:mb-xl">
+          <div className="mb-md sm:mb-lg flex items-end justify-between">
+            <h2 className="font-h1 text-lg sm:text-h1 text-on-surface">Sélection du jour</h2>
+            <div className="flex gap-2 sm:gap-sm">
               <button
                 type="button"
                 aria-label="Précédent"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-white hover:bg-primary-lighter"
+                className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-line bg-white hover:bg-primary-lighter"
               >
                 <MIcon name="chevron_left" />
               </button>
               <button
                 type="button"
                 aria-label="Suivant"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-white hover:bg-primary-lighter"
+                className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-line bg-white hover:bg-primary-lighter"
               >
                 <MIcon name="chevron_right" />
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-md md:grid-cols-4">
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {SELECTION.map((item) => (
               <div
                 key={item.id}
                 onClick={() => navigate({ to: '/produit/$productId', params: { productId: 'p1' } })}
                 className="bento-hover group cursor-pointer overflow-hidden rounded-[14px] border border-line bg-white p-md"
               >
-                <div className="relative mb-md h-40 overflow-hidden rounded-[10px] bg-page">
+                <div className="relative mb-md h-48 sm:h-40 overflow-hidden rounded-[10px] bg-page">
                   <img
                     src={item.image}
                     alt={item.nom}
@@ -242,29 +244,29 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ---- Negotiation Module Placeholder (Design Stitch v2) ---- */}
-        <section className="mb-xl bg-white rounded-[14px] border-l-[3px] border-secondary-container p-lg flex flex-col md:flex-row items-center justify-between gap-lg">
+        {/* ---- Negotiation Module Placeholder (Design Stitch v2 adaptatif) ---- */}
+        <section className="mb-lg sm:mb-xl bg-white rounded-[14px] border-l-[3px] border-secondary-container p-4 sm:p-lg flex flex-col md:flex-row items-center justify-between gap-md sm:gap-lg">
           <div className="w-full md:w-[70%]">
-            <div className="inline-flex items-center gap-2 bg-secondary-container/10 text-on-secondary-container px-3 py-1 rounded-full mb-sm whitespace-nowrap">
-              <span className="material-symbols-outlined text-[18px]">handshake</span>
-              <span className="text-label uppercase tracking-wider whitespace-nowrap">Nouveau : La Négociation Directe</span>
+            <div className="inline-flex max-w-full items-center gap-2 bg-secondary-container/10 text-on-secondary-container px-2.5 py-1 rounded-full mb-sm text-xs sm:text-label font-medium uppercase tracking-wider overflow-hidden">
+              <span className="material-symbols-outlined text-[16px] sm:text-[18px] shrink-0">handshake</span>
+              <span className="truncate sm:whitespace-normal">Nouveau : La Négociation Directe</span>
             </div>
-            <h2 className="font-h2 text-h1 text-on-surface mb-xs">Trop cher ? Propose ton prix !</h2>
-            <p className="text-secondary text-body leading-relaxed max-w-2xl">
+            <h2 className="font-h1 text-lg sm:text-h1 text-on-surface mb-xs">Trop cher ? Propose ton prix !</h2>
+            <p className="text-secondary text-xs sm:text-body leading-relaxed max-w-2xl">
               Comme au marché physique, vous pouvez désormais proposer un prix au vendeur pour certains produits. Recevez une réponse en temps réel.
             </p>
           </div>
           <div className="w-full md:w-[30%] bg-bg-app p-4 rounded-xl">
             <div className="flex flex-col gap-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-secondary text-label">Prix Vendeur</span>
+              <div className="flex justify-between items-center text-xs sm:text-label">
+                <span className="text-secondary">Prix Vendeur</span>
                 <span className="font-bold text-on-surface">2.500 FCFA</span>
               </div>
               <div className="h-[1.5px] bg-border-default w-full"></div>
-              <div className="flex justify-between items-center">
-                <span className="text-secondary text-label">Votre Offre</span>
+              <div className="flex justify-between items-center text-xs sm:text-label">
+                <span className="text-secondary">Votre Offre</span>
                 <input
-                  className="w-24 text-right border-none bg-white rounded-lg p-1 font-bold text-primary focus:ring-1 focus:ring-primary"
+                  className="w-20 sm:w-24 text-right border-none bg-white rounded-lg p-1 font-bold text-primary focus:ring-1 focus:ring-primary text-xs sm:text-sm"
                   type="text"
                   value={offre}
                   onChange={(e) => setOffre(e.target.value)}
@@ -273,7 +275,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => toast('Négociation — Sprint 2')}
-                className="w-full bg-secondary text-white font-bold py-2 rounded-lg mt-2 scale-interaction"
+                className="w-full bg-secondary text-white font-bold py-2 rounded-lg mt-2 text-xs sm:text-sm scale-interaction"
               >
                 Envoyer l'offre
               </button>
@@ -283,33 +285,7 @@ export default function HomePage() {
       </main>
 
       <DarkFooter />
-
-      {/* ---- BottomNavBar (Mobile only) ---- */}
-      <nav className="fixed bottom-0 left-0 z-50 flex w-full items-center justify-around border-t border-line bg-warm px-2 py-2 shadow-lg lg:hidden">
-        <Link
-          to="/"
-          className="scale-interaction flex flex-col items-center justify-center rounded-xl bg-primary-lighter px-3 py-1 text-primary-shade"
-        >
-          <MIcon name="home" />
-          <span className="font-micro text-micro">Home</span>
-        </Link>
-        <Link to="/catalogue" className="scale-interaction flex flex-col items-center justify-center text-on-surface-variant">
-          <MIcon name="category" />
-          <span className="font-micro text-micro">Categories</span>
-        </Link>
-        <button
-          type="button"
-          onClick={() => toast('Commandes — Sprint 3')}
-          className="scale-interaction flex flex-col items-center justify-center text-on-surface-variant"
-        >
-          <MIcon name="receipt_long" />
-          <span className="font-micro text-micro">Orders</span>
-        </button>
-        <Link to="/panier" className="scale-interaction flex flex-col items-center justify-center text-on-surface-variant">
-          <MIcon name="shopping_cart" />
-          <span className="font-micro text-micro">Cart</span>
-        </Link>
-      </nav>
+      <ClientBottomNav />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { IconShoppingCart, IconMapPin } from '@tabler/icons-react';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientFooter from '../../../components/layout/client/ClientFooter';
+import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import CheckoutStepper from '../../../components/client/checkout/CheckoutStepper';
 import CartLineItem from '../../../components/client/cart/CartLineItem';
 import CartSummary from '../../../components/client/cart/CartSummary';
@@ -117,6 +118,7 @@ export default function CartPage() {
       </main>
 
       <ClientFooter />
+      <ClientBottomNav />
     </div>
   );
 }

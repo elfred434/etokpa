@@ -79,24 +79,15 @@ export default function ConnexionPage() {
         <button type="submit" className="btn btn-primary w-full" disabled={loading}>
           {loading ? 'Connexion…' : 'Se connecter'}
         </button>
-        <p className="mt-lg flex items-center justify-center gap-sm text-[13px] text-ink-3">
-            Si vous n'avez pas de compte 
-            <Link to="/inscription"> Inscrivez-vous
-            </Link>
-          </p>
+        
+        <p className="mt-lg flex items-center justify-center gap-xs text-[13px] text-ink-3">
+          Si vous n'avez pas de compte,{' '}
+          <Link to="/inscription" className="font-semibold text-primary hover:underline">
+            Inscrivez-vous
+          </Link>
+        </p>
 
         {authError && <Alert>Email ou mot de passe incorrect</Alert>}
-
-        <Divider label="OU CONTINUER AVEC" />
-          
-        <button
-          type="button"
-          className="btn btn-secondary w-full"
-          onClick={() => navigate({ to: '/verification-2fa' })}
-        >
-          <IconShieldCheck size={20} />
-          Vérification en 2 étapes
-        </button>
       </form>
 
       <p className="mt-lg flex items-center justify-center gap-sm text-[13px] text-ink-3">

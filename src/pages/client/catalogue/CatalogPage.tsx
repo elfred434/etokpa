@@ -3,6 +3,7 @@ import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
+import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
@@ -594,6 +595,7 @@ export default function CatalogPage() {
           </div>
         </div>
       </footer>
+      <ClientBottomNav />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
+import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
@@ -341,7 +342,7 @@ export default function ProductPage() {
       </div>
 
       {/* ---- Mobile Floating Bottom Action Bar ---- */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-between gap-3 border-t border-line bg-white p-3 shadow-lg md:hidden">
+      <div className="fixed bottom-[52px] left-0 right-0 z-40 flex items-center justify-between gap-3 border-t border-line bg-white p-3 shadow-lg md:hidden">
         <div>
           <span className="text-micro text-ink-2">Prix total</span>
           <p className="text-base font-bold text-primary">{(450 * quantity).toLocaleString('fr-FR')} FCFA</p>
@@ -364,6 +365,8 @@ export default function ProductPage() {
           </button>
         </div>
       </div>
+
+      <ClientBottomNav />
     </div>
   );
 }
