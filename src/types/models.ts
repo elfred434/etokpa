@@ -21,6 +21,8 @@ export interface Product {
   stock: StockState;
   badges: ProductBadge[];
   image?: string;           // URL Cloudinary future ; sinon placeholder dégradé
+  /** Description (backend ProductResource.description) */
+  description?: string;
   /** Offre de négociation acceptée (badge + prix barré, maquette panier) */
   negotiated?: { oldPrice: number };
 }

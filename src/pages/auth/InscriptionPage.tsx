@@ -127,10 +127,17 @@ export default function InscriptionPage() {
       localStorage.setItem('tokpa_pending_email', profil.email);
       navigate({ to: '/verification-2fa' });
     } catch (err: unknown) {
-      console.warn('API Register fallback:', err);
-      toast.success('Compte créé (mode démo) ! Code 2FA envoyé.');
-      localStorage.setItem('tokpa_pending_email', profil.email);
-      navigate({ to: '/verification-2fa' });
+      console.warn('API Register error:', err);
+      const detail = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })
+        ?.response?.data;
+      const firstError = detail?.errors
+        ? Object.values(detail.errors).flat()[0]
+        : undefined;
+      toast.error(
+        detail?.message && detail.message !== 'Les données fournies sont invalides.'
+          ? detail.message
+          : firstError || 'Inscription impossible (email déjà utilisé ? ou serveur inaccessible).',
+      );
     } finally {
       setLoading(false);
     }
