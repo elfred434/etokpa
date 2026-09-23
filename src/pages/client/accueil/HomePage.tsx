@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
@@ -10,33 +10,7 @@ import { add } from '../../../store/slices/cart/cartSlice';
 import { submitOffer } from '../../../store/slices/negotiation/negotiationSlice';
 import type { Product } from '../../../types/models';
 import { useLanguage } from '../../../context/LanguageContext';
-
-/* ---- Données exactes du code.html « accueil_tokpa » ---- */
-
-const ATOUTS = [
-  {
-    icon: 'payments',
-    titre: 'Négociation de prix',
-    texte: 'Discutez les prix directement comme au marché Dantokpa.',
-  },
-  {
-    icon: 'local_shipping',
-    titre: 'Livraison Rapide',
-    texte: 'Vos produits frais livrés en moins de 2 heures à votre porte.',
-  },
-  {
-    icon: 'location_on',
-    titre: 'Produits Locaux',
-    texte: 'Soutenez les agriculteurs béninois et mangez sainement.',
-  },
-];
-
-const CATEGORIES = [
-  { icon: 'potted_plant', nom: 'Légumes' },
-  { icon: 'set_meal', nom: 'Poissons' },
-  { icon: 'liquor', nom: 'Épices' },
-  { icon: 'shopping_basket', nom: 'Packs' },
-];
+import { catalogApi, type ApiProduct } from '../../../services/api';
 
 interface SelectionItem {
   id: string;
@@ -48,51 +22,35 @@ interface SelectionItem {
   badge: 'Disponible' | 'Stock Limité';
 }
 
-const SELECTION: SelectionItem[] = [
-  {
-    id: 's1',
-    nom: 'Tomates Fraîches (1kg)',
-    lieu: 'Cotonou Sud',
-    prixLabel: '1.200 FCFA',
-    prix: 1200,
-    image: '/images/design/tomates-1kg.png',
-    badge: 'Disponible',
-  },
-  {
-    id: 's2',
-    nom: "Igname du Nord (L'unité)",
-    lieu: 'Abomey-Calavi',
-    prixLabel: '850 FCFA',
-    prix: 850,
-    image: '/images/design/igname.png',
-    badge: 'Disponible',
-  },
-  {
-    id: 's3',
-    nom: 'Mangues Greffées (Lot de 3)',
-    lieu: 'Zogbo',
-    prixLabel: '1.500 FCFA',
-    prix: 1500,
-    image: '/images/design/mangues.png',
-    badge: 'Stock Limité',
-  },
-  {
-    id: 's4',
-    nom: 'Piment Rouge Séché (Sachet)',
-    lieu: 'Dantokpa',
-    prixLabel: '500 FCFA',
-    prix: 500,
-    image: '/images/design/piment.png',
-    badge: 'Disponible',
-  },
-];
-
-/** Accueil TOKPa — copie conforme du code.html Stitch « accueil_tokpa ». */
+/** Accueil TOKPa — Connecté au Backend API Laravel + UI Stitch */
 export default function HomePage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { t, isFr } = useLanguage();
-  const [offre, setOffre] = useState('2.100');
+  const [offre, setOffre] = useState('2100');
+  const [selection, setSelection] = useState<SelectionItem[]>([]);
+
+  // Connection API Backend GET /api/products
+  useEffect(() => {
+    catalogApi.getProducts({ per_page: 8 })
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const fetched: SelectionItem[] = res.data.slice(0, 4).map((p: ApiProduct) => ({
+            id: String(p.id),
+            nom: p.nom,
+            lieu: 'Marché Dantokpa',
+            prixLabel: `${p.prix.toLocaleString('fr-FR')} FCFA`,
+            prix: p.prix,
+            image: p.image_url || '/images/design/tomates-1kg.png',
+            badge: p.stock > 5 ? 'Disponible' : 'Stock Limité',
+          }));
+          setSelection(fetched);
+        }
+      })
+      .catch((err) => {
+        console.warn('API Products fallback for home:', err);
+      });
+  }, []);
 
   const atoutsList = [
     { icon: 'payments', titre: t('home.atouts.a1Title'), texte: t('home.atouts.a1Text') },
@@ -149,7 +107,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => navigate({ to: '/catalogue' })}
-              className="scale-interaction flex items-center gap-2 rounded-[10px] bg-primary px-4 py-3 sm:px-lg sm:py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-primary-hover"
+              className="scale-interaction flex items-center gap-2 rounded-[10px] bg-primary px-4 py-3 sm:px-lg sm:py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-primary-hover cursor-pointer"
             >
               {t('home.heroCta')}
               <MIcon name="arrow_forward" />
@@ -194,73 +152,62 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ---- Featured Products (1 par espace sur mobile) ---- */}
-        <section className="mb-lg sm:mb-xl">
-          <div className="mb-md sm:mb-lg flex items-end justify-between">
-            <h2 className="font-h1 text-lg sm:text-h1 text-on-surface">{t('home.selectionTitle')}</h2>
-            <div className="flex gap-2 sm:gap-sm">
-              <button
-                type="button"
-                aria-label="Précédent"
-                className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-line bg-white hover:bg-primary-lighter"
-              >
-                <MIcon name="chevron_left" />
-              </button>
-              <button
-                type="button"
-                aria-label="Suivant"
-                className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-line bg-white hover:bg-primary-lighter"
-              >
-                <MIcon name="chevron_right" />
-              </button>
+        {/* ---- Featured Products ---- */}
+        {selection.length > 0 && (
+          <section className="mb-lg sm:mb-xl">
+            <div className="mb-md sm:mb-lg flex items-end justify-between">
+              <h2 className="font-h1 text-lg sm:text-h1 text-on-surface">{t('home.selectionTitle')}</h2>
+              <Link to="/catalogue" className="flex items-center gap-1 text-xs sm:text-sm font-bold text-primary-shade hover:underline">
+                {t('common.seeAll')} <MIcon name="chevron_right" className="text-[18px]" />
+              </Link>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {SELECTION.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => navigate({ to: '/produit/$productId', params: { productId: 'p1' } })}
-                className="bento-hover group cursor-pointer overflow-hidden rounded-[14px] border border-line bg-white p-md"
-              >
-                <div className="relative mb-md h-48 sm:h-40 overflow-hidden rounded-[10px] bg-page">
-                  <img
-                    src={item.image}
-                    alt={item.nom}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  {item.badge === 'Disponible' ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {selection.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => navigate({ to: '/produit/$productId', params: { productId: item.id } })}
+                  className="bento-hover group cursor-pointer overflow-hidden rounded-[14px] border border-line bg-white p-md shadow-xs"
+                >
+                  <div className="relative mb-md h-48 sm:h-40 overflow-hidden rounded-[10px] bg-page flex items-center justify-center">
+                    {item.image.startsWith('/') ? (
+                      <div className="w-full h-full bg-gradient-to-br from-primary-lighter to-primary-light flex items-center justify-center">
+                        <MIcon name="shopping_bag" className="text-4xl text-primary" />
+                      </div>
+                    ) : (
+                      <img
+                        src={item.image}
+                        alt={item.nom}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    )}
                     <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-success px-2 py-0.5 text-micro text-white">
-                      <span className="h-1.5 w-1.5 rounded-full bg-white" /> {t('common.available')}
+                      <span className="h-1.5 w-1.5 rounded-full bg-white" /> {item.badge}
                     </span>
-                  ) : (
-                    <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-secondary-container px-2 py-0.5 text-micro text-on-secondary-container">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-text" /> {t('common.lowStock')}
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-col gap-xs">
-                  <span className="text-label text-ink-2">{item.lieu}</span>
-                  <h3 className="font-h3 font-bold text-on-surface">{item.nom}</h3>
-                  <div className="mt-sm flex items-center justify-between">
-                    <span className="font-price text-price text-primary-shade">{item.prixLabel}</span>
-                    <button
-                      type="button"
-                      aria-label={`Ajouter ${item.nom}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addToCart(item);
-                      }}
-                      className="scale-interaction flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white"
-                    >
-                      <MIcon name="add" className="text-[18px]" />
-                    </button>
+                  </div>
+                  <div className="flex flex-col gap-xs">
+                    <span className="text-label text-ink-2">{item.lieu}</span>
+                    <h3 className="font-h3 font-bold text-on-surface line-clamp-1">{item.nom}</h3>
+                    <div className="mt-sm flex items-center justify-between">
+                      <span className="font-price text-price text-primary-shade">{item.prixLabel}</span>
+                      <button
+                        type="button"
+                        aria-label={`Ajouter ${item.nom}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToCart(item);
+                        }}
+                        className="scale-interaction flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white cursor-pointer"
+                      >
+                        <MIcon name="add" className="text-[18px]" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ---- Negotiation Module Placeholder ---- */}
         <section className="mb-lg sm:mb-xl bg-white rounded-[14px] border-l-[3px] border-secondary-container p-4 sm:p-lg flex flex-col md:flex-row items-center justify-between gap-md sm:gap-lg">
@@ -303,7 +250,7 @@ export default function HomePage() {
                       minPrice: 2000,
                     }),
                   );
-                  toast.success(isFr ? 'Offre envoyée en direct au marché !' : 'Offer sent live to market!');
+                  toast.success(isFr ? 'Offre envoyée au marché !' : 'Offer sent to market!');
                   navigate({ to: '/negociations' });
                 }}
                 className="w-full bg-secondary text-white font-bold py-2 rounded-lg mt-2 text-xs sm:text-sm scale-interaction cursor-pointer"

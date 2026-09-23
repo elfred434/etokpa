@@ -22,63 +22,19 @@ interface NegotiationState {
   history: NegotiationItem[];
 }
 
-const INITIAL_NEGOTIATIONS: NegotiationItem[] = [
-  {
-    id: 'neg_101',
-    productId: 'p101',
-    productName: 'Sac de Riz Parboiled 50kg',
-    vendorName: 'Agro-Business Bénin',
-    originalPrice: 24500,
-    proposedPrice: 21000,
-    minPrice: 20000,
-    status: 'pending',
-    createdAt: 'Il y a 10 min',
-  },
-  {
-    id: 'neg_102',
-    productId: 'p102',
-    productName: 'Lot d’Ananas Pain de Sucre (x10)',
-    vendorName: 'Maman Africa Fruits',
-    originalPrice: 4500,
-    proposedPrice: 3800,
-    counterPrice: 4100,
-    minPrice: 3900,
-    status: 'counter_offer',
-    createdAt: 'Il y a 1 heure',
-  },
-  {
-    id: 'neg_103',
-    productId: 'p103',
-    productName: 'Huile d’Arachide Pure 5L',
-    vendorName: 'Sodeco-Bénin',
-    originalPrice: 8000,
-    proposedPrice: 7200,
-    minPrice: 7000,
-    status: 'accepted',
-    createdAt: 'Aujourd’hui, 09:30',
-  },
-  {
-    id: 'neg_104',
-    productId: 'p12',
-    productName: 'Pack légumes 5 variétés',
-    vendorName: 'Marché Dantokpa',
-    originalPrice: 500,
-    proposedPrice: 380,
-    minPrice: 350,
-    status: 'accepted',
-    createdAt: 'Aujourd’hui, 10:15',
-  },
-];
-
 const initialState: NegotiationState = {
-  activeNegotiations: Object.fromEntries(INITIAL_NEGOTIATIONS.map((n) => [n.productId, n])),
-  history: INITIAL_NEGOTIATIONS,
+  activeNegotiations: {},
+  history: [],
 };
 
 const negotiationSlice = createSlice({
   name: 'negotiation',
   initialState,
   reducers: {
+    setProposals(state, action: PayloadAction<NegotiationItem[]>) {
+      state.history = action.payload;
+      state.activeNegotiations = Object.fromEntries(action.payload.map((n) => [n.productId, n]));
+    },
     submitOffer(
       state,
       action: PayloadAction<{
@@ -121,7 +77,6 @@ const negotiationSlice = createSlice({
       };
 
       state.activeNegotiations[productId] = item;
-      // Remplace if existing or unshift
       const existingIndex = state.history.findIndex((h) => h.productId === productId);
       if (existingIndex >= 0) {
         state.history[existingIndex] = item;
@@ -149,6 +104,6 @@ const negotiationSlice = createSlice({
   },
 });
 
-export const { submitOffer, acceptCounterOffer, cancelNegotiation } = negotiationSlice.actions;
+export const { setProposals, submitOffer, acceptCounterOffer, cancelNegotiation } = negotiationSlice.actions;
 
 export default negotiationSlice.reducer;

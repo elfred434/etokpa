@@ -1,13 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import { INITIAL_CART } from '../../../constants/mockData';
 import type { CartItem, Product } from '../../../types/models';
 
 interface CartState {
   items: CartItem[];
 }
 
-const initialState: CartState = { items: INITIAL_CART };
+const initialState: CartState = { items: [] };
 
 const cartSlice = createSlice({
   name: 'cart',
