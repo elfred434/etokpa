@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { store, } from '../store';
 import { useAppDispatch, useAppSelector } from '../hooks/useStore';
-import { add } from '../store/slices/cart/cartSlice';
+import { add, clear } from '../store/slices/cart/cartSlice';
 import { cartApi } from '../services/api';
 import type { Product } from '../types/models';
 
@@ -47,7 +47,12 @@ export function useCartSync(sessionKey: number): void {
       .then((res) => {
         if (cancelled) return;
         const serverItems: ServerCartItem[] = res?.data ?? [];
-        if (serverItems.length > 0 && localItems().length === 0) {
+        const local = localItems();
+
+        if (serverItems.length > 0) {
+          // Le serveur est la vérité : on aligne le Redux sur l'état serveur
+          // (évite tout décalage local/serveur, ex. multi-appareils).
+          dispatch(clear());
           for (const it of serverItems) {
             const product: Product = {
               id: String(it.product_id),
@@ -61,6 +66,11 @@ export function useCartSync(sessionKey: number): void {
               badges: [],
             };
             dispatch(add({ product, quantity: it.quantite }));
+          }
+        } else if (local.length > 0) {
+          // Panier serveur vide mais panier local non vide → on pousse le local au serveur
+          for (const it of local) {
+            cartApi.addToCart(Number(it.product.id), it.quantite).catch(() => undefined);
           }
         }
         prevItemsRef.current = snapshot(localItems());
