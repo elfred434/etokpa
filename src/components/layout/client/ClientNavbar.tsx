@@ -6,7 +6,6 @@ import MIcon from '../../shared/MIcon';
 import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
 import { useLanguage } from '../../../context/LanguageContext';
-import NegotiationModal from '../../client/negotiation/NegotiationModal';
 
 interface ClientNavbarProps {
   search?: string;
@@ -28,9 +27,9 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { language, toggleLanguage, t } = useLanguage();
   const [localSearch, setLocalSearch] = useState('');
-  const [negoModalOpen, setNegoModalOpen] = useState(false);
 
   const onMarket = pathname === '/' || pathname.startsWith('/catalogue') || pathname.startsWith('/produit');
+  const onNegociations = pathname.startsWith('/negociations');
 
   const submitSearch = (e: FormEvent | React.KeyboardEvent) => {
     e.preventDefault();
@@ -39,108 +38,103 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
   };
 
   return (
-    <>
-      <header className="fixed top-0 z-50 w-full border-b border-line bg-warm">
-        <div className="mx-auto flex h-[52px] w-full max-w-[1200px] items-center justify-between px-4">
-          {/* Logo + liens */}
-          <div className="flex items-center gap-lg">
-            <Link to="/" className="font-h2 text-h2 tracking-tight text-primary-shade">
-              TOKPa
-            </Link>
-            <nav className="hidden gap-md md:flex">
-              <Link
-                to="/catalogue"
-                className={clsx(
-                  'py-3 font-body text-body transition-colors',
-                  onMarket
-                    ? 'border-b-2 border-primary-shade font-bold text-primary-shade'
-                    : 'rounded px-2 text-on-surface-variant hover:bg-primary-lighter',
-                )}
-              >
-                {t('nav.market')}
-              </Link>
-              <button
-                type="button"
-                onClick={() => setNegoModalOpen(true)}
-                className={clsx(
-                  'relative rounded px-2 py-3 font-body text-body transition-colors hover:bg-primary-lighter',
-                  negoModalOpen ? 'font-bold text-primary-shade' : 'text-on-surface-variant',
-                )}
-              >
-                {t('nav.negotiations')}
-                {activeNegoCount > 0 && (
-                  <span className="ml-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
-                    {activeNegoCount}
-                  </span>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => toast(`${t('nav.orders')} — Sprint 3`)}
-                className="rounded px-2 py-3 font-body text-body text-on-surface-variant transition-colors hover:bg-primary-lighter"
-              >
-                {t('nav.orders')}
-              </button>
-            </nav>
-          </div>
-
-          {/* Recherche (pillule) */}
-          <form onSubmit={submitSearch} className="mx-8 hidden max-w-1xl flex-1 lg:block">
-            <div className="relative flex items-center rounded-full border border-line bg-warm-low px-4 py-1.5">
-              <MIcon name="search" className="mr-2 text-ink-3" />
-              <input
-                type="text"
-                value={search ?? localSearch}
-                onChange={(e) => (onSearch ? onSearch(e.target.value) : setLocalSearch(e.target.value))}
-                placeholder={searchPlaceholder ?? t('common.searchPlaceholder')}
-                className="w-full border-none bg-transparent p-0 text-ink-2 focus:outline-none focus:ring-0 text-xs sm:text-sm"
-              />
-            </div>
-          </form>
-
-          {/* Icônes & Sélecteur de langue */}
-          <div className="flex items-center gap-3 sm:gap-md text-primary-shade">
-            {/* Bouton de bascule de langue FR / EN */}
-            <button
-              type="button"
-              onClick={toggleLanguage}
-              title={language === 'fr' ? 'Switch to English' : 'Passer en Français'}
-              className="flex items-center gap-1 rounded-full border border-primary-light bg-primary-lighter px-2.5 py-1 text-xs font-bold text-primary-shade transition-transform active:scale-95"
+    <header className="fixed top-0 z-50 w-full border-b border-line bg-warm">
+      <div className="mx-auto flex h-[52px] w-full max-w-[1200px] items-center justify-between px-4">
+        {/* Logo + liens */}
+        <div className="flex items-center gap-lg">
+          <Link to="/" className="font-h2 text-h2 tracking-tight text-primary-shade">
+            TOKPa
+          </Link>
+          <nav className="hidden gap-md md:flex">
+            <Link
+              to="/catalogue"
+              className={clsx(
+                'py-3 font-body text-body transition-colors',
+                onMarket
+                  ? 'border-b-2 border-primary-shade font-bold text-primary-shade'
+                  : 'rounded px-2 text-on-surface-variant hover:bg-primary-lighter',
+              )}
             >
-              <MIcon name="language" className="text-[16px]" />
-              <span className="uppercase">{language}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setNegoModalOpen(true)}
-              className="scale-interaction relative md:hidden"
-              title={t('nav.negotiations')}
-            >
-              <MIcon name="handshake" />
-              {activeNegoCount > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />}
-            </button>
-
-            <Link to="/notifications" className="scale-interaction" aria-label="Notifications">
-              <MIcon name="notifications" />
-            </Link>
-            <Link to="/panier" className="scale-interaction relative" aria-label="Panier">
-              <MIcon name="shopping_cart" />
-              {cartCount > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />}
+              {t('nav.market')}
             </Link>
             <Link
-              to="/profil"
-              className="scale-interaction"
-              aria-label="Profil"
+              to="/negociations"
+              className={clsx(
+                'relative py-3 font-body text-body transition-colors',
+                onNegociations
+                  ? 'border-b-2 border-primary-shade font-bold text-primary-shade'
+                  : 'rounded px-2 text-on-surface-variant hover:bg-primary-lighter',
+              )}
             >
-              <MIcon name="account_circle" />
+              {t('nav.negotiations')}
+              {activeNegoCount > 0 && (
+                <span className="ml-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
+                  {activeNegoCount}
+                </span>
+              )}
             </Link>
-          </div>
+            <button
+              type="button"
+              onClick={() => toast(`${t('nav.orders')} — Sprint 3`)}
+              className="rounded px-2 py-3 font-body text-body text-on-surface-variant transition-colors hover:bg-primary-lighter"
+            >
+              {t('nav.orders')}
+            </button>
+          </nav>
         </div>
-      </header>
 
-      {/* Modal de suivi des négociations F-10 */}
-      <NegotiationModal isOpen={negoModalOpen} onClose={() => setNegoModalOpen(false)} />
-    </>
+        {/* Recherche (pillule) */}
+        <form onSubmit={submitSearch} className="mx-8 hidden max-w-1xl flex-1 lg:block">
+          <div className="relative flex items-center rounded-full border border-line bg-warm-low px-4 py-1.5">
+            <MIcon name="search" className="mr-2 text-ink-3" />
+            <input
+              type="text"
+              value={search ?? localSearch}
+              onChange={(e) => (onSearch ? onSearch(e.target.value) : setLocalSearch(e.target.value))}
+              placeholder={searchPlaceholder ?? t('common.searchPlaceholder')}
+              className="w-full border-none bg-transparent p-0 text-ink-2 focus:outline-none focus:ring-0 text-xs sm:text-sm"
+            />
+          </div>
+        </form>
+
+        {/* Icônes & Sélecteur de langue */}
+        <div className="flex items-center gap-3 sm:gap-md text-primary-shade">
+          {/* Bouton de bascule de langue FR / EN */}
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            title={language === 'fr' ? 'Switch to English' : 'Passer en Français'}
+            className="flex items-center gap-1 rounded-full border border-primary-light bg-primary-lighter px-2.5 py-1 text-xs font-bold text-primary-shade transition-transform active:scale-95"
+          >
+            <MIcon name="language" className="text-[16px]" />
+            <span className="uppercase">{language}</span>
+          </button>
+
+          <Link
+            to="/negociations"
+            className="scale-interaction relative md:hidden"
+            title={t('nav.negotiations')}
+          >
+            <MIcon name="handshake" />
+            {activeNegoCount > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />}
+          </Link>
+
+          <Link to="/notifications" className="scale-interaction" aria-label="Notifications">
+            <MIcon name="notifications" />
+          </Link>
+          <Link to="/panier" className="scale-interaction relative" aria-label="Panier">
+            <MIcon name="shopping_cart" />
+            {cartCount > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />}
+          </Link>
+          <Link
+            to="/profil"
+            className="scale-interaction"
+            aria-label="Profil"
+          >
+            <MIcon name="account_circle" />
+          </Link>
+        </div>
+      </div>
+    </header>
   );
 }

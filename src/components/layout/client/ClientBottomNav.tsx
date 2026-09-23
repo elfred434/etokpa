@@ -11,10 +11,14 @@ import { useLanguage } from '../../../context/LanguageContext';
 export default function ClientBottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const cartCount = useAppSelector((s) => selectCount(s.cart.items));
+  const negotiations = useAppSelector((s) => s.negotiation.history);
+  const activeNegoCount = negotiations.filter((n) => n.status === 'accepted' || n.status === 'counter_offer').length;
+
   const { t } = useLanguage();
 
   const isHome = pathname === '/';
   const isCatalogue = pathname.startsWith('/catalogue');
+  const isNegociations = pathname.startsWith('/negociations');
   const isPanier = pathname.startsWith('/panier');
   const isProfil = pathname.startsWith('/profil');
 
@@ -38,6 +42,23 @@ export default function ClientBottomNav() {
       >
         <MIcon name="category" className="text-[20px]" />
         <span className="font-micro text-micro">{t('nav.categories')}</span>
+      </Link>
+
+      <Link
+        to="/negociations"
+        className={`scale-interaction relative flex flex-col items-center justify-center rounded-xl px-3 py-1 transition-colors ${
+          isNegociations ? 'bg-primary-lighter text-primary-shade font-semibold' : 'text-on-surface-variant hover:text-on-surface'
+        }`}
+      >
+        <div className="relative">
+          <MIcon name="handshake" className="text-[20px]" />
+          {activeNegoCount > 0 && (
+            <span className="absolute -right-2 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white">
+              {activeNegoCount}
+            </span>
+          )}
+        </div>
+        <span className="font-micro text-micro">{t('nav.negotiations')}</span>
       </Link>
 
       <Link

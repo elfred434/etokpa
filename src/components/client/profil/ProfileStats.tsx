@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 
@@ -14,6 +15,7 @@ export default function ProfileStats() {
       value: '12',
       sub: isFr ? 'effectuées' : 'completed',
       iconBg: 'bg-primary-lighter text-primary-dark',
+      link: '/profil',
     },
     {
       icon: 'location_on',
@@ -21,6 +23,7 @@ export default function ProfileStats() {
       value: '3',
       sub: isFr ? 'enregistrés' : 'saved',
       iconBg: 'bg-success-light text-success-dark',
+      link: '/profil',
     },
     {
       icon: 'handshake',
@@ -28,13 +31,18 @@ export default function ProfileStats() {
       value: '14 500 F',
       sub: isFr ? 'économies réalisées' : 'savings made',
       iconBg: 'bg-amber-light text-amber-text',
+      link: '/negociations',
     },
   ];
 
   return (
     <div className="mb-md grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-md">
       {stats.map((s) => (
-        <div key={s.label} className="flex items-center gap-md rounded-[14px] border border-line bg-white p-4 shadow-sm">
+        <Link
+          key={s.label}
+          to={s.link}
+          className="flex items-center gap-md rounded-[14px] border border-line bg-white p-4 shadow-sm transition-transform hover:border-primary-light active:scale-98"
+        >
           <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${s.iconBg}`}>
             <MIcon name={s.icon} className="text-[24px]" />
           </div>
@@ -43,7 +51,7 @@ export default function ProfileStats() {
             <p className="text-lg font-bold text-ink sm:text-xl">{s.value}</p>
             <span className="text-[11px] text-ink-2">{s.sub}</span>
           </div>
-        </div>
+        </Link>
       ))}
     </div>
   );
