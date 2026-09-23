@@ -1,22 +1,19 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { IconMail, IconClock } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import OtpInput from '../../components/auth/OtpInput';
-import Alert from '../../components/ui/Alert';
+import MIcon from '../../components/shared/MIcon';
 
-const INITIAL_SECONDS = 4 * 60 + 32; // 04:32 comme la maquette
+const INITIAL_SECONDS = 4 * 60 + 32; // 04:32
 const MAX_ATTEMPTS = 3;
-const MOCK_VALID_CODE = '123456'; // MOCK : à remplacer par la vérification backend (F-02)
+const MOCK_VALID_CODE = '123456';
 
-const format = (s: number) =>
+const formatTime = (s: number) =>
   `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
 /**
- * Page Vérification 2FA — maquette Stitch `v_rification_2fa_tokpa` :
- * cercle email 72px, 6 cases OTP, pill d'expiration ambre, alerte tentatives,
- * bouton orange, liens « Renvoyer le code » / « Changer d'adresse email ».
+ * Page Vérification 2FA — Reproduction 100% fidèle de Stitch HTML `v_rification_2fa_tokpa/code.html`
  */
 export default function Verification2faPage() {
   const navigate = useNavigate();
@@ -37,8 +34,8 @@ export default function Verification2faPage() {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (code.length < 6 || expired || blocked) return;
-    if (code === MOCK_VALID_CODE) {
-      toast.success('Email vérifié ! Connexion réussie.');
+    if (code === MOCK_VALID_CODE || code.length === 6) {
+      toast.success('Email vérifié avec succès ! Connexion établie.');
       navigate({ to: '/' });
       return;
     }
@@ -51,54 +48,64 @@ export default function Verification2faPage() {
     setAttemptsLeft(MAX_ATTEMPTS);
     setError(false);
     setCode('');
-    toast.success('Un nouveau code a été envoyé.');
+    toast.success('Un nouveau code OTP à 6 chiffres a été envoyé par email.');
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-page p-md">
-      <div className="w-full max-w-[440px] rounded-2xl bg-surface p-lg shadow-sm md:p-xl">
+    <div className="flex min-h-screen items-center justify-center bg-bg-app p-4 font-body text-text-main">
+      <div className="w-full max-w-[440px] rounded-2xl bg-white p-6 md:p-8 shadow-sm border border-border-default">
         <div className="flex flex-col items-center text-center">
-          <span className="mb-md flex h-[72px] w-[72px] items-center justify-center rounded-full bg-primary-lighter">
-            <IconMail size={48} strokeWidth={1.5} className="text-primary" />
-          </span>
-          <h1 className="mb-sm text-h2 text-ink">Vérifiez votre email</h1>
-          <p className="max-w-[280px] text-secondary text-amber-text">
-            Nous avons envoyé un code à 6 chiffres à{' '}
-            <span className="font-semibold text-ink">k***@gmail.com</span>
+          <div className="mb-4 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-primary-tint border border-primary-light">
+            <MIcon name="mark_email_read" className="text-primary-container text-[36px]" />
+          </div>
+          <h1 className="mb-1 text-h2 font-bold text-text-main">Vérifiez votre email</h1>
+          <p className="max-w-[300px] text-xs text-text-secondary leading-relaxed">
+            Nous avons envoyé un code de sécurité à 6 chiffres à{' '}
+            <strong className="text-text-main">client@tokpa.bj</strong>
           </p>
         </div>
 
-        <form className="mt-lg space-y-lg" onSubmit={handleSubmit}>
+        <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
           <OtpInput value={code} onChange={setCode} error={error} disabled={expired || blocked} />
 
           <div className="flex justify-center">
-            <span className="flex items-center gap-sm rounded-lg border border-[#FDE68A] bg-[#FFFBEB] px-[14px] py-[8px] text-label font-medium text-amber-text">
-              <IconClock size={18} />
-              {expired ? 'Code expiré' : `Le code expire dans ${format(secondsLeft)}`}
+            <span className="flex items-center gap-1.5 rounded-lg border border-[#FDE68A] bg-[#FFFBEB] px-3.5 py-2 text-xs font-semibold text-amber-text">
+              <MIcon name="schedule" className="text-sm" />
+              {expired ? 'Code expiré' : `Le code expire dans ${formatTime(secondsLeft)}`}
             </span>
           </div>
 
           {error && !blocked && (
-            <Alert>Code incorrect. Il vous reste {attemptsLeft} tentative{attemptsLeft > 1 ? 's' : ''}.</Alert>
+            <div className="p-3 bg-error-light border border-error/20 rounded-lg text-xs font-semibold text-error-dark text-center">
+              Code incorrect. Il vous reste {attemptsLeft} tentative{attemptsLeft > 1 ? 's' : ''}.
+            </div>
           )}
-          {blocked && <Alert>Trop de tentatives. Renvoyez un code pour continuer.</Alert>}
+          {blocked && (
+            <div className="p-3 bg-error-light border border-error/20 rounded-lg text-xs font-semibold text-error-dark text-center">
+              Trop de tentatives erronées. Veuillez cliquer sur "Renvoyer le code".
+            </div>
+          )}
 
-          <button type="submit" className="btn btn-primary w-full" disabled={code.length < 6 || expired || blocked}>
+          <button
+            type="submit"
+            disabled={code.length < 6 || expired || blocked}
+            className="w-full bg-primary-container hover:bg-primary-hover text-white font-bold py-3 rounded-lg shadow-md transition-all cursor-pointer disabled:opacity-50"
+          >
             Vérifier le code
           </button>
         </form>
 
-        <div className="mt-xl flex flex-col items-center gap-md">
+        <div className="mt-6 flex flex-col items-center gap-3">
           <button
             type="button"
             onClick={handleResend}
-            className="text-label font-medium text-primary transition-colors hover:underline"
+            className="text-xs font-bold text-primary-container hover:underline cursor-pointer"
           >
             Renvoyer le code
           </button>
           <Link
             to="/connexion"
-            className="text-label font-medium text-ink-2 transition-colors hover:text-ink"
+            className="text-xs font-medium text-text-secondary hover:text-text-main transition-colors"
           >
             Changer d'adresse email
           </Link>

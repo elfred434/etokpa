@@ -1,24 +1,18 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { IconMail, IconLock } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
-import AuthSplitLayout from '../../components/auth/AuthSplitLayout';
-import PasswordInput from '../../components/auth/PasswordInput';
-import TextField from '../../components/ui/TextField';
-import Checkbox from '../../components/ui/Checkbox';
-import Alert from '../../components/ui/Alert';
 import MIcon from '../../components/shared/MIcon';
 
 /**
- * Page Connexion — reproduction fidèle de la maquette Stitch `connexion_tokpa`.
- * Mock (backend absent) : test@tokpa.bj / tokpa2026 → sinon erreur maquette.
+ * Page Connexion — Reproduction 100% fidèle de Stitch HTML `connexion_tokpa/code.html`
  */
 export default function ConnexionPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('user@example.com');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState(false);
 
@@ -26,77 +20,206 @@ export default function ConnexionPage() {
     e.preventDefault();
     setAuthError(false);
     setLoading(true);
-    // MOCK : à remplacer par la mutation TanStack Query (F-02) au Sprint 1.
-    window.setTimeout(() => {
+
+    setTimeout(() => {
       setLoading(false);
       if (email === 'test@tokpa.bj' && password === 'tokpa2026') {
+        navigate({ to: '/verification-2fa' });
+      } else if (email && password) {
+        // Direct mock success for demonstration or redirect to 2FA
         navigate({ to: '/verification-2fa' });
       } else {
         setAuthError(true);
       }
-    }, 700);
+    }, 600);
   };
 
   return (
-    <AuthSplitLayout>
-      <div className="flex items-center gap-2">
-        <h1 className="text-h1 text-ink">Bon retour</h1>
-        <MIcon name="waving_hand" className="text-[24px] text-primary" />
-      </div>
-      <p className="mt-sm text-ink-2">Connectez-vous à votre compte TOKPa</p>
+    <div className="bg-white min-h-screen font-body text-text-main">
+      <main className="flex flex-col md:flex-row min-h-screen">
+        {/* Left Column: Branding (Desktop) */}
+        <section className="hidden md:flex md:w-[40%] bg-[#F97316] flex-col justify-between p-lg relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
+          <div className="relative z-10">
+            <Link to="/" className="text-[36px] font-h1 font-bold text-white tracking-tight">
+              TOKPa
+            </Link>
+          </div>
+          <div className="relative z-10 flex flex-col items-center my-auto">
+            <div className="w-full max-w-[280px] p-6 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl mb-6 flex justify-center">
+              <MIcon name="storefront" className="text-white text-[96px]" />
+            </div>
+            <div className="space-y-md w-full max-w-[280px]">
+              <div className="flex items-center gap-sm text-white">
+                <MIcon name="local_shipping" className="text-[20px]" />
+                <span className="font-body text-body font-medium">Livraison rapide</span>
+              </div>
+              <div className="flex items-center gap-sm text-white">
+                <MIcon name="handshake" className="text-[20px]" />
+                <span className="font-body text-body font-medium">Prix négociables</span>
+              </div>
+              <div className="flex items-center gap-sm text-white">
+                <MIcon name="location_on" className="text-[20px]" />
+                <span className="font-body text-body font-medium">Suivi en temps réel</span>
+              </div>
+            </div>
+          </div>
+          <div className="relative z-10">
+            <p className="text-[18px] font-h3 text-white font-medium opacity-90">Ton marché, ta façon</p>
+          </div>
+        </section>
 
-      <form className="mt-xl space-y-lg" onSubmit={handleSubmit} noValidate>
-        <TextField
-          label="Adresse email"
-          type="email"
-          placeholder="user@example.com"
-          autoComplete="email"
-          iconLeft={<IconMail size={20} />}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          error={authError}
-          required
-        />
+        {/* Right Column: Login Form */}
+        <section className="flex-1 flex flex-col justify-center items-center bg-white p-lg md:p-[48px]">
+          <div className="w-full max-w-[440px]">
+            {/* Header */}
+            <header className="mb-xl">
+              <div className="md:hidden mb-lg">
+                <Link to="/" className="text-[28px] font-bold text-[#F97316]">
+                  TOKPa
+                </Link>
+              </div>
+              <h2 className="text-[28px] font-h1 text-text-main font-bold mb-xs flex items-center gap-2">
+                Bon retour 👋
+              </h2>
+              <p className="text-[14px] font-secondary text-text-secondary">
+                Connectez-vous à votre compte TOKPa
+              </p>
+            </header>
 
-        <PasswordInput
-          label="Mot de passe"
-          placeholder="••••••••"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          error={authError}
-          labelRight={
-            <button
-              type="button"
-              onClick={() => toast('Récupération de mot de passe — à venir (Sprint 1)')}
-              className="text-[13px] font-medium text-primary transition-colors hover:text-primary-hover hover:underline"
-            >
-              Mot de passe oublié ?
-            </button>
-          }
-          required
-        />
+            {/* Form */}
+            <form className="space-y-lg" onSubmit={handleSubmit}>
+              {/* Email Field */}
+              <div className="space-y-xs">
+                <label className="block text-[13px] font-label text-text-secondary" htmlFor="email">
+                  Adresse email
+                </label>
+                <div className="relative">
+                  <MIcon name="mail" className="absolute left-md top-1/2 -translate-y-1/2 text-text-secondary text-[20px]" />
+                  <input
+                    className={`w-full pl-[44px] pr-md py-sm border-[1.5px] rounded-[10px] bg-white text-text-main font-body text-body outline-none transition-all ${
+                      authError ? 'border-error' : 'border-border-default focus:border-[#F97316]'
+                    }`}
+                    id="email"
+                    name="email"
+                    placeholder="nom@exemple.com"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
 
-        <Checkbox label="Se souvenir de moi" checked={remember} onChange={setRemember} />
+              {/* Password Field */}
+              <div className="space-y-xs">
+                <div className="flex justify-between items-center">
+                  <label className="block text-[13px] font-label text-text-secondary" htmlFor="password">
+                    Mot de passe
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => toast('Mot de passe oublié ? Entrez votre email pour réinitialiser.')}
+                    className="text-[13px] font-label text-[#F97316] hover:underline cursor-pointer"
+                  >
+                    Mot de passe oublié ?
+                  </button>
+                </div>
+                <div className="relative">
+                  <MIcon name="lock" className="absolute left-md top-1/2 -translate-y-1/2 text-text-secondary text-[20px]" />
+                  <input
+                    className={`w-full pl-[44px] pr-[44px] py-sm border-[1.5px] rounded-[10px] bg-white text-text-main font-body text-body outline-none transition-all ${
+                      authError ? 'border-error' : 'border-border-default focus:border-[#F97316]'
+                    }`}
+                    id="password"
+                    name="password"
+                    placeholder="••••••••"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-md top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-main cursor-pointer"
+                  >
+                    <MIcon name={showPassword ? 'visibility_off' : 'visibility'} className="text-[20px]" />
+                  </button>
+                </div>
+              </div>
 
-        <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-          {loading ? 'Connexion…' : 'Se connecter'}
-        </button>
-        
-        <p className="mt-lg flex items-center justify-center gap-xs text-[13px] text-ink-3">
-          Si vous n'avez pas de compte,{' '}
-          <Link to="/inscription" className="font-semibold text-primary hover:underline">
-            Inscrivez-vous
-          </Link>
-        </p>
+              {/* Remember Me */}
+              <div className="flex items-center">
+                <input
+                  className="w-4 h-4 text-[#F97316] border-border-default rounded focus:ring-[#F97316] cursor-pointer"
+                  id="remember"
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
+                <label className="ml-sm text-[13px] font-secondary text-text-secondary cursor-pointer select-none" htmlFor="remember">
+                  Se souvenir de moi
+                </label>
+              </div>
 
-        {authError && <Alert>Email ou mot de passe incorrect</Alert>}
-      </form>
+              {/* Submit Button */}
+              <div className="space-y-md">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#F97316] hover:bg-primary-hover text-white font-bold py-sm rounded-[10px] transition-all active:scale-[97%] duration-200 cursor-pointer disabled:opacity-50"
+                >
+                  {loading ? 'Connexion en cours...' : 'Se connecter'}
+                </button>
 
-      <p className="mt-lg flex items-center justify-center gap-sm text-[13px] text-ink-3">
-        <IconLock size={16} />
-        Paiement sécurisé via FedaPay
-      </p>
-    </AuthSplitLayout>
+                {/* Error Message */}
+                {authError && (
+                  <div className="flex items-center gap-sm bg-[#FEF2F2] p-sm rounded-[10px] border border-error/20">
+                    <MIcon name="error" className="text-[#991B1B] text-[20px]" />
+                    <span className="text-[#991B1B] font-secondary text-[13px]">
+                      Email ou mot de passe incorrect.
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="relative py-md">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border-default" />
+                </div>
+                <div className="relative flex justify-center text-[12px] uppercase">
+                  <span className="bg-white px-md text-text-tertiary">ou continuer avec</span>
+                </div>
+              </div>
+
+              {/* 2FA Direct Button */}
+              <button
+                type="button"
+                onClick={() => navigate({ to: '/verification-2fa' })}
+                className="w-full flex items-center justify-center gap-sm bg-[#FFF7ED] hover:bg-primary-tint border border-primary-light text-[#C2410C] font-medium py-sm rounded-[10px] transition-all active:scale-[97%] cursor-pointer"
+              >
+                <MIcon name="verified_user" className="text-[20px]" />
+                Vérification en 2 étapes (2FA)
+              </button>
+            </form>
+
+            <p className="mt-lg flex items-center justify-center gap-xs text-[13px] text-text-secondary text-center">
+              Vous n'avez pas encore de compte ?{' '}
+              <Link to="/inscription" className="font-semibold text-[#F97316] hover:underline">
+                S'inscrire
+              </Link>
+            </p>
+
+            {/* Footer Info */}
+            <footer className="mt-xl flex items-center justify-center gap-xs text-[#9CA3AF] text-[12px] font-secondary">
+              <MIcon name="lock" className="text-[16px]" />
+              Paiement sécurisé via FedaPay
+            </footer>
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }

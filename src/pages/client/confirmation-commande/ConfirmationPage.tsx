@@ -1,7 +1,9 @@
 import { useRouterState, useNavigate } from '@tanstack/react-router';
-import { IconCheck, IconMap, IconHeadset, IconSun, IconChevronRight } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
-import { formatFCFA } from '../../../utils/format';
+import ClientNavbar from '../../../components/layout/client/ClientNavbar';
+import ClientFooter from '../../../components/layout/client/ClientFooter';
+import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
+import MIcon from '../../../components/shared/MIcon';
 import { ZONES } from '../../../constants/mockData';
 
 interface ConfirmationState {
@@ -9,101 +11,133 @@ interface ConfirmationState {
   zone?: string;
 }
 
-/** Page Confirmation de commande — copie conforme de la maquette v2 (succès FedaPay). */
+/**
+ * Page Confirmation de Commande — Reproduction 100% intégrale et fidèle de Stitch HTML `confirmation_de_commande_tokpa/code.html`
+ */
 export default function ConfirmationPage() {
   const navigate = useNavigate();
   const state = useRouterState({ select: (s) => s.location.state as ConfirmationState | undefined });
-  const total = state?.total ?? 2580;
+  const total = state?.total ?? 3980;
   const zoneNom = ZONES.find((z) => z.id === state?.zone)?.nom.replace('Zone ', '') ?? 'Cadjehoun';
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-page p-md">
-      <div className="w-full max-w-[800px] rounded-2xl bg-surface p-xl shadow-sm md:p-xl">
-        {/* Confetti + coche */}
-        <div className="relative mx-auto h-[96px] w-[96px]">
-          <span className="absolute -left-6 top-2 h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
-          <span className="absolute -top-3 left-10 h-1.5 w-1.5 rounded-full bg-amber" aria-hidden="true" />
-          <span className="absolute -right-7 top-6 h-1.5 w-1.5 rounded-full bg-amber" aria-hidden="true" />
-          <span className="absolute -left-9 top-12 h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
-          <span className="flex h-[96px] w-[96px] items-center justify-center rounded-full bg-success-light">
-            <IconCheck size={40} strokeWidth={2.5} className="text-success" />
-          </span>
-        </div>
+    <div className="bg-bg-app font-body text-text-main flex flex-col min-h-screen">
+      <ClientNavbar />
 
-        <h1 className="mt-lg text-center text-h2 text-ink">Commande confirmée !</h1>
-        <p className="mt-sm text-center text-[15px] text-ink-2">Votre paiement a été accepté par FedaPay</p>
+      <main className="flex-grow flex items-center justify-center px-md py-xl mt-[52px] md:mt-[64px] pb-24">
+        <div className="w-full max-w-[520px] bg-bg-card rounded-xl p-lg md:p-xl shadow-sm flex flex-col items-center text-center border border-border-default/50">
+          {/* Success Animation Container */}
+          <div className="relative mb-lg">
+            <div className="w-20 h-20 bg-success-light rounded-full flex items-center justify-center z-10 relative">
+              <MIcon name="check" className="text-[40px] text-success" />
+            </div>
+            {/* Discrete Confetti Dots */}
+            <div
+              className="absolute w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"
+              style={{ top: '-5px', left: '-10px' }}
+            />
+            <div
+              className="absolute w-1.5 h-1.5 rounded-full bg-secondary-container animate-pulse"
+              style={{ top: '10px', right: '-15px' }}
+            />
+            <div
+              className="absolute w-1.5 h-1.5 rounded-full bg-success animate-pulse"
+              style={{ bottom: '-5px', left: '50%' }}
+            />
+            <div
+              className="absolute w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"
+              style={{ top: '40px', left: '-20px' }}
+            />
+            <div
+              className="absolute w-1.5 h-1.5 rounded-full bg-secondary-container animate-pulse"
+              style={{ top: '-10px', right: '20px' }}
+            />
+          </div>
 
-        <div className="mt-lg flex justify-center">
-          <span className="rounded-lg border border-amber/30 bg-amber-light px-lg py-sm text-center font-semibold text-primary-dark">
+          {/* Title & Messaging */}
+          <h1 className="font-h1 text-h1 text-text-main mb-sm font-bold">Commande confirmée !</h1>
+          <p className="font-body text-body text-text-secondary mb-md">
+            Votre paiement a été accepté par FedaPay
+          </p>
+
+          {/* Order Number Badge */}
+          <div className="bg-primary-tint text-primary-dark font-label text-label px-md py-sm rounded-lg mb-lg border border-primary-light font-bold">
             #TOK-2847
-          </span>
-        </div>
-
-        {/* Récapitulatif */}
-        <div className="mt-lg rounded-[12px] bg-page p-lg">
-          <div className="flex items-center justify-between border-b border-line pb-md">
-            <span className="text-[15px] text-ink-2">Total payé</span>
-            <span className="price text-[18px]">{formatFCFA(total)}</span>
           </div>
-          <div className="space-y-md pt-md">
-            <div className="flex items-center justify-between">
-              <span className="text-[15px] text-ink-2">Zone de livraison</span>
-              <span className="text-[15px] font-bold text-ink">{zoneNom}</span>
+
+          {/* Summary Box */}
+          <div className="w-full bg-bg-secondary rounded-lg p-md mb-lg space-y-md text-left border border-border-default/50">
+            <div className="flex justify-between items-center">
+              <span className="font-body text-text-secondary">Total payé</span>
+              <span className="font-price text-price text-primary-container font-bold">
+                {total.toLocaleString('fr-FR')} FCFA
+              </span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[15px] text-ink-2">Arrivée estimée</span>
-              <span className="text-[15px] font-bold text-ink">30–45 minutes</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[15px] text-ink-2">Livreur assigné</span>
-              <span className="text-[15px] font-bold italic text-amber-text">En cours d'assignation…</span>
+            <div className="h-[1px] bg-border-default w-full" />
+            <div className="space-y-sm">
+              <div className="flex justify-between">
+                <span className="font-body text-text-secondary">Zone de livraison</span>
+                <span className="font-body font-medium text-text-main">{zoneNom}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-body text-text-secondary">Arrivée estimée</span>
+                <span className="font-body font-medium text-text-main">30–45 minutes</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-body text-text-secondary">Livreur assigné</span>
+                <span className="font-body font-medium text-primary italic">En cours d'assignation...</span>
+              </div>
             </div>
           </div>
+
+          {/* Action Buttons */}
+          <div className="w-full space-y-md">
+            <button
+              type="button"
+              onClick={() => navigate({ to: '/commandes/suivi' })}
+              className="w-full bg-primary-container text-white font-label font-bold h-[48px] rounded-lg flex items-center justify-center gap-sm hover:bg-primary-hover active:scale-95 transition-all shadow-md cursor-pointer"
+            >
+              <MIcon name="map" className="text-[20px]" />
+              Suivre ma commande
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate({ to: '/catalogue' })}
+              className="w-full bg-white border border-border-default text-text-secondary font-label font-bold h-[48px] rounded-lg hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
+            >
+              Retour au catalogue
+            </button>
+          </div>
+
+          {/* Footer Link */}
+          <button
+            type="button"
+            onClick={() => toast('Support client TOKPa — ouvert 7j/7')}
+            className="mt-lg flex items-center gap-xs font-label text-primary-container font-bold hover:underline transition-all cursor-pointer"
+          >
+            <MIcon name="headset_mic" className="text-[18px]" />
+            Besoin d'aide ? Contactez le support
+          </button>
+
+          {/* Promo Banner */}
+          <button
+            type="button"
+            onClick={() => toast.success('Lien de parrainage copié ! Partagez-le avec vos proches.')}
+            className="w-full mt-xl bg-primary-tint border border-primary-light rounded-lg p-md flex items-center justify-between text-left hover:bg-primary-light/30 transition-all cursor-pointer"
+          >
+            <div className="flex flex-col">
+              <span className="font-label text-primary-dark font-bold text-h3 flex items-center gap-1">
+                🌟 Partagez TOKPa avec vos amis
+              </span>
+              <span className="text-micro text-primary">Obtenez 500 FCFA sur votre prochaine commande</span>
+            </div>
+            <MIcon name="chevron_right" className="text-primary-dark" />
+          </button>
         </div>
+      </main>
 
-        <button
-          type="button"
-          onClick={() => toast('Suivi GPS temps réel — Sprint 3')}
-          className="btn btn-primary mt-lg w-full"
-        >
-          <IconMap size={20} />
-          Suivre ma commande
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate({ to: '/catalogue' })}
-          className="mt-md w-full rounded-[10px] border border-line bg-card py-[12px] text-[15px] text-ink-2 transition-colors hover:bg-surface hover:text-ink"
-        >
-          Retour au catalogue
-        </button>
-
-        <button
-          type="button"
-          onClick={() => toast('Support — à venir')}
-          className="mx-auto mt-lg flex items-center gap-sm text-[15px] text-primary hover:underline"
-        >
-          <IconHeadset size={18} />
-          Besoin d'aide ? Contactez le support
-        </button>
-
-        {/* Parrainage */}
-        <button
-          type="button"
-          onClick={() => toast('Parrainage — à venir')}
-          className="mt-xl flex w-full items-center justify-between rounded-[12px] border border-amber/30 bg-amber-light p-lg text-left transition-transform active:scale-[0.98]"
-        >
-          <span>
-            <span className="flex items-center gap-sm text-[15px] font-bold text-primary-dark">
-              <IconSun size={18} className="text-amber" />
-              Partagez TOKPa avec vos amis
-            </span>
-            <span className="mt-xs block text-[15px] text-amber-text">
-              Obtenez 500 FCFA sur votre prochaine commande
-            </span>
-          </span>
-          <IconChevronRight size={20} className="text-amber-text" />
-        </button>
-      </div>
+      <ClientFooter />
+      <ClientBottomNav />
     </div>
   );
 }
