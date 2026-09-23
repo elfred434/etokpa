@@ -72,7 +72,14 @@ const panierRoute = createRoute({ getParentRoute: () => rootRoute, path: '/panie
 const confirmationRoute = createRoute({ getParentRoute: () => rootRoute, path: '/confirmation', component: ConfirmationPage });
 const profilRoute = createRoute({ getParentRoute: () => rootRoute, path: '/profil', component: ProfilePage });
 const negociationsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/negociations', component: NegotiationsPage });
-const orderTrackingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/commandes/suivi', component: OrderTrackingPage });
+const orderTrackingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/commandes/suivi',
+  component: OrderTrackingPage,
+  validateSearch: (search: Record<string, unknown>): { order?: string } => ({
+    order: typeof search.order === 'string' ? search.order : undefined,
+  }),
+});
 const messagingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/messagerie', component: MessagingPage });
 const adminCatalogueRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/catalogue', component: AdminCatalogPage });
 const adminCategoriesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/categories', component: AdminCategoriesPage });

@@ -13,7 +13,8 @@ const COTONOU_PATH: [number, number][] = [
 ];
 
 interface UseRiderLocationOptions {
-  orderId: string;
+  orderId?: string; // si absent, le hook ne s'abonne à aucun canal (disabled)
+  enabled?: boolean; // autorise l'abonnement/simulation (défaut : true si orderId fourni)
   initialCoords?: [number, number];
   destinationCoords?: [number, number];
   simulatedSpeedMs?: number; // millisecondes entre chaque micro-déplacement
@@ -24,10 +25,12 @@ interface UseRiderLocationOptions {
  */
 export function useRiderLocation({
   orderId,
+  enabled,
   initialCoords = RIDER_COORDS,
   destinationCoords = CLIENT_COORDS,
   simulatedSpeedMs = 2500,
 }: UseRiderLocationOptions) {
+  const active = enabled !== false && !!orderId;
   const [riderCoords, setRiderCoords] = useState<[number, number]>(initialCoords);
   const [isWebSocketActive, setIsWebSocketActive] = useState(false);
   const pathIndexRef = useRef(3); // Démarre au niveau de la position du livreur sur le boulevard
@@ -56,6 +59,7 @@ export function useRiderLocation({
   //   payload : {order_id, livreur_id, latitude, longitude, horodatage}
   // (voir routes/channels.php + app/Events/LivreurPositionUpdated.php du backend)
   useEffect(() => {
+    if (!active || !orderId) return undefined;
     if (typeof window !== 'undefined' && (window as unknown as { Echo?: unknown }).Echo) {
       try {
         const echo = (window as unknown as {
@@ -79,11 +83,11 @@ export function useRiderLocation({
       }
     }
     return undefined;
-  }, [orderId]);
+  }, [orderId, active]);
 
   // Fallback Simulation Temps Réel Cotonou (si WebSocket backend non connecté en local)
   useEffect(() => {
-    if (isWebSocketActive) return;
+    if (!active || isWebSocketActive) return;
 
     const interval = setInterval(() => {
       pathIndexRef.current = (pathIndexRef.current + 1) % COTONOU_PATH.length;
@@ -92,7 +96,7 @@ export function useRiderLocation({
     }, simulatedSpeedMs);
 
     return () => clearInterval(interval);
-  }, [isWebSocketActive, simulatedSpeedMs]);
+  }, [active, isWebSocketActive, simulatedSpeedMs]);
 
   return {
     riderCoords,

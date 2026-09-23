@@ -1,23 +1,116 @@
-import { Link } from '@tanstack/react-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
+import EmptyState from '../../../components/shared/EmptyState';
 import RealBeninMap from '../../../components/client/commandes/RealBeninMap';
 import { useRiderLocation } from '../../../hooks/useRiderLocation';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
+import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
+import { ordersApi } from '../../../services/api';
+
+interface ApiRider {
+  id: number;
+  nom_complet: string;
+  telephone?: string;
+}
+
+interface ApiOrder {
+  id: number;
+  statut: string;
+  montant_total?: number;
+  nombre_items?: number;
+  date_commande?: string;
+  livreur?: ApiRider | null;
+}
+
+interface TrackingInfo {
+  order_id?: number;
+  statut?: string;
+  position?: { latitude: number; longitude: number } | null;
+  distance_km?: number | string;
+}
+
+/** Ordre du stepper d'après la machine à états du backend. */
+const STATUT_FLOW: Record<string, number> = {
+  en_attente: 0,
+  en_preparation: 1,
+  en_livraison: 2,
+  livre: 3,
+};
 
 /**
- * OrderTrackingPage — Suivi de Commande Client avec Récupération GPS Temps Réel (Protected Route)
+ * OrderTrackingPage — Suivi de commande avec GPS temps réel (route protégée).
+ * - `?order={id}` (liens Confirmation / Panier) ; sinon liste des commandes + plus récente par défaut.
+ * - GET /api/orders/{id}           → statut, montant, livreur assigné (nom + téléphone réels)
+ * - GET /api/orders/{id}/tracking  → position + distance restante
+ * - Reverb tracking.{id}           → livreur.position.updated (hook useRiderLocation)
+ * - Reverb notifications.{userId}  → order.status.changed → rechargement du statut
  */
 export default function OrderTrackingPage() {
   const { isFr } = useLanguage();
   const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
+  const navigate = useNavigate();
+  const search = useSearch({ from: '/commandes/suivi' }) as unknown as { order?: string };
 
-  const { riderCoords, estimatedMinutes, isWebSocketActive, distanceKm } = useRiderLocation({
-    orderId: 'TOK-2847',
+  const [allOrders, setAllOrders] = useState<ApiOrder[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState<number | null>(search.order ? Number(search.order) : null);
+  const [order, setOrder] = useState<ApiOrder | null>(null);
+  const [tracking, setTracking] = useState<TrackingInfo | null>(null);
+
+  // Chargement de la liste (pour le sélecteur quand pas de ?order=)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    ordersApi
+      .getOrders()
+      .then((res) => {
+        const list: ApiOrder[] = (res?.data ?? res ?? []).map((o: Record<string, unknown> & { data?: ApiOrder }) => o.data ?? o);
+        setAllOrders(list);
+        if (!selectedId && list.length > 0) setSelectedId(list[0].id);
+      })
+      .catch((err) => console.warn('Orders list error:', err))
+      .finally(() => setOrdersLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
+
+  // Chargement commande + tracking quand selectedId change (ou statut refreshé)
+  useEffect(() => {
+    if (!isAuthenticated || !selectedId) return;
+    ordersApi
+      .getOrder(selectedId)
+      .then((res) => {
+        const data = (res?.data ?? res) as ApiOrder;
+        setOrder(data);
+        return ordersApi.getTracking(selectedId).then((t) => setTracking(t as TrackingInfo));
+      })
+      .catch((err) => console.warn('Order/tracking error:', err));
+  }, [isAuthenticated, selectedId]);
+
+  // Rafraîchissement temps réel sur les événements de statut (notifications.{userId})
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    return subscribeRealtimeRefresh(['orders'], (e) => {
+      if (e.scope === 'orders' && selectedId) {
+        ordersApi.getOrder(selectedId).then((res) => setOrder((res?.data ?? res) as ApiOrder)).catch(() => {});
+        ordersApi.getTracking(selectedId).then((t) => setTracking(t as TrackingInfo)).catch(() => {});
+      }
+    });
+  }, [isAuthenticated, selectedId]);
+
+  const { riderCoords, estimatedMinutes, isWebSocketActive } = useRiderLocation({
+    orderId: selectedId ? String(selectedId) : undefined,
+    enabled: isAuthenticated && !!selectedId,
     simulatedSpeedMs: 2500,
   });
+
+  const distanceKm = useMemo(() => {
+    const d = tracking?.distance_km;
+    if (d === undefined || d === null) return null;
+    return Number(d);
+  }, [tracking]);
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -27,15 +120,17 @@ export default function OrderTrackingPage() {
     );
   }
 
+  const stepIndex = order ? (STATUT_FLOW[order.statut] ?? 0) : 0;
+  const isDelivered = order?.statut === 'livre';
+  const rider = order?.livreur ?? null;
+
   return (
     <div className="bg-bg-app font-body text-on-surface antialiased min-h-screen flex flex-col">
-      {/* Top Navigation Anchor */}
       <ClientNavbar />
 
-      {/* Main Viewport Canvas */}
       <main className="flex-grow pt-[52px] pb-[80px] md:pb-0 relative overflow-hidden flex flex-col">
-        {/* GPS MAP SECTION (REAL BENIN MAP WITH LIVE RIDER POSITION) */}
-        <section className="relative h-[480px] sm:h-[580px] w-full overflow-hidden bg-[#E8F4FD]">
+        {/* GPS MAP SECTION */}
+        <section className="relative h-[420px] sm:h-[520px] w-full overflow-hidden bg-[#E8F4FD]">
           <RealBeninMap riderCoords={riderCoords} />
         </section>
 
@@ -43,115 +138,208 @@ export default function OrderTrackingPage() {
         <section className="relative flex-grow bg-white rounded-t-[20px] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-lg pt-lg pb-xl z-40 -mt-8 overflow-y-auto max-w-[800px] mx-auto w-full">
           <div className="w-12 h-1.5 bg-border-default rounded-full mx-auto mb-lg" />
 
-          {/* Header Status with Live GPS Badge */}
-          <div className="flex flex-wrap justify-between items-start mb-lg gap-2">
-            <div>
-              <div className="inline-flex items-center gap-xs px-md py-xs bg-primary-tint border border-primary-light rounded-full mb-sm">
-                <span className="w-2.5 h-2.5 rounded-full bg-success animate-ping inline-block" />
-                <span className="text-label text-primary-dark font-bold">
-                  {isFr ? 'En livraison · GPS Temps Réel' : 'Live Delivery · Realtime GPS'}
-                </span>
+          {ordersLoading ? (
+            <div className="py-2xl flex justify-center">
+              <MIcon name="sync" className="text-primary text-3xl animate-spin" />
+            </div>
+          ) : allOrders.length === 0 ? (
+            <div className="py-xl">
+              <EmptyState
+                icon={<MIcon name="local_shipping" className="text-4xl text-primary" />}
+                title={isFr ? 'Aucune commande à suivre' : 'No orders to track'}
+                description={isFr ? 'Vos commandes en cours apparaîtront ici.' : 'Your ongoing orders will appear here.'}
+                action={
+                  <button
+                    type="button"
+                    className="px-lg py-3 bg-primary-container text-white rounded-lg font-bold cursor-pointer"
+                    onClick={() => navigate({ to: '/catalogue' })}
+                  >
+                    {isFr ? 'Explorer le marché' : 'Browse the market'}
+                  </button>
+                }
+              />
+            </div>
+          ) : (
+            <>
+              {/* Sélecteur de commande (plusieurs commandes) */}
+              {allOrders.length > 1 && (
+                <div className="flex gap-xs overflow-x-auto pb-md mb-md">
+                  {allOrders.map((o) => (
+                    <button
+                      key={o.id}
+                      type="button"
+                      onClick={() => setSelectedId(o.id)}
+                      className={`flex-shrink-0 px-md py-xs rounded-full text-micro font-bold border transition-all cursor-pointer ${
+                        o.id === selectedId
+                          ? 'bg-primary-container text-white border-primary-container'
+                          : 'bg-white text-text-secondary border-border-default hover:border-primary-container'
+                      }`}
+                    >
+                      #{o.id} · {o.statut}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Header Status with Live GPS Badge */}
+              <div className="flex flex-wrap justify-between items-start mb-lg gap-2">
+                <div>
+                  <div
+                    className={`inline-flex items-center gap-xs px-md py-xs rounded-full mb-sm border ${
+                      isDelivered
+                        ? 'bg-success-light text-success-dark border-success-light'
+                        : 'bg-primary-tint text-primary-dark border-primary-light'
+                    }`}
+                  >
+                    {!isDelivered && <span className="w-2.5 h-2.5 rounded-full bg-success animate-ping inline-block" />}
+                    {isDelivered && <MIcon name="check" className="text-[14px]" />}
+                    <span className="text-label font-bold">
+                      {isDelivered
+                        ? isFr ? 'Commande livrée' : 'Order delivered'
+                        : isFr ? 'Suivi en direct' : 'Live tracking'}
+                    </span>
+                  </div>
+                  {!isDelivered && (
+                    <div className="flex items-center gap-sm text-primary-container">
+                      <MIcon name="schedule" />
+                      <span className="font-h3 font-bold">
+                        {isFr
+                          ? `Arrivée estimée : ~${estimatedMinutes} min${
+                              distanceKm !== null ? ` (${distanceKm.toFixed(1)} km restant)` : ''
+                            }`
+                          : `Estimated arrival: ~${estimatedMinutes} min${
+                              distanceKm !== null ? ` (${distanceKm.toFixed(1)} km remaining)` : ''
+                            }`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="text-micro bg-bg-secondary px-3 py-1.5 rounded-lg border border-border-default font-mono text-text-secondary">
+                  GPS: {riderCoords[0].toFixed(4)}, {riderCoords[1].toFixed(4)}
+                  {isWebSocketActive ? ' (WebSocket Reverb)' : ' (GPS)'}
+                </div>
               </div>
-              <div className="flex items-center gap-sm text-primary-container">
-                <MIcon name="schedule" />
-                <span className="font-h3 font-bold">
-                  {isFr
-                    ? `Arrivée estimée : ~${estimatedMinutes} min (${distanceKm} km restant)`
-                    : `Estimated arrival: ~${estimatedMinutes} min (${distanceKm} km remaining)`}
-                </span>
+
+              {/* Progress Stepper — état piloté par le statut backend */}
+              <div className="relative flex justify-between items-center mb-xl px-sm">
+                <div className="absolute left-md right-md h-[3px] bg-border-default top-1/2 -translate-y-1/2 z-0" />
+                <div
+                  className="absolute left-md h-[3px] bg-primary-container top-1/2 -translate-y-1/2 z-0 transition-all duration-700"
+                  style={{ width: `${(stepIndex / 3) * 100}%` }}
+                />
+
+                {[
+                  { labelFr: 'Marché Dantokpa', labelEn: 'Dantokpa Market', icon: 'store' },
+                  { labelFr: 'Préparation', labelEn: 'Preparing', icon: 'inventory_2' },
+                  { labelFr: 'En cours de route', labelEn: 'In transit', icon: 'local_shipping' },
+                  { labelFr: 'Livrée', labelEn: 'Delivered', icon: 'check_circle' },
+                ].map((step, i) => {
+                  const done = i < stepIndex || isDelivered;
+                  const active = i === stepIndex && !isDelivered;
+                  return (
+                    <div key={step.labelFr} className="relative z-10 flex flex-col items-center">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm ${
+                          done
+                            ? 'bg-success text-white'
+                            : active
+                              ? 'bg-primary-container text-white animate-bounce'
+                              : 'bg-white border-2 border-border-default text-border-default'
+                        }`}
+                      >
+                        <MIcon name={done ? 'check' : (step.icon as string)} className="text-[16px]" />
+                      </div>
+                      <span
+                        className={`text-micro mt-sm ${
+                          active ? 'text-primary-container font-bold' : 'text-text-secondary'
+                        }`}
+                      >
+                        {isFr ? step.labelFr : step.labelEn}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
 
-            <div className="text-micro bg-bg-secondary px-3 py-1.5 rounded-lg border border-border-default font-mono text-text-secondary">
-              GPS: {riderCoords[0].toFixed(4)}, {riderCoords[1].toFixed(4)}
-              {isWebSocketActive ? ' (WebSocket Reverb)' : ' (Live GPS)'}
-            </div>
-          </div>
-
-          {/* Progress Stepper */}
-          <div className="relative flex justify-between items-center mb-xl px-sm">
-            {/* Line Background */}
-            <div className="absolute left-md right-md h-[3px] bg-border-default top-1/2 -translate-y-1/2 z-0" />
-            {/* Active Line Progress */}
-            <div className="absolute left-md w-[60%] h-[3px] bg-primary-container top-1/2 -translate-y-1/2 z-0" />
-
-            {/* Step 1: Completed */}
-            <div className="relative z-10 flex flex-col items-center">
-              <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-white border-4 border-white shadow-sm">
-                <MIcon name="check" className="text-[16px]" />
+              {/* Rider Info Card — livreur réel assigné (GET /orders/{id}) */}
+              <div className="bg-bg-secondary rounded-lg p-md mb-lg flex items-center justify-between">
+                <div className="flex items-center gap-md">
+                  <div className="w-12 h-12 bg-success rounded-full flex items-center justify-center text-white font-bold text-h3">
+                    {rider
+                      ? rider.nom_complet
+                          .split(' ')
+                          .map((p) => p[0])
+                          .slice(0, 2)
+                          .join('')
+                          .toUpperCase()
+                      : 'TK'}
+                  </div>
+                  <div>
+                    <h4 className="font-label text-body text-text-main font-bold">
+                      {rider ? rider.nom_complet : isFr ? 'Livreur en cours d’assignation…' : 'Rider being assigned…'}
+                    </h4>
+                    <p className="text-secondary text-text-secondary">
+                      {rider
+                        ? isFr
+                          ? `Livreur TOKPa (zone Cotonou)`
+                          : 'TOKPa rider (Cotonou zone)'
+                        : isFr
+                          ? 'Assignation par la supervision'
+                          : 'Assigned by the supervisor'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-sm">
+                  {rider?.telephone && (
+                    <a
+                      href={`tel:${rider.telephone.replace(/\s/g, '')}`}
+                      className="w-10 h-10 bg-white border border-border-default rounded-lg flex items-center justify-center text-primary-container active:scale-95 transition-transform"
+                      title={isFr ? 'Appeler le livreur' : 'Call rider'}
+                    >
+                      <MIcon name="call" />
+                    </a>
+                  )}
+                  <Link
+                    to="/messagerie"
+                    className="w-10 h-10 bg-white border border-border-default rounded-lg flex items-center justify-center text-primary-container active:scale-95 transition-transform"
+                    title={isFr ? 'Discuter' : 'Chat'}
+                  >
+                    <MIcon name="chat" />
+                  </Link>
+                </div>
               </div>
-              <span className="text-micro mt-sm text-text-secondary">{isFr ? 'Marché Dantokpa' : 'Dantokpa Market'}</span>
-            </div>
 
-            {/* Step 2: Completed */}
-            <div className="relative z-10 flex flex-col items-center">
-              <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-white border-4 border-white shadow-sm">
-                <MIcon name="check" className="text-[16px]" />
-              </div>
-              <span className="text-micro mt-sm text-text-secondary">{isFr ? 'Préparation' : 'Preparing'}</span>
-            </div>
-
-            {/* Step 3: Active Pulsing */}
-            <div className="relative z-10 flex flex-col items-center">
-              <div className="w-8 h-8 rounded-full bg-primary-container animate-bounce flex items-center justify-center text-white border-4 border-white shadow-sm">
-                <MIcon name="local_shipping" className="text-[16px]" />
-              </div>
-              <span className="text-micro mt-sm text-primary-container font-bold">
-                {isFr ? 'En cours de route' : 'In transit'}
-              </span>
-            </div>
-
-            {/* Step 4: Empty */}
-            <div className="relative z-10 flex flex-col items-center">
-              <div className="w-8 h-8 rounded-full bg-white border-2 border-border-default flex items-center justify-center text-border-default" />
-              <span className="text-micro mt-sm text-text-tertiary">{isFr ? 'Cadjehoun' : 'Cadjehoun'}</span>
-            </div>
-          </div>
-
-          {/* Rider Info Card */}
-          <div className="bg-bg-secondary rounded-lg p-md mb-lg flex items-center justify-between">
-            <div className="flex items-center gap-md">
-              <div className="w-12 h-12 bg-success rounded-full flex items-center justify-center text-white font-bold text-h3">
-                JK
-              </div>
-              <div>
-                <h4 className="font-label text-body text-text-main font-bold">Jean Kouassi</h4>
-                <p className="text-secondary text-text-secondary">Livreur Zone Cadjehoun (Cotonou)</p>
-              </div>
-            </div>
-            <div className="flex gap-sm">
-              <a
-                href="tel:+22990000000"
-                className="w-10 h-10 bg-white border border-border-default rounded-lg flex items-center justify-center text-primary-container active:scale-95 transition-transform"
-              >
-                <MIcon name="call" />
-              </a>
-              <Link
-                to="/messagerie"
-                className="w-10 h-10 bg-white border border-border-default rounded-lg flex items-center justify-center text-primary-container active:scale-95 transition-transform"
-              >
-                <MIcon name="chat" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Order Summary Card */}
-          <div className="border border-border-default rounded-lg p-md">
-            <div className="flex justify-between items-center mb-xs">
-              <span className="text-label font-bold text-text-main">Commande #TOK-2847</span>
-              <Link to="/confirmation" className="text-label text-primary-container font-bold hover:underline">
-                {isFr ? 'Voir les détails' : 'View details'}
-              </Link>
-            </div>
-            <div className="flex justify-between text-body">
-              <span className="text-text-secondary">3 articles (Sac de riz 50kg, Tomates fraîches)</span>
-              <span className="font-price text-text-main">3 980 FCFA</span>
-            </div>
-          </div>
+              {/* Order Summary Card — données réelles */}
+              {order && (
+                <div className="border border-border-default rounded-lg p-md">
+                  <div className="flex justify-between items-center mb-xs">
+                    <span className="text-label font-bold text-text-main">
+                      {isFr ? 'Commande' : 'Order'} #{order.id}
+                    </span>
+                    <Link
+                      to="/messagerie"
+                      className="text-label text-primary-container font-bold hover:underline"
+                    >
+                      {isFr ? 'Contacter le support' : 'Contact support'}
+                    </Link>
+                  </div>
+                  <div className="flex justify-between text-body">
+                    <span className="text-text-secondary">
+                      {order.nombre_items ?? 0} {isFr ? 'article(s)' : 'item(s)'}
+                      {order.date_commande ? ` · ${new Date(order.date_commande).toLocaleDateString('fr-FR')}` : ''}
+                    </span>
+                    <span className="font-price text-text-main">
+                      {Number(order.montant_total ?? 0).toLocaleString('fr-FR')} FCFA
+                    </span>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </section>
       </main>
 
-      {/* Bottom Navigation */}
       <ClientBottomNav />
     </div>
   );

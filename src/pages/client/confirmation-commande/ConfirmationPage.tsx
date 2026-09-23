@@ -4,21 +4,29 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientFooter from '../../../components/layout/client/ClientFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
-import { ZONES } from '../../../constants/mockData';
 
+/**
+ * Données passées par CartPage après POST /api/orders (vraies valeurs backend).
+ */
 interface ConfirmationState {
+  orderId?: number;
   total?: number;
-  zone?: string;
+  zoneNom?: string;
+  landmarkNom?: string;
+  nbItems?: number;
 }
 
 /**
  * Page Confirmation de Commande — Reproduction 100% intégrale et fidèle de Stitch HTML `confirmation_de_commande_tokpa/code.html`
+ * Les valeurs affichées proviennent de la commande réellement créée (state) ; fallbacks neutres si accès direct.
  */
 export default function ConfirmationPage() {
   const navigate = useNavigate();
   const state = useRouterState({ select: (s) => s.location.state as ConfirmationState | undefined });
-  const total = state?.total ?? 3980;
-  const zoneNom = ZONES.find((z) => z.id === state?.zone)?.nom.replace('Zone ', '') ?? 'Cadjehoun';
+  const total = state?.total ?? 0;
+  const zoneNom = state?.zoneNom ?? '—';
+  const landmarkNom = state?.landmarkNom ?? '—';
+  const orderNumber = state?.orderId ? `#TOK-${state.orderId}` : null;
 
   return (
     <div className="bg-bg-app font-body text-text-main flex flex-col min-h-screen">
@@ -57,13 +65,15 @@ export default function ConfirmationPage() {
           {/* Title & Messaging */}
           <h1 className="font-h1 text-h1 text-text-main mb-sm font-bold">Commande confirmée !</h1>
           <p className="font-body text-body text-text-secondary mb-md">
-            Votre paiement a été accepté par FedaPay
+            Votre commande a bien été enregistrée
           </p>
 
-          {/* Order Number Badge */}
-          <div className="bg-primary-tint text-primary-dark font-label text-label px-md py-sm rounded-lg mb-lg border border-primary-light font-bold">
-            #TOK-2847
-          </div>
+          {/* Order Number Badge — numéro réel de la commande backend */}
+          {orderNumber && (
+            <div className="bg-primary-tint text-primary-dark font-label text-label px-md py-sm rounded-lg mb-lg border border-primary-light font-bold">
+              {orderNumber}
+            </div>
+          )}
 
           {/* Summary Box */}
           <div className="w-full bg-bg-secondary rounded-lg p-md mb-lg space-y-md text-left border border-border-default/50">
@@ -80,6 +90,10 @@ export default function ConfirmationPage() {
                 <span className="font-body font-medium text-text-main">{zoneNom}</span>
               </div>
               <div className="flex justify-between">
+                <span className="font-body text-text-secondary">Point de repère</span>
+                <span className="font-body font-medium text-text-main text-right">{landmarkNom}</span>
+              </div>
+              <div className="flex justify-between">
                 <span className="font-body text-text-secondary">Arrivée estimée</span>
                 <span className="font-body font-medium text-text-main">30–45 minutes</span>
               </div>
@@ -94,7 +108,9 @@ export default function ConfirmationPage() {
           <div className="w-full space-y-md">
             <button
               type="button"
-              onClick={() => navigate({ to: '/commandes/suivi' })}
+              onClick={() =>
+                navigate({ to: '/commandes/suivi', search: state?.orderId ? { order: String(state.orderId) } : {} })
+              }
               className="w-full bg-primary-container text-white font-label font-bold h-[48px] rounded-lg flex items-center justify-center gap-sm hover:bg-primary-hover active:scale-95 transition-all shadow-md cursor-pointer"
             >
               <MIcon name="map" className="text-[20px]" />

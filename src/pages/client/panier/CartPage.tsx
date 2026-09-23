@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
@@ -6,13 +6,41 @@ import ClientFooter from '../../../components/layout/client/ClientFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
-import { DELIVERY_FEES, ZONES } from '../../../constants/mockData';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
-import { remove, setQuantity, selectCount, selectSubtotal, selectSavings } from '../../../store/slices/cart/cartSlice';
-import { ordersApi, paymentsApi } from '../../../services/api';
+import { clear, remove, setQuantity, selectCount, selectSubtotal, selectSavings } from '../../../store/slices/cart/cartSlice';
+import { catalogApi, ordersApi, paymentsApi } from '../../../services/api';
+
+interface ApiLandmark {
+  id: number;
+  nom: string;
+  description?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+interface ApiZone {
+  id: number;
+  nom: string;
+  km_prix: number;
+  min_prix: number;
+  points_repere?: ApiLandmark[];
+}
+
+interface ConfirmationPayload {
+  orderId: number;
+  total: number;
+  zoneNom: string;
+  landmarkNom: string;
+  nbItems: number;
+}
 
 /**
- * Page Panier & Caisse — Intégration API Backend Laravel + UI Stitch
+ * Page Panier & Caisse — 100 % API backend :
+ *   - GET  /api/zones                → zones + points de repère (réels, seedés)
+ *   - POST /api/orders               → landmark_id requis (point_reperes), description_lieu, payment_method
+ *   - POST /api/payments/init        → FedaPay (sandbox dev : token local, url {APP_URL}/payments/sandbox/{token})
+ * Le frais de livraison affiché = `km_prix` de la zone (DeliveryFeeCalculator du backend).
+ * Le panier est synchronisé avec le serveur par SystemBridge (useCartSync).
  */
 export default function CartPage() {
   const navigate = useNavigate();
@@ -22,60 +50,106 @@ export default function CartPage() {
   const subtotal = useAppSelector((s) => selectSubtotal(s.cart.items));
   const savings = useAppSelector((s) => selectSavings(s.cart.items));
 
-  const [landmark, setLandmark] = useState('Face au carrefour Cadjehoun, en face de la pharmacie Sainte-Marie');
-  const [zoneId, setZoneId] = useState('z1');
+  // Zones + points de repère (backend)
+  const [zones, setZones] = useState<ApiZone[]>([]);
+  const [zonesLoading, setZonesLoading] = useState(true);
+  const [zoneId, setZoneId] = useState<number | null>(null);
+  const [landmarkId, setLandmarkId] = useState<number | null>(null);
+  const [descriptionLieu, setDescriptionLieu] = useState('');
   const [landmarkError, setLandmarkError] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const deliveryFee = DELIVERY_FEES[zoneId] ?? 500;
+  const selectedZone = zones.find((z) => z.id === zoneId) ?? null;
+  const deliveryFee = selectedZone ? Number(selectedZone.km_prix) : 0;
   const grandTotal = Math.max(0, subtotal - savings + deliveryFee);
 
+  // 1) Chargement des zones de livraison (GET /api/zones)
+  useEffect(() => {
+    catalogApi
+      .getZones()
+      .then((res) => {
+        const list: ApiZone[] = res?.data ?? (Array.isArray(res) ? res : []);
+        setZones(list);
+        if (list.length > 0) setZoneId((prev) => prev ?? list[0].id);
+      })
+      .catch((err) => {
+        console.warn('Zones API unavailable:', err);
+        toast.error('Zones de livraison indisponibles (backend hors ligne ?)');
+      })
+      .finally(() => setZonesLoading(false));
+  }, []);
+
+  const handleZoneChange = (id: number) => {
+    setZoneId(id);
+    setLandmarkId(null);
+  };
+
   const handlePaid = async () => {
-    if (!landmark.trim()) {
+    if (!selectedZone) {
+      toast.error('Sélectionnez une zone de livraison.');
+      return;
+    }
+    if (!landmarkId) {
       setLandmarkError(true);
+      toast.error('Sélectionnez un point de repère.');
       return;
     }
 
     setLoading(true);
-
     try {
-      // 1. Appel API Backend POST /api/orders
-      const payloadItems = items.map((item) => ({
-        product_id: Number(item.product.id) || 1,
-        quantite: item.quantite,
-      }));
-
+      // 1) POST /api/orders — le backend vérifie stock + dispo et vide le panier serveur
       const orderRes = await ordersApi.createOrder({
-        items: payloadItems,
-        landmark_id: 1,
-        description_lieu: landmark,
+        items: items.map((item) => ({
+          product_id: Number(item.product.id),
+          quantite: item.quantite,
+        })),
+        landmark_id: landmarkId,
+        description_lieu: descriptionLieu.trim() || undefined,
         payment_method: 'fedapay',
       });
 
-      const orderId = orderRes?.data?.id || orderRes?.id || 1;
+      const orderData = orderRes?.data ?? orderRes;
+      const orderId: number = orderData?.id ?? 0;
+      const orderTotal: number = Number(orderData?.montant_total ?? grandTotal);
+      const landmarkNom: string =
+        (selectedZone.points_repere ?? []).find((l) => l.id === landmarkId)?.nom ?? selectedZone.nom;
 
-      // 2. Initialisation paiement FedaPay POST /api/payments/init
+      // 2) POST /api/payments/init — FedaPay (sandbox si SDK absent)
       try {
         const paymentRes = await paymentsApi.initPayment({ order_id: orderId });
-        if (paymentRes?.redirect_url) {
-          toast.success('Paiement FedaPay initialisé !');
+        const redirectUrl: string | undefined = paymentRes?.redirect_url;
+        if (redirectUrl) {
+          const isRealFedaPay = /fedapay\.com/i.test(redirectUrl);
+          if (isRealFedaPay) {
+            window.open(redirectUrl, '_blank', 'noopener');
+            toast.success('Redirection vers FedaPay…');
+          } else {
+            toast.success('Paiement FedaPay initialisé (mode sandbox dev).');
+          }
         }
       } catch (payErr) {
-        console.warn('API FedaPay payment init fallback:', payErr);
+        console.warn('FedaPay init error (commande déjà enregistrée) :', payErr);
       }
 
+      // 3) Nettoyage local + confirmation avec les données réelles
+      dispatch(clear());
       toast.success('Commande enregistrée avec succès !');
-      navigate({
-        to: '/confirmation',
-        state: { total: grandTotal, zone: zoneId } as Record<string, unknown>,
-      });
-    } catch (err) {
-      console.warn('API Order create fallback:', err);
-      toast.success('Commande enregistrée (mode démo) !');
-      navigate({
-        to: '/confirmation',
-        state: { total: grandTotal, zone: zoneId } as Record<string, unknown>,
-      });
+      const payload: ConfirmationPayload = {
+        orderId,
+        total: orderTotal,
+        zoneNom: selectedZone.nom,
+        landmarkNom,
+        nbItems: count,
+      };
+      navigate({ to: '/confirmation', state: payload as unknown as Record<string, unknown> });
+    } catch (err: unknown) {
+      console.warn('Order create error:', err);
+      const detail = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })
+        ?.response?.data;
+      const firstError = detail?.errors
+        ? Object.values(detail.errors).flat()[0]
+        : undefined;
+      toast.error(detail?.message || firstError || 'Impossible de créer la commande.');
     } finally {
       setLoading(false);
     }
@@ -116,7 +190,7 @@ export default function CartPage() {
               <div className="w-9 h-9 rounded-full border-2 border-border-default bg-bg-app text-text-tertiary flex items-center justify-center font-bold text-h3 transition-all duration-300">
                 3
               </div>
-              <span className="font-label text-label text-text-tertiary">Paiement</span>
+              <span className="font-label text-label font-medium text-text-tertiary">Paiement</span>
             </div>
 
             {/* Step 4: Confirmation */}
@@ -124,7 +198,7 @@ export default function CartPage() {
               <div className="w-9 h-9 rounded-full border-2 border-border-default bg-bg-app text-text-tertiary flex items-center justify-center font-bold text-h3 transition-all duration-300">
                 4
               </div>
-              <span className="font-label text-label text-text-tertiary">Confirmation</span>
+              <span className="font-label text-label font-medium text-text-tertiary">Confirmation</span>
             </div>
           </div>
         </div>
@@ -245,40 +319,14 @@ export default function CartPage() {
               )}
             </div>
 
-            {/* Point de Repère Section */}
+            {/* Point de Repère Section — zones + points de repère réels (GET /api/zones) */}
             <div className="bg-white rounded-lg p-lg shadow-sm border border-border-default/50">
               <div className="flex items-center gap-sm mb-lg">
                 <MIcon name="location_on" className="text-primary-container" />
                 <h2 className="font-h2 text-h2 text-on-surface">Lieu de livraison</h2>
               </div>
               <div className="space-y-md">
-                <div>
-                  <label className="block font-label text-secondary text-text-secondary mb-xs">
-                    Point de repère (requis)
-                  </label>
-                  <div className="relative">
-                    <MIcon name="edit_location" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
-                    <input
-                      className={`w-full pl-10 pr-4 py-3 bg-white rounded-lg border-1.5 ${
-                        landmarkError ? 'border-error' : 'border-border-default'
-                      } focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body`}
-                      type="text"
-                      value={landmark}
-                      onChange={(e) => {
-                        setLandmark(e.target.value);
-                        if (e.target.value.trim()) setLandmarkError(false);
-                      }}
-                      placeholder="Ex: Face à la pharmacie, portail bleu..."
-                    />
-                  </div>
-                  {landmarkError && (
-                    <p className="mt-1 text-xs font-semibold text-error">
-                      Veuillez préciser un point de repère précis pour le livreur.
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-md items-end">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
                   <div>
                     <label className="block font-label text-secondary text-text-secondary mb-xs">
                       Zone de livraison
@@ -286,11 +334,13 @@ export default function CartPage() {
                     <div className="relative">
                       <MIcon name="map" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                       <select
-                        className="w-full pl-10 pr-10 py-3 bg-white rounded-lg border-1.5 border-border-default appearance-none focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body"
-                        value={zoneId}
-                        onChange={(e) => setZoneId(e.target.value)}
+                        className="w-full pl-10 pr-10 py-3 bg-white rounded-lg border-1.5 border-border-default appearance-none focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body disabled:opacity-60"
+                        value={zoneId ?? ''}
+                        onChange={(e) => handleZoneChange(Number(e.target.value))}
+                        disabled={zonesLoading}
                       >
-                        {ZONES.map((z) => (
+                        {zonesLoading && <option value="">Chargement des zones…</option>}
+                        {zones.map((z) => (
                           <option key={z.id} value={z.id}>
                             {z.nom}
                           </option>
@@ -300,12 +350,68 @@ export default function CartPage() {
                     </div>
                   </div>
 
-                  <div className="bg-primary-tint p-lg rounded-lg border border-primary-light flex items-center justify-between">
-                    <span className="text-body font-medium text-on-primary-container">Frais de livraison</span>
-                    <span className="font-price text-primary-container font-bold">
-                      {deliveryFee.toLocaleString('fr-FR')} FCFA
-                    </span>
+                  <div>
+                    <label className="block font-label text-secondary text-text-secondary mb-xs">
+                      Point de repère <span className="text-error">*</span>
+                    </label>
+                    <div className="relative">
+                      <MIcon name="edit_location" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                      <select
+                        className={`w-full pl-10 pr-10 py-3 bg-white rounded-lg border-1.5 appearance-none focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body disabled:opacity-60 ${
+                          landmarkError ? 'border-error' : 'border-border-default'
+                        }`}
+                        value={landmarkId ?? ''}
+                        onChange={(e) => {
+                          setLandmarkId(Number(e.target.value) || null);
+                          if (e.target.value) setLandmarkError(false);
+                        }}
+                        disabled={!selectedZone || (selectedZone.points_repere ?? []).length === 0}
+                      >
+                        <option value="">
+                          {selectedZone && (selectedZone.points_repere ?? []).length === 0
+                            ? 'Aucun point de repère dans cette zone'
+                            : 'Sélectionner un point de repère…'}
+                        </option>
+                        {(selectedZone?.points_repere ?? []).map((l) => (
+                          <option key={l.id} value={l.id}>
+                            {l.nom}
+                          </option>
+                        ))}
+                      </select>
+                      <MIcon name="expand_more" className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+                    </div>
+                    {landmarkError && (
+                      <p className="mt-1 text-xs font-semibold text-error">
+                        Le point de repère est requis pour la livraison.
+                      </p>
+                    )}
                   </div>
+                </div>
+
+                <div>
+                  <label className="block font-label text-secondary text-text-secondary mb-xs">
+                    Description du lieu exact (optionnel)
+                  </label>
+                  <div className="relative">
+                    <MIcon name="edit" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                    <input
+                      className="w-full pl-10 pr-4 py-3 bg-white rounded-lg border-1.5 border-border-default focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body"
+                      type="text"
+                      value={descriptionLieu}
+                      onChange={(e) => setDescriptionLieu(e.target.value)}
+                      placeholder="Ex : face à la pharmacie, portail bleu…"
+                      maxLength={255}
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-primary-tint p-lg rounded-lg border border-primary-light flex items-center justify-between">
+                  <span className="text-body font-medium text-on-primary-container">
+                    Frais de livraison {selectedZone ? `(zone ${selectedZone.nom})` : ''}
+                  </span>
+                  <span className="font-price text-primary-container font-bold">
+                    {deliveryFee.toLocaleString('fr-FR')} FCFA
+                  </span>
                 </div>
               </div>
             </div>
@@ -374,7 +480,7 @@ export default function CartPage() {
                 <div className="flex gap-sm">
                   <MIcon name="info" className="text-info shrink-0" />
                   <p className="text-secondary text-text-secondary">
-                    Livraison prévue dans <span className="font-bold text-on-surface">35-50 min</span> par nos coursiers partenaires TOKPa Express.
+                    Livraison par nos coursiers partenaires TOKPa Express — le livreur se présente au point de repère choisi.
                   </p>
                 </div>
               </div>
