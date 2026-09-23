@@ -7,14 +7,14 @@ import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
-import { acceptCounterOffer, cancelNegotiation, type NegotiationItem } from '../../../store/slices/negotiation/negotiationSlice';
+import { acceptCounterOffer, type NegotiationItem } from '../../../store/slices/negotiation/negotiationSlice';
 import { useLanguage } from '../../../context/LanguageContext';
 import type { Product } from '../../../types/models';
 
 type FilterTab = 'all' | 'pending' | 'accepted' | 'rejected';
 
 /**
- * Page dédiée Mes Négociations — reproduction 100% intégrale du design Stitch HTML `mes_n_gociations_tokpa/code.html`.
+ * Page dédiée Mes Négociations — Reproduction 100% intégrale et fidèle de Stitch HTML `mes_n_gociations_tokpa/code.html`.
  */
 export default function NegotiationsPage() {
   const dispatch = useAppDispatch();
@@ -68,13 +68,16 @@ export default function NegotiationsPage() {
   };
 
   const handleDiscussionClick = (neg: NegotiationItem) => {
-    toast(isFr ? `Discussion avec ${neg.vendorName || 'le vendeur'}...` : `Chatting with ${neg.vendorName || 'seller'}...`, {
-      icon: '💬',
-    });
+    toast(
+      isFr
+        ? `Discussion ouverte avec ${neg.vendorName || 'le vendeur'}.`
+        : `Chat open with ${neg.vendorName || 'seller'}.`,
+      { icon: '💬' },
+    );
   };
 
   return (
-    <div className="bg-bg-app min-h-screen pb-24 text-on-surface font-body">
+    <div className="bg-bg-app min-h-screen pb-24 font-body">
       {/* TopNavBar */}
       <ClientNavbar />
 
@@ -100,54 +103,46 @@ export default function NegotiationsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('all')}
-                className={clsx(
-                  'px-md py-sm font-label text-label transition-colors',
-                  activeTab === 'all'
-                    ? 'border-b-2 border-primary text-primary font-semibold'
-                    : 'text-on-surface-variant hover:text-primary',
-                )}
+                className={clsx('px-md py-sm font-label text-label cursor-pointer transition-colors', {
+                  'tab-active': activeTab === 'all',
+                  'text-on-surface-variant hover:text-primary': activeTab !== 'all',
+                })}
               >
                 {isFr ? `Toutes (${history.length})` : `All (${history.length})`}
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('pending')}
-                className={clsx(
-                  'px-md py-sm font-label text-label transition-colors',
-                  activeTab === 'pending'
-                    ? 'border-b-2 border-primary text-primary font-semibold'
-                    : 'text-on-surface-variant hover:text-primary',
-                )}
+                className={clsx('px-md py-sm font-label text-label cursor-pointer transition-colors', {
+                  'tab-active': activeTab === 'pending',
+                  'text-on-surface-variant hover:text-primary': activeTab !== 'pending',
+                })}
               >
                 {isFr ? `En cours (${pendingCount})` : `Pending (${pendingCount})`}
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('accepted')}
-                className={clsx(
-                  'px-md py-sm font-label text-label transition-colors',
-                  activeTab === 'accepted'
-                    ? 'border-b-2 border-primary text-primary font-semibold'
-                    : 'text-on-surface-variant hover:text-primary',
-                )}
+                className={clsx('px-md py-sm font-label text-label cursor-pointer transition-colors', {
+                  'tab-active': activeTab === 'accepted',
+                  'text-on-surface-variant hover:text-primary': activeTab !== 'accepted',
+                })}
               >
                 {isFr ? `Acceptées (${acceptedCount})` : `Accepted (${acceptedCount})`}
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('rejected')}
-                className={clsx(
-                  'px-md py-sm font-label text-label transition-colors',
-                  activeTab === 'rejected'
-                    ? 'border-b-2 border-primary text-primary font-semibold'
-                    : 'text-on-surface-variant hover:text-primary',
-                )}
+                className={clsx('px-md py-sm font-label text-label cursor-pointer transition-colors', {
+                  'tab-active': activeTab === 'rejected',
+                  'text-on-surface-variant hover:text-primary': activeTab !== 'rejected',
+                })}
               >
                 {isFr ? `Refusées (${rejectedCount})` : `Rejected (${rejectedCount})`}
               </button>
             </nav>
 
-            {/* List of Cards */}
+            {/* Negotiation Items */}
             {filteredHistory.length === 0 ? (
               <div className="bg-bg-card rounded-card p-lg text-center border border-border-default shadow-sm">
                 <MIcon name="handshake" className="mx-auto text-[48px] text-text-tertiary mb-2" />
@@ -155,7 +150,9 @@ export default function NegotiationsPage() {
                   {isFr ? 'Aucune négociation dans cette catégorie' : 'No negotiations found'}
                 </p>
                 <p className="font-secondary text-secondary mt-1">
-                  {isFr ? 'Proposez une offre de prix au marché pour débuter !' : 'Make an offer to vendors on the market to get started!'}
+                  {isFr
+                    ? 'Proposez une offre de prix au marché pour débuter !'
+                    : 'Make an offer to vendors on the market to get started!'}
                 </p>
               </div>
             ) : (
@@ -165,38 +162,40 @@ export default function NegotiationsPage() {
                 const isAccepted = neg.status === 'accepted';
                 const isRejected = neg.status === 'rejected';
 
+                const iconName =
+                  neg.productName.toLowerCase().includes('riz')
+                    ? 'restaurant'
+                    : neg.productName.toLowerCase().includes('huile')
+                    ? 'oil_barrel'
+                    : 'inventory_2';
+
                 return (
                   <article
                     key={neg.id}
                     className={clsx(
-                      'bg-bg-card rounded-card p-md shadow-sm border border-border-default flex flex-col sm:flex-row gap-md items-start group transition-all',
-                      isPending && 'border-l-4 border-l-[#F59E0B]',
-                      isCounter && 'border-l-4 border-l-primary',
-                      isAccepted && 'border-l-4 border-l-success',
-                      isRejected && 'border-l-4 border-l-error',
+                      'bg-bg-card rounded-card p-md shadow-sm border border-border-default flex flex-col sm:flex-row gap-md items-start group',
+                      isPending && 'negotiation-card',
+                      isCounter && 'border-l-4 border-primary',
+                      isAccepted && 'border-l-4 border-success',
+                      isRejected && 'border-l-4 border-error',
                     )}
                   >
-                    {/* Thumbnail */}
-                    <div className="w-24 h-24 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0 overflow-hidden border border-border-default">
+                    {/* Thumbnail matching code.html */}
+                    <div className="w-24 h-24 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0">
                       {neg.productImage ? (
-                        <img src={neg.productImage} alt={neg.productName} className="h-full w-full object-cover" />
-                      ) : (
-                        <MIcon
-                          name={
-                            neg.productName.toLowerCase().includes('riz')
-                              ? 'restaurant'
-                              : neg.productName.toLowerCase().includes('huile')
-                              ? 'oil_barrel'
-                              : 'inventory_2'
-                          }
-                          className="text-outline text-4xl"
+                        <img
+                          src={neg.productImage}
+                          alt={neg.productName}
+                          className="h-full w-full object-cover rounded-lg"
                         />
+                      ) : (
+                        <MIcon name={iconName} className="text-outline text-4xl" />
                       )}
                     </div>
 
-                    {/* Information Block */}
+                    {/* Content Block */}
                     <div className="flex-1 min-w-0 w-full">
-                      <div className="flex justify-between items-start mb-xs gap-2">
+                      <div className="flex justify-between items-start mb-xs">
                         <div>
                           <h3 className="font-h3 text-h3 text-on-surface truncate">{neg.productName}</h3>
                           <p className="font-secondary text-secondary">
@@ -207,26 +206,26 @@ export default function NegotiationsPage() {
 
                         {/* Status Badges */}
                         {isPending && (
-                          <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-amber-light text-amber-text text-micro font-micro uppercase tracking-wider shrink-0">
-                            <span className="h-2 w-2 rounded-full bg-amber-text inline-block mr-1.5" />
+                          <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-amber-light text-amber-text text-micro font-micro uppercase tracking-wider">
+                            <span className="bubble-dot bg-amber-text" />
                             {isFr ? 'En attente du vendeur' : 'Waiting for seller'}
                           </span>
                         )}
                         {isCounter && (
-                          <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-primary-light text-primary-deep text-micro font-micro uppercase tracking-wider shrink-0">
-                            <span className="h-2 w-2 rounded-full bg-primary-deep inline-block mr-1.5" />
+                          <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-primary-light text-primary-deep text-micro font-micro uppercase tracking-wider">
+                            <span className="bubble-dot bg-primary-deep" />
                             {isFr ? 'Contre-proposition' : 'Counter proposal'}
                           </span>
                         )}
                         {isAccepted && (
-                          <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-success-light text-success-dark text-micro font-micro uppercase tracking-wider shrink-0">
-                            <span className="h-2 w-2 rounded-full bg-success inline-block mr-1.5" />
+                          <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-success-light text-success-dark text-micro font-micro uppercase tracking-wider">
+                            <span className="bubble-dot bg-success" />
                             {isFr ? 'Offre acceptée' : 'Offer accepted'}
                           </span>
                         )}
                         {isRejected && (
-                          <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-error-light text-error-dark text-micro font-micro uppercase tracking-wider shrink-0">
-                            <span className="h-2 w-2 rounded-full bg-error inline-block mr-1.5" />
+                          <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-error-light text-error-dark text-micro font-micro uppercase tracking-wider">
+                            <span className="bubble-dot bg-error" />
                             {isFr ? 'Offre refusée' : 'Offer rejected'}
                           </span>
                         )}
@@ -234,92 +233,123 @@ export default function NegotiationsPage() {
 
                       {/* Prices comparison */}
                       <div className="flex flex-wrap gap-md mt-md mb-lg">
-                        <div className="flex flex-col">
-                          <span className="font-secondary text-secondary">
-                            {isCounter ? (isFr ? 'Prix vendeur' : 'Seller price') : (isFr ? 'Prix initial' : 'Original price')}
-                          </span>
-                          <span
-                            className={clsx(
-                              'font-price text-price text-text-secondary',
-                              !isCounter && 'line-through opacity-70',
-                            )}
-                          >
-                            {neg.originalPrice.toLocaleString('fr-FR')} FCFA
-                          </span>
-                        </div>
-
                         {isCounter ? (
-                          <div className="flex flex-col bg-amber-light border border-[#F59E0B] px-sm py-xs rounded-lg">
-                            <span className="font-secondary text-amber-text">{isFr ? 'Votre offre' : 'Your offer'}</span>
-                            <span className="font-price text-price text-amber-text">
-                              {neg.proposedPrice.toLocaleString('fr-FR')} FCFA
-                            </span>
-                          </div>
+                          <>
+                            <div className="flex flex-col">
+                              <span className="font-secondary text-secondary">{isFr ? 'Prix vendeur' : 'Seller price'}</span>
+                              <span className="font-price text-price text-text-secondary">
+                                {neg.originalPrice.toLocaleString('fr-FR')} FCFA
+                              </span>
+                            </div>
+                            <div className="flex flex-col bg-amber-light border border-[#F59E0B] px-sm py-xs rounded-lg">
+                              <span className="font-secondary text-amber-text">{isFr ? 'Votre offre' : 'Your offer'}</span>
+                              <span className="font-price text-price text-amber-text">
+                                {neg.proposedPrice.toLocaleString('fr-FR')} FCFA
+                              </span>
+                            </div>
+                          </>
                         ) : isAccepted ? (
-                          <div className="flex flex-col bg-success-light border border-success-dark px-sm py-xs rounded-lg">
-                            <span className="font-secondary text-success-dark">{isFr ? 'Prix final' : 'Final price'}</span>
-                            <span className="font-price text-price text-success-dark">
-                              {neg.proposedPrice.toLocaleString('fr-FR')} FCFA
-                            </span>
-                          </div>
+                          <>
+                            <div className="flex flex-col">
+                              <span className="font-secondary text-secondary">{isFr ? 'Prix initial' : 'Original price'}</span>
+                              <span className="font-price text-price text-text-secondary line-through opacity-70">
+                                {neg.originalPrice.toLocaleString('fr-FR')} FCFA
+                              </span>
+                            </div>
+                            <div className="flex flex-col bg-success-light border border-success-dark px-sm py-xs rounded-lg">
+                              <span className="font-secondary text-success-dark">{isFr ? 'Prix final' : 'Final price'}</span>
+                              <span className="font-price text-price text-success-dark">
+                                {neg.proposedPrice.toLocaleString('fr-FR')} FCFA
+                              </span>
+                            </div>
+                          </>
                         ) : (
-                          <div className="flex flex-col bg-amber-light border border-[#F59E0B] px-sm py-xs rounded-lg">
-                            <span className="font-secondary text-amber-text">{isFr ? 'Votre offre' : 'Your offer'}</span>
-                            <span className="font-price text-price text-amber-text">
-                              {neg.proposedPrice.toLocaleString('fr-FR')} FCFA
-                            </span>
-                          </div>
+                          <>
+                            <div className="flex flex-col">
+                              <span className="font-secondary text-secondary">{isFr ? 'Prix initial' : 'Original price'}</span>
+                              <span className="font-price text-price text-text-secondary line-through opacity-70">
+                                {neg.originalPrice.toLocaleString('fr-FR')} FCFA
+                              </span>
+                            </div>
+                            <div className="flex flex-col bg-amber-light border border-[#F59E0B] px-sm py-xs rounded-lg">
+                              <span className="font-secondary text-amber-text">{isFr ? 'Votre offre' : 'Your offer'}</span>
+                              <span className="font-price text-price text-amber-text">
+                                {neg.proposedPrice.toLocaleString('fr-FR')} FCFA
+                              </span>
+                            </div>
+                          </>
                         )}
                       </div>
 
-                      {/* Action buttons */}
+                      {/* Action buttons strictly matching code.html */}
                       <div className="flex gap-sm flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => handleDiscussionClick(neg)}
-                          className="px-md py-2 border border-primary text-primary font-medium text-label rounded-button hover:bg-primary-tint active:scale-95 transition-all"
-                        >
-                          {isFr ? 'Voir la discussion' : 'View chat'}
-                        </button>
-
-                        {isPending && (
-                          <button
-                            type="button"
-                            onClick={() => handleDiscussionClick(neg)}
-                            className="px-md py-2 bg-white border border-border-default text-on-surface font-medium text-label rounded-button hover:bg-bg-secondary active:scale-95 transition-all"
-                          >
-                            {isFr ? 'Modifier mon offre' : 'Edit my offer'}
-                          </button>
+                        {isAccepted && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleAddToCart(neg)}
+                              className="px-md py-2 bg-primary-container text-white font-medium text-label rounded-button hover:bg-primary-hover active:scale-95 transition-all flex items-center gap-xs cursor-pointer shadow-sm"
+                            >
+                              <MIcon name="shopping_basket" className="text-[18px]" />
+                              {isFr ? "Finaliser l'achat" : 'Checkout deal'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDiscussionClick(neg)}
+                              className="px-md py-2 border border-border-default text-on-surface-variant font-medium text-label rounded-button hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
+                            >
+                              {isFr ? 'Voir discussion' : 'View chat'}
+                            </button>
+                          </>
                         )}
 
                         {isCounter && (
-                          <button
-                            type="button"
-                            onClick={() => handleAcceptCounter(neg.productId, neg.counterPrice || neg.minPrice)}
-                            className="px-md py-2 bg-primary-container text-white font-medium text-label rounded-button hover:bg-primary-hover active:scale-95 transition-all"
-                          >
-                            {isFr ? 'Répondre' : 'Reply'}
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleDiscussionClick(neg)}
+                              className="px-md py-2 border border-primary text-primary font-medium text-label rounded-button hover:bg-primary-tint active:scale-95 transition-all cursor-pointer"
+                            >
+                              {isFr ? 'Voir la discussion' : 'View discussion'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAcceptCounter(neg.productId, neg.counterPrice || neg.minPrice)}
+                              className="px-md py-2 bg-primary-container text-white font-medium text-label rounded-button hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
+                            >
+                              {isFr ? 'Répondre' : 'Reply'}
+                            </button>
+                          </>
                         )}
 
-                        {isAccepted && (
-                          <button
-                            type="button"
-                            onClick={() => handleAddToCart(neg)}
-                            className="px-md py-2 bg-primary-container text-white font-medium text-label rounded-button hover:bg-primary-hover active:scale-95 transition-all flex items-center gap-xs"
-                          >
-                            <MIcon name="shopping_basket" className="text-[18px]" />
-                            {isFr ? 'Finaliser l’achat' : 'Checkout deal'}
-                          </button>
+                        {isPending && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleDiscussionClick(neg)}
+                              className="px-md py-2 border border-primary text-primary font-medium text-label rounded-button hover:bg-primary-tint active:scale-95 transition-all cursor-pointer"
+                            >
+                              {isFr ? 'Voir la discussion' : 'View discussion'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDiscussionClick(neg)}
+                              className="px-md py-2 bg-white border border-border-default text-on-surface font-medium text-label rounded-button hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
+                            >
+                              {isFr ? 'Modifier mon offre' : 'Edit my offer'}
+                            </button>
+                          </>
                         )}
 
-                        <button
-                          type="button"
-                          onClick={() => dispatch(cancelNegotiation({ productId: neg.productId }))}
-                          className="px-md py-2 bg-white border border-border-default text-on-surface-variant hover:text-error font-medium text-label rounded-button hover:bg-bg-secondary active:scale-95 transition-all"
-                        >
-                          {isFr ? 'Annuler' : 'Cancel'}
-                        </button>
+                        {isRejected && (
+                          <button
+                            type="button"
+                            onClick={() => handleDiscussionClick(neg)}
+                            className="px-md py-2 border border-border-default text-on-surface-variant font-medium text-label rounded-button hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
+                          >
+                            {isFr ? 'Voir discussion' : 'View chat'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </article>
@@ -333,7 +363,7 @@ export default function NegotiationsPage() {
             <div className="bg-white rounded-card p-lg border border-border-default shadow-sm sticky top-[80px]">
               <div className="flex items-center gap-sm mb-md text-primary">
                 <MIcon name="tips_and_updates" />
-                <h2 className="font-h2 text-h2 font-bold">{isFr ? 'Guide de Négociation' : 'Negotiation Guide'}</h2>
+                <h2 className="font-h2 text-h2">{isFr ? 'Guide de Négociation' : 'Negotiation Guide'}</h2>
               </div>
               <p className="font-secondary text-secondary mb-md">
                 {isFr
