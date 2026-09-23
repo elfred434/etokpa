@@ -65,7 +65,13 @@ let boundToken: string | null = null;
  * Sans token → déconnecte et retourne null.
  */
 export function initEcho(): Echo<'pusher'> | null {
-  const token = localStorage.getItem('tokpa_token');
+  let token = localStorage.getItem('tokpa_token');
+  // Token démo legacy (avant l'alignement API) : plus valide, on le purge proprement.
+  if (token === 'demo_token_sanctum_123') {
+    localStorage.removeItem('tokpa_token');
+    localStorage.removeItem('tokpa_user');
+    token = null;
+  }
   if (!token) {
     shutdownEcho();
     return null;
@@ -76,24 +82,40 @@ export function initEcho(): Echo<'pusher'> | null {
 
   shutdownEcho();
 
-  const { host, port, wssPort, scheme, key } = getReverbConfig();
-  (window as unknown as { Pusher: typeof Pusher }).Pusher = Pusher;
+  try {
+    const { host, port, wssPort, scheme, key } = getReverbConfig();
+    (window as unknown as { Pusher: typeof Pusher }).Pusher = Pusher;
 
-  window.Echo = new Echo({
-    broadcaster: 'pusher',
-    key,
-    wsHost: host,
-    wsPort: port,
-    wssPort,
-    forceTLS: scheme === 'wss',
-    enabledTransports: scheme === 'wss' ? ['wss'] : ['ws'],
-    authEndpoint: `${getApiOrigin()}/broadcasting/auth`,
-    auth: {
-      headers: { Authorization: `Bearer ${token}` },
-    },
-  });
-  boundToken = token;
-  return window.Echo;
+    // IMPORTANT (pusher-js 8.x) :
+    //  - `cluster` est OBLIGATOIRE dans les options (sinon throw « Options object
+    //    must provide a cluster ») — Reverb l'ignore quand host/port sont donnés.
+    //    (Le broadcaster « reverb » de laravel-echo 2.x l'injecte automatiquement ;
+    //    on le passe explicitement pour garder le typage Echo<'pusher'>.)
+    //  - pusher-js lit `host`/`port` (PAS `wsHost`/`wsPort`) pour cibler le serveur.
+    window.Echo = new Echo({
+      broadcaster: 'pusher',
+      key,
+      cluster: '',
+      host,
+      port,
+      wsHost: host,
+      wsPort: port,
+      wssPort,
+      forceTLS: scheme === 'wss',
+      enabledTransports: scheme === 'wss' ? ['wss'] : ['ws'],
+      authEndpoint: `${getApiOrigin()}/broadcasting/auth`,
+      auth: {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    } as ConstructorParameters<typeof Echo<'pusher'>>[0]);
+    boundToken = token;
+    return window.Echo;
+  } catch (err) {
+    // Le temps réel est un confort : un échec ne doit JAMAIS bloquer le rendu de l'app.
+    console.warn('TOKPa Reverb: initialisation impossible — mode dégradé (sans WebSocket).', err);
+    shutdownEcho();
+    return null;
+  }
 }
 
 /** Coupe la connexion Reverb (déconnexion / perte de token). */
