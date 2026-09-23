@@ -88,7 +88,7 @@ export default function OrderTrackingPage() {
   const { isFr } = useLanguage();
   const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
   const navigate = useNavigate();
-  const search = useSearch({ from: '/commandes/suivi' }) as unknown as { order?: string };
+  const search = useSearch({ from: '/commandes/suivi' }) as unknown as { order?: string; simu?: string };
 
   const [allOrders, setAllOrders] = useState<ApiOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
@@ -155,6 +155,7 @@ export default function OrderTrackingPage() {
     orderId: selectedId ? String(selectedId) : undefined,
     enabled: isAuthenticated && !!selectedId,
     realPosition,
+    allowSimulation: search.simu === '1', // démo opt-in uniquement : sans ça, aucune position inventée
     simulatedSpeedMs: 2500,
   });
 
@@ -185,7 +186,7 @@ export default function OrderTrackingPage() {
       <main className="flex-grow pt-[52px] pb-[80px] md:pb-0 relative overflow-hidden flex flex-col">
         {/* GPS MAP SECTION */}
         <section className="relative h-[420px] sm:h-[520px] w-full overflow-hidden bg-[#E8F4FD]">
-          <RealBeninMap riderCoords={riderCoords} />
+          <RealBeninMap riderCoords={riderCoords} riderName={rider?.nom_complet} />
         </section>
 
         {/* STATUS PANEL (Floating Bottom Sheet) */}
@@ -267,21 +268,37 @@ export default function OrderTrackingPage() {
                     <div className="flex items-center gap-sm text-primary-container">
                       <MIcon name="schedule" />
                       <span className="font-h3 font-bold">
-                        {isFr
-                          ? `Arrivée estimée : ~${estimatedMinutes} min${
-                              distanceKm !== null ? ` (${distanceKm.toFixed(1)} km restant)` : ''
-                            }`
-                          : `Estimated arrival: ~${estimatedMinutes} min${
-                              distanceKm !== null ? ` (${distanceKm.toFixed(1)} km remaining)` : ''
-                            }`}
+                        {estimatedMinutes === null
+                          ? isFr
+                            ? 'Arrivée estimée : dès la première position GPS'
+                            : 'Estimated arrival: awaiting first GPS fix'
+                          : isFr
+                            ? `Arrivée estimée : ~${estimatedMinutes} min${
+                                distanceKm !== null ? ` (${distanceKm.toFixed(1)} km restant)` : ''
+                              }`
+                            : `Estimated arrival: ~${estimatedMinutes} min${
+                                distanceKm !== null ? ` (${distanceKm.toFixed(1)} km remaining)` : ''
+                              }`}
                       </span>
                     </div>
                   )}
                 </div>
 
                 <div className="text-micro bg-bg-secondary px-3 py-1.5 rounded-lg border border-border-default font-mono text-text-secondary">
-                  GPS: {riderCoords[0].toFixed(4)}, {riderCoords[1].toFixed(4)}
-                  {source === 'websocket' ? ' (WebSocket Reverb)' : source === 'api' ? ' (GPS API /orders/{id}/tracking)' : ' (simulation)'}
+                  {riderCoords ? (
+                    <>
+                      GPS: {riderCoords[0].toFixed(4)}, {riderCoords[1].toFixed(4)}
+                      {source === 'websocket'
+                        ? ' (WebSocket Reverb)'
+                        : source === 'api'
+                          ? ' (GPS API /orders/{id}/tracking)'
+                          : ' (simulation ?simu=1)'}
+                    </>
+                  ) : isFr ? (
+                    'Position du livreur non encore disponible'
+                  ) : (
+                    'Rider position not available yet'
+                  )}
                 </div>
               </div>
 

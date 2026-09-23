@@ -1,14 +1,15 @@
 import { apiClient } from './client';
 
+/** PointRepere — exactement le modèle backend (fillable : zone_id, nom, description, latitude, longitude). */
 export interface PointRepereItem {
   id?: number;
   user_id?: number;
   nom: string;
-  quartier?: string;
-  zone?: string;
   description?: string;
-  lat?: number;
-  lng?: number;
+  /** decimal:7 côté backend (peut arriver en string) */
+  latitude?: number | string;
+  longitude?: number | string;
+  zone_id?: number;
 }
 
 export const landmarksApi = {

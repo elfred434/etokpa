@@ -132,7 +132,7 @@ export const adminApi = {
     return response.data;
   },
   updateOrderStatus: async (orderId: number, statut: string) => {
-    const response = await apiClient.patch(`/orders/${orderId}/status`, { statut });
+    const response = await apiClient.patch(`/admin/orders/${orderId}/status`, { statut });
     return response.data;
   },
 

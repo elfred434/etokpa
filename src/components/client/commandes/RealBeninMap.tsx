@@ -51,17 +51,23 @@ function MapRecenterController({ center }: { center: [number, number] }) {
 }
 
 interface RealBeninMapProps {
-  riderCoords: [number, number];
+  /** Position GPS réelle du livreur (endpoints tracking/Reverb) — null = aucun marqueur livreur (pas de simulation). */
+  riderCoords?: [number, number] | null;
+  /** Nom réel du livreur (GET /orders/{id} → livreur.nom_complet). */
+  riderName?: string;
   onRecenterRider?: () => void;
 }
 
-export default function RealBeninMap({ riderCoords, onRecenterRider }: RealBeninMapProps) {
-  const routePath: [number, number][] = [DANTOKPA_COORDS, riderCoords, CLIENT_COORDS];
+export default function RealBeninMap({ riderCoords = null, riderName, onRecenterRider }: RealBeninMapProps) {
+  const mapCenter: [number, number] = riderCoords ?? CLIENT_COORDS;
+  const routePath: [number, number][] = riderCoords
+    ? [DANTOKPA_COORDS, riderCoords, CLIENT_COORDS]
+    : [DANTOKPA_COORDS, CLIENT_COORDS];
 
   return (
     <div className="relative w-full h-full min-h-[450px] z-10">
       <MapContainer
-        center={riderCoords}
+        center={mapCenter}
         zoom={14}
         scrollWheelZoom={false}
         className="w-full h-full rounded-b-none"
@@ -72,7 +78,7 @@ export default function RealBeninMap({ riderCoords, onRecenterRider }: RealBenin
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <MapRecenterController center={riderCoords} />
+        <MapRecenterController center={mapCenter} />
 
         {/* Tracé de l’itinéraire dynamique Cotonou */}
         <Polyline positions={routePath} color="#f97316" weight={5} opacity={0.85} dashArray="10, 8" />
@@ -87,15 +93,17 @@ export default function RealBeninMap({ riderCoords, onRecenterRider }: RealBenin
           </Popup>
         </Marker>
 
-        {/* Marqueur Livreur Jean Kouassi Temps Réel */}
-        <Marker position={riderCoords} icon={riderIcon}>
-          <Popup>
-            <div className="text-center font-sans p-1">
-              <strong className="block text-success-dark font-bold">Jean Kouassi (Livreur)</strong>
-              <span className="text-xs text-gray-600">GPS Live : {riderCoords[0].toFixed(4)}, {riderCoords[1].toFixed(4)}</span>
-            </div>
-          </Popup>
-        </Marker>
+        {/* Marqueur Livreur — SEULEMENT avec une position GPS réelle (aucune donnée inventée) */}
+        {riderCoords && (
+          <Marker position={riderCoords} icon={riderIcon}>
+            <Popup>
+              <div className="text-center font-sans p-1">
+                <strong className="block text-success-dark font-bold">{riderName ? `${riderName} (Livreur)` : 'Livreur TOKPa'}</strong>
+                <span className="text-xs text-gray-600">GPS : {riderCoords[0].toFixed(4)}, {riderCoords[1].toFixed(4)}</span>
+              </div>
+            </Popup>
+          </Marker>
+        )}
 
         {/* Marqueur Client / Cadjehoun */}
         <Marker position={CLIENT_COORDS} icon={clientIcon}>

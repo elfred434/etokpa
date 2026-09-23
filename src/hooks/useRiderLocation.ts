@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { DANTOKPA_COORDS, CLIENT_COORDS, RIDER_COORDS } from '../components/client/commandes/RealBeninMap';
 
-// Segment d'itinéraire réel dans Cotonou : Dantokpa -> Boulevard St Michel -> Cadjehoun
+// Segment d'itinéraire réel dans Cotonou (uniquement utilisé en mode simulation ?simu=1)
 const COTONOU_PATH: [number, number][] = [
   DANTOKPA_COORDS, // [6.3725, 2.4332]
   [6.3705, 2.4310],
@@ -14,25 +14,31 @@ const COTONOU_PATH: [number, number][] = [
 
 interface UseRiderLocationOptions {
   orderId?: string; // si absent, le hook ne s'abonne à aucun canal (disabled)
-  enabled?: boolean; // autorise l'abonnement/simulation (défaut : true si orderId fourni)
+  enabled?: boolean; // autorise l'abonnement (défaut : true si orderId fourni)
   initialCoords?: [number, number];
   destinationCoords?: [number, number];
-  simulatedSpeedMs?: number; // millisecondes entre chaque micro-déplacement
+  simulatedSpeedMs?: number; // millisecondes entre chaque micro-déplacement (simulation uniquement)
   /**
    * Position GPS réelle renvoyée par GET /orders/{id}/tracking (champ `position`).
-   * Priorité sur la simulation : la carte correspond alors aux endpoints.
+   * Priorité sur la simulation.
    */
   realPosition?: [number, number] | null;
+  /**
+   * Autorise la simulation de démo (?simu=1). DÉFAUT FALSE :
+   * sans données réelles, on n'invente aucune position (correspondance endpoints).
+   */
+  allowSimulation?: boolean;
 }
 
-/** Origine des coordonnées affichées : WebSocket Reverb > API tracking > simulation. */
-export type RiderPositionSource = 'websocket' | 'api' | 'simulation';
+/** Origine des coordonnées : WebSocket Reverb > API tracking > simulation (opt-in) > indisponible. */
+export type RiderPositionSource = 'websocket' | 'api' | 'simulation' | 'unavailable';
 
 /**
  * Hook `useRiderLocation` — Position GPS du livreur, alignée sur les endpoints backend :
  *  1. Reverb `private tracking.{orderId}` → événement `livreur.position.updated` (temps réel)
  *  2. GET /api/orders/{id}/tracking → `position` (instantané GPS réel, via `realPosition`)
- *  3. Simulation Cotonou (uniquement si ni WebSocket ni position API — dev/démo)
+ *  3. Simulation Cotonou — SEULEMENT si `allowSimulation` (URL ?simu=1) et aucune donnée réelle
+ *  Sinon : `source = 'unavailable'` et `riderCoords = null` (aucune position inventée).
  */
 export function useRiderLocation({
   orderId,
@@ -41,12 +47,13 @@ export function useRiderLocation({
   destinationCoords = CLIENT_COORDS,
   simulatedSpeedMs = 2500,
   realPosition = null,
+  allowSimulation = false,
 }: UseRiderLocationOptions) {
   const active = enabled !== false && !!orderId;
   const [riderCoords, setRiderCoords] = useState<[number, number]>(initialCoords);
   const [isWebSocketActive, setIsWebSocketActive] = useState(false);
   const [apiPositionUsed, setApiPositionUsed] = useState(false);
-  const pathIndexRef = useRef(3); // Démarre au niveau de la position du livreur sur le boulevard
+  const pathIndexRef = useRef(3);
 
   // Calcul dynamique de la distance restante (formule Haversine approximée)
   const calculateDistanceKm = (c1: [number, number], c2: [number, number]) => {
@@ -63,14 +70,22 @@ export function useRiderLocation({
     return R * c;
   };
 
-  const distanceKm = calculateDistanceKm(riderCoords, destinationCoords);
-  // Estimation : ~25 km/h en ville à Cotonou
-  const estimatedMinutes = Math.max(1, Math.round((distanceKm / 25) * 60));
+  const source: RiderPositionSource = isWebSocketActive
+    ? 'websocket'
+    : apiPositionUsed
+      ? 'api'
+      : allowSimulation
+        ? 'simulation'
+        : 'unavailable';
+  const hasFix = source !== 'unavailable';
+
+  const distanceKm = hasFix ? calculateDistanceKm(riderCoords, destinationCoords) : null;
+  // Estimation : ~25 km/h en ville à Cotonou (uniquement avec une position)
+  const estimatedMinutes = distanceKm !== null ? Math.max(1, Math.round((distanceKm / 25) * 60)) : null;
 
   // Priorité 1 — Écoute temps réel Reverb — CANAL RÉEL DU BACKEND :
   //   private tracking.{orderId}  →  événement `livreur.position.updated`
   //   payload : {order_id, livreur_id, latitude, longitude, horodatage}
-  // (voir routes/channels.php + app/Events/LivreurPositionUpdated.php du backend)
   useEffect(() => {
     if (!active || !orderId) return undefined;
     if (typeof window !== 'undefined' && (window as unknown as { Echo?: unknown }).Echo) {
@@ -105,9 +120,9 @@ export function useRiderLocation({
     setApiPositionUsed(true);
   }, [active, isWebSocketActive, realPosition]);
 
-  // Priorité 3 — Simulation Cotonou (SEULEMENT si ni WebSocket ni position API)
+  // Priorité 3 — Simulation Cotonou (opt-in ?simu=1, uniquement sans données réelles)
   useEffect(() => {
-    if (!active || isWebSocketActive || apiPositionUsed) return;
+    if (!active || isWebSocketActive || apiPositionUsed || !allowSimulation) return;
 
     const interval = setInterval(() => {
       pathIndexRef.current = (pathIndexRef.current + 1) % COTONOU_PATH.length;
@@ -116,15 +131,14 @@ export function useRiderLocation({
     }, simulatedSpeedMs);
 
     return () => clearInterval(interval);
-  }, [active, isWebSocketActive, apiPositionUsed, simulatedSpeedMs]);
-
-  const source: RiderPositionSource = isWebSocketActive ? 'websocket' : apiPositionUsed ? 'api' : 'simulation';
+  }, [active, isWebSocketActive, apiPositionUsed, allowSimulation, simulatedSpeedMs]);
 
   return {
-    riderCoords,
+    /** null = aucune position fiable (n'invente rien) */
+    riderCoords: (hasFix ? riderCoords : null) as [number, number] | null,
     estimatedMinutes,
     isWebSocketActive,
     source,
-    distanceKm: Number(distanceKm.toFixed(2)),
+    distanceKm: distanceKm !== null ? Number(distanceKm.toFixed(2)) : null,
   };
 }
