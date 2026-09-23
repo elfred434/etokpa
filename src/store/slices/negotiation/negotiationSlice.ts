@@ -13,6 +13,10 @@ export interface NegotiationItem {
   proposedPrice: number;
   counterPrice?: number;
   minPrice: number;
+  /** Quantité proposée (backend `quantite`). */
+  quantite?: number;
+  /** Réponse/justification de l'admin (backend `admin_response`). */
+  adminResponse?: string;
   status: NegotiationStatus;
   createdAt: string;
 }

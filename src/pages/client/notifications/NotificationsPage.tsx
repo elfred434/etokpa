@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import clsx from 'clsx';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
@@ -6,8 +6,10 @@ import ClientFooter from '../../../components/layout/client/ClientFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import Pagination from '../../../components/shared/Pagination';
-import { NOTIFICATIONS } from '../../../constants/mockData';
+import EmptyState from '../../../components/shared/EmptyState';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
+import { useLanguage } from '../../../context/LanguageContext';
+import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import { notificationsApi, type ApiNotification } from '../../../services/api';
 import type { NotificationType } from '../../../types/models';
 
@@ -20,44 +22,164 @@ const FILTERS: { key: FilterKey; label: string; icon: string }[] = [
   { key: 'security', label: 'Sécurité', icon: 'shield' },
 ];
 
+interface UiNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  time: string;
+  unread: boolean;
+  orderId?: number;
+}
+
+/** Libellés statuts backend (machine à états Commande + BudgetPropose). */
+const STATUT_TEXT: Record<string, { fr: string; en: string }> = {
+  en_attente: { fr: 'en attente de confirmation', en: 'pending confirmation' },
+  en_preparation: { fr: 'en cours de préparation', en: 'being prepared' },
+  en_livraison: { fr: 'en cours de livraison', en: 'out for delivery' },
+  livre: { fr: 'a été livrée', en: 'has been delivered' },
+  annule: { fr: 'a été annulée', en: 'was cancelled' },
+  accepte: { fr: 'acceptée', en: 'accepted' },
+  refuse: { fr: 'refusée', en: 'rejected' },
+  expire: { fr: 'expirée', en: 'expired' },
+};
+
 /**
- * Page Historique des Notifications — Protected Route + UI Stitch 100% fidèle + Backend Laravel
+ * Traduction type backend → (catégorie, titre, message).
+ * Le backend ne fournit PAS title/message dans `data` — c'est ici qu'on les construit.
+ */
+function describeNotification(n: ApiNotification, isFr: boolean): { type: NotificationType; title: string; message: string; orderId?: number } {
+  const d = n.data ?? {};
+  const orderId = d.order_id !== undefined ? Number(d.order_id) : undefined;
+
+  switch (n.type) {
+    case 'order.status': {
+      const statut = String(d.statut ?? '');
+      const t = STATUT_TEXT[statut] ?? { fr: statut, en: statut };
+      return {
+        type: 'order',
+        title: isFr ? `Commande #${orderId ?? ''} — statut` : `Order #${orderId ?? ''} — status`,
+        message: isFr ? `Votre commande est ${t.fr}.` : `Your order is ${t.en}.`,
+        orderId,
+      };
+    }
+    case 'order.confirmed':
+      return {
+        type: 'order',
+        title: isFr ? `Commande #${orderId ?? ''} confirmée` : `Order #${orderId ?? ''} confirmed`,
+        message: isFr
+          ? 'Votre commande a bien été enregistrée. Suivez son avancement en direct.'
+          : 'Your order has been registered. Track its progress live.',
+        orderId,
+      };
+    case 'budget.response': {
+      const statut = String(d.statut ?? '');
+      const t = STATUT_TEXT[statut] ?? { fr: statut, en: statut };
+      return {
+        type: 'promo',
+        title: isFr
+          ? `Négociation ${t.fr}`
+          : `Negotiation ${t.en}`,
+        message: isFr
+          ? `Votre offre sur le budget a été ${t.fr}${statut === 'accepte' ? ' — votre commande a été créée automatiquement.' : '.'}`
+          : `Your budget offer was ${t.en}${statut === 'accepte' ? ' — your order was created automatically.' : '.'}`,
+        orderId: statut === 'accepte' ? orderId : undefined,
+      };
+    }
+    case 'delivery.assigned':
+      return {
+        type: 'order',
+        title: isFr ? 'Livreur assigné' : 'Rider assigned',
+        message: isFr
+          ? `Un livreur a été assigné à votre commande #${orderId ?? ''}.`
+          : `A rider was assigned to your order #${orderId ?? ''}.`,
+        orderId,
+      };
+    case 'payment.confirmed':
+      return {
+        type: 'order',
+        title: isFr ? 'Paiement confirmé' : 'Payment confirmed',
+        message: isFr
+          ? `Le paiement de votre commande #${orderId ?? ''} a été confirmé par FedaPay.`
+          : `The payment for your order #${orderId ?? ''} was confirmed by FedaPay.`,
+        orderId,
+      };
+    default:
+      return {
+        type: 'order',
+        title: 'Notification TOKPa',
+        message: 'Mise à jour concernant votre compte',
+        orderId,
+      };
+  }
+}
+
+function formatTime(iso: string, isFr: boolean): string {
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return '—';
+  const time = date.toLocaleTimeString(isFr ? 'fr-FR' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+  const now = new Date();
+  const sameDay = date.toDateString() === now.toDateString();
+  if (sameDay) return time;
+  return `${date.toLocaleDateString(isFr ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })} ${time}`;
+}
+
+/**
+ * Page Historique des Notifications — Protected Route + UI Stitch 100% fidèle + Backend Laravel.
+ * GET /api/notifications (paginé) — `lu === false` = non lue ; PATCH /notifications/{id}/read.
+ * Rafraîchissement temps réel via le bus SystemBridge (canal notifications.{userId}).
  */
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
+  const { isFr } = useLanguage();
 
   const [filter, setFilter] = useState<FilterKey>('all');
-  const [notifications, setNotifications] = useState(NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<UiNotification[]>([]);
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
-  // Synchronisation avec l'API Backend Laravel GET /api/notifications
+  const loadPage = useCallback(
+    (p: number) => {
+      if (!isAuthenticated) return;
+      notificationsApi
+        .getNotifications(p)
+        .then((res) => {
+          const items: ApiNotification[] = res?.data ?? (Array.isArray(res) ? res : []);
+          const mapped: UiNotification[] = items.map((n) => {
+            const desc = describeNotification(n, isFr);
+            return {
+              id: String(n.id),
+              type: desc.type,
+              title: desc.title,
+              message: desc.message,
+              time: formatTime(n.created_at, isFr),
+              unread: n.lu === false,
+              orderId: desc.orderId,
+            };
+          });
+          setNotifications(mapped);
+          if (res?.last_page) setPageCount(res.last_page);
+          setHasLoaded(true);
+        })
+        .catch((err) => {
+          console.warn('Notifications API error:', err);
+          setHasLoaded(true);
+        });
+    },
+    [isAuthenticated, isFr],
+  );
+
+  useEffect(() => {
+    loadPage(page);
+  }, [loadPage, page]);
+
+  // Temps réel : un événement push sur notifications.{userId} → rechargement silencieux
   useEffect(() => {
     if (!isAuthenticated) return;
-
-    notificationsApi.getNotifications(page)
-      .then((res) => {
-        const items = res?.data || (Array.isArray(res) ? res : []);
-        if (Array.isArray(items) && items.length > 0) {
-          const mapped = items.map((n: ApiNotification) => ({
-            id: String(n.id),
-            type: (n.type as NotificationType) || 'order',
-            title: n.data?.title || 'Notification TOKPa',
-            message: n.data?.message || 'Mise à jour concernant votre compte',
-            time: n.created_at ? new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Récemment',
-            unread: !n.read_at,
-          }));
-          setNotifications(mapped);
-          if (res?.last_page) {
-            setPageCount(res.last_page);
-          }
-        }
-      })
-      .catch((err) => {
-        console.warn('Backend notifications fallback:', err);
-      });
-  }, [isAuthenticated, page]);
+    return subscribeRealtimeRefresh(['notifications'], () => loadPage(page));
+  }, [isAuthenticated, loadPage, page]);
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -70,25 +192,25 @@ export default function NotificationsPage() {
   const filtered = filter === 'all' ? notifications : notifications.filter((n) => n.type === filter);
   const unreadCount = notifications.filter((n) => n.unread).length;
 
+  const markRead = (item: UiNotification) => {
+    if (!item.unread) return;
+    notificationsApi.markRead(item.id).catch(() => {});
+    setNotifications((list) => list.map((n) => (n.id === item.id ? { ...n, unread: false } : n)));
+  };
+
   const markAllRead = () => {
     setNotifications((list) =>
       list.map((n) => {
-        if (n.unread && !isNaN(Number(n.id))) {
-          notificationsApi.markRead(n.id).catch(() => {});
-        }
+        if (n.unread) notificationsApi.markRead(n.id).catch(() => {});
         return { ...n, unread: false };
-      })
+      }),
     );
   };
 
-  const handleNotificationClick = (item: (typeof notifications)[0]) => {
-    if (item.unread && !isNaN(Number(item.id))) {
-      notificationsApi.markRead(item.id).catch(() => {});
-      setNotifications((list) => list.map((n) => (n.id === item.id ? { ...n, unread: false } : n)));
-    }
-
-    if (item.type === 'order') {
-      navigate({ to: '/commandes/suivi' });
+  const handleNotificationClick = (item: UiNotification) => {
+    markRead(item);
+    if (item.orderId) {
+      navigate({ to: '/commandes/suivi', search: { order: String(item.orderId) } });
     } else if (item.type === 'promo') {
       navigate({ to: '/negociations' });
     } else {
@@ -131,7 +253,7 @@ export default function NotificationsPage() {
               <span className="text-xs font-bold text-primary-dark">Astuce TOKPa</span>
             </div>
             <p className="text-xs text-primary-deep leading-relaxed">
-              Activez les notifications SMS pour ne manquer aucune négociation en direct.
+              Les notifications de statut de commande arrivent en temps réel — aucune actualisation nécessaire.
             </p>
           </div>
         </aside>
@@ -170,7 +292,7 @@ export default function NotificationsPage() {
                   type="button"
                   onClick={() => setFilter(key)}
                   className={clsx(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium shrink-0 transition-all',
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium shrink-0 transition-all cursor-pointer',
                     filter === key
                       ? 'bg-primary-container text-white font-bold'
                       : 'bg-white text-text-secondary border border-border-default',
@@ -183,55 +305,65 @@ export default function NotificationsPage() {
             </div>
 
             {/* Notification List */}
-            <div className="space-y-3">
-              {filtered.map((item) => {
-                const isUnread = item.unread;
-                const typeIcon =
-                  item.type === 'order'
-                    ? 'shopping_bag'
-                    : item.type === 'promo'
-                    ? 'local_offer'
-                    : item.type === 'security'
-                    ? 'shield'
-                    : 'info';
+            {filtered.length === 0 && hasLoaded ? (
+              <div className="bg-white border border-border-default rounded-xl">
+                <EmptyState
+                  icon={<MIcon name="notifications" className="text-4xl text-primary" />}
+                  title={filter === 'all' ? 'Aucune notification' : 'Aucune notification de ce type'}
+                  description="Vos alertes (commandes, négociations, paiements) apparaîtront ici."
+                />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filtered.map((item) => {
+                  const isUnread = item.unread;
+                  const typeIcon =
+                    item.type === 'order'
+                      ? 'shopping_bag'
+                      : item.type === 'promo'
+                        ? 'local_offer'
+                        : item.type === 'security'
+                          ? 'shield'
+                          : 'info';
 
-                const iconBg =
-                  item.type === 'order'
-                    ? 'bg-success-light text-success-dark border-success-dark/20'
-                    : item.type === 'promo'
-                    ? 'bg-amber-light text-amber-text border-amber-hover/20'
-                    : item.type === 'security'
-                    ? 'bg-error-light text-error-dark border-error-dark/20'
-                    : 'bg-primary-tint text-primary border-primary-light';
+                  const iconBg =
+                    item.type === 'order'
+                      ? 'bg-success-light text-success-dark border-success-dark/20'
+                      : item.type === 'promo'
+                        ? 'bg-amber-light text-amber-text border-amber-hover/20'
+                        : item.type === 'security'
+                          ? 'bg-error-light text-error-dark border-error-dark/20'
+                          : 'bg-primary-tint text-primary border-primary-light';
 
-                return (
-                  <div
-                    key={item.id}
-                    onClick={() => handleNotificationClick(item)}
-                    className={clsx(
-                      'p-4 rounded-xl border border-border-default flex items-start gap-4 transition-all hover:border-primary-container hover:shadow-sm cursor-pointer',
-                      isUnread ? 'bg-white' : 'bg-white/80 opacity-80',
-                    )}
-                  >
-                    <div className={clsx('w-10 h-10 shrink-0 rounded-full flex items-center justify-center border', iconBg)}>
-                      <MIcon name={typeIcon} className="text-xl" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="text-h3 font-bold truncate text-text-main">{item.title}</h3>
-                        <span className="text-micro text-text-tertiary shrink-0 ml-2">{item.time}</span>
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => handleNotificationClick(item)}
+                      className={clsx(
+                        'p-4 rounded-xl border border-border-default flex items-start gap-4 transition-all hover:border-primary-container hover:shadow-sm cursor-pointer',
+                        isUnread ? 'bg-white' : 'bg-white/80 opacity-80',
+                      )}
+                    >
+                      <div className={clsx('w-10 h-10 shrink-0 rounded-full flex items-center justify-center border', iconBg)}>
+                        <MIcon name={typeIcon} className="text-xl" />
                       </div>
-                      <p className="text-body text-text-secondary line-clamp-2">{item.message}</p>
-                    </div>
-                    {isUnread && (
-                      <div className="shrink-0 pt-1">
-                        <div className="w-2 h-2 rounded-full bg-primary-container" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="text-h3 font-bold truncate text-text-main">{item.title}</h3>
+                          <span className="text-micro text-text-tertiary shrink-0 ml-2">{item.time}</span>
+                        </div>
+                        <p className="text-body text-text-secondary line-clamp-2">{item.message}</p>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                      {isUnread && (
+                        <div className="shrink-0 pt-1">
+                          <div className="w-2 h-2 rounded-full bg-primary-container" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {pageCount > 1 && (
               <Pagination page={page} pageCount={pageCount} onChange={setPage} className="mt-8" />

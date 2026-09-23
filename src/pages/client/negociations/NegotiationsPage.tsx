@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -11,9 +11,10 @@ import { acceptCounterOffer, setProposals, type NegotiationItem } from '../../..
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { negotiationApi } from '../../../services/api';
+import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import type { Product } from '../../../types/models';
 
-type FilterTab = 'all' | 'pending' | 'accepted' | 'rejected';
+type FilterTab = 'all' | 'pending' | 'accepted' | 'rejected' | 'expired';
 
 /**
  * Page dédiée Mes Négociations — Synchronisée 100% avec l'API Backend Laravel GET /api/budget-proposals
@@ -29,8 +30,7 @@ export default function NegotiationsPage() {
   const [isApiLoading, setIsApiLoading] = useState(true);
 
   // Load real budget proposals from Backend GET /api/budget-proposals
-  useEffect(() => {
-    if (!isAuthenticated) return;
+  const loadProposals = useCallback(() => {
     setIsApiLoading(true);
 
     negotiationApi.getProposals()
@@ -43,11 +43,17 @@ export default function NegotiationsPage() {
             productName: p.product?.nom || 'Produit du marché',
             productImage: p.product?.image_url,
             vendorName: 'Marché Dantokpa',
-            originalPrice: Number(p.product?.prix) || Number(p.prix_propose) || 1000,
+            originalPrice: Number(p.product?.prix) || Number(p.prix_propose) || 0,
             proposedPrice: Number(p.prix_propose),
             minPrice: Number(p.product?.prix_minimum) || Number(p.prix_propose),
-            status: p.statut === 'accepte' ? 'accepted' : p.statut === 'refuse' ? 'rejected' : 'pending',
-            createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Récemment',
+            quantite: Number(p.quantite) || 1,
+            adminResponse: p.admin_response || undefined,
+            status:
+              p.statut === 'accepte' ? 'accepted'
+              : p.statut === 'refuse' ? 'rejected'
+              : p.statut === 'expire' ? 'expired'
+              : 'pending',
+            createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR') : 'Récemment',
           }));
           dispatch(setProposals(mapped));
         }
@@ -57,6 +63,22 @@ export default function NegotiationsPage() {
       })
       .finally(() => setIsApiLoading(false));
   }, [isAuthenticated, dispatch]);
+
+  useEffect(() => {
+    if (isAuthenticated) loadProposals();
+  }, [isAuthenticated, loadProposals]);
+
+  // Temps réel : budget.responded sur notifications.{userId} → rechargement silencieux
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    return subscribeRealtimeRefresh(['proposals'], () => loadProposals());
+  }, [isAuthenticated, loadProposals]);
+
+  // ---- Modal « Modifier mon offre » (PUT /api/budget-proposals/{id}) ----
+  const [editModal, setEditModal] = useState<NegotiationItem | null>(null);
+  const [editPrice, setEditPrice] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -69,11 +91,13 @@ export default function NegotiationsPage() {
   const pendingCount = history.filter((n) => n.status === 'pending' || n.status === 'counter_offer').length;
   const acceptedCount = history.filter((n) => n.status === 'accepted').length;
   const rejectedCount = history.filter((n) => n.status === 'rejected').length;
+  const expiredCount = history.filter((n) => n.status === 'expired').length;
 
   const filteredHistory = history.filter((n) => {
     if (activeTab === 'pending') return n.status === 'pending' || n.status === 'counter_offer';
     if (activeTab === 'accepted') return n.status === 'accepted';
     if (activeTab === 'rejected') return n.status === 'rejected';
+    if (activeTab === 'expired') return n.status === 'expired';
     return true;
   });
 
@@ -110,12 +134,57 @@ export default function NegotiationsPage() {
   };
 
   const handleDiscussionClick = (neg: NegotiationItem) => {
+    if (neg.status === 'accepted') {
+      // La conversation de la commande auto-créée vit dans la Messagerie
+      navigate({ to: '/messagerie' });
+      return;
+    }
     toast(
       isFr
-        ? `Discussion ouverte avec ${neg.vendorName || 'le marché'}.`
-        : `Chat open with ${neg.vendorName || 'market'}.`,
+        ? 'La discussion avec le marché se débloque à l’acceptation de votre offre (Messagerie).'
+        : 'Chat with the market unlocks once your offer is accepted (Messaging).',
       { icon: '💬' },
     );
+  };
+
+  const openEditOffer = (neg: NegotiationItem) => {
+    setEditModal(neg);
+    setEditPrice(String(neg.proposedPrice));
+    setEditError(null);
+  };
+
+  const submitEditOffer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editModal) return;
+    const price = Number(editPrice);
+    if (!Number.isFinite(price) || price <= 0) {
+      setEditError(isFr ? 'Saisissez un prix valide.' : 'Enter a valid price.');
+      return;
+    }
+    if (price < editModal.minPrice) {
+      setEditError(
+        isFr
+          ? `Le prix minimum négociable est ${editModal.minPrice.toLocaleString('fr-FR')} FCFA.`
+          : `The minimum negotiable price is ${editModal.minPrice.toLocaleString('fr-FR')} FCFA.`,
+      );
+      return;
+    }
+    setEditSaving(true);
+    try {
+      await negotiationApi.updateProposal(editModal.id, {
+        product_id: Number(editModal.productId),
+        prix_propose: price,
+        quantite: editModal.quantite,
+      });
+      toast.success(isFr ? 'Offre mise à jour et retransmise au marché.' : 'Offer updated and resubmitted.');
+      setEditModal(null);
+      loadProposals();
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { message?: string } } })?.response?.data;
+      setEditError(detail?.message || (isFr ? 'Impossible de modifier l’offre.' : 'Could not update the offer.'));
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   return (
@@ -182,6 +251,16 @@ export default function NegotiationsPage() {
               >
                 {isFr ? `Refusées (${rejectedCount})` : `Rejected (${rejectedCount})`}
               </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('expired')}
+                className={clsx('px-md py-sm font-label text-label cursor-pointer transition-colors', {
+                  'tab-active': activeTab === 'expired',
+                  'text-on-surface-variant hover:text-primary': activeTab !== 'expired',
+                })}
+              >
+                {isFr ? `Expirées (${expiredCount})` : `Expired (${expiredCount})`}
+              </button>
             </nav>
 
             {/* Negotiation Items */}
@@ -208,6 +287,7 @@ export default function NegotiationsPage() {
                 const isCounter = neg.status === 'counter_offer';
                 const isAccepted = neg.status === 'accepted';
                 const isRejected = neg.status === 'rejected';
+                const isExpired = neg.status === 'expired';
 
                 const iconName =
                   neg.productName.toLowerCase().includes('riz')
@@ -225,6 +305,7 @@ export default function NegotiationsPage() {
                       isCounter && 'border-l-4 border-primary',
                       isAccepted && 'border-l-4 border-success',
                       isRejected && 'border-l-4 border-error',
+                      isExpired && 'border-l-4 border-border-default opacity-75',
                     )}
                   >
                     {/* Thumbnail matching code.html */}
@@ -274,6 +355,11 @@ export default function NegotiationsPage() {
                           <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-error-light text-error-dark text-micro font-micro uppercase tracking-wider">
                             <span className="bubble-dot bg-error" />
                             {isFr ? 'Offre refusée' : 'Offer rejected'}
+                          </span>
+                        )}
+                        {isExpired && (
+                          <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-bg-secondary text-text-secondary text-micro font-micro uppercase tracking-wider">
+                            {isFr ? 'Offre expirée' : 'Offer expired'}
                           </span>
                         )}
                       </div>
@@ -328,6 +414,16 @@ export default function NegotiationsPage() {
                         )}
                       </div>
 
+                      {/* Réponse de l'admin (backend admin_response) */}
+                      {(isRejected || isExpired) && neg.adminResponse && (
+                        <div className="mt-md p-sm bg-error-light/60 border border-error/20 rounded-lg">
+                          <p className="text-micro font-bold text-error-dark uppercase tracking-wider mb-xs">
+                            {isFr ? 'Réponse du marché' : 'Market response'}
+                          </p>
+                          <p className="text-secondary text-text-main">{neg.adminResponse}</p>
+                        </div>
+                      )}
+
                       {/* Action buttons strictly matching code.html */}
                       <div className="flex gap-sm flex-wrap">
                         {isAccepted && (
@@ -380,7 +476,7 @@ export default function NegotiationsPage() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDiscussionClick(neg)}
+                              onClick={() => openEditOffer(neg)}
                               className="px-md py-2 bg-white border border-border-default text-on-surface font-medium text-label rounded-button hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
                             >
                               {isFr ? 'Modifier mon offre' : 'Edit my offer'}
@@ -389,13 +485,22 @@ export default function NegotiationsPage() {
                         )}
 
                         {isRejected && (
-                          <button
-                            type="button"
-                            onClick={() => handleDiscussionClick(neg)}
-                            className="px-md py-2 border border-border-default text-on-surface-variant font-medium text-label rounded-button hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
-                          >
-                            {isFr ? 'Voir discussion' : 'View chat'}
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleDiscussionClick(neg)}
+                              className="px-md py-2 border border-border-default text-on-surface-variant font-medium text-label rounded-button hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
+                            >
+                              {isFr ? 'Voir discussion' : 'View chat'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openEditOffer(neg)}
+                              className="px-md py-2 border border-primary text-primary font-medium text-label rounded-button hover:bg-primary-tint active:scale-95 transition-all cursor-pointer"
+                            >
+                              {isFr ? 'Reproposer un prix' : 'Reprice offer'}
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -463,6 +568,81 @@ export default function NegotiationsPage() {
           </aside>
         </div>
       </main>
+
+      {/* Modal « Modifier mon offre » — PUT /api/budget-proposals/{id} */}
+      {editModal && (
+        <div className="fixed inset-0 bg-on-surface/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4 animate-fade-in">
+          <div className="bg-white w-full max-w-[480px] rounded-xl shadow-2xl overflow-hidden p-lg">
+            <div className="flex justify-between items-center mb-md border-b border-border-default pb-3">
+              <h3 className="font-h2 text-h2 font-bold">{isFr ? 'Modifier mon offre' : 'Edit my offer'}</h3>
+              <button
+                type="button"
+                onClick={() => setEditModal(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <MIcon name="close" />
+              </button>
+            </div>
+
+            <form onSubmit={submitEditOffer} className="space-y-md">
+              <div className="p-md bg-bg-secondary rounded-lg">
+                <p className="font-bold text-on-surface">{editModal.productName}</p>
+                <p className="text-secondary text-text-secondary text-micro">
+                  {isFr ? 'Prix actuel' : 'Current price'} :{' '}
+                  {editModal.originalPrice.toLocaleString('fr-FR')} FCFA ·{' '}
+                  {isFr ? 'Votre offre' : 'Your offer'} :{' '}
+                  {editModal.proposedPrice.toLocaleString('fr-FR')} FCFA
+                </p>
+                <p className="text-micro text-text-tertiary mt-xs">
+                  {isFr ? 'Prix minimum accepté par le marché' : 'Market minimum price'} :{' '}
+                  <span className="font-bold text-primary-container">{editModal.minPrice.toLocaleString('fr-FR')} FCFA</span>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-label mb-1 text-text-secondary font-medium">
+                  {isFr ? 'Nouveau prix proposé (FCFA)' : 'New proposed price (FCFA)'}
+                </label>
+                <input
+                  type="number"
+                  min={editModal.minPrice}
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                  required
+                  className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none font-price"
+                />
+              </div>
+
+              {editError && (
+                <div className="p-3 bg-error-light border border-error/20 rounded-lg text-xs font-semibold text-error-dark">
+                  {editError}
+                </div>
+              )}
+
+              <div className="pt-md border-t border-border-default flex justify-end gap-md">
+                <button
+                  type="button"
+                  onClick={() => setEditModal(null)}
+                  className="px-md py-2 rounded-lg border border-border-default font-medium hover:bg-gray-50 transition-all cursor-pointer"
+                >
+                  {isFr ? 'Annuler' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSaving}
+                  className="px-lg py-2 rounded-lg bg-primary-container hover:bg-primary-hover text-white font-bold transition-all shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  {editSaving
+                    ? (isFr ? 'Envoi…' : 'Sending…')
+                    : isFr
+                      ? 'Reproposer'
+                      : 'Submit new price'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* BottomNavBar */}
       <ClientBottomNav />
