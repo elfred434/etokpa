@@ -42,7 +42,7 @@ export default function CartPage() {
       // 1. Appel API Backend POST /api/orders
       const payloadItems = items.map((item) => ({
         product_id: Number(item.product.id) || 1,
-        quantite: item.quantity,
+        quantite: item.quantite,
       }));
 
       const orderRes = await ordersApi.createOrder({
@@ -142,7 +142,7 @@ export default function CartPage() {
               {/* Article List */}
               {items.length === 0 ? (
                 <EmptyState
-                  icon={() => <MIcon name="shopping_cart" className="text-4xl text-text-tertiary" />}
+                  icon={<MIcon name="shopping_cart" className="text-4xl text-primary" />}
                   title="Votre panier est vide"
                   description="Ajoutez des produits frais du marché pour commencer vos achats."
                   action={
@@ -212,17 +212,17 @@ export default function CartPage() {
                             <button
                               type="button"
                               onClick={() =>
-                                dispatch(setQuantity({ productId: item.product.id, quantity: Math.max(1, item.quantity - 1) }))
+                                dispatch(setQuantity({ productId: item.product.id, quantity: Math.max(1, item.quantite - 1) }))
                               }
                               className="w-8 h-8 flex items-center justify-center text-primary-container hover:bg-primary-tint rounded-[4px] transition-colors cursor-pointer font-bold"
                             >
                               -
                             </button>
-                            <span className="px-3 font-bold text-on-surface">{item.quantity}</span>
+                            <span className="px-3 font-bold text-on-surface">{item.quantite}</span>
                             <button
                               type="button"
                               onClick={() =>
-                                dispatch(setQuantity({ productId: item.product.id, quantity: item.quantity + 1 }))
+                                dispatch(setQuantity({ productId: item.product.id, quantity: item.quantite + 1 }))
                               }
                               className="w-8 h-8 flex items-center justify-center text-primary-container hover:bg-primary-tint rounded-[4px] transition-colors cursor-pointer font-bold"
                             >

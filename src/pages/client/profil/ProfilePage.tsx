@@ -196,6 +196,12 @@ export default function ProfilePage() {
       <ClientNavbar />
 
       <main className="max-w-[720px] mx-auto mt-[76px] px-md">
+        {isDataLoading ? (
+          <div className="py-2xl flex justify-center">
+            <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+          </div>
+        ) : (
+        <>
         {/* PROFILE HEADER (Real Backend User Info) */}
         <section className="bg-bg-card rounded-[14px] p-lg border border-border-default flex flex-col sm:flex-row items-start sm:items-center justify-between gap-md mb-md shadow-xs">
           <div className="flex items-center gap-md">
@@ -419,6 +425,8 @@ export default function ProfilePage() {
             </button>
           </div>
         </section>
+        </>
+        )}
       </main>
 
       {/* Modal Landmark Add/Edit */}

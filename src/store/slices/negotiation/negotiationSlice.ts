@@ -98,8 +98,8 @@ const negotiationSlice = createSlice({
       }
     },
     cancelNegotiation(state, action: PayloadAction<{ productId: string }>) {
-      delete state.activeNegotiations[action.payload];
-      state.history = state.history.filter((h) => h.productId !== action.payload);
+      delete state.activeNegotiations[action.payload.productId];
+      state.history = state.history.filter((h) => h.productId !== action.payload.productId);
     },
   },
 });

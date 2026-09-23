@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import AdminSidebar from '../../../components/layout/admin/AdminSidebar';
 import MIcon from '../../../components/shared/MIcon';

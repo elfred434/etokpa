@@ -13,7 +13,7 @@ interface NegotiationModalProps {
 
 export default function NegotiationModal({ isOpen, onClose }: NegotiationModalProps) {
   const dispatch = useAppDispatch();
-  const { t, isFr } = useLanguage();
+  const { isFr } = useLanguage();
   const history = useAppSelector((state) => state.negotiation.history);
 
   if (!isOpen) return null;

@@ -174,7 +174,7 @@ export default function PreviewPage() {
           <Section title="Panier : lignes & quantité">
             {cart.length === 0 ? (
               <EmptyState
-                icon={IconShoppingCart}
+                icon={<IconShoppingCart size={36} strokeWidth={1.5} className="text-primary" />}
                 title="Votre panier est vide"
                 description="Ajoutez des produits frais du marché pour commencer."
                 action={<button type="button" className="btn btn-primary">Explorer le marché</button>}

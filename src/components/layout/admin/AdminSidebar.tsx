@@ -1,6 +1,7 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
 import MIcon from '../../shared/MIcon';
+import toast from 'react-hot-toast';
 
 interface AdminSidebarProps {
   currentPath?: string;
@@ -31,18 +32,14 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-1">
-        <Link
-          to="/admin/dashboard"
-          className={clsx(
-            'flex items-center gap-3 px-md py-3 font-body text-body transition-colors rounded-lg',
-            activePath === '/admin/dashboard'
-              ? 'bg-primary-tint text-primary-container font-bold'
-              : 'text-text-tertiary hover:text-white hover:bg-white/5',
-          )}
+        <button
+          type="button"
+          onClick={() => toast("Module en cours de développement — API backend prête, page frontend à l'étape 3")}
+          className="flex items-center gap-3 px-md py-3 font-body text-body transition-colors rounded-lg text-text-tertiary hover:text-white hover:bg-white/5 cursor-pointer"
         >
           <MIcon name="dashboard" />
           <span>Dashboard</span>
-        </Link>
+        </button>
 
         <Link
           to="/admin/catalogue"
@@ -70,67 +67,52 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
           <span>Catégories</span>
         </Link>
 
-        <Link
-          to="/admin/zones"
-          className={clsx(
-            'flex items-center gap-3 px-md py-3 font-body text-body transition-colors rounded-lg',
-            activePath === '/admin/zones'
-              ? 'bg-primary-tint text-primary-container font-bold'
-              : 'text-text-tertiary hover:text-white hover:bg-white/5',
-          )}
+        <button
+          type="button"
+          onClick={() => toast("Module en cours de développement — API backend prête, page frontend à l'étape 3")}
+          className="flex items-center gap-3 px-md py-3 font-body text-body transition-colors rounded-lg text-text-tertiary hover:text-white hover:bg-white/5 cursor-pointer"
         >
           <MIcon name="map" />
           <span>Zones</span>
-        </Link>
+        </button>
 
-        <Link
-          to="/admin/utilisateurs"
-          className={clsx(
-            'flex items-center gap-3 px-md py-3 font-body text-body transition-colors rounded-lg',
-            activePath === '/admin/utilisateurs'
-              ? 'bg-primary-tint text-primary-container font-bold'
-              : 'text-text-tertiary hover:text-white hover:bg-white/5',
-          )}
+        <button
+          type="button"
+          onClick={() => toast("Module en cours de développement — API backend prête, page frontend à l'étape 3")}
+          className="flex items-center gap-3 px-md py-3 font-body text-body transition-colors rounded-lg text-text-tertiary hover:text-white hover:bg-white/5 cursor-pointer"
         >
           <MIcon name="group" />
           <span>Utilisateurs</span>
-        </Link>
+        </button>
 
-        <Link
-          to="/admin/validations"
-          className={clsx(
-            'flex items-center gap-3 px-md py-3 font-body text-body transition-colors rounded-lg',
-            activePath === '/admin/validations'
-              ? 'bg-primary-tint text-primary-container font-bold'
-              : 'text-text-tertiary hover:text-white hover:bg-white/5',
-          )}
+        <button
+          type="button"
+          onClick={() => toast("Module en cours de développement — API backend prête, page frontend à l'étape 3")}
+          className="flex items-center gap-3 px-md py-3 font-body text-body transition-colors rounded-lg text-text-tertiary hover:text-white hover:bg-white/5 cursor-pointer"
         >
           <MIcon name="fact_check" />
           <span>Validations</span>
-        </Link>
+        </button>
 
-        <Link
-          to="/admin/logs"
-          className={clsx(
-            'flex items-center gap-3 px-md py-3 font-body text-body transition-colors rounded-lg',
-            activePath === '/admin/logs'
-              ? 'bg-primary-tint text-primary-container font-bold'
-              : 'text-text-tertiary hover:text-white hover:bg-white/5',
-          )}
+        <button
+          type="button"
+          onClick={() => toast("Module en cours de développement — API backend prête, page frontend à l'étape 3")}
+          className="flex items-center gap-3 px-md py-3 font-body text-body transition-colors rounded-lg text-text-tertiary hover:text-white hover:bg-white/5 cursor-pointer"
         >
           <MIcon name="history" />
           <span>Logs</span>
-        </Link>
+        </button>
       </nav>
 
       <div className="mt-auto pt-md border-t border-white/10" style={{ borderColor: 'rgba(249, 115, 22, 0.15)' }}>
-        <Link
-          to="/admin/parametres"
-          className="flex items-center gap-3 px-md py-3 text-text-tertiary hover:text-white hover:bg-white/5 transition-colors font-body"
+        <button
+          type="button"
+          onClick={() => toast("Module en cours de développement — API backend prête, page frontend à l'étape 3")}
+          className="flex items-center gap-3 px-md py-3 font-body text-body transition-colors rounded-lg text-text-tertiary hover:text-white hover:bg-white/5 cursor-pointer"
         >
           <MIcon name="settings" />
           <span>Paramètres</span>
-        </Link>
+        </button>
         <div className="flex items-center gap-3 px-md py-4 mt-2">
           <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-primary font-bold">
             JD
