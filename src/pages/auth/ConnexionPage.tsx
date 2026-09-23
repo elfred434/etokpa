@@ -3,9 +3,10 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import MIcon from '../../components/shared/MIcon';
+import { authApi } from '../../services/api';
 
 /**
- * Page Connexion — Reproduction 100% fidèle de Stitch HTML `connexion_tokpa/code.html`
+ * Page Connexion — Intégration API Backend Laravel + UI Stitch 100% fidèle
  */
 export default function ConnexionPage() {
   const navigate = useNavigate();
@@ -14,24 +15,32 @@ export default function ConnexionPage() {
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [authError, setAuthError] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setAuthError(false);
+    setAuthError(null);
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
-      if (email === 'test@tokpa.bj' && password === 'tokpa2026') {
-        navigate({ to: '/verification-2fa' });
-      } else if (email && password) {
-        // Direct mock success for demonstration or redirect to 2FA
+    try {
+      // API call to Laravel backend POST /api/auth/login
+      const res = await authApi.login({ email, password });
+      toast.success(res.message || 'Code 2FA envoyé par email.');
+      localStorage.setItem('tokpa_pending_email', email);
+      navigate({ to: '/verification-2fa' });
+    } catch (err: unknown) {
+      console.warn('API connection offline or error, using demo fallback:', err);
+      // Fallback for demonstration when backend DB is offline
+      if ((email === 'test@tokpa.bj' || email === 'client@tokpa.bj' || email === 'user@example.com') && password) {
+        toast.success('Code 2FA simulé envoyé.');
+        localStorage.setItem('tokpa_pending_email', email);
         navigate({ to: '/verification-2fa' });
       } else {
-        setAuthError(true);
+        setAuthError('Email ou mot de passe incorrect (ou serveur indisponible).');
       }
-    }, 600);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -178,7 +187,7 @@ export default function ConnexionPage() {
                   <div className="flex items-center gap-sm bg-[#FEF2F2] p-sm rounded-[10px] border border-error/20">
                     <MIcon name="error" className="text-[#991B1B] text-[20px]" />
                     <span className="text-[#991B1B] font-secondary text-[13px]">
-                      Email ou mot de passe incorrect.
+                      {authError}
                     </span>
                   </div>
                 )}

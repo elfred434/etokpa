@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -8,6 +8,7 @@ import MIcon from '../../../components/shared/MIcon';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import type { CategoryId, Product } from '../../../types/models';
+import { catalogApi, type ApiProduct } from '../../../services/api';
 
 /* ---- Données exactes du code.html « catalogue_tokpa » ---- */
 
@@ -33,7 +34,7 @@ interface CatalogProduct {
   id: string;
   nom: string;
   zoneId: string;
-  meta: string; // « Marché Dantokpa · 1kg »
+  meta: string;
   quantite: string;
   prix: number;
   prixLabel: string;
@@ -44,7 +45,7 @@ interface CatalogProduct {
   cat: CategoryId;
 }
 
-const PRODUCTS: CatalogProduct[] = [
+const INITIAL_PRODUCTS: CatalogProduct[] = [
   { id: 'c1', nom: 'Tomates fraîches (Local)', zoneId: 'dantokpa', meta: 'Marché Dantokpa · 1kg', quantite: '1kg', prix: 450, prixLabel: '450 FCFA', stock: 'available', icon: 'eco', cat: 'vegetable' },
   { id: 'c2', nom: 'Oignons violets', zoneId: 'ganhi', meta: 'Marché Ganhi · 2kg', quantite: '2kg', prix: 800, prixLabel: '800 FCFA', prixAncienLabel: '1 000 FCFA', promo: 'Promo −20%', stock: 'available', icon: 'nutrition', cat: 'vegetable' },
   { id: 'c3', nom: 'Poivrons verts', zoneId: 'missebo', meta: 'Marché Missèbo · 500g', quantite: '500g', prix: 600, prixLabel: '600 FCFA', stock: 'low', icon: 'eco', cat: 'vegetable' },
@@ -67,13 +68,13 @@ const CAT_TITLES: Record<CatFilter, string> = {
 
 const PER_PAGE = 9;
 
-/** Catalogue — copie conforme du code.html Stitch « catalogue_tokpa ». */
+/** Catalogue — Copie conforme Stitch + Intégration API Backend Laravel */
 export default function CatalogPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const q = useRouterState({ select: (s) => (s.location.search as { q?: string }).q ?? '' });
 
-  // État initial = snapshot exact du design (Dantokpa coché, 7500, dispo ON, 9 cartes).
+  const [productsList, setProductsList] = useState<CatalogProduct[]>(INITIAL_PRODUCTS);
   const [search, setSearch] = useState(q);
   const [cat, setCat] = useState<CatFilter>('all');
   const [zones, setZones] = useState<string[]>(['dantokpa']);
@@ -85,10 +86,35 @@ export default function CatalogPage() {
   const [page, setPage] = useState(1);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
+  // Connection API Backend GET /api/products
+  useEffect(() => {
+    catalogApi.getProducts({ q: search })
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const fetched: CatalogProduct[] = res.data.map((p: ApiProduct) => ({
+            id: String(p.id),
+            nom: p.nom,
+            zoneId: 'dantokpa',
+            meta: `Marché Dantokpa · ${p.stock > 0 ? 'En stock' : 'Rupture'}`,
+            quantite: '1 unité',
+            prix: p.prix,
+            prixLabel: `${p.prix.toLocaleString('fr-FR')} FCFA`,
+            stock: p.stock > 5 ? 'available' : p.stock > 0 ? 'low' : 'none',
+            icon: 'shopping_bag',
+            cat: 'vegetable',
+          }));
+          setProductsList(fetched);
+        }
+      })
+      .catch((err) => {
+        console.warn('API Catalog offline, using Stitch mock catalog:', err);
+      });
+  }, [search]);
+
   const touch = () => setTouched(true);
 
   const filtered = useMemo(() => {
-    let items = [...PRODUCTS];
+    let items = [...productsList];
     const needle = search.trim().toLowerCase();
     if (needle) items = items.filter((p) => p.nom.toLowerCase().includes(needle) || p.meta.toLowerCase().includes(needle));
     if (touched) {
@@ -101,7 +127,7 @@ export default function CatalogPage() {
     if (sort === 'desc') items.sort((a, b) => b.prix - a.prix);
     if (sort === 'new') items.reverse();
     return items;
-  }, [search, touched, cat, zones, maxPrice, dispoOnly, sort]);
+  }, [search, touched, cat, zones, maxPrice, dispoOnly, sort, productsList]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const currentPage = Math.min(page, totalPages);
@@ -515,7 +541,6 @@ export default function CatalogPage() {
                       <h4 className="text-xs sm:text-label font-semibold text-ink line-clamp-1">{p.nom}</h4>
                       <p className="mt-0.5 text-xs text-ink-2">{p.meta}</p>
 
-                      {/* Badges affichés APRÈS le marché (meta) uniquement en vue liste */}
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
                         {p.stock === 'available' && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-success-light px-2 py-0.5 text-[10px] font-bold text-success-dark">

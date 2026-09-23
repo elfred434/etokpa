@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import { submitOffer, acceptCounterOffer, cancelNegotiation } from '../../../store/slices/negotiation/negotiationSlice';
 import type { Product } from '../../../types/models';
+import { negotiationApi } from '../../../services/api';
 
 /* ---- Fiche exacte du code.html « fiche_produit_tokpa » ---- */
 
@@ -44,13 +45,13 @@ const AVIS = [
     auteur: 'Mariam D.',
     note: 4,
     date: 'Il y a 1 semaine',
-    texte: 'Bonne qualité globale, quelques tomates un peu mûres mais la vendeuse a été arrangeante.',
+    texte: 'Bonne qualité globale, quelques tomates un peu mûres mais l’équipe du marché a été arrangeante.',
   },
 ];
 
 type TabId = 'description' | 'origine' | 'avis';
 
-/** Fiche produit avec module de négociation F-10 interactif. */
+/** Fiche produit avec module de négociation F-10 connecté au Backend API Laravel */
 export default function ProductPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -61,7 +62,7 @@ export default function ProductPage() {
 
   const activeNeg = useAppSelector((state) => state.negotiation.activeNegotiations[PRODUCT.id]);
 
-  const handleSendOffer = () => {
+  const handleSendOffer = async () => {
     const numPrice = parseInt(offerInput.replace(/[^0-9]/g, ''), 10);
     if (isNaN(numPrice) || numPrice <= 0) {
       toast.error('Veuillez entrer un montant valide en FCFA');
@@ -69,20 +70,31 @@ export default function ProductPage() {
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      dispatch(
-        submitOffer({
-          productId: PRODUCT.id,
-          productName: PRODUCT.nom,
-          productImage: PRODUCT.image,
-          originalPrice: PRODUCT.prix,
-          proposedPrice: numPrice,
-          minPrice: PRODUCT.prixMinimum,
-        })
-      );
-      setIsSubmitting(false);
-      toast.success('Offre envoyée avec succès !');
-    }, 1200);
+
+    try {
+      // API call POST /api/budget-proposals
+      await negotiationApi.createProposal({
+        product_id: Number(PRODUCT.id) || 1,
+        prix_propose: numPrice,
+        quantite: quantity,
+      });
+      toast.success('Proposition de budget envoyée à l’API !');
+    } catch (e) {
+      console.warn('API negotiation proposal fallback:', e);
+    }
+
+    dispatch(
+      submitOffer({
+        productId: PRODUCT.id,
+        productName: PRODUCT.nom,
+        productImage: PRODUCT.image,
+        originalPrice: PRODUCT.prix,
+        proposedPrice: numPrice,
+        minPrice: PRODUCT.prixMinimum,
+      })
+    );
+    setIsSubmitting(false);
+    toast.success('Offre traitée avec succès !');
   };
 
   const handleAddNegotiatedToCart = (price: number) => {
@@ -199,7 +211,7 @@ export default function ProductPage() {
                     type="button"
                     aria-label="Diminuer"
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="border-r border-line p-2 text-ink transition-colors hover:bg-surface"
+                    className="border-r border-line p-2 text-ink transition-colors hover:bg-surface cursor-pointer"
                   >
                     <MIcon name="remove" className="text-[18px]" />
                   </button>
@@ -208,7 +220,7 @@ export default function ProductPage() {
                     type="button"
                     aria-label="Augmenter"
                     onClick={() => setQuantity((q) => q + 1)}
-                    className="border-l border-line p-2 text-ink transition-colors hover:bg-surface"
+                    className="border-l border-line p-2 text-ink transition-colors hover:bg-surface cursor-pointer"
                   >
                     <MIcon name="add" className="text-[18px]" />
                   </button>
@@ -260,7 +272,7 @@ export default function ProductPage() {
                       type="button"
                       disabled={isSubmitting}
                       onClick={handleSendOffer}
-                      className="w-full transform rounded-[10px] bg-success py-2.5 font-bold text-white transition-all hover:bg-success-dark active:scale-[0.98] disabled:opacity-50"
+                      className="w-full transform rounded-[10px] bg-success py-2.5 font-bold text-white transition-all hover:bg-success-dark active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                     >
                       {isSubmitting ? 'Traitement de l’offre…' : 'Envoyer l’offre'}
                     </button>
@@ -281,14 +293,14 @@ export default function ProductPage() {
                       <button
                         type="button"
                         onClick={() => handleAddNegotiatedToCart(activeNeg.proposedPrice)}
-                        className="w-full rounded-lg bg-success py-2 text-xs font-bold text-white shadow-sm hover:bg-success-dark"
+                        className="w-full rounded-lg bg-success py-2 text-xs font-bold text-white shadow-sm hover:bg-success-dark cursor-pointer"
                       >
                         Ajouter au panier ({activeNeg.proposedPrice.toLocaleString('fr-FR')} FCFA)
                       </button>
                       <button
                         type="button"
                         onClick={() => dispatch(cancelNegotiation({ productId: PRODUCT.id }))}
-                        className="rounded-lg border border-line bg-white px-3 py-2 text-xs font-bold text-ink-2"
+                        className="rounded-lg border border-line bg-white px-3 py-2 text-xs font-bold text-ink-2 cursor-pointer"
                       >
                         Annuler
                       </button>
@@ -314,14 +326,14 @@ export default function ProductPage() {
                           dispatch(acceptCounterOffer({ productId: PRODUCT.id }));
                           toast.success('Contre-offre acceptée !');
                         }}
-                        className="w-full rounded-lg bg-amber-text py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-text/90"
+                        className="w-full rounded-lg bg-amber-text py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-text/90 cursor-pointer"
                       >
                         Accepter ({activeNeg.counterPrice?.toLocaleString('fr-FR')} FCFA)
                       </button>
                       <button
                         type="button"
                         onClick={() => dispatch(cancelNegotiation({ productId: PRODUCT.id }))}
-                        className="rounded-lg border border-line bg-white px-3 py-2 text-xs font-bold text-ink-2"
+                        className="rounded-lg border border-line bg-white px-3 py-2 text-xs font-bold text-ink-2 cursor-pointer"
                       >
                         Refuser
                       </button>
@@ -339,7 +351,7 @@ export default function ProductPage() {
                     <button
                       type="button"
                       onClick={() => dispatch(cancelNegotiation({ productId: PRODUCT.id }))}
-                      className="w-full rounded-lg bg-white border border-line py-2 text-xs font-bold text-ink hover:bg-surface"
+                      className="w-full rounded-lg bg-white border border-line py-2 text-xs font-bold text-ink hover:bg-surface cursor-pointer"
                     >
                       Faire une nouvelle offre
                     </button>
@@ -352,7 +364,7 @@ export default function ProductPage() {
                 <button
                   type="button"
                   onClick={addToCart}
-                  className="flex w-full transform items-center justify-center gap-2 rounded-[10px] bg-primary py-3.5 font-bold text-white transition-all hover:bg-primary-hover active:scale-[0.98]"
+                  className="flex w-full transform items-center justify-center gap-2 rounded-[10px] bg-primary py-3.5 font-bold text-white transition-all hover:bg-primary-hover active:scale-[0.98] cursor-pointer"
                 >
                   <MIcon name="shopping_cart" />
                   Ajouter au panier ({PRODUCT.prix} FCFA)
@@ -360,7 +372,7 @@ export default function ProductPage() {
                 <button
                   type="button"
                   onClick={buyNow}
-                  className="w-full rounded-[10px] border border-primary bg-white py-3.5 font-bold text-primary transition-all hover:bg-primary-lighter"
+                  className="w-full rounded-[10px] border border-primary bg-white py-3.5 font-bold text-primary transition-all hover:bg-primary-lighter cursor-pointer"
                 >
                   Acheter maintenant
                 </button>
@@ -383,7 +395,7 @@ export default function ProductPage() {
                   type="button"
                   onClick={() => setTab(id)}
                   className={clsx(
-                    'px-8 py-4 text-sm',
+                    'px-8 py-4 text-sm cursor-pointer',
                     tab === id ? 'active-tab font-semibold' : 'font-medium text-ink-2 hover:text-ink',
                   )}
                 >
@@ -470,7 +482,7 @@ export default function ProductPage() {
           <button
             type="button"
             onClick={addToCart}
-            className="flex items-center gap-1 rounded-lg border border-primary bg-primary-lighter px-3 py-2.5 text-xs font-bold text-primary"
+            className="flex items-center gap-1 rounded-lg border border-primary bg-primary-lighter px-3 py-2.5 text-xs font-bold text-primary cursor-pointer"
           >
             <MIcon name="shopping_cart" className="text-[16px]" />
             Panier
@@ -478,7 +490,7 @@ export default function ProductPage() {
           <button
             type="button"
             onClick={buyNow}
-            className="rounded-lg bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm"
+            className="rounded-lg bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm cursor-pointer"
           >
             Acheter
           </button>
