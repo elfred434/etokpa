@@ -10,6 +10,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import { ordersApi } from '../../../services/api';
+import { extractApiError, formatApiError } from '../../../utils/apiError';
 
 interface ApiRider {
   id: number;
@@ -17,28 +18,62 @@ interface ApiRider {
   telephone?: string;
 }
 
-interface ApiOrder {
+/** Un item de commande — exactement `OrderResource::$items`. */
+interface ApiOrderItem {
   id: number;
-  statut: string;
-  montant_total?: number;
-  nombre_items?: number;
-  date_commande?: string;
-  livreur?: ApiRider | null;
+  product_id: number;
+  nom?: string;
+  quantite: number;
+  prix_unitaire: number;
 }
 
+/** Commande — exactement `OrderResource::$data` (GET /orders et GET /orders/{id}). */
+interface ApiOrder {
+  id: number;
+  montant_total?: number;
+  frais_livraison?: number;
+  devise?: string;
+  statut: string;
+  description_lieu?: string;
+  created_at?: string;
+  items?: ApiOrderItem[];
+  landmark?: { id: number; nom: string; zone_id?: number } | null;
+  livreur?: ApiRider | null;
+  payment?: { id: number; montant: number; statut: string; methode: string } | null;
+}
+
+/** Position GPS — modèle `SuiviLivraison` sérialisé (decimal:7 → parfois string). */
+interface TrackingPosition {
+  latitude: number | string;
+  longitude: number | string;
+  horodatage?: string;
+  livreur_id?: number;
+  statut?: string;
+}
+
+/** GET /orders/{id}/tracking — exactement `TrackingController::show`. */
 interface TrackingInfo {
   order_id?: number;
   statut?: string;
-  position?: { latitude: number; longitude: number } | null;
-  distance_km?: number | string;
+  position?: TrackingPosition | null;
+  distance_km?: number | string | null;
 }
 
-/** Ordre du stepper d'après la machine à états du backend. */
+/** Ordre du stepper d'après la machine à états du backend (Commande::STATUT_*). */
 const STATUT_FLOW: Record<string, number> = {
   en_attente: 0,
   en_preparation: 1,
   en_livraison: 2,
   livre: 3,
+};
+
+/** Libellés FR des statuts réels (dont `annule`). */
+const STATUT_LABELS: Record<string, string> = {
+  en_attente: 'En attente',
+  en_preparation: 'En préparation',
+  en_livraison: 'En livraison',
+  livre: 'Livrée',
+  annule: 'Annulée',
 };
 
 /**
@@ -60,6 +95,7 @@ export default function OrderTrackingPage() {
   const [selectedId, setSelectedId] = useState<number | null>(search.order ? Number(search.order) : null);
   const [order, setOrder] = useState<ApiOrder | null>(null);
   const [tracking, setTracking] = useState<TrackingInfo | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Chargement de la liste (pour le sélecteur quand pas de ?order=)
   useEffect(() => {
@@ -71,7 +107,10 @@ export default function OrderTrackingPage() {
         setAllOrders(list);
         if (!selectedId && list.length > 0) setSelectedId(list[0].id);
       })
-      .catch((err) => console.warn('Orders list error:', err))
+      .catch((err) => {
+        console.warn('Orders list error:', err);
+        setFetchError(formatApiError(extractApiError(err)));
+      })
       .finally(() => setOrdersLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
@@ -86,7 +125,10 @@ export default function OrderTrackingPage() {
         setOrder(data);
         return ordersApi.getTracking(selectedId).then((t) => setTracking(t as TrackingInfo));
       })
-      .catch((err) => console.warn('Order/tracking error:', err));
+      .catch((err) => {
+        console.warn('Order/tracking error:', err);
+        setFetchError(formatApiError(extractApiError(err)));
+      });
   }, [isAuthenticated, selectedId]);
 
   // Rafraîchissement temps réel sur les événements de statut (notifications.{userId})
@@ -100,9 +142,19 @@ export default function OrderTrackingPage() {
     });
   }, [isAuthenticated, selectedId]);
 
-  const { riderCoords, estimatedMinutes, isWebSocketActive } = useRiderLocation({
+  // Position GPS réelle (GET /orders/{id}/tracking → position) : priorité sur la simulation
+  const realPosition = useMemo<[number, number] | null>(() => {
+    const p = tracking?.position;
+    if (!p) return null;
+    const lat = Number(p.latitude);
+    const lng = Number(p.longitude);
+    return Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : null;
+  }, [tracking]);
+
+  const { riderCoords, estimatedMinutes, source } = useRiderLocation({
     orderId: selectedId ? String(selectedId) : undefined,
     enabled: isAuthenticated && !!selectedId,
+    realPosition,
     simulatedSpeedMs: 2500,
   });
 
@@ -122,6 +174,8 @@ export default function OrderTrackingPage() {
 
   const stepIndex = order ? (STATUT_FLOW[order.statut] ?? 0) : 0;
   const isDelivered = order?.statut === 'livre';
+  const isCancelled = order?.statut === 'annule';
+  const articlesCount = (order?.items ?? []).reduce((sum, it) => sum + Number(it.quantite ?? 0), 0);
   const rider = order?.livreur ?? null;
 
   return (
@@ -137,6 +191,12 @@ export default function OrderTrackingPage() {
         {/* STATUS PANEL (Floating Bottom Sheet) */}
         <section className="relative flex-grow bg-white rounded-t-[20px] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-lg pt-lg pb-xl z-40 -mt-8 overflow-y-auto max-w-[800px] mx-auto w-full">
           <div className="w-12 h-1.5 bg-border-default rounded-full mx-auto mb-lg" />
+
+          {fetchError && (
+            <div className="mb-lg p-3 bg-error-light border border-error/20 rounded-lg text-xs font-semibold text-error-dark leading-relaxed">
+              {fetchError}
+            </div>
+          )}
 
           {ordersLoading ? (
             <div className="py-2xl flex justify-center">
@@ -175,7 +235,7 @@ export default function OrderTrackingPage() {
                           : 'bg-white text-text-secondary border-border-default hover:border-primary-container'
                       }`}
                     >
-                      #{o.id} · {o.statut}
+                      #{o.id} · {STATUT_LABELS[o.statut] ?? o.statut}
                     </button>
                   ))}
                 </div>
@@ -188,18 +248,22 @@ export default function OrderTrackingPage() {
                     className={`inline-flex items-center gap-xs px-md py-xs rounded-full mb-sm border ${
                       isDelivered
                         ? 'bg-success-light text-success-dark border-success-light'
-                        : 'bg-primary-tint text-primary-dark border-primary-light'
+                        : isCancelled
+                          ? 'bg-error-light text-error-dark border-error/20'
+                          : 'bg-primary-tint text-primary-dark border-primary-light'
                     }`}
                   >
-                    {!isDelivered && <span className="w-2.5 h-2.5 rounded-full bg-success animate-ping inline-block" />}
-                    {isDelivered && <MIcon name="check" className="text-[14px]" />}
+                    {!isDelivered && !isCancelled && <span className="w-2.5 h-2.5 rounded-full bg-success animate-ping inline-block" />}
+                    {(isDelivered || isCancelled) && <MIcon name={isCancelled ? 'cancel' : 'check'} className="text-[14px]" />}
                     <span className="text-label font-bold">
                       {isDelivered
                         ? isFr ? 'Commande livrée' : 'Order delivered'
-                        : isFr ? 'Suivi en direct' : 'Live tracking'}
+                        : isCancelled
+                          ? isFr ? 'Commande annulée' : 'Order cancelled'
+                          : isFr ? 'Suivi en direct' : 'Live tracking'}
                     </span>
                   </div>
-                  {!isDelivered && (
+                  {!isDelivered && !isCancelled && (
                     <div className="flex items-center gap-sm text-primary-container">
                       <MIcon name="schedule" />
                       <span className="font-h3 font-bold">
@@ -217,7 +281,7 @@ export default function OrderTrackingPage() {
 
                 <div className="text-micro bg-bg-secondary px-3 py-1.5 rounded-lg border border-border-default font-mono text-text-secondary">
                   GPS: {riderCoords[0].toFixed(4)}, {riderCoords[1].toFixed(4)}
-                  {isWebSocketActive ? ' (WebSocket Reverb)' : ' (GPS)'}
+                  {source === 'websocket' ? ' (WebSocket Reverb)' : source === 'api' ? ' (GPS API /orders/{id}/tracking)' : ' (simulation)'}
                 </div>
               </div>
 
@@ -326,8 +390,8 @@ export default function OrderTrackingPage() {
                   </div>
                   <div className="flex justify-between text-body">
                     <span className="text-text-secondary">
-                      {order.nombre_items ?? 0} {isFr ? 'article(s)' : 'item(s)'}
-                      {order.date_commande ? ` · ${new Date(order.date_commande).toLocaleDateString('fr-FR')}` : ''}
+                      {articlesCount} {isFr ? 'article(s)' : 'item(s)'}
+                      {order.created_at ? ` · ${new Date(order.created_at).toLocaleDateString('fr-FR')}` : ''}
                     </span>
                     <span className="font-price text-text-main">
                       {Number(order.montant_total ?? 0).toLocaleString('fr-FR')} FCFA
