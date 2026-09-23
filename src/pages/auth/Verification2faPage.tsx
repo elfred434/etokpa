@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import OtpInput from '../../components/auth/OtpInput';
 import MIcon from '../../components/shared/MIcon';
 import { authApi } from '../../services/api';
+import { extractApiError, formatApiError } from '../../utils/apiError';
 
 const INITIAL_SECONDS = 10 * 60; // TTL réel du backend (TwoFAService::TTL_MINUTES = 10)
 const MAX_ATTEMPTS = 3;
@@ -49,14 +50,7 @@ export default function Verification2faPage() {
     } catch (err: unknown) {
       console.warn('API 2FA verification error:', err);
       // Pas de fallback factice : sans token réel du backend, on ne « connecte » personne.
-      const detail = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
-      const apiMessage = detail?.message && detail.message !== 'Les données fournies sont invalides.'
-        ? detail.message
-        : null;
-      setError(
-        apiMessage ??
-          'Code 2FA invalide, expiré, ou serveur TOKPa inaccessible (code en dev : storage/logs/laravel.log).',
-      );
+      setError(formatApiError(extractApiError(err)));
       setAttemptsLeft((a) => a - 1);
     } finally {
       setLoading(false);
@@ -69,7 +63,7 @@ export default function Verification2faPage() {
       toast.success('Un nouveau code OTP a été envoyé par email.');
     } catch (err) {
       console.warn('Resend 2FA error:', err);
-      toast.error('Impossible de renvoyer le code (serveur inaccessible).');
+      toast.error(formatApiError(extractApiError(err)));
     }
     setSecondsLeft(INITIAL_SECONDS);
     setAttemptsLeft(MAX_ATTEMPTS);

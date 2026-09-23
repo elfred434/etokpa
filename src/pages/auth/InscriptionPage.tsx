@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import MIcon from '../../components/shared/MIcon';
 import { authApi } from '../../services/api';
+import { extractApiError, formatApiError } from '../../utils/apiError';
 
 const profilSchema = z.object({
   prenom: z.string().min(2, 'Prénom requis'),
@@ -75,6 +76,7 @@ export default function InscriptionPage() {
   const [securityErrors, setSecurityErrors] = useState<SecurityErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const setProfilField = <K extends keyof typeof profil>(key: K, value: string) =>
     setProfil((f) => ({ ...f, [key]: value }));
@@ -98,6 +100,7 @@ export default function InscriptionPage() {
 
   const handleSecuritySubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setApiError(null);
     const result = securitySchema.safeParse(security);
     if (!result.success) {
       const next: SecurityErrors = {};
@@ -128,16 +131,24 @@ export default function InscriptionPage() {
       navigate({ to: '/verification-2fa' });
     } catch (err: unknown) {
       console.warn('API Register error:', err);
-      const detail = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })
-        ?.response?.data;
-      const firstError = detail?.errors
-        ? Object.values(detail.errors).flat()[0]
-        : undefined;
-      toast.error(
-        detail?.message && detail.message !== 'Les données fournies sont invalides.'
-          ? detail.message
-          : firstError || 'Inscription impossible (email déjà utilisé ? ou serveur inaccessible).',
-      );
+      const info = extractApiError(err);
+      const text = formatApiError(info);
+      setApiError(text);
+      toast.error(text);
+
+      // Erreurs de champs (422) → sous les inputs correspondants
+      const profilNext: ProfilErrors = {};
+      const securityNext: SecurityErrors = {};
+      for (const [field, msgs] of Object.entries(info.fieldErrors)) {
+        const msg = Array.isArray(msgs) ? msgs[0] : String(msgs);
+        if (field === 'prenom' || field === 'nom' || field === 'email' || field === 'telephone' || field === 'ville') {
+          profilNext[field] = msg;
+        } else if (field === 'password') {
+          securityNext[field] = msg;
+        }
+      }
+      if (Object.keys(profilNext).length > 0) setProfilErrors((prev) => ({ ...prev, ...profilNext }));
+      if (Object.keys(securityNext).length > 0) setSecurityErrors((prev) => ({ ...prev, ...securityNext }));
     } finally {
       setLoading(false);
     }
@@ -420,6 +431,12 @@ export default function InscriptionPage() {
                   </span>
                 </label>
               </div>
+
+              {apiError && (
+                <div className="p-3 bg-error-light border border-error/20 rounded-lg text-xs font-semibold text-error-dark leading-relaxed">
+                  {apiError}
+                </div>
+              )}
 
               <button
                 type="submit"

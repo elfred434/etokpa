@@ -4,6 +4,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import MIcon from '../../components/shared/MIcon';
 import { authApi } from '../../services/api';
+import { extractApiError, formatApiError } from '../../utils/apiError';
 
 /**
  * Page Connexion — Intégration API Backend Laravel + UI Stitch 100% fidèle
@@ -30,12 +31,12 @@ export default function ConnexionPage() {
       navigate({ to: '/verification-2fa' });
     } catch (err: unknown) {
       console.warn('API login error:', err);
-      const detail = (err as { response?: { status?: number; data?: { message?: string } } })?.response;
-      if (detail?.status === 401) {
-        setAuthError(detail.data?.message || 'Email ou mot de passe incorrect.');
-      } else {
-        setAuthError('Serveur TOKPa inaccessible — vérifiez que le backend est démarré (localhost:8000).');
-      }
+      const info = extractApiError(err);
+      setAuthError(
+        info.status === 401
+          ? info.message || 'Email ou mot de passe incorrect.'
+          : formatApiError(info),
+      );
     } finally {
       setLoading(false);
     }
@@ -136,7 +137,7 @@ export default function ConnexionPage() {
                         toast.success(res?.message || 'Si un compte existe, un lien de réinitialisation a été envoyé.');
                       } catch (err) {
                         console.warn('Forgot password error:', err);
-                        toast.error('Impossible d\'envoyer le lien (serveur inaccessible).');
+                        toast.error(formatApiError(extractApiError(err)));
                       }
                     }}
                     className="text-[13px] font-label text-[#F97316] hover:underline cursor-pointer"
