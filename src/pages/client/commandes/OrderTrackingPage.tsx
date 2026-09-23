@@ -3,13 +3,18 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import RealBeninMap from '../../../components/client/commandes/RealBeninMap';
+import { useRiderLocation } from '../../../hooks/useRiderLocation';
 import { useLanguage } from '../../../context/LanguageContext';
 
 /**
- * OrderTrackingPage — Suivi de Commande Client avec Carte OpenStreetMap Réelle du Bénin (Cotonou / Dantokpa / Cadjehoun)
+ * OrderTrackingPage — Suivi de Commande Client avec Récupération GPS Temps Réel du Livreur (Laravel Reverb WebSocket + OpenStreetMap Cotonou)
  */
 export default function OrderTrackingPage() {
   const { isFr } = useLanguage();
+  const { riderCoords, estimatedMinutes, isWebSocketActive, distanceKm } = useRiderLocation({
+    orderId: 'TOK-2847',
+    simulatedSpeedMs: 2500,
+  });
 
   return (
     <div className="bg-bg-app font-body text-on-surface antialiased min-h-screen flex flex-col">
@@ -18,30 +23,37 @@ export default function OrderTrackingPage() {
 
       {/* Main Viewport Canvas */}
       <main className="flex-grow pt-[52px] pb-[80px] md:pb-0 relative overflow-hidden flex flex-col">
-        {/* GPS MAP SECTION (REAL BENIN MAP) */}
+        {/* GPS MAP SECTION (REAL BENIN MAP WITH LIVE RIDER POSITION) */}
         <section className="relative h-[480px] sm:h-[580px] w-full overflow-hidden bg-[#E8F4FD]">
-          <RealBeninMap />
+          <RealBeninMap riderCoords={riderCoords} />
         </section>
 
         {/* STATUS PANEL (Floating Bottom Sheet) */}
         <section className="relative flex-grow bg-white rounded-t-[20px] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-lg pt-lg pb-xl z-40 -mt-8 overflow-y-auto max-w-[800px] mx-auto w-full">
           <div className="w-12 h-1.5 bg-border-default rounded-full mx-auto mb-lg" />
 
-          {/* Header Status */}
-          <div className="flex justify-between items-start mb-lg">
+          {/* Header Status with Live GPS Badge */}
+          <div className="flex flex-wrap justify-between items-start mb-lg gap-2">
             <div>
               <div className="inline-flex items-center gap-xs px-md py-xs bg-primary-tint border border-primary-light rounded-full mb-sm">
-                <span className="w-2 h-2 rounded-full bg-primary-container inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-success animate-ping inline-block" />
                 <span className="text-label text-primary-dark font-bold">
-                  {isFr ? 'En livraison à Cotonou' : 'Out for delivery in Cotonou'}
+                  {isFr ? 'En livraison · GPS Temps Réel' : 'Live Delivery · Realtime GPS'}
                 </span>
               </div>
               <div className="flex items-center gap-sm text-primary-container">
                 <MIcon name="schedule" />
-                <span className="font-h3">
-                  {isFr ? 'Arrivée estimée : 12 minutes (Boulevard St Michel)' : 'Estimated arrival: 12 minutes'}
+                <span className="font-h3 font-bold">
+                  {isFr
+                    ? `Arrivée estimée : ~${estimatedMinutes} min (${distanceKm} km restant)`
+                    : `Estimated arrival: ~${estimatedMinutes} min (${distanceKm} km remaining)`}
                 </span>
               </div>
+            </div>
+
+            <div className="text-micro bg-bg-secondary px-3 py-1.5 rounded-lg border border-border-default font-mono text-text-secondary">
+              GPS: {riderCoords[0].toFixed(4)}, {riderCoords[1].toFixed(4)}
+              {isWebSocketActive ? ' (WebSocket Reverb)' : ' (Live Simulator)'}
             </div>
           </div>
 

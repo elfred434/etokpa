@@ -8,15 +8,6 @@ export const DANTOKPA_COORDS: [number, number] = [6.3725, 2.4332]; // Marché Da
 export const RIDER_COORDS: [number, number] = [6.367, 2.421]; // Position actuelle Livreur Jean Kouassi sur Boulevard St Michel
 export const CLIENT_COORDS: [number, number] = [6.362, 2.410]; // Destination Cadjehoun Cotonou
 
-const ROUTE_PATH: [number, number][] = [
-  DANTOKPA_COORDS,
-  [6.3705, 2.431],
-  [6.3685, 2.426],
-  RIDER_COORDS,
-  [6.365, 2.416],
-  CLIENT_COORDS,
-];
-
 // Icônes personnalisées Leaflet Tokpa avec Material Symbols
 const sellerIcon = L.divIcon({
   className: 'custom-leaflet-marker',
@@ -32,12 +23,12 @@ const sellerIcon = L.divIcon({
 const riderIcon = L.divIcon({
   className: 'custom-leaflet-marker-rider',
   html: `
-    <div style="background-color: #10B981; width: 44px; height: 44px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(16,185,129,0.5); animation: pulse 2s infinite;">
-      <span class="material-symbols-outlined" style="color: white; font-size: 22px;">motorcycle</span>
+    <div style="background-color: #10B981; width: 46px; height: 46px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(16,185,129,0.6); animation: pulse 1.8s infinite;">
+      <span class="material-symbols-outlined" style="color: white; font-size: 24px;">motorcycle</span>
     </div>
   `,
-  iconSize: [44, 44],
-  iconAnchor: [22, 22],
+  iconSize: [46, 46],
+  iconAnchor: [23, 23],
 });
 
 const clientIcon = L.divIcon({
@@ -54,20 +45,23 @@ const clientIcon = L.divIcon({
 function MapRecenterController({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, 14, { animate: true });
+    map.setView(center, map.getZoom(), { animate: true });
   }, [center, map]);
   return null;
 }
 
 interface RealBeninMapProps {
+  riderCoords: [number, number];
   onRecenterRider?: () => void;
 }
 
-export default function RealBeninMap({ onRecenterRider }: RealBeninMapProps) {
+export default function RealBeninMap({ riderCoords, onRecenterRider }: RealBeninMapProps) {
+  const routePath: [number, number][] = [DANTOKPA_COORDS, riderCoords, CLIENT_COORDS];
+
   return (
     <div className="relative w-full h-full min-h-[450px] z-10">
       <MapContainer
-        center={RIDER_COORDS}
+        center={riderCoords}
         zoom={14}
         scrollWheelZoom={false}
         className="w-full h-full rounded-b-none"
@@ -78,10 +72,10 @@ export default function RealBeninMap({ onRecenterRider }: RealBeninMapProps) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <MapRecenterController center={RIDER_COORDS} />
+        <MapRecenterController center={riderCoords} />
 
-        {/* Tracé de l’itinéraire réel Cotonou */}
-        <Polyline positions={ROUTE_PATH} color="#f97316" weight={5} opacity={0.85} dashArray="10, 8" />
+        {/* Tracé de l’itinéraire dynamique Cotonou */}
+        <Polyline positions={routePath} color="#f97316" weight={5} opacity={0.85} dashArray="10, 8" />
 
         {/* Marqueur Marché Dantokpa */}
         <Marker position={DANTOKPA_COORDS} icon={sellerIcon}>
@@ -93,12 +87,12 @@ export default function RealBeninMap({ onRecenterRider }: RealBeninMapProps) {
           </Popup>
         </Marker>
 
-        {/* Marqueur Livreur Jean Kouassi */}
-        <Marker position={RIDER_COORDS} icon={riderIcon}>
+        {/* Marqueur Livreur Jean Kouassi Temps Réel */}
+        <Marker position={riderCoords} icon={riderIcon}>
           <Popup>
             <div className="text-center font-sans p-1">
               <strong className="block text-success-dark font-bold">Jean Kouassi (Livreur)</strong>
-              <span className="text-xs text-gray-600">En déplacement vers Cadjehoun</span>
+              <span className="text-xs text-gray-600">GPS Live : {riderCoords[0].toFixed(4)}, {riderCoords[1].toFixed(4)}</span>
             </div>
           </Popup>
         </Marker>
@@ -118,7 +112,7 @@ export default function RealBeninMap({ onRecenterRider }: RealBeninMapProps) {
       <button
         type="button"
         onClick={onRecenterRider}
-        title="Recentrer sur le livreur au Bénin"
+        title="Recentrer sur la position temps réel du livreur"
         className="absolute bottom-6 right-6 z-[400] w-12 h-12 bg-white rounded-full flex items-center justify-center border border-border-default shadow-xl hover:bg-bg-secondary transition-transform active:scale-95 cursor-pointer"
       >
         <span className="material-symbols-outlined text-text-main">my_location</span>
