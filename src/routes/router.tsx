@@ -14,6 +14,7 @@ import ProfilePage from '../pages/client/profil/ProfilePage';
 import NegotiationsPage from '../pages/client/negociations/NegotiationsPage';
 import AdminCatalogPage from '../pages/admin/catalogue/AdminCatalogPage';
 import AdminCategoriesPage from '../pages/admin/categories/AdminCategoriesPage';
+import NotFoundPage from '../pages/NotFoundPage';
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -35,6 +36,7 @@ const rootRoute = createRootRoute({
       />
     </>
   ),
+  notFoundComponent: NotFoundPage,
 });
 
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: HomePage });
