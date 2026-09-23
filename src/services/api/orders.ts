@@ -7,6 +7,7 @@ export interface CreateOrderPayload {
   }>;
   landmark_id: number;
   description_lieu?: string;
+  payment_method: 'cash' | 'card' | 'fedapay';
 }
 
 export const ordersApi = {

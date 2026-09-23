@@ -49,6 +49,7 @@ export default function CartPage() {
         items: payloadItems,
         landmark_id: 1,
         description_lieu: landmark,
+        payment_method: 'fedapay',
       });
 
       const orderId = orderRes?.data?.id || orderRes?.id || 1;

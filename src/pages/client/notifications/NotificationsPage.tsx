@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import clsx from 'clsx';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
@@ -8,6 +8,7 @@ import MIcon from '../../../components/shared/MIcon';
 import Pagination from '../../../components/shared/Pagination';
 import { NOTIFICATIONS } from '../../../constants/mockData';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
+import { notificationsApi, type ApiNotification } from '../../../services/api';
 import type { NotificationType } from '../../../types/models';
 
 type FilterKey = 'all' | NotificationType;
@@ -20,7 +21,7 @@ const FILTERS: { key: FilterKey; label: string; icon: string }[] = [
 ];
 
 /**
- * Page Historique des Notifications — Protected Route + UI Stitch 100% fidèle
+ * Page Historique des Notifications — Protected Route + UI Stitch 100% fidèle + Backend Laravel
  */
 export default function NotificationsPage() {
   const navigate = useNavigate();
@@ -29,6 +30,34 @@ export default function NotificationsPage() {
   const [filter, setFilter] = useState<FilterKey>('all');
   const [notifications, setNotifications] = useState(NOTIFICATIONS);
   const [page, setPage] = useState(1);
+  const [pageCount, setPageCount] = useState(1);
+
+  // Synchronisation avec l'API Backend Laravel GET /api/notifications
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    notificationsApi.getNotifications(page)
+      .then((res) => {
+        const items = res?.data || (Array.isArray(res) ? res : []);
+        if (Array.isArray(items) && items.length > 0) {
+          const mapped = items.map((n: ApiNotification) => ({
+            id: String(n.id),
+            type: (n.type as NotificationType) || 'order',
+            title: n.data?.title || 'Notification TOKPa',
+            message: n.data?.message || 'Mise à jour concernant votre compte',
+            time: n.created_at ? new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Récemment',
+            unread: !n.read_at,
+          }));
+          setNotifications(mapped);
+          if (res?.last_page) {
+            setPageCount(res.last_page);
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('Backend notifications fallback:', err);
+      });
+  }, [isAuthenticated, page]);
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -42,13 +71,25 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter((n) => n.unread).length;
 
   const markAllRead = () => {
-    setNotifications((list) => list.map((n) => ({ ...n, unread: false })));
+    setNotifications((list) =>
+      list.map((n) => {
+        if (n.unread && !isNaN(Number(n.id))) {
+          notificationsApi.markRead(n.id).catch(() => {});
+        }
+        return { ...n, unread: false };
+      })
+    );
   };
 
-  const handleNotificationClick = (type: NotificationType) => {
-    if (type === 'order') {
+  const handleNotificationClick = (item: (typeof notifications)[0]) => {
+    if (item.unread && !isNaN(Number(item.id))) {
+      notificationsApi.markRead(item.id).catch(() => {});
+      setNotifications((list) => list.map((n) => (n.id === item.id ? { ...n, unread: false } : n)));
+    }
+
+    if (item.type === 'order') {
       navigate({ to: '/commandes/suivi' });
-    } else if (type === 'promo') {
+    } else if (item.type === 'promo') {
       navigate({ to: '/negociations' });
     } else {
       navigate({ to: '/profil' });
@@ -166,7 +207,7 @@ export default function NotificationsPage() {
                 return (
                   <div
                     key={item.id}
-                    onClick={() => handleNotificationClick(item.type)}
+                    onClick={() => handleNotificationClick(item)}
                     className={clsx(
                       'p-4 rounded-xl border border-border-default flex items-start gap-4 transition-all hover:border-primary-container hover:shadow-sm cursor-pointer',
                       isUnread ? 'bg-white' : 'bg-white/80 opacity-80',
@@ -192,7 +233,9 @@ export default function NotificationsPage() {
               })}
             </div>
 
-            <Pagination page={page} pageCount={8} onChange={setPage} className="mt-8" />
+            {pageCount > 1 && (
+              <Pagination page={page} pageCount={pageCount} onChange={setPage} className="mt-8" />
+            )}
           </div>
         </section>
       </div>

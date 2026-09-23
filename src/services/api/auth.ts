@@ -13,6 +13,10 @@ export interface RegisterPayload {
   password: string;
   role?: 'client' | 'manager' | 'livreur' | 'admin' | 'super_admin';
   quartier?: string;
+  zone_id?: number;
+  heure_debut?: string;
+  heure_fin?: string;
+  documents?: unknown[];
 }
 
 export interface Verify2FAPayload {
@@ -43,7 +47,7 @@ export interface UserProfile {
 }
 
 export const authApi = {
-  // POST /api/auth/login -> déclenche l'envoi du code 2FA
+  // POST /api/auth/login -> declenche l'envoi du code 2FA
   login: async (payload: LoginPayload) => {
     const response = await apiClient.post('/auth/login', payload);
     return response.data;
@@ -59,7 +63,7 @@ export const authApi = {
     return response.data;
   },
 
-  // POST /api/auth/register -> création de compte et envoi 2FA
+  // POST /api/auth/register -> creation de compte et envoi 2FA
   register: async (payload: RegisterPayload) => {
     const response = await apiClient.post('/auth/register', payload);
     return response.data;
@@ -71,19 +75,37 @@ export const authApi = {
     return response.data;
   },
 
-  // GET /api/profile -> profil utilisateur authentifié
+  // GET /api/profile -> profil utilisateur authentifie
   getProfile: async () => {
     const response = await apiClient.get('/profile');
     return response.data;
   },
 
-  // PUT /api/profile -> mise à jour profil
+  // PUT /api/profile -> mise a jour profil
   updateProfile: async (data: Partial<UserProfile> & Record<string, unknown>) => {
     const response = await apiClient.put('/profile', data);
     return response.data;
   },
 
-  // POST /api/auth/logout -> déconnexion
+  // POST /api/auth/change-password -> changement de mot de passe
+  changePassword: async (payload: { current_password: string; new_password: string; new_password_confirmation: string }) => {
+    const response = await apiClient.post('/auth/change-password', payload);
+    return response.data;
+  },
+
+  // POST /api/auth/forgot-password -> mot de passe oublie
+  forgotPassword: async (email: string) => {
+    const response = await apiClient.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  // POST /api/auth/reset-password -> reinitialisation mot de passe
+  resetPassword: async (payload: { email: string; token: string; password: string; password_confirmation: string }) => {
+    const response = await apiClient.post('/auth/reset-password', payload);
+    return response.data;
+  },
+
+  // POST /api/auth/logout -> deconnexion
   logout: async () => {
     try {
       await apiClient.post('/auth/logout');
