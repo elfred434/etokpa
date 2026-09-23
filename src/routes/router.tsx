@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import ConnexionPage from '../pages/auth/ConnexionPage';
 import InscriptionPage from '../pages/auth/InscriptionPage';
 import Verification2faPage from '../pages/auth/Verification2faPage';
+import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
 import NotificationsPage from '../pages/client/notifications/NotificationsPage';
 import PreviewPage from '../pages/preview/PreviewPage';
 import HomePage from '../pages/client/accueil/HomePage';
@@ -47,6 +48,16 @@ const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', com
 const connexionRoute = createRoute({ getParentRoute: () => rootRoute, path: '/connexion', component: ConnexionPage });
 const inscriptionRoute = createRoute({ getParentRoute: () => rootRoute, path: '/inscription', component: InscriptionPage });
 const verificationRoute = createRoute({ getParentRoute: () => rootRoute, path: '/verification-2fa', component: Verification2faPage });
+// Lien envoyé par POST /api/auth/forgot-password : /reset-password?token=...&email=...
+const resetPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/reset-password',
+  component: ResetPasswordPage,
+  validateSearch: (search: Record<string, unknown>): { token?: string; email?: string } => ({
+    token: typeof search.token === 'string' ? search.token : undefined,
+    email: typeof search.email === 'string' ? search.email : undefined,
+  }),
+});
 const notificationsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/notifications', component: NotificationsPage });
 const catalogueRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -73,6 +84,7 @@ const routeTree = rootRoute.addChildren([
   connexionRoute,
   inscriptionRoute,
   verificationRoute,
+  resetPasswordRoute,
   notificationsRoute,
   catalogueRoute,
   produitRoute,

@@ -6,7 +6,7 @@ import OtpInput from '../../components/auth/OtpInput';
 import MIcon from '../../components/shared/MIcon';
 import { authApi } from '../../services/api';
 
-const INITIAL_SECONDS = 4 * 60 + 32; // 04:32
+const INITIAL_SECONDS = 10 * 60; // TTL réel du backend (TwoFAService::TTL_MINUTES = 10)
 const MAX_ATTEMPTS = 3;
 
 const formatTime = (s: number) =>
@@ -47,26 +47,17 @@ export default function Verification2faPage() {
       toast.success(res.message || 'Authentification réussie !');
       navigate({ to: '/' });
     } catch (err: unknown) {
-      console.warn('API verification fallback (mode test local):', err);
-      // Mode de test / démo local : tout code à 6 chiffres ou 123456 permet de se connecter
-      if (code.length === 6) {
-        toast.success('Code 2FA validé ! Connexion réussie.');
-        localStorage.setItem('tokpa_token', 'demo_token_sanctum_123');
-        localStorage.setItem('tokpa_user', JSON.stringify({
-          id: 1,
-          nom: 'Client',
-          prenom: 'Démonstration',
-          nom_complet: 'Client Démonstration',
-          email: pendingEmail,
-          role: { id: 1, nom: 'client' },
-          statut: 'actif',
-          stats: { commandes_effectuees: 0, points_repere_enregistres: 0 }
-        }));
-        navigate({ to: '/' });
-      } else {
-        setError('Code 2FA invalide ou expiré.');
-        setAttemptsLeft((a) => a - 1);
-      }
+      console.warn('API 2FA verification error:', err);
+      // Pas de fallback factice : sans token réel du backend, on ne « connecte » personne.
+      const detail = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
+      const apiMessage = detail?.message && detail.message !== 'Les données fournies sont invalides.'
+        ? detail.message
+        : null;
+      setError(
+        apiMessage ??
+          'Code 2FA invalide, expiré, ou serveur TOKPa inaccessible (code en dev : storage/logs/laravel.log).',
+      );
+      setAttemptsLeft((a) => a - 1);
     } finally {
       setLoading(false);
     }
@@ -77,8 +68,8 @@ export default function Verification2faPage() {
       await authApi.resend2fa(pendingEmail);
       toast.success('Un nouveau code OTP a été envoyé par email.');
     } catch (err) {
-      console.warn('Resend 2FA fallback:', err);
-      toast.success('Un nouveau code OTP (mode démo) a été généré.');
+      console.warn('Resend 2FA error:', err);
+      toast.error('Impossible de renvoyer le code (serveur inaccessible).');
     }
     setSecondsLeft(INITIAL_SECONDS);
     setAttemptsLeft(MAX_ATTEMPTS);

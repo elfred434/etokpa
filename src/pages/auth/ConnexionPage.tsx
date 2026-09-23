@@ -29,14 +29,12 @@ export default function ConnexionPage() {
       localStorage.setItem('tokpa_pending_email', email);
       navigate({ to: '/verification-2fa' });
     } catch (err: unknown) {
-      console.warn('API connection offline or error, using demo fallback:', err);
-      // Fallback for demonstration when backend DB is offline
-      if ((email === 'test@tokpa.bj' || email === 'client@tokpa.bj' || email === 'user@example.com') && password) {
-        toast.success('Code 2FA simulé envoyé.');
-        localStorage.setItem('tokpa_pending_email', email);
-        navigate({ to: '/verification-2fa' });
+      console.warn('API login error:', err);
+      const detail = (err as { response?: { status?: number; data?: { message?: string } } })?.response;
+      if (detail?.status === 401) {
+        setAuthError(detail.data?.message || 'Email ou mot de passe incorrect.');
       } else {
-        setAuthError('Email ou mot de passe incorrect (ou serveur indisponible).');
+        setAuthError('Serveur TOKPa inaccessible — vérifiez que le backend est démarré (localhost:8000).');
       }
     } finally {
       setLoading(false);
@@ -128,7 +126,19 @@ export default function ConnexionPage() {
                   </label>
                   <button
                     type="button"
-                    onClick={() => toast('Mot de passe oublié ? Entrez votre email pour réinitialiser.')}
+                    onClick={async () => {
+                      if (!email.trim()) {
+                        toast.error('Renseignez d\'abord votre adresse email.');
+                        return;
+                      }
+                      try {
+                        const res = await authApi.forgotPassword(email.trim());
+                        toast.success(res?.message || 'Si un compte existe, un lien de réinitialisation a été envoyé.');
+                      } catch (err) {
+                        console.warn('Forgot password error:', err);
+                        toast.error('Impossible d\'envoyer le lien (serveur inaccessible).');
+                      }
+                    }}
                     className="text-[13px] font-label text-[#F97316] hover:underline cursor-pointer"
                   >
                     Mot de passe oublié ?
