@@ -5,7 +5,8 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
-import { authApi, landmarksApi } from '../../../services/api';
+import { useAuthGuard } from '../../../hooks/useAuthGuard';
+import { authApi, landmarksApi, ordersApi, type UserProfile, type PointRepereItem } from '../../../services/api';
 
 interface Landmark {
   id: string;
@@ -16,82 +17,27 @@ interface Landmark {
   icon: string;
 }
 
-const INITIAL_LANDMARKS: Landmark[] = [
-  {
-    id: '1',
-    nom: 'Carrefour Cadjehoun',
-    isDefault: true,
-    description: 'Face à la pharmacie Sainte-Marie, côté pair',
-    zone: 'Zone Cadjehoun',
-    icon: 'location_on',
-  },
-  {
-    id: '2',
-    nom: 'Bureau TOKPa Hub',
-    isDefault: false,
-    description: 'Immeuble en verre, 2ème étage, Bureau 204',
-    zone: 'Zone Haie Vive',
-    icon: 'work',
-  },
-  {
-    id: '3',
-    nom: 'Maison Maman',
-    isDefault: false,
-    description: "Près de l'église, portail bleu avec bougainvilliers",
-    zone: 'Zone Akpakpa',
-    icon: 'home',
-  },
-];
-
-const RECENT_ORDERS = [
-  { id: 'TOK-2847', date: 'Aujourd’hui', totalLabel: '3 980 FCFA', statusFr: 'En livraison', statusEn: 'Out for delivery', active: true },
-  { id: 'TOK-2840', date: '08 Oct 2023', totalLabel: '12 400 FCFA', statusFr: 'Livré', statusEn: 'Delivered', active: false },
-  { id: 'TOK-2831', date: '02 Oct 2023', totalLabel: '5 200 FCFA', statusFr: 'Livré', statusEn: 'Delivered', active: false },
-];
+interface OrderItem {
+  id: string;
+  date: string;
+  totalLabel: string;
+  statusFr: string;
+  statusEn: string;
+  active: boolean;
+}
 
 /**
- * ProfilePage — Intégration API Backend + UI Stitch 100% fidèle
+ * ProfilePage — Uniquement données réelles Backend Laravel (Pas de fausses données statiques frontend)
  */
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { language, toggleLanguage, isFr } = useLanguage();
-  const [landmarks, setLandmarks] = useState<Landmark[]>(INITIAL_LANDMARKS);
-  const [userName, setUserName] = useState('Kossi Ouédraogo');
-  const [userLocation, setUserLocation] = useState('Cotonou · Cadjehoun');
-  const [orderCount, setOrderCount] = useState(23);
+  const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
 
-  // Connection API Backend GET /api/profile et GET /api/landmarks
-  useEffect(() => {
-    authApi.getProfile()
-      .then((res) => {
-        if (res?.data) {
-          const u = res.data;
-          if (u.nom_complet || (u.prenom && u.nom)) {
-            setUserName(u.nom_complet || `${u.prenom} ${u.nom}`);
-          }
-          if (u.stats?.commandes_effectuees !== undefined) {
-            setOrderCount(u.stats.commandes_effectuees);
-          }
-        }
-      })
-      .catch((err) => console.warn('API Profile fallback:', err));
-
-    landmarksApi.getLandmarks()
-      .then((res) => {
-        if (Array.isArray(res) && res.length > 0) {
-          const fetched: Landmark[] = res.map((l, index) => ({
-            id: String(l.id || index),
-            nom: l.nom || 'Point de repère',
-            description: l.description || l.quartier || 'Non spécifié',
-            zone: l.zone || 'Zone Cadjehoun',
-            icon: 'location_on',
-            isDefault: index === 0,
-          }));
-          setLandmarks(fetched);
-        }
-      })
-      .catch((err) => console.warn('API Landmarks fallback:', err));
-  }, []);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [landmarks, setLandmarks] = useState<Landmark[]>([]);
+  const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
   // Edit / Add Landmark Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -100,6 +46,84 @@ export default function ProfilePage() {
   const [formDesc, setFormDescription] = useState('');
   const [formZone, setFormZone] = useState('Zone Cadjehoun');
   const [formIcon, setFormIcon] = useState('location_on');
+
+  // Load real data from Backend Laravel API
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    setIsDataLoading(true);
+
+    // 1. GET /api/profile
+    const p1 = authApi.getProfile()
+      .then((res) => {
+        if (res?.data) {
+          setProfile(res.data);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load profile:', err);
+      });
+
+    // 2. GET /api/landmarks
+    const p2 = landmarksApi.getLandmarks()
+      .then((res) => {
+        if (Array.isArray(res)) {
+          const mapped: Landmark[] = res.map((l: PointRepereItem, index: number) => ({
+            id: String(l.id || index),
+            nom: l.nom || 'Point de repère',
+            description: l.description || l.quartier || 'Non spécifié',
+            zone: l.zone || 'Zone Cadjehoun',
+            icon: 'location_on',
+            isDefault: index === 0,
+          }));
+          setLandmarks(mapped);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load landmarks:', err);
+      });
+
+    // 3. GET /api/orders
+    const p3 = ordersApi.getOrders()
+      .then((res) => {
+        const orderList = res?.data || (Array.isArray(res) ? res : []);
+        if (Array.isArray(orderList)) {
+          const mappedOrders: OrderItem[] = orderList.map((o) => {
+            const isEnLivraison = o.statut === 'en_cours' || o.statut === 'en_attente';
+            return {
+              id: String(o.id),
+              date: o.created_at ? new Date(o.created_at).toLocaleDateString() : 'Récemment',
+              totalLabel: `${(o.montant_total || 0).toLocaleString('fr-FR')} FCFA`,
+              statusFr: o.statut === 'livre' ? 'Livré' : o.statut === 'annule' ? 'Annulé' : 'En cours',
+              statusEn: o.statut === 'livre' ? 'Delivered' : o.statut === 'annule' ? 'Cancelled' : 'In progress',
+              active: isEnLivraison,
+            };
+          });
+          setRecentOrders(mappedOrders);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load orders:', err);
+      });
+
+    Promise.allSettled([p1, p2, p3]).then(() => setIsDataLoading(false));
+  }, [isAuthenticated]);
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
+        <div className="flex flex-col items-center gap-3">
+          <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+          <p className="text-sm font-semibold text-text-secondary">Redirection vers la connexion...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const userFullName = profile?.nom_complet || (profile?.prenom ? `${profile.prenom} ${profile.nom}` : 'Utilisateur TOKPa');
+  const userRole = typeof profile?.role === 'object' ? profile.role.nom : profile?.role || 'Client';
+  const orderCount = profile?.stats?.commandes_effectuees ?? recentOrders.length;
+  const landmarkCount = profile?.stats?.points_repere_enregistres ?? landmarks.length;
 
   const handleOpenAdd = () => {
     setEditingLandmark(null);
@@ -122,11 +146,11 @@ export default function ProfilePage() {
   const handleDeleteLandmark = async (id: string) => {
     try {
       await landmarksApi.deleteLandmark(id);
+      setLandmarks((prev) => prev.filter((l) => l.id !== id));
+      toast.success(isFr ? 'Point de repère supprimé' : 'Landmark deleted');
     } catch (e) {
-      console.warn('API delete landmark fallback:', e);
+      toast.error('Erreur lors de la suppression du repère');
     }
-    setLandmarks((prev) => prev.filter((l) => l.id !== id));
-    toast.success(isFr ? 'Point de repère supprimé' : 'Landmark deleted');
   };
 
   const handleSaveLandmark = async (e: React.FormEvent) => {
@@ -139,32 +163,26 @@ export default function ProfilePage() {
         description: formDesc,
         zone: formZone,
       });
-    } catch (e) {
-      console.warn('API create landmark fallback:', e);
-    }
 
-    if (editingLandmark) {
-      setLandmarks((prev) =>
-        prev.map((l) =>
-          l.id === editingLandmark.id
-            ? { ...l, nom: formNom, description: formDesc, zone: formZone, icon: formIcon }
-            : l,
-        ),
-      );
-      toast.success(isFr ? 'Point de repère mis à jour !' : 'Landmark updated!');
-    } else {
-      const newLm: Landmark = {
-        id: `lm_${Date.now()}`,
-        nom: formNom,
-        description: formDesc,
-        zone: formZone,
-        icon: formIcon,
-        isDefault: landmarks.length === 0,
-      };
-      setLandmarks((prev) => [...prev, newLm]);
-      toast.success(isFr ? 'Nouveau point de repère ajouté !' : 'New landmark added!');
+      // Reload landmarks
+      const updated = await landmarksApi.getLandmarks();
+      if (Array.isArray(updated)) {
+        setLandmarks(
+          updated.map((l: PointRepereItem, index: number) => ({
+            id: String(l.id || index),
+            nom: l.nom || 'Point de repère',
+            description: l.description || l.quartier || 'Non spécifié',
+            zone: l.zone || 'Zone Cadjehoun',
+            icon: 'location_on',
+            isDefault: index === 0,
+          }))
+        );
+      }
+      toast.success(isFr ? 'Point de repère enregistré !' : 'Landmark saved!');
+      setIsModalOpen(false);
+    } catch (e) {
+      toast.error('Erreur lors de l’enregistrement du point de repère');
     }
-    setIsModalOpen(false);
   };
 
   const handleLogout = async () => {
@@ -175,71 +193,60 @@ export default function ProfilePage() {
 
   return (
     <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
-      {/* TopNavBar */}
       <ClientNavbar />
 
-      {/* Main Content Container */}
       <main className="max-w-[720px] mx-auto mt-[76px] px-md">
-        {/* PROFILE HEADER */}
-        <section className="bg-bg-card rounded-[14px] p-lg border border-border-default flex flex-col sm:flex-row items-start sm:items-center justify-between gap-md mb-md">
+        {/* PROFILE HEADER (Real Backend User Info) */}
+        <section className="bg-bg-card rounded-[14px] p-lg border border-border-default flex flex-col sm:flex-row items-start sm:items-center justify-between gap-md mb-md shadow-xs">
           <div className="flex items-center gap-md">
-            <div className="w-16 h-16 rounded-full bg-primary-tint flex items-center justify-center text-[22px] font-bold text-primary-dark shrink-0">
-              {userName.substring(0, 2).toUpperCase()}
+            <div className="w-16 h-16 rounded-full bg-primary-tint flex items-center justify-center text-[22px] font-bold text-primary-dark shrink-0 border border-primary-light">
+              {userFullName.substring(0, 2).toUpperCase()}
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-sm">
-                <h2 className="font-h2 text-h2 text-text-main font-bold">{userName}</h2>
+                <h2 className="font-h2 text-h2 text-text-main font-bold">{userFullName}</h2>
                 <span className="inline-flex items-center gap-xs px-sm py-1 bg-success-light text-success text-micro rounded-full font-bold uppercase tracking-wider">
                   <MIcon name="verified_user" className="!text-xs" style={{ fontVariationSettings: "'FILL' 1" }} />
-                  {isFr ? 'Client vérifié' : 'Verified Client'}
+                  {userRole}
                 </span>
               </div>
               <div className="flex items-center text-text-secondary mt-1">
-                <MIcon name="location_on" className="text-sm mr-1" />
-                <span className="text-secondary">{userLocation}</span>
+                <MIcon name="mail" className="text-sm mr-1" />
+                <span className="text-secondary">{profile?.email || 'Non renseigné'}</span>
               </div>
             </div>
           </div>
           <button
             type="button"
-            onClick={() => toast(isFr ? 'Mode modification profil ouvert' : 'Edit profile mode open')}
+            onClick={() => toast(isFr ? 'Modification du profil' : 'Edit profile')}
             className="px-md py-sm bg-white border border-border-default text-text-secondary rounded-lg font-label text-label flex items-center gap-sm transition-all hover:bg-bg-secondary cursor-pointer"
           >
             <MIcon name="edit" className="text-sm" />
-            {isFr ? 'Modifier le profil' : 'Edit profile'}
+            {isFr ? 'Modifier' : 'Edit'}
           </button>
         </section>
 
-        {/* QUICK STATS */}
-        <section className="grid grid-cols-3 gap-md mb-md">
-          <div className="bg-bg-secondary p-md rounded-[10px] border border-border-default flex flex-col items-center justify-center text-center">
+        {/* REAL BACKEND STATS */}
+        <section className="grid grid-cols-2 gap-md mb-md">
+          <div className="bg-bg-card p-md rounded-[10px] border border-border-default flex flex-col items-center justify-center text-center shadow-xs">
             <span className="font-h2 text-h2 text-text-main font-bold">{orderCount}</span>
             <span className="text-micro text-text-tertiary uppercase mt-1">
-              {isFr ? 'Commandes passées' : 'Completed orders'}
+              {isFr ? 'Commandes' : 'Orders'}
             </span>
           </div>
-          <div className="bg-bg-secondary p-md rounded-[10px] border border-border-default flex flex-col items-center justify-center text-center">
-            <span className="font-h2 text-h2 text-text-main font-bold">4.8 ★</span>
+          <div className="bg-bg-card p-md rounded-[10px] border border-border-default flex flex-col items-center justify-center text-center shadow-xs">
+            <span className="font-h2 text-h2 text-primary-container font-bold">{landmarkCount}</span>
             <span className="text-micro text-text-tertiary uppercase mt-1">
-              {isFr ? 'Note moyenne' : 'Average rating'}
+              {isFr ? 'Points de repère' : 'Landmarks'}
             </span>
           </div>
-          <Link
-            to="/negociations"
-            className="bg-bg-secondary p-md rounded-[10px] border border-border-default flex flex-col items-center justify-center text-center transition-transform hover:border-primary-light active:scale-98"
-          >
-            <span className="font-h2 text-h2 text-primary-container font-bold">3 420 FCFA</span>
-            <span className="text-micro text-text-tertiary uppercase mt-1">
-              {isFr ? 'Économies négociations' : 'Negotiation savings'}
-            </span>
-          </Link>
         </section>
 
-        {/* MY FAVORITE LANDMARKS */}
+        {/* LANDMARKS SECTION */}
         <section className="mb-md">
           <div className="flex justify-between items-center mb-sm">
             <h3 className="font-h3 text-h3 text-text-main font-bold">
-              {isFr ? 'Mes points de repère favoris' : 'My favorite landmarks'}
+              {isFr ? 'Mes points de repère' : 'My landmarks'}
             </h3>
             <button
               type="button"
@@ -247,58 +254,66 @@ export default function ProfilePage() {
               className="bg-primary-container text-white px-md py-sm rounded-[10px] font-label text-label flex items-center gap-sm shadow-sm cursor-pointer hover:bg-primary-hover transition-all"
             >
               <MIcon name="add" />
-              {isFr ? 'Ajouter' : 'Add new'}
+              {isFr ? 'Nouveau' : 'Add new'}
             </button>
           </div>
 
-          <div className="space-y-sm">
-            {landmarks.map((lm) => (
-              <div
-                key={lm.id}
-                className="bg-bg-card p-md rounded-[10px] border border-border-default flex items-center justify-between group hover:border-primary-light transition-colors"
-              >
-                <div className="flex items-center gap-md">
-                  <div className="w-10 h-10 rounded-full bg-primary-tint flex items-center justify-center text-primary-container shrink-0">
-                    <MIcon name={lm.icon} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-sm">
-                      <span className="font-medium text-body text-text-main font-bold">{lm.nom}</span>
-                      {lm.isDefault && (
-                        <span className="px-sm py-0.5 bg-success-light text-success text-[10px] rounded-full font-bold uppercase tracking-tighter">
-                          {isFr ? 'Par défaut' : 'Default'}
-                        </span>
-                      )}
+          {landmarks.length === 0 ? (
+            <div className="bg-bg-card p-lg rounded-[10px] border border-border-default text-center text-text-secondary">
+              <MIcon name="location_off" className="text-3xl text-text-tertiary mb-2" />
+              <p className="text-sm font-semibold">Aucun point de repère enregistré</p>
+              <p className="text-xs text-text-tertiary mt-1">Ajoutez un point de repère pour accélérer vos livraisons.</p>
+            </div>
+          ) : (
+            <div className="space-y-sm">
+              {landmarks.map((lm) => (
+                <div
+                  key={lm.id}
+                  className="bg-bg-card p-md rounded-[10px] border border-border-default flex items-center justify-between group hover:border-primary-light transition-colors"
+                >
+                  <div className="flex items-center gap-md">
+                    <div className="w-10 h-10 rounded-full bg-primary-tint flex items-center justify-center text-primary-container shrink-0">
+                      <MIcon name={lm.icon} />
                     </div>
-                    <p className="text-secondary text-text-secondary">{lm.description}</p>
-                    <span className="inline-block mt-1 px-sm py-0.5 bg-gray-100 text-text-secondary text-micro rounded-md">
-                      {lm.zone}
-                    </span>
+                    <div>
+                      <div className="flex items-center gap-sm">
+                        <span className="font-medium text-body text-text-main font-bold">{lm.nom}</span>
+                        {lm.isDefault && (
+                          <span className="px-sm py-0.5 bg-success-light text-success text-[10px] rounded-full font-bold uppercase tracking-tighter">
+                            {isFr ? 'Par défaut' : 'Default'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-secondary text-text-secondary">{lm.description}</p>
+                      <span className="inline-block mt-1 px-sm py-0.5 bg-gray-100 text-text-secondary text-micro rounded-md">
+                        {lm.zone}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-sm">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(lm)}
+                      className="p-sm text-primary-container hover:bg-primary-tint rounded-lg transition-colors cursor-pointer"
+                    >
+                      <MIcon name="edit" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteLandmark(lm.id)}
+                      className="p-sm text-error hover:bg-error-light rounded-lg transition-colors cursor-pointer"
+                    >
+                      <MIcon name="delete" />
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex gap-sm">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEdit(lm)}
-                    className="p-sm text-primary-container hover:bg-primary-tint rounded-lg transition-colors cursor-pointer"
-                  >
-                    <MIcon name="edit" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteLandmark(lm.id)}
-                    className="p-sm text-error hover:bg-error-light rounded-lg transition-colors cursor-pointer"
-                  >
-                    <MIcon name="delete" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
-        {/* RECENT ORDERS */}
+        {/* RECENT ORDERS SECTION */}
         <section className="mb-md">
           <div className="flex justify-between items-center mb-sm">
             <h3 className="font-h3 text-h3 text-text-main font-bold">
@@ -309,37 +324,45 @@ export default function ProfilePage() {
             </Link>
           </div>
 
-          <div className="bg-bg-card border border-border-default rounded-[14px] overflow-hidden">
-            <div className="divide-y divide-border-default">
-              {RECENT_ORDERS.map((o) => (
-                <div key={o.id} className="p-md flex items-center justify-between hover:bg-bg-secondary transition-colors">
-                  <div className="flex flex-col">
-                    <span className="font-bold text-text-main">#{o.id}</span>
-                    <span className="text-secondary text-text-tertiary">{o.date}</span>
-                  </div>
-                  <div className="font-bold text-primary-container">{o.totalLabel}</div>
-                  <div className="flex items-center gap-md">
-                    <span
-                      className={
-                        o.active
-                          ? 'px-sm py-1 bg-primary-tint border border-primary-light text-primary-dark text-micro rounded-full font-bold uppercase'
-                          : 'px-sm py-1 bg-success-light text-success text-micro rounded-full font-bold uppercase'
-                      }
-                    >
-                      {isFr ? o.statusFr : o.statusEn}
-                    </span>
-                    <Link
-                      to={o.active ? '/commandes/suivi' : '/confirmation'}
-                      className="text-primary-container font-label text-label flex items-center gap-xs font-bold"
-                    >
-                      {o.active ? (isFr ? 'Suivre' : 'Track') : (isFr ? 'Détails' : 'Details')}
-                      <MIcon name="chevron_right" className="text-sm" />
-                    </Link>
-                  </div>
-                </div>
-              ))}
+          {recentOrders.length === 0 ? (
+            <div className="bg-bg-card p-lg rounded-[10px] border border-border-default text-center text-text-secondary">
+              <MIcon name="shopping_bag" className="text-3xl text-text-tertiary mb-2" />
+              <p className="text-sm font-semibold">Aucune commande enregistrée</p>
+              <p className="text-xs text-text-tertiary mt-1">Vos commandes apparaîtront ici une fois validées.</p>
             </div>
-          </div>
+          ) : (
+            <div className="bg-bg-card border border-border-default rounded-[14px] overflow-hidden">
+              <div className="divide-y divide-border-default">
+                {recentOrders.map((o) => (
+                  <div key={o.id} className="p-md flex items-center justify-between hover:bg-bg-secondary transition-colors">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-text-main">Commande #{o.id}</span>
+                      <span className="text-secondary text-text-tertiary">{o.date}</span>
+                    </div>
+                    <div className="font-bold text-primary-container">{o.totalLabel}</div>
+                    <div className="flex items-center gap-md">
+                      <span
+                        className={
+                          o.active
+                            ? 'px-sm py-1 bg-primary-tint border border-primary-light text-primary-dark text-micro rounded-full font-bold uppercase'
+                            : 'px-sm py-1 bg-success-light text-success text-micro rounded-full font-bold uppercase'
+                        }
+                      >
+                        {isFr ? o.statusFr : o.statusEn}
+                      </span>
+                      <Link
+                        to={o.active ? '/commandes/suivi' : '/confirmation'}
+                        className="text-primary-container font-label text-label flex items-center gap-xs font-bold"
+                      >
+                        {o.active ? (isFr ? 'Suivre' : 'Track') : (isFr ? 'Détails' : 'Details')}
+                        <MIcon name="chevron_right" className="text-sm" />
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* SECURITY & SETTINGS */}

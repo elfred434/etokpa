@@ -5,6 +5,7 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
+import { useAuthGuard } from '../../../hooks/useAuthGuard';
 
 interface Message {
   id: string;
@@ -47,12 +48,22 @@ const INITIAL_MESSAGES: Message[] = [
 ];
 
 /**
- * MessagingPage — Reproduction 100% intégrale et fidèle de `messagerie_tokpa/code.html`
+ * MessagingPage — Tchat Client (Protected Route)
  */
 export default function MessagingPage() {
   const { isFr } = useLanguage();
+  const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
+
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
+        <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+      </div>
+    );
+  }
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,44 +132,6 @@ export default function MessagingPage() {
                 </p>
                 <span className="px-sm py-[2px] bg-primary-container text-white text-micro font-bold rounded-full inline-block">
                   En course
-                </span>
-              </div>
-            </div>
-
-            {/* Archived 1 */}
-            <div className="bg-bg-card hover:bg-bg-app p-md flex gap-md cursor-pointer transition-all border-b border-border-default/50">
-              <div className="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-white font-bold text-h3">
-                AL
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center mb-xs">
-                  <h3 className="font-h3 text-h3 text-text-main truncate font-bold">Amina Lawal</h3>
-                  <span className="font-micro text-micro text-text-tertiary">Hier</span>
-                </div>
-                <p className="font-secondary text-secondary text-text-tertiary truncate mb-sm">
-                  Merci pour le pourboire ! À la prochaine...
-                </p>
-                <span className="px-sm py-[2px] bg-success-light text-success-dark text-micro font-bold rounded-full inline-block">
-                  Livré
-                </span>
-              </div>
-            </div>
-
-            {/* Archived 2 */}
-            <div className="bg-bg-card hover:bg-bg-app p-md flex gap-md cursor-pointer transition-all border-b border-border-default/50">
-              <div className="w-12 h-12 rounded-full bg-info-dark flex items-center justify-center text-white font-bold text-h3">
-                MS
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center mb-xs">
-                  <h3 className="font-h3 text-h3 text-text-main truncate font-bold">Marc Sossa</h3>
-                  <span className="font-micro text-micro text-text-tertiary">Mar.</span>
-                </div>
-                <p className="font-secondary text-secondary text-text-tertiary truncate mb-sm">
-                  Votre commande a été déposée.
-                </p>
-                <span className="px-sm py-[2px] bg-success-light text-success-dark text-micro font-bold rounded-full inline-block">
-                  Livré
                 </span>
               </div>
             </div>

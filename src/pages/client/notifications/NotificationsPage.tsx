@@ -7,6 +7,7 @@ import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import Pagination from '../../../components/shared/Pagination';
 import { NOTIFICATIONS } from '../../../constants/mockData';
+import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import type { NotificationType } from '../../../types/models';
 
 type FilterKey = 'all' | NotificationType;
@@ -19,13 +20,23 @@ const FILTERS: { key: FilterKey; label: string; icon: string }[] = [
 ];
 
 /**
- * Page Historique des Notifications — Reproduction 100% fidèle de Stitch HTML `historique_des_notifications_tokpa/code.html`
+ * Page Historique des Notifications — Protected Route + UI Stitch 100% fidèle
  */
 export default function NotificationsPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
+
   const [filter, setFilter] = useState<FilterKey>('all');
   const [notifications, setNotifications] = useState(NOTIFICATIONS);
   const [page, setPage] = useState(1);
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
+        <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+      </div>
+    );
+  }
 
   const filtered = filter === 'all' ? notifications : notifications.filter((n) => n.type === filter);
   const unreadCount = notifications.filter((n) => n.unread).length;

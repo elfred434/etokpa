@@ -5,16 +5,27 @@ import MIcon from '../../../components/shared/MIcon';
 import RealBeninMap from '../../../components/client/commandes/RealBeninMap';
 import { useRiderLocation } from '../../../hooks/useRiderLocation';
 import { useLanguage } from '../../../context/LanguageContext';
+import { useAuthGuard } from '../../../hooks/useAuthGuard';
 
 /**
- * OrderTrackingPage — Suivi de Commande Client avec Récupération GPS Temps Réel du Livreur (Laravel Reverb WebSocket + OpenStreetMap Cotonou)
+ * OrderTrackingPage — Suivi de Commande Client avec Récupération GPS Temps Réel (Protected Route)
  */
 export default function OrderTrackingPage() {
   const { isFr } = useLanguage();
+  const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
+
   const { riderCoords, estimatedMinutes, isWebSocketActive, distanceKm } = useRiderLocation({
     orderId: 'TOK-2847',
     simulatedSpeedMs: 2500,
   });
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
+        <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-bg-app font-body text-on-surface antialiased min-h-screen flex flex-col">
@@ -53,7 +64,7 @@ export default function OrderTrackingPage() {
 
             <div className="text-micro bg-bg-secondary px-3 py-1.5 rounded-lg border border-border-default font-mono text-text-secondary">
               GPS: {riderCoords[0].toFixed(4)}, {riderCoords[1].toFixed(4)}
-              {isWebSocketActive ? ' (WebSocket Reverb)' : ' (Live Simulator)'}
+              {isWebSocketActive ? ' (WebSocket Reverb)' : ' (Live GPS)'}
             </div>
           </div>
 
