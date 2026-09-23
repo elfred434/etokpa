@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import clsx from 'clsx';
 import {
   IconLayoutGrid,
@@ -26,6 +27,7 @@ const FILTERS: { key: FilterKey; label: string; icon: typeof IconLayoutGrid }[] 
 
 /** Page « Historique des notifications » — maquette Stitch (sidebar filtres + liste + pagination). */
 export default function NotificationsPage() {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<FilterKey>('all');
   const [notifications, setNotifications] = useState(NOTIFICATIONS);
   const [page, setPage] = useState(1);
@@ -34,6 +36,16 @@ export default function NotificationsPage() {
   const unread = notifications.filter((n) => n.unread).length;
 
   const markAllRead = () => setNotifications((list) => list.map((n) => ({ ...n, unread: false })));
+
+  const handleNotificationClick = (type: NotificationType) => {
+    if (type === 'order') {
+      navigate({ to: '/commandes/suivi' });
+    } else if (type === 'promo') {
+      navigate({ to: '/negociations' });
+    } else {
+      navigate({ to: '/profil' });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-page pt-[52px]">
@@ -111,7 +123,11 @@ export default function NotificationsPage() {
 
           <div className="space-y-md">
             {filtered.map((n) => (
-              <NotificationItem key={n.id} notification={n} />
+              <NotificationItem
+                key={n.id}
+                notification={n}
+                onClick={() => handleNotificationClick(n.type)}
+              />
             ))}
           </div>
 

@@ -30,6 +30,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
 
   const onMarket = pathname === '/' || pathname.startsWith('/catalogue') || pathname.startsWith('/produit');
   const onNegociations = pathname.startsWith('/negociations');
+  const onCommandes = pathname.startsWith('/commandes');
 
   const submitSearch = (e: FormEvent | React.KeyboardEvent) => {
     e.preventDefault();
@@ -73,13 +74,17 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
                 </span>
               )}
             </Link>
-            <button
-              type="button"
-              onClick={() => toast(`${t('nav.orders')} — Sprint 3`)}
-              className="rounded px-2 py-3 font-body text-body text-on-surface-variant transition-colors hover:bg-primary-lighter"
+            <Link
+              to="/commandes/suivi"
+              className={clsx(
+                'py-3 font-body text-body transition-colors',
+                onCommandes
+                  ? 'border-b-2 border-primary-shade font-bold text-primary-shade'
+                  : 'rounded px-2 text-on-surface-variant hover:bg-primary-lighter',
+              )}
             >
               {t('nav.orders')}
-            </button>
+            </Link>
           </nav>
         </div>
 
