@@ -8,8 +8,12 @@ import './theme/theme.css';
 import { store } from './store';
 import { router } from './routes/router';
 import { LanguageProvider } from './context/LanguageContext';
+import { initEcho } from './services/realtime/echo';
 
 // Point d'entrée React de TOKPa — Redux + TanStack Router + Language Context
+// Temps réel Reverb : initialisé au boot si un token Sanctum est présent
+// (ré-initialisé après chaque login via services/api/auth.ts).
+initEcho();
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Provider store={store}>

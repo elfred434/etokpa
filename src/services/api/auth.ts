@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { initEcho, shutdownEcho } from '../realtime/echo';
 
 export interface LoginPayload {
   email: string;
@@ -59,6 +60,8 @@ export const authApi = {
     if (response.data?.token) {
       localStorage.setItem('tokpa_token', response.data.token);
       localStorage.setItem('tokpa_user', JSON.stringify(response.data.user));
+      // Connexion réussie → on branche le temps réel Reverb (canaux privés).
+      initEcho();
     }
     return response.data;
   },
@@ -112,6 +115,7 @@ export const authApi = {
     } finally {
       localStorage.removeItem('tokpa_token');
       localStorage.removeItem('tokpa_user');
+      shutdownEcho();
     }
   },
 };

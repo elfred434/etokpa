@@ -51,20 +51,34 @@ export function useRiderLocation({
   // Estimation : ~25 km/h en ville à Cotonou
   const estimatedMinutes = Math.max(1, Math.round((distanceKm / 25) * 60));
 
-  // Écoute de l'événement Laravel Echo / Reverb si connecté
+  // Écoute temps réel Reverb — CANAL RÉEL DU BACKEND :
+  //   private tracking.{orderId}  →  événement `livreur.position.updated`
+  //   payload : {order_id, livreur_id, latitude, longitude, horodatage}
+  // (voir routes/channels.php + app/Events/LivreurPositionUpdated.php du backend)
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as unknown as { Echo?: unknown }).Echo) {
       try {
-        const echo = (window as unknown as { Echo: { private: (channel: string) => { listen: (event: string, cb: (e: { lat: number; lng: number }) => void) => void } } }).Echo;
-        const channel = echo.private(`order.${orderId}`);
-        channel.listen('.RiderLocationUpdated', (data: { lat: number; lng: number }) => {
+        const echo = (window as unknown as {
+          Echo: { private: (channel: string) => { listen: (event: string, cb: (e: { latitude: number; longitude: number }) => void) => void; stopListening: (event: string) => void } };
+        }).Echo;
+        const channel = echo.private(`tracking.${orderId}`);
+        const handler = (data: { latitude: number; longitude: number }) => {
           setIsWebSocketActive(true);
-          setRiderCoords([data.lat, data.lng]);
-        });
+          setRiderCoords([Number(data.latitude), Number(data.longitude)]);
+        };
+        channel.listen('livreur.position.updated', handler);
+        return () => {
+          try {
+            channel.stopListening('livreur.position.updated');
+          } catch {
+            /* noop */
+          }
+        };
       } catch {
         setIsWebSocketActive(false);
       }
     }
+    return undefined;
   }, [orderId]);
 
   // Fallback Simulation Temps Réel Cotonou (si WebSocket backend non connecté en local)
