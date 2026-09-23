@@ -414,6 +414,12 @@ export default function OrderTrackingPage() {
                       {Number(order.montant_total ?? 0).toLocaleString('fr-FR')} FCFA
                     </span>
                   </div>
+                  {(order.landmark?.nom || order.description_lieu) && (
+                    <p className="mt-sm text-micro text-text-tertiary">
+                      {isFr ? 'Livraison' : 'Delivery'} : {order.landmark?.nom ?? '—'}
+                      {order.description_lieu ? ` — ${order.description_lieu}` : ''}
+                    </p>
+                  )}
                 </div>
               )}
             </>

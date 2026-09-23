@@ -8,7 +8,7 @@ import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { clear, remove, setQuantity, selectCount, selectSubtotal, selectSavings } from '../../../store/slices/cart/cartSlice';
-import { catalogApi, ordersApi, paymentsApi } from '../../../services/api';
+import { authApi, catalogApi, landmarksApi, ordersApi, paymentsApi } from '../../../services/api';
 
 interface ApiLandmark {
   id: number;
@@ -24,6 +24,15 @@ interface ApiZone {
   km_prix: number;
   min_prix: number;
   points_repere?: ApiLandmark[];
+}
+
+/** Un « point de repère » de l'utilisateur : ligne réelle point_reperes (rowId) ou entrée profil JSON. */
+interface MyLandmark {
+  key: string;
+  nom: string;
+  description: string;
+  rowId?: number;
+  zoneId?: number;
 }
 
 interface ConfirmationPayload {
@@ -55,6 +64,9 @@ export default function CartPage() {
   const [zonesLoading, setZonesLoading] = useState(true);
   const [zoneId, setZoneId] = useState<number | null>(null);
   const [landmarkId, setLandmarkId] = useState<number | null>(null);
+  const [landmarkSel, setLandmarkSel] = useState<string>('');
+  const [landmarkNomSel, setLandmarkNomSel] = useState<string | null>(null);
+  const [myLandmarks, setMyLandmarks] = useState<MyLandmark[]>([]);
   const [descriptionLieu, setDescriptionLieu] = useState('');
   const [landmarkError, setLandmarkError] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -79,9 +91,57 @@ export default function CartPage() {
       .finally(() => setZonesLoading(false));
   }, []);
 
+  // 2) Mes points de repère à MOI : lignes réelles (GET /landmarks) + entrées du profil (client.point_repere)
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const list: MyLandmark[] = [];
+      try {
+        const res = await landmarksApi.getLandmarks();
+        const rows: Array<Record<string, unknown>> = Array.isArray(res) ? res : ((res?.data ?? []) as Array<Record<string, unknown>>);
+        rows.forEach((r, i) => {
+          list.push({
+            key: `row-${r.id ?? i}`,
+            nom: String(r.nom ?? 'Point de repère'),
+            description: String(r.description ?? ''),
+            rowId: Number(r.id),
+            zoneId: r.zone_id != null ? Number(r.zone_id) : undefined,
+          });
+        });
+      } catch {
+        /* GET /landmarks indisponible (B-13 backend) ou hors ligne */
+      }
+      try {
+        const res = await authApi.getProfile();
+        const profil = ((res?.data ?? res) as { profil?: Record<string, unknown> })?.profil;
+        const raw = profil?.point_repere;
+        if (Array.isArray(raw)) {
+          raw.forEach((item, i) => {
+            if (typeof item === 'string') {
+              if (!list.some((l) => l.nom === item)) list.push({ key: `mine-${i}`, nom: item, description: '' });
+            } else if (item && typeof item === 'object') {
+              const o = item as Record<string, unknown>;
+              const nom = String(o.nom ?? 'Point de repère');
+              const description = String(o.landmark ?? o.description ?? '');
+              if (!list.some((l) => l.nom === nom)) list.push({ key: `mine-${i}`, nom, description });
+            }
+          });
+        }
+      } catch {
+        /* profil indisponible */
+      }
+      if (alive) setMyLandmarks(list);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const handleZoneChange = (id: number) => {
     setZoneId(id);
     setLandmarkId(null);
+    setLandmarkSel('');
+    setLandmarkNomSel(null);
   };
 
   const handlePaid = async () => {
@@ -112,7 +172,9 @@ export default function CartPage() {
       const orderId: number = orderData?.id ?? 0;
       const orderTotal: number = Number(orderData?.montant_total ?? grandTotal);
       const landmarkNom: string =
-        (selectedZone.points_repere ?? []).find((l) => l.id === landmarkId)?.nom ?? selectedZone.nom;
+        landmarkNomSel ??
+        (selectedZone.points_repere ?? []).find((l) => l.id === landmarkId)?.nom ??
+        selectedZone.nom;
 
       // 2) POST /api/payments/init — FedaPay (sandbox si SDK absent)
       try {
@@ -360,23 +422,70 @@ export default function CartPage() {
                         className={`w-full pl-10 pr-10 py-3 bg-white rounded-lg border-1.5 appearance-none focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body disabled:opacity-60 ${
                           landmarkError ? 'border-error' : 'border-border-default'
                         }`}
-                        value={landmarkId ?? ''}
+                        value={landmarkSel}
                         onChange={(e) => {
-                          setLandmarkId(Number(e.target.value) || null);
-                          if (e.target.value) setLandmarkError(false);
+                          const v = e.target.value;
+                          setLandmarkSel(v);
+                          if (!v) {
+                            setLandmarkId(null);
+                            setLandmarkNomSel(null);
+                            return;
+                          }
+                          setLandmarkError(false);
+                          const personal = myLandmarks.find((l) => l.key === v);
+                          if (personal) {
+                            setLandmarkNomSel(personal.nom);
+                            if (personal.rowId) {
+                              // Ligne point_reperes réelle → landmark_id direct (frais de sa zone)
+                              setLandmarkId(personal.rowId);
+                              if (personal.zoneId) setZoneId(personal.zoneId);
+                            } else {
+                              // Repère du profil (JSON) → ancrage = 1er point public de la zone
+                              // (l'API exige un landmark_id exists:point_reperes ; le vrai lieu part dans description_lieu)
+                              setLandmarkId(selectedZone?.points_repere?.[0]?.id ?? null);
+                            }
+                            if (!descriptionLieu.trim()) {
+                              setDescriptionLieu(
+                                personal.description ? `${personal.nom} — ${personal.description}` : personal.nom,
+                              );
+                            }
+                          } else {
+                            const zid = Number(v.replace('zone-', ''));
+                            setLandmarkId(Number.isFinite(zid) ? zid : null);
+                            setLandmarkNomSel(
+                              selectedZone?.points_repere?.find((l) => l.id === zid)?.nom ?? null,
+                            );
+                          }
                         }}
-                        disabled={!selectedZone || (selectedZone.points_repere ?? []).length === 0}
+                        disabled={
+                          myLandmarks.length === 0 &&
+                          (!selectedZone || (selectedZone.points_repere ?? []).length === 0)
+                        }
                       >
                         <option value="">
-                          {selectedZone && (selectedZone.points_repere ?? []).length === 0
-                            ? 'Aucun point de repère dans cette zone'
+                          {myLandmarks.length === 0 && (!selectedZone || (selectedZone.points_repere ?? []).length === 0)
+                            ? 'Aucun point de repère disponible'
                             : 'Sélectionner un point de repère…'}
                         </option>
-                        {(selectedZone?.points_repere ?? []).map((l) => (
-                          <option key={l.id} value={l.id}>
-                            {l.nom}
-                          </option>
-                        ))}
+                        {myLandmarks.length > 0 && (
+                          <optgroup label="Mes points de repère">
+                            {myLandmarks.map((l) => (
+                              <option key={l.key} value={l.key}>
+                                {l.nom}
+                                {!l.rowId ? ' (profil)' : ''}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {(selectedZone?.points_repere ?? []).length > 0 && (
+                          <optgroup label={`Points de la zone ${selectedZone?.nom ?? ''}`}>
+                            {(selectedZone?.points_repere ?? []).map((l) => (
+                              <option key={l.id} value={`zone-${l.id}`}>
+                                {l.nom}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
                       </select>
                       <MIcon name="expand_more" className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
                     </div>
