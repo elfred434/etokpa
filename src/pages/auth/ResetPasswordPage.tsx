@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate, useRouter } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import MIcon from '../../components/shared/MIcon';
 import PasswordInput from '../../components/auth/PasswordInput';
@@ -14,8 +14,7 @@ import { authApi } from '../../services/api';
  */
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
-  const router = useRouter();
-  const { token, email } = router.parseLocation().search as unknown as { token?: string; email?: string };
+  const { token, email } = useSearch({ from: '/reset-password' });
 
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
