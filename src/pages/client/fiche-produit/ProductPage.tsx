@@ -5,8 +5,9 @@ import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
-import { useAppDispatch } from '../../../hooks/useStore';
+import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
+import { submitOffer, acceptCounterOffer, cancelNegotiation } from '../../../store/slices/negotiation/negotiationSlice';
 import type { Product } from '../../../types/models';
 
 /* ---- Fiche exacte du code.html « fiche_produit_tokpa » ---- */
@@ -49,13 +50,50 @@ const AVIS = [
 
 type TabId = 'description' | 'origine' | 'avis';
 
-/** Fiche produit — mise à jour sans vendeur. */
+/** Fiche produit avec module de négociation F-10 interactif. */
 export default function ProductPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(2);
-  const [offre, setOffre] = useState('380 FCFA');
+  const [offerInput, setOfferInput] = useState('380');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [tab, setTab] = useState<TabId>('description');
+
+  const activeNeg = useAppSelector((state) => state.negotiation.activeNegotiations[PRODUCT.id]);
+
+  const handleSendOffer = () => {
+    const numPrice = parseInt(offerInput.replace(/[^0-9]/g, ''), 10);
+    if (isNaN(numPrice) || numPrice <= 0) {
+      toast.error('Veuillez entrer un montant valide en FCFA');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setTimeout(() => {
+      dispatch(
+        submitOffer({
+          productId: PRODUCT.id,
+          productName: PRODUCT.nom,
+          productImage: PRODUCT.image,
+          originalPrice: PRODUCT.prix,
+          proposedPrice: numPrice,
+          minPrice: PRODUCT.prixMinimum,
+        })
+      );
+      setIsSubmitting(false);
+      toast.success('Offre envoyée avec succès !');
+    }, 1200);
+  };
+
+  const handleAddNegotiatedToCart = (price: number) => {
+    const negotiatedProduct: Product = {
+      ...PRODUCT,
+      prix: price,
+      negotiated: { oldPrice: PRODUCT.prix },
+    };
+    dispatch(add({ product: negotiatedProduct, quantity }));
+    toast.success(`Ajouté au panier au prix négocié de ${price.toLocaleString('fr-FR')} FCFA !`);
+  };
 
   const addToCart = () => {
     dispatch(add({ product: PRODUCT, quantity }));
@@ -177,45 +215,136 @@ export default function ProductPage() {
                 </div>
               </div>
 
-              {/* NEGOTIATION MODULE */}
-              <div className="flex flex-col gap-4 rounded-lg border-l-[3px] border-[#F59E0B] bg-[#FFFBEB] p-4">
-                <div className="flex items-center gap-2">
-                  <MIcon name="payments" className="text-[#F59E0B]" />
-                  <h3 className="text-sm font-semibold uppercase tracking-tight text-[#92400E]">Proposer votre budget</h3>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 rounded-lg bg-page p-3 text-center">
-                    <p className="mb-1 text-[10px] uppercase text-ink-2">Prix référence</p>
-                    <p className="font-bold text-ink">450 FCFA</p>
+              {/* DYNAMIC NEGOTIATION MODULE (F-10) */}
+              <div className="flex flex-col gap-4 rounded-lg border-l-[3px] border-[#F59E0B] bg-[#FFFBEB] p-4 transition-all">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MIcon name="payments" className="text-[#F59E0B]" />
+                    <h3 className="text-sm font-semibold uppercase tracking-tight text-[#92400E]">
+                      Proposer votre budget
+                    </h3>
                   </div>
-                  <MIcon name="sync" className="rotate-90 text-[#F59E0B]" />
-                  <div className="flex-1 rounded-lg border border-dashed border-[#F59E0B] bg-amber-light p-3 text-center">
-                    <p className="mb-1 text-[10px] uppercase text-amber-text">Votre offre</p>
-                    <input
-                      type="text"
-                      value={offre}
-                      onChange={(e) => setOffre(e.target.value)}
-                      className="w-full border-none bg-transparent p-0 text-center font-bold text-ink focus:outline-none focus:ring-0"
-                    />
+                  <span className="inline-block rounded-full bg-amber-light px-2.5 py-0.5 text-micro font-bold text-amber-text">
+                    Négociation F-10
+                  </span>
+                </div>
+
+                {/* State: Idle or submitting */}
+                {(!activeNeg || activeNeg.status === 'idle') && (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 rounded-lg bg-page p-3 text-center">
+                        <p className="mb-1 text-[10px] uppercase text-ink-2">Prix référence</p>
+                        <p className="font-bold text-ink">450 FCFA</p>
+                      </div>
+                      <MIcon name="sync" className="rotate-90 text-[#F59E0B]" />
+                      <div className="flex-1 rounded-lg border border-dashed border-[#F59E0B] bg-amber-light p-3 text-center">
+                        <p className="mb-1 text-[10px] uppercase text-amber-text">Votre offre</p>
+                        <div className="flex items-center justify-center gap-1 font-bold text-ink">
+                          <input
+                            type="number"
+                            value={offerInput}
+                            onChange={(e) => setOfferInput(e.target.value)}
+                            className="w-16 border-none bg-transparent p-0 text-center font-bold text-ink focus:outline-none focus:ring-0"
+                          />
+                          <span className="text-xs">FCFA</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-[12px] italic text-[#92400E]">
+                      Budget min. suggéré : 350 FCFA
+                    </p>
+
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={handleSendOffer}
+                      className="w-full transform rounded-[10px] bg-success py-2.5 font-bold text-white transition-all hover:bg-success-dark active:scale-[0.98] disabled:opacity-50"
+                    >
+                      {isSubmitting ? 'Traitement de l’offre…' : 'Envoyer l’offre'}
+                    </button>
+                  </>
+                )}
+
+                {/* State: Accepted */}
+                {activeNeg?.status === 'accepted' && (
+                  <div className="space-y-3 rounded-lg border border-success/40 bg-success-light/50 p-3">
+                    <div className="flex items-center gap-2 text-success-dark">
+                      <MIcon name="verified" className="text-success" />
+                      <span className="text-xs font-bold uppercase tracking-wider">Offre acceptée !</span>
+                    </div>
+                    <p className="text-xs text-ink">
+                      Votre proposition de <strong className="text-success-dark">{activeNeg.proposedPrice.toLocaleString('fr-FR')} FCFA</strong> a été acceptée par le marché !
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleAddNegotiatedToCart(activeNeg.proposedPrice)}
+                        className="w-full rounded-lg bg-success py-2 text-xs font-bold text-white shadow-sm hover:bg-success-dark"
+                      >
+                        Ajouter au panier ({activeNeg.proposedPrice.toLocaleString('fr-FR')} FCFA)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => dispatch(cancelNegotiation({ productId: PRODUCT.id }))}
+                        className="rounded-lg border border-line bg-white px-3 py-2 text-xs font-bold text-ink-2"
+                      >
+                        Annuler
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <p className="text-[12px] italic text-[#92400E]">Budget min. accepté sur ce lot : 350 FCFA</p>
-                <div className="flex flex-col gap-2">
-                  <button
-                    type="button"
-                    onClick={() => toast('Négociation — Sprint 2')}
-                    className="w-full transform rounded-[10px] bg-success py-2.5 font-bold text-white transition-all hover:bg-success-dark active:scale-[0.98]"
-                  >
-                    Envoyer l'offre
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toast('Négociation annulée')}
-                    className="text-center text-xs text-ink-2 hover:text-ink"
-                  >
-                    Annuler la négociation
-                  </button>
-                </div>
+                )}
+
+                {/* State: Counter Offer */}
+                {activeNeg?.status === 'counter_offer' && (
+                  <div className="space-y-3 rounded-lg border border-amber-text/40 bg-amber-light p-3">
+                    <div className="flex items-center gap-2 text-amber-text">
+                      <MIcon name="sync" className="text-amber-text" />
+                      <span className="text-xs font-bold uppercase tracking-wider">Contre-offre du marché</span>
+                    </div>
+                    <p className="text-xs text-ink">
+                      Votre offre ({activeNeg.proposedPrice} FCFA) est légèrement basse. Le marché vous propose :{' '}
+                      <strong className="text-amber-text">{activeNeg.counterPrice?.toLocaleString('fr-FR')} FCFA</strong>.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          dispatch(acceptCounterOffer({ productId: PRODUCT.id }));
+                          toast.success('Contre-offre acceptée !');
+                        }}
+                        className="w-full rounded-lg bg-amber-text py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-text/90"
+                      >
+                        Accepter ({activeNeg.counterPrice?.toLocaleString('fr-FR')} FCFA)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => dispatch(cancelNegotiation({ productId: PRODUCT.id }))}
+                        className="rounded-lg border border-line bg-white px-3 py-2 text-xs font-bold text-ink-2"
+                      >
+                        Refuser
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* State: Rejected */}
+                {activeNeg?.status === 'rejected' && (
+                  <div className="space-y-3 rounded-lg border border-error/40 bg-error-light p-3">
+                    <p className="text-xs font-bold text-error">Offre trop basse ({activeNeg.proposedPrice} FCFA)</p>
+                    <p className="text-xs text-ink">
+                      Le prix minimum accepté pour ce produit est de {activeNeg.minPrice} FCFA.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => dispatch(cancelNegotiation({ productId: PRODUCT.id }))}
+                      className="w-full rounded-lg bg-white border border-line py-2 text-xs font-bold text-ink hover:bg-surface"
+                    >
+                      Faire une nouvelle offre
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Main Action Buttons */}
@@ -226,7 +355,7 @@ export default function ProductPage() {
                   className="flex w-full transform items-center justify-center gap-2 rounded-[10px] bg-primary py-3.5 font-bold text-white transition-all hover:bg-primary-hover active:scale-[0.98]"
                 >
                   <MIcon name="shopping_cart" />
-                  Ajouter au panier
+                  Ajouter au panier ({PRODUCT.prix} FCFA)
                 </button>
                 <button
                   type="button"
