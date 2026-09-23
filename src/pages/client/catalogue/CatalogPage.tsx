@@ -68,6 +68,16 @@ const CAT_TITLES: Record<CatFilter, string> = {
 
 const PER_PAGE = 9;
 
+/** Catégorie réelle (ProductResource.categorie) -> CatFilter Stitch. */
+function mapApiCategory(categorie?: ApiProduct['categorie']): CategoryId {
+  const s = `${categorie?.slug ?? ''} ${categorie?.nom ?? ''}`.toLowerCase();
+  if (/poisson|viande|chair|boeuf|porc|poulet/.test(s)) return 'fish';
+  if (/c.r.al|graine|riz|ma.s|bl.|haricot/.test(s)) return 'grain';
+  if (/.pice|condiment|aromate|ail|piment/.test(s)) return 'spice';
+  if (/pack|bundle|lot/.test(s)) return 'pack';
+  return 'vegetable';
+}
+
 /** Catalogue — Copie conforme Stitch + Intégration API Backend Laravel */
 export default function CatalogPage() {
   const dispatch = useAppDispatch();
@@ -95,13 +105,15 @@ export default function CatalogPage() {
             id: String(p.id),
             nom: p.nom,
             zoneId: 'dantokpa',
-            meta: `Marché Dantokpa · ${p.stock > 0 ? 'En stock' : 'Rupture'}`,
-            quantite: '1 unité',
+            meta: p.categorie?.nom ? `${p.categorie.nom} · Marché Dantokpa` : 'Marché Dantokpa',
+            quantite: p.stock > 0 ? `Stock : ${p.stock}` : 'Rupture',
             prix: p.prix,
             prixLabel: `${p.prix.toLocaleString('fr-FR')} FCFA`,
-            stock: p.stock > 5 ? 'available' : p.stock > 0 ? 'low' : 'none',
+            prixAncienLabel: undefined,
+            promo: undefined,
+            stock: p.disponible === false ? 'none' : p.stock > 5 ? 'available' : p.stock > 0 ? 'low' : 'none',
             icon: 'shopping_bag',
-            cat: 'vegetable',
+            cat: mapApiCategory(p.categorie),
           }));
           setProductsList(fetched);
         }
@@ -132,7 +144,6 @@ export default function CatalogPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const currentPage = Math.min(page, totalPages);
   const visible = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
-  const isDesignSnapshot = !touched && !search.trim();
 
   const resetFilters = () => {
     setCat('all');
@@ -430,9 +441,9 @@ export default function CatalogPage() {
         <section className="min-w-0 flex-grow">
           <div className="mb-md flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:mb-lg">
             <div>
-              <h2 className="font-h1 text-h1 text-on-surface">{isDesignSnapshot ? 'Légumes frais' : CAT_TITLES[cat]}</h2>
+              <h2 className="font-h1 text-h1 text-on-surface">{CAT_TITLES[cat]}</h2>
               <p className="mt-1 text-ink-2">
-                {isDesignSnapshot ? '148 produits trouvés' : `${filtered.length} produits trouvés`}
+                {filtered.length} produits trouvés
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4">

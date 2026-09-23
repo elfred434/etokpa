@@ -33,10 +33,24 @@ export interface ApiCategory {
   icone?: string;
 }
 
+/** Zone de livraison — exactement `ZoneResource` (GET /zones). */
 export interface ApiZone {
   id: number;
   nom: string;
-  tarif_livraison?: number;
+  open_zone?: boolean;
+  min_prix: number;
+  km_prix: number;
+  tarif_km: number;
+  maj_heure?: string | null;
+  description?: string | null;
+  polygone_geo?: unknown;
+  points_repere?: Array<{
+    id: number;
+    nom: string;
+    description?: string | null;
+    latitude?: number | string;
+    longitude?: number | string;
+  }>;
 }
 
 export const catalogApi = {
