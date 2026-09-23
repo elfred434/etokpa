@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -24,40 +25,40 @@ export default function DarkFooter() {
           <h4 className="mb-md font-bold">{isFr ? 'Plateforme' : 'Platform'}</h4>
           <ul className="flex flex-col gap-sm text-body text-surface-variant">
             <li>
-              <button type="button" onClick={soon(isFr ? 'Comment ça marche' : 'How it works')} className="hover:text-white">
-                {isFr ? 'Comment ça marche' : 'How it works'}
-              </button>
+              <Link to="/catalogue" className="hover:text-white">
+                {isFr ? 'Explorer le marché' : 'Explore market'}
+              </Link>
             </li>
             <li>
-              <button type="button" onClick={soon(isFr ? 'Devenir Livreur' : 'Become a Delivery Driver')} className="hover:text-white">
-                {isFr ? 'Devenir Livreur' : 'Become a Delivery Driver'}
-              </button>
+              <Link to="/negociations" className="hover:text-white">
+                {isFr ? 'Mes Négociations' : 'My Negotiations'}
+              </Link>
             </li>
             <li>
-              <button type="button" onClick={soon(isFr ? 'Espace Manager' : 'Manager Area')} className="hover:text-white">
-                {isFr ? 'Espace Manager' : 'Manager Area'}
-              </button>
+              <Link to="/admin/catalogue" className="hover:text-white">
+                {isFr ? 'Espace Administration' : 'Admin Area'}
+              </Link>
             </li>
           </ul>
         </div>
 
         <div>
-          <h4 className="mb-md font-bold">{isFr ? 'Aide' : 'Help'}</h4>
+          <h4 className="mb-md font-bold">{isFr ? 'Aide & Suivi' : 'Help & Tracking'}</h4>
           <ul className="flex flex-col gap-sm text-body text-surface-variant">
             <li>
-              <button type="button" onClick={soon(isFr ? 'Support Client' : 'Customer Support')} className="hover:text-white">
-                {isFr ? 'Support Client' : 'Customer Support'}
-              </button>
+              <Link to="/messagerie" className="hover:text-white">
+                {isFr ? 'Messagerie Client ↔ Livreur' : 'Rider Messaging'}
+              </Link>
             </li>
             <li>
-              <button type="button" onClick={soon(isFr ? "Conditions d'utilisation" : 'Terms of Service')} className="hover:text-white">
-                {isFr ? "Conditions d'utilisation" : 'Terms of Service'}
-              </button>
+              <Link to="/commandes/suivi" className="hover:text-white">
+                {isFr ? 'Suivi en Temps Réel' : 'Live Order Tracking'}
+              </Link>
             </li>
             <li>
-              <button type="button" onClick={soon(isFr ? 'Politique de confidentialité' : 'Privacy Policy')} className="hover:text-white">
-                {isFr ? 'Politique de confidentialité' : 'Privacy Policy'}
-              </button>
+              <Link to="/profil" className="hover:text-white">
+                {isFr ? 'Mon Compte' : 'My Account'}
+              </Link>
             </li>
           </ul>
         </div>
@@ -68,7 +69,7 @@ export default function DarkFooter() {
             <button
               type="button"
               onClick={soon('Facebook')}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface-variant transition-colors hover:bg-primary-shade"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface-variant transition-colors hover:bg-primary-shade cursor-pointer"
               aria-label="Facebook"
             >
               <MIcon name="face_nod" />
@@ -76,7 +77,7 @@ export default function DarkFooter() {
             <button
               type="button"
               onClick={soon('Partager')}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface-variant transition-colors hover:bg-primary-shade"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface-variant transition-colors hover:bg-primary-shade cursor-pointer"
               aria-label="Partager"
             >
               <MIcon name="share" />
@@ -86,7 +87,7 @@ export default function DarkFooter() {
       </div>
 
       <div className="mx-auto mt-xl max-w-[1200px] border-t border-on-surface-variant px-4 pt-lg text-center text-label text-surface-variant">
-        © 2024 TOKPa. {isFr ? 'Tous droits réservés.' : 'All rights reserved.'} Cotonou, Bénin.
+        © 2026 TOKPa. {isFr ? 'Tous droits réservés.' : 'All rights reserved.'} Cotonou, Bénin.
       </div>
     </footer>
   );

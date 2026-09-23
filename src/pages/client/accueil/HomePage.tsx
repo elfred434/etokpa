@@ -7,6 +7,7 @@ import DarkFooter from '../../../components/layout/client/DarkFooter';
 import MIcon from '../../../components/shared/MIcon';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
+import { submitOffer } from '../../../store/slices/negotiation/negotiationSlice';
 import type { Product } from '../../../types/models';
 import { useLanguage } from '../../../context/LanguageContext';
 
@@ -291,8 +292,21 @@ export default function HomePage() {
               </div>
               <button
                 type="button"
-                onClick={() => toast(`${t('home.sendOffer')} — Sprint 2`)}
-                className="w-full bg-secondary text-white font-bold py-2 rounded-lg mt-2 text-xs sm:text-sm scale-interaction"
+                onClick={() => {
+                  const proposed = Number(offre.replace(/\D/g, '')) || 2100;
+                  dispatch(
+                    submitOffer({
+                      productId: 'p_home_nego',
+                      productName: 'Tomates Fraîches (1kg)',
+                      originalPrice: 2500,
+                      proposedPrice: proposed,
+                      minPrice: 2000,
+                    }),
+                  );
+                  toast.success(isFr ? 'Offre envoyée en direct au marché !' : 'Offer sent live to market!');
+                  navigate({ to: '/negociations' });
+                }}
+                className="w-full bg-secondary text-white font-bold py-2 rounded-lg mt-2 text-xs sm:text-sm scale-interaction cursor-pointer"
               >
                 {t('home.sendOffer')}
               </button>

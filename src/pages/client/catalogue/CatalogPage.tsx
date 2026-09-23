@@ -604,18 +604,18 @@ export default function CatalogPage() {
         <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 text-ink-2">
           <div className="flex items-center gap-2">
             <span className="font-h3 text-primary">TOKPa</span>
-            <span className="text-micro">© 2024 - Le Marché Béninois en ligne</span>
+            <span className="text-micro">© 2026 - Le Marché Béninois en ligne</span>
           </div>
           <div className="hidden gap-lg sm:flex">
-            <Link to="/" className="text-label transition-colors hover:text-primary">
+            <Link to="/profil" className="text-label transition-colors hover:text-primary">
               Aide & Support
             </Link>
-            <button type="button" onClick={() => toast('Vendre sur TOKPa — Sprint 2')} className="text-label transition-colors hover:text-primary">
-              Vendre sur TOKPa
-            </button>
-            <button type="button" onClick={() => toast('Livraison — Sprint 3')} className="text-label transition-colors hover:text-primary">
-              Livraison
-            </button>
+            <Link to="/negociations" className="text-label transition-colors hover:text-primary">
+              Négocier sur TOKPa
+            </Link>
+            <Link to="/commandes/suivi" className="text-label transition-colors hover:text-primary">
+              Suivi Livraison
+            </Link>
           </div>
         </div>
       </footer>
