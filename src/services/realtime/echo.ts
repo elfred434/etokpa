@@ -109,6 +109,11 @@ export function shutdownEcho(): void {
   boundToken = null;
 }
 
+/** Renvoie l'instance Echo courante (sans la créer). */
+export function windowEcho(): Echo<'pusher'> | null {
+  return window.Echo ?? null;
+}
+
 /** Écoute un événement nommé sur un canal privé (helper typé). */
 export function listenPrivate(channel: string, event: string, callback: (payload: unknown) => void) {
   const echo = window.Echo;

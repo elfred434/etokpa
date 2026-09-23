@@ -17,10 +17,12 @@ import MessagingPage from '../pages/client/messagerie/MessagingPage';
 import AdminCatalogPage from '../pages/admin/catalogue/AdminCatalogPage';
 import AdminCategoriesPage from '../pages/admin/categories/AdminCategoriesPage';
 import NotFoundPage from '../pages/NotFoundPage';
+import SystemBridge from '../components/system/SystemBridge';
 
 const rootRoute = createRootRoute({
   component: () => (
     <>
+      <SystemBridge />
       <Outlet />
       <Toaster
         position="top-center"

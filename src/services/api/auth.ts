@@ -60,8 +60,10 @@ export const authApi = {
     if (response.data?.token) {
       localStorage.setItem('tokpa_token', response.data.token);
       localStorage.setItem('tokpa_user', JSON.stringify(response.data.user));
-      // Connexion réussie → on branche le temps réel Reverb (canaux privés).
+      // Connexion réussie → on branche le temps réel Reverb (canaux privés)
+      // et on notifie le SystemBridge (panier serveur + notifications).
       initEcho();
+      window.dispatchEvent(new Event('tokpa:auth-changed'));
     }
     return response.data;
   },
@@ -116,6 +118,7 @@ export const authApi = {
       localStorage.removeItem('tokpa_token');
       localStorage.removeItem('tokpa_user');
       shutdownEcho();
+      window.dispatchEvent(new Event('tokpa:auth-changed'));
     }
   },
 };
