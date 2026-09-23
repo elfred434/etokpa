@@ -12,6 +12,8 @@ import CartPage from '../pages/client/panier/CartPage';
 import ConfirmationPage from '../pages/client/confirmation-commande/ConfirmationPage';
 import ProfilePage from '../pages/client/profil/ProfilePage';
 import NegotiationsPage from '../pages/client/negociations/NegotiationsPage';
+import OrderTrackingPage from '../pages/client/commandes/OrderTrackingPage';
+import MessagingPage from '../pages/client/messagerie/MessagingPage';
 import AdminCatalogPage from '../pages/admin/catalogue/AdminCatalogPage';
 import AdminCategoriesPage from '../pages/admin/categories/AdminCategoriesPage';
 import NotFoundPage from '../pages/NotFoundPage';
@@ -57,6 +59,8 @@ const panierRoute = createRoute({ getParentRoute: () => rootRoute, path: '/panie
 const confirmationRoute = createRoute({ getParentRoute: () => rootRoute, path: '/confirmation', component: ConfirmationPage });
 const profilRoute = createRoute({ getParentRoute: () => rootRoute, path: '/profil', component: ProfilePage });
 const negociationsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/negociations', component: NegotiationsPage });
+const orderTrackingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/commandes/suivi', component: OrderTrackingPage });
+const messagingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/messagerie', component: MessagingPage });
 const adminCatalogueRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/catalogue', component: AdminCatalogPage });
 const adminCategoriesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/categories', component: AdminCategoriesPage });
 // Route temporaire de review des composants (retirée à la fin du Sprint 1).
@@ -74,6 +78,8 @@ const routeTree = rootRoute.addChildren([
   confirmationRoute,
   profilRoute,
   negociationsRoute,
+  orderTrackingRoute,
+  messagingRoute,
   adminCatalogueRoute,
   adminCategoriesRoute,
   previewRoute,

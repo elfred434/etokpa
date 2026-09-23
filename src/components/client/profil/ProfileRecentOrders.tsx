@@ -3,9 +3,9 @@ import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 
 const RECENT_ORDERS = [
-  { id: 'TOK-2847', date: '12 Oct 2023', totalLabel: '8 500 FCFA', statusFr: 'Livré', statusEn: 'Delivered' },
-  { id: 'TOK-2840', date: '08 Oct 2023', totalLabel: '12 400 FCFA', statusFr: 'Livré', statusEn: 'Delivered' },
-  { id: 'TOK-2831', date: '02 Oct 2023', totalLabel: '5 200 FCFA', statusFr: 'Livré', statusEn: 'Delivered' },
+  { id: 'TOK-2847', date: 'Aujourd’hui', totalLabel: '3 980 FCFA', statusFr: 'En livraison', statusEn: 'Out for delivery', active: true },
+  { id: 'TOK-2840', date: '08 Oct 2023', totalLabel: '12 400 FCFA', statusFr: 'Livré', statusEn: 'Delivered', active: false },
+  { id: 'TOK-2831', date: '02 Oct 2023', totalLabel: '5 200 FCFA', statusFr: 'Livré', statusEn: 'Delivered', active: false },
 ];
 
 /**
@@ -41,14 +41,20 @@ export default function ProfileRecentOrders() {
               <div className="hidden font-bold text-primary sm:block">{o.totalLabel}</div>
 
               <div className="flex items-center justify-between gap-md sm:justify-end">
-                <span className="rounded-full bg-success-light px-2.5 py-1 text-micro font-bold uppercase text-success-dark">
+                <span
+                  className={
+                    o.active
+                      ? 'rounded-full bg-primary-tint border border-primary-light px-2.5 py-1 text-micro font-bold uppercase text-primary-dark'
+                      : 'rounded-full bg-success-light px-2.5 py-1 text-micro font-bold uppercase text-success-dark'
+                  }
+                >
                   {isFr ? o.statusFr : o.statusEn}
                 </span>
                 <Link
-                  to="/confirmation"
+                  to={o.active ? '/commandes/suivi' : '/confirmation'}
                   className="flex items-center gap-0.5 text-xs font-bold text-primary hover:underline"
                 >
-                  {isFr ? 'Détails' : 'Details'}
+                  {o.active ? (isFr ? 'Suivre' : 'Track') : (isFr ? 'Détails' : 'Details')}
                   <MIcon name="chevron_right" className="text-sm" />
                 </Link>
               </div>
