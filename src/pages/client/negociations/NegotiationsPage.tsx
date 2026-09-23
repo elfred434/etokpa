@@ -7,7 +7,7 @@ import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
-import { acceptCounterOffer, type NegotiationItem } from '../../../store/slices/negotiation/negotiationSlice';
+import { acceptCounterOffer, setProposals, type NegotiationItem } from '../../../store/slices/negotiation/negotiationSlice';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { negotiationApi } from '../../../services/api';
@@ -16,7 +16,7 @@ import type { Product } from '../../../types/models';
 type FilterTab = 'all' | 'pending' | 'accepted' | 'rejected';
 
 /**
- * Page dédiée Mes Négociations — Intégration API Backend Laravel + UI Stitch 100% fidèle
+ * Page dédiée Mes Négociations — Synchronisée 100% avec l'API Backend Laravel GET /api/budget-proposals
  */
 export default function NegotiationsPage() {
   const dispatch = useAppDispatch();
@@ -26,16 +26,37 @@ export default function NegotiationsPage() {
 
   const history = useAppSelector((state) => state.negotiation.history);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
+  const [isApiLoading, setIsApiLoading] = useState(true);
 
-  // Load real budget proposals from Backend
+  // Load real budget proposals from Backend GET /api/budget-proposals
   useEffect(() => {
     if (!isAuthenticated) return;
+    setIsApiLoading(true);
+
     negotiationApi.getProposals()
       .then((res) => {
-        // Backend proposals fetched
+        const proposalsList = res?.data || (Array.isArray(res) ? res : []);
+        if (Array.isArray(proposalsList)) {
+          const mapped: NegotiationItem[] = proposalsList.map((p: any) => ({
+            id: String(p.id),
+            productId: String(p.product_id || p.product?.id || '1'),
+            productName: p.product?.nom || 'Produit du marché',
+            productImage: p.product?.image_url,
+            vendorName: 'Marché Dantokpa',
+            originalPrice: Number(p.product?.prix) || Number(p.prix_propose) || 1000,
+            proposedPrice: Number(p.prix_propose),
+            minPrice: Number(p.product?.prix_minimum) || Number(p.prix_propose),
+            status: p.statut === 'accepte' ? 'accepted' : p.statut === 'refuse' ? 'rejected' : 'pending',
+            createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Récemment',
+          }));
+          dispatch(setProposals(mapped));
+        }
       })
-      .catch((err) => console.warn('API Proposals fallback:', err));
-  }, [isAuthenticated]);
+      .catch((err) => {
+        console.warn('API Proposals load error:', err);
+      })
+      .finally(() => setIsApiLoading(false));
+  }, [isAuthenticated, dispatch]);
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -164,16 +185,21 @@ export default function NegotiationsPage() {
             </nav>
 
             {/* Negotiation Items */}
-            {filteredHistory.length === 0 ? (
+            {isApiLoading ? (
+              <div className="bg-bg-card rounded-card p-lg text-center border border-border-default shadow-sm">
+                <MIcon name="sync" className="mx-auto text-[32px] text-primary animate-spin mb-2" />
+                <p className="font-h3 text-h3 text-on-surface font-medium">Chargement des négociations...</p>
+              </div>
+            ) : filteredHistory.length === 0 ? (
               <div className="bg-bg-card rounded-card p-lg text-center border border-border-default shadow-sm">
                 <MIcon name="handshake" className="mx-auto text-[48px] text-text-tertiary mb-2" />
                 <p className="font-h3 text-h3 text-on-surface font-medium">
-                  {isFr ? 'Aucune négociation dans cette catégorie' : 'No negotiations found'}
+                  {isFr ? 'Aucune négociation enregistrée' : 'No negotiations found'}
                 </p>
                 <p className="font-secondary text-secondary mt-1">
                   {isFr
-                    ? 'Proposez une offre de prix sur un produit pour débuter !'
-                    : 'Make an offer on a product to get started!'}
+                    ? 'Proposez une offre de prix sur un produit du catalogue pour débuter !'
+                    : 'Make an offer on a catalog product to get started!'}
                 </p>
               </div>
             ) : (
