@@ -107,7 +107,9 @@ export default function CatalogPage() {
           const fetched: CatalogProduct[] = list.map((p: ApiProduct) => ({
             id: String(p.id),
             nom: p.nom,
-            zoneId: '',
+            // L'API n'a pas de champ marché → rattaché à Dantokpa (marché principal CDC),
+            // comme avant 3690409 : sinon le filtre zone (pré-coché) exclut tout produit API.
+            zoneId: 'dantokpa',
             meta: p.description ?? '',
             quantite: p.stock > 0 ? `${p.stock} en stock` : 'Rupture',
             prix: Number(p.prix ?? 0),
