@@ -16,9 +16,20 @@ import NegotiationsPage from '../pages/client/negociations/NegotiationsPage';
 import OrderTrackingPage from '../pages/client/commandes/OrderTrackingPage';
 import OrdersListPage from '../pages/client/commandes/OrdersListPage';
 import MessagingPage from '../pages/client/messagerie/MessagingPage';
-import AdminCatalogPage from '../pages/admin/catalogue/AdminCatalogPage';
-import AdminCategoriesPage from '../pages/admin/categories/AdminCategoriesPage';
+import AdminCatalogPage from '../pages/admin/AdminCatalogPage';
+import AdminCategoriesPage from '../pages/admin/AdminCategoriesPage';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
+import AdminZonesPage from '../pages/admin/AdminZonesPage';
+import AdminUsersPage from '../pages/admin/AdminUsersPage';
+import AdminUserDetailPage from '../pages/admin/AdminUserDetailPage';
+import AdminLivreursPage from '../pages/admin/AdminLivreursPage';
+import AdminValidationsPage from '../pages/admin/AdminValidationsPage';
+import AdminLogsPage from '../pages/admin/AdminLogsPage';
+import AdminParametresPage from '../pages/admin/AdminParametresPage';
+import AdminSystemePage from '../pages/admin/AdminSystemePage';
+import AdminBddPage from '../pages/admin/AdminBddPage';
+import AdminClesApiPage from '../pages/admin/AdminClesApiPage';
+import AdminSecuritePage from '../pages/admin/AdminSecuritePage';
 import NotFoundPage from '../pages/NotFoundPage';
 import SystemBridge from '../components/system/SystemBridge';
 
@@ -87,6 +98,17 @@ const messagingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/me
 const adminCatalogueRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/catalogue', component: AdminCatalogPage });
 const adminDashboardRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin', component: AdminDashboardPage });
 const adminCategoriesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/categories', component: AdminCategoriesPage });
+const adminZonesPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/zones', component: AdminZonesPage });
+const adminUsersPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/utilisateurs', component: AdminUsersPage });
+const adminUserDetailPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/utilisateurs/detail', component: AdminUserDetailPage });
+const adminLivreursPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/livreurs', component: AdminLivreursPage });
+const adminValidationsPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/validations', component: AdminValidationsPage });
+const adminLogsPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/logs', component: AdminLogsPage });
+const adminParametresPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/parametres', component: AdminParametresPage });
+const adminSystemePageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/systeme', component: AdminSystemePage });
+const adminBddPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/bdd-jobs', component: AdminBddPage });
+const adminClesApiPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/cles-api', component: AdminClesApiPage });
+const adminSecuritePageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/securite', component: AdminSecuritePage });
 // Route temporaire de review des composants (retirée à la fin du Sprint 1).
 const previewRoute = createRoute({ getParentRoute: () => rootRoute, path: '/preview', component: PreviewPage });
 
@@ -109,6 +131,17 @@ const routeTree = rootRoute.addChildren([
   adminDashboardRoute,
   adminCatalogueRoute,
   adminCategoriesRoute,
+  adminZonesPageRoute,
+  adminUsersPageRoute,
+  adminUserDetailPageRoute,
+  adminLivreursPageRoute,
+  adminValidationsPageRoute,
+  adminLogsPageRoute,
+  adminParametresPageRoute,
+  adminSystemePageRoute,
+  adminBddPageRoute,
+  adminClesApiPageRoute,
+  adminSecuritePageRoute,
   previewRoute,
 ]);
 

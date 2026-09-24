@@ -1,22 +1,36 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 
 interface AdminSidebarProps {
   currentPath?: string;
 }
 
-/** Items de navigation — copie conforme du design Stitch (admin). */
-const NAV_ITEMS = [
-  { key: 'dashboard', icon: 'dashboard', label: 'Dashboard', to: '/admin' },
-  { key: 'catalogue', icon: 'inventory_2', label: 'Catalogue', to: '/admin/catalogue' },
-  { key: 'zones', icon: 'map', label: 'Zones', to: null },
-  { key: 'utilisateurs', icon: 'group', label: 'Utilisateurs', to: null },
-  { key: 'validations', icon: 'verified_user', label: 'Validations', to: null },
-  { key: 'logs', icon: 'history', label: 'Logs', to: null },
-] as const;
+interface NavItem {
+  key: string;
+  icon: string;
+  label: string;
+  to: string;
+}
 
-const PARAMS_ITEM = { key: 'parametres', icon: 'settings', label: 'Paramètres', to: null } as const;
+/** Gestion Métier (Admin) + DevOps (super-admin) — libellés des designs Stitch. */
+const METIER_ITEMS: NavItem[] = [
+  { key: 'dashboard', icon: 'dashboard', label: 'Dashboard Global', to: '/admin' },
+  { key: 'catalogue', icon: 'inventory_2', label: 'Catalogue & Produits', to: '/admin/catalogue' },
+  { key: 'categories', icon: 'category', label: 'Catégories', to: '/admin/categories' },
+  { key: 'zones', icon: 'map', label: 'Zones de Livraison', to: '/admin/zones' },
+  { key: 'utilisateurs', icon: 'group', label: 'Utilisateurs', to: '/admin/utilisateurs' },
+  { key: 'livreurs', icon: 'two_wheeler', label: 'Livreurs', to: '/admin/livreurs' },
+  { key: 'validations', icon: 'verified_user', label: 'Validations', to: '/admin/validations' },
+  { key: 'logs', icon: 'history', label: 'Logs & Audit', to: '/admin/logs' },
+  { key: 'parametres', icon: 'settings', label: 'Paramètres', to: '/admin/parametres' },
+];
+
+const DEVOPS_ITEMS: NavItem[] = [
+  { key: 'systeme', icon: 'terminal', label: 'Console Système', to: '/admin/systeme' },
+  { key: 'bdd', icon: 'database', label: 'BDD & Jobs', to: '/admin/bdd-jobs' },
+  { key: 'cles', icon: 'key', label: 'Clés API & Webhooks', to: '/admin/cles-api' },
+  { key: 'securite', icon: 'shield', label: 'Sécurité & Env', to: '/admin/securite' },
+];
 
 const ACTIVE_CLASS =
   'flex items-center gap-3 px-4 py-3 bg-primary-tint text-primary-container rounded-lg font-bold transition-all duration-200 active:scale-[0.97]';
@@ -24,53 +38,38 @@ const IDLE_CLASS =
   'flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-primary-hover/10 rounded-lg active:scale-[0.97]';
 
 /**
- * AdminSidebar — chrome latéral admin, copie conforme du design Stitch
- * (`tableau_de_bord_global_admin_tokpa/code.html` — « SIDE NAV BAR »).
+ * AdminSidebar — chrome latéral admin (design Stitch) : groupe Gestion Métier
+ * + groupe DevOps & Core Engine (super-admin) + bloc profil.
  */
 export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const activePath = currentPath || pathname;
 
-  const isActive = (key: string) =>
-    key === 'dashboard'
-      ? activePath === '/admin' || activePath === '/admin/'
-      : key === 'catalogue'
-        ? activePath.startsWith('/admin/catalogue') || activePath.startsWith('/admin/categories')
-        : activePath.startsWith(`/admin/${key}`);
-
-  const renderItem = (item: { key: string; icon: string; label: string; to: string | null }) => {
-    const cls = isActive(item.key) ? ACTIVE_CLASS : IDLE_CLASS;
-    const inner = (
-      <>
+  const renderItem = (item: NavItem) => {
+    const active =
+      item.to === '/admin'
+        ? activePath === '/admin' || activePath === '/admin/'
+        : activePath.startsWith(item.to);
+    return (
+      <Link key={item.key} to={item.to} className={active ? ACTIVE_CLASS : IDLE_CLASS}>
         <MIcon name={item.icon} />
         <span className="font-secondary text-body">{item.label}</span>
-      </>
-    );
-    if (!item.to) {
-      return (
-        <button
-          key={item.key}
-          type="button"
-          onClick={() => toast('Page statique — prochaine vague du lot admin')}
-          className={`${cls} w-full text-left cursor-pointer`}
-        >
-          {inner}
-        </button>
-      );
-    }
-    return (
-      <Link key={item.key} to={item.to} className={cls}>
-        {inner}
       </Link>
     );
   };
+
+  const groupLabel = (label: string) => (
+    <p className="px-4 pt-3 pb-1 font-secondary text-micro uppercase tracking-widest opacity-50 text-surface-variant">
+      {label}
+    </p>
+  );
 
   return (
     <aside
       className="fixed left-0 top-0 h-full w-64 bg-inverse-surface border-r border-outline-variant flex flex-col p-md z-50"
       style={{ backgroundColor: 'rgb(31, 19, 11)', borderColor: 'rgba(249, 115, 22, 0.15)' }}
     >
-      <div className="mb-xl px-4">
+      <div className="mb-lg px-4">
         <h1 className="text-h2 font-h2 font-bold text-primary-container tracking-tight">
           <span style={{ color: 'rgb(255, 255, 255)' }}>TOK</span>
           <span style={{ color: 'rgb(249, 115, 22)' }}>Pa</span>
@@ -79,8 +78,10 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-2 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {NAV_ITEMS.map(renderItem)}
-        <div className="mt-auto pt-md">{renderItem(PARAMS_ITEM)}</div>
+        {groupLabel('Gestion Métier (Admin)')}
+        {METIER_ITEMS.map(renderItem)}
+        {groupLabel('DevOps & Core Engine')}
+        {DEVOPS_ITEMS.map(renderItem)}
       </nav>
 
       <div
