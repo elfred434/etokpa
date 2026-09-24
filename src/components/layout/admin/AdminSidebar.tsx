@@ -1,4 +1,4 @@
-import { useRouterState } from '@tanstack/react-router';
+import { Link, useRouterState } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 
 interface AdminSidebarProps {
@@ -35,7 +35,7 @@ const DEVOPS_ITEMS: NavItem[] = [
 const ACTIVE_CLASS =
   'flex items-center gap-3 px-4 py-3 bg-primary-tint text-primary-container rounded-lg font-bold transition-all duration-200 active:scale-[0.97]';
 const IDLE_CLASS =
-  'flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-primary-hover/10 rounded-lg active:scale-[0.97]';
+  'flex items-center gap-3 px-4 py-3 text-white transition-colors hover:bg-primary-hover/10 rounded-lg active:scale-[0.97]';
 
 /**
  * AdminSidebar — chrome latéral admin (design Stitch) : groupe Gestion Métier
@@ -51,15 +51,15 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
         ? activePath === '/admin' || activePath === '/admin/'
         : activePath.startsWith(item.to);
     return (
-      <a
+      <Link
         key={item.key}
-        href={item.to}
+        to={item.to}
         aria-current={active ? 'page' : undefined}
         className={active ? ACTIVE_CLASS : IDLE_CLASS}
       >
         <MIcon name={item.icon} />
         <span className="font-secondary text-body">{item.label}</span>
-      </a>
+      </Link>
     );
   };
 

@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 
 type Item = { label: string; path: string; icon: string; badge?: string };
@@ -30,7 +31,7 @@ export default function ManagerSidebar({ currentPath }: Props) {
           <MIcon name="location_on" className="text-primary-tint text-[18px]" />
           <div className="flex-1">
             <p className="text-label font-semibold text-white">Zone Akpakpa</p>
-            <p className="text-text-inverse-secondary">Littoral Cotonou</p>
+            <p className="text-label text-white/80">Littoral Cotonou</p>
           </div>
           <span className="rounded-full bg-success-container px-2 py-0.5 text-[11px] font-bold text-on-surface">
             Active
@@ -41,14 +42,12 @@ export default function ManagerSidebar({ currentPath }: Props) {
         {ITEMS.map((item) => {
           const active = currentPath === item.path;
           return (
-            <a
+            <Link
               key={item.path}
-              href={item.path}
+              to={item.path}
               aria-current={active ? 'page' : undefined}
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-body transition ${
-                active
-                  ? 'bg-primary text-white'
-                  : 'text-text-inverse-secondary hover:bg-white/5 hover:text-white'
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-body text-white transition ${
+                active ? 'bg-primary' : 'hover:bg-white/10'
               }`}
             >
               <MIcon name={item.icon} className="text-[18px]" />
@@ -58,7 +57,7 @@ export default function ManagerSidebar({ currentPath }: Props) {
                   {item.badge}
                 </span>
               )}
-            </a>
+            </Link>
           );
         })}
       </nav>
@@ -69,7 +68,7 @@ export default function ManagerSidebar({ currentPath }: Props) {
           </div>
           <div className="flex-1">
             <p className="text-label font-semibold text-white">Serge Migan</p>
-            <p className="text-text-inverse-secondary">Manager de zone</p>
+            <p className="text-label text-white/80">Manager de zone</p>
           </div>
         </div>
       </div>
