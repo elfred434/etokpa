@@ -8,7 +8,7 @@ import MIcon from '../../../components/shared/MIcon';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import type { CategoryId, Product } from '../../../types/models';
-import { catalogApi, type ApiCategory, type ApiProduct } from '../../../services/api';
+import { catalogApi, type ApiBundle, type ApiCategory, type ApiProduct } from '../../../services/api';
 import { absImageUrl } from '../../../utils/imageUrl';
 import { categoryKind, type CategoryKind } from '../../../utils/categoryKind';
 
@@ -61,6 +61,8 @@ interface CatalogProduct {
   cat: CategoryId;
   /** id réel de ProductResource.categorie (filtre par catégorie API, rattaché à sa racine). */
   catRawId?: number;
+  /** Pack réel (GET /bundles) : pas de fiche produit ni d'ajout au panier (le panier n'accepte que des produits). */
+  isPack?: boolean;
   /** Image réelle = ProductResource.image_url résolue par absImageUrl (même source que l'admin) ; absente → dégradé + icône. */
   image?: string | null;
 }
@@ -134,6 +136,49 @@ export default function CatalogPage() {
     };
   }, []);
 
+  // Packs réels — GET /api/bundles (F-08 : produits inclus + prix total), affichés quand « Packs & Bundles »
+  // est choisi, avec le design des cartes produit. null = non chargés → repli : produits dont la catégorie
+  // ressemble à « pack » (comportement précédent).
+  const [apiPacks, setApiPacks] = useState<CatalogProduct[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    catalogApi
+      .getBundles()
+      .then((res) => {
+        const list: ApiBundle[] = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        if (!alive) return;
+        setApiPacks(
+          list.map((b) => {
+            const inclus = b.products ?? b.produits ?? [];
+            const prix = Number(b.prix_total ?? 0);
+            return {
+              id: `pack-${b.id}`,
+              nom: b.nom,
+              zoneId: 'dantokpa', // même rattachement que les produits API (pas de champ marché)
+              meta: inclus.length
+                ? `${inclus.length} produit${inclus.length > 1 ? 's' : ''} inclus : ${inclus
+                    .map((it) => `${it.nom} ×${Number(it.pivot?.qte ?? 1)}`)
+                    .join(', ')}`
+                : (b.description ?? ''),
+              quantite: 'Pack',
+              prix,
+              prixLabel: `${prix} F`,
+              stock: b.disponible === false ? 'none' : 'available',
+              icon: 'shopping_basket',
+              cat: 'pack',
+              image: absImageUrl(b.img_url),
+              isPack: true,
+            } satisfies CatalogProduct;
+          }),
+        );
+      })
+      .catch((err) => console.warn('API bundles error (repli sur les produits « pack »):', err));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const packMode = cat === 'pack' && apiPacks !== null;
+
   // Sous-catégorie → catégorie racine (le filtre de la barre latérale porte sur les racines)
   const rootOf = useMemo(() => {
     const m = new Map<number, number>();
@@ -202,7 +247,7 @@ export default function CatalogPage() {
   const touch = () => setTouched(true);
 
   const filtered = useMemo(() => {
-    let items = [...productsList];
+    let items = [...(packMode && apiPacks ? apiPacks : productsList)];
     const needle = search.trim().toLowerCase();
     if (needle) items = items.filter((p) => p.nom.toLowerCase().includes(needle) || p.meta.toLowerCase().includes(needle));
     if (touched) {
@@ -222,7 +267,7 @@ export default function CatalogPage() {
     if (sort === 'desc') items.sort((a, b) => b.prix - a.prix);
     if (sort === 'new') items.reverse();
     return items;
-  }, [search, touched, cat, zones, maxPrice, dispoOnly, sort, productsList, rootOf]);
+  }, [search, touched, cat, zones, maxPrice, dispoOnly, sort, productsList, rootOf, packMode, apiPacks]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const currentPage = Math.min(page, totalPages);
@@ -545,7 +590,7 @@ export default function CatalogPage() {
             <div>
               <h2 className="font-h1 text-h1 text-on-surface">{catTitle}</h2>
               <p className="mt-1 text-ink-2">
-                {filtered.length} produits trouvés
+                {filtered.length} {packMode ? 'packs trouvés' : 'produits trouvés'}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4">
@@ -598,15 +643,20 @@ export default function CatalogPage() {
 
           {visible.length === 0 ? (
             <div className="rounded-xl border-[0.5px] border-line bg-white p-xl text-center text-ink-2">
-              Aucun produit ne correspond à ces filtres.
+              {packMode ? 'Aucun pack ne correspond à ces filtres.' : 'Aucun produit ne correspond à ces filtres.'}
             </div>
           ) : view === 'grid' ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {visible.map((p) => (
                 <div
                   key={p.id}
-                  onClick={() => openProduct(p.id)}
-                  className="group cursor-pointer overflow-hidden rounded-xl border-[0.5px] border-line bg-white transition-all hover:shadow-md"
+                  onClick={() => {
+                    if (!p.isPack) openProduct(p.id);
+                  }}
+                  className={clsx(
+                    'group overflow-hidden rounded-xl border-[0.5px] border-line bg-white transition-all hover:shadow-md',
+                    p.isPack ? 'cursor-default' : 'cursor-pointer',
+                  )}
                 >
                   <div className="relative flex h-[110px] items-center justify-center bg-gradient-to-br from-primary-lighter to-primary-light">
                     {p.image ? (
@@ -626,17 +676,19 @@ export default function CatalogPage() {
                           <span className="block text-micro text-ink-3 line-through">{p.prixAncienLabel}</span>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        aria-label={`Ajouter ${p.nom}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addToCart(p);
-                        }}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white transition-all hover:bg-primary-hover active:scale-95"
-                      >
-                        <MIcon name="add" className="text-[20px]" />
-                      </button>
+                      {!p.isPack && (
+                        <button
+                          type="button"
+                          aria-label={`Ajouter ${p.nom}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart(p);
+                          }}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white transition-all hover:bg-primary-hover active:scale-95"
+                        >
+                          <MIcon name="add" className="text-[20px]" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -647,8 +699,13 @@ export default function CatalogPage() {
               {visible.map((p) => (
                 <div
                   key={p.id}
-                  onClick={() => openProduct(p.id)}
-                  className="group flex flex-col sm:flex-row cursor-pointer items-start sm:items-center justify-between gap-3 sm:gap-md rounded-xl border-[0.5px] border-line bg-white p-3 sm:p-md transition-all hover:shadow-md"
+                  onClick={() => {
+                    if (!p.isPack) openProduct(p.id);
+                  }}
+                  className={clsx(
+                    'group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-md rounded-xl border-[0.5px] border-line bg-white p-3 sm:p-md transition-all hover:shadow-md',
+                    p.isPack ? 'cursor-default' : 'cursor-pointer',
+                  )}
                 >
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className="relative flex h-[70px] w-[90px] sm:h-[80px] sm:w-[110px] shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary-lighter to-primary-light">
@@ -689,17 +746,19 @@ export default function CatalogPage() {
                         <span className="block text-micro text-ink-3 line-through">{p.prixAncienLabel}</span>
                       )}
                     </div>
-                    <button
-                      type="button"
-                      aria-label={`Ajouter ${p.nom}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addToCart(p);
-                      }}
-                      className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-primary text-white transition-all hover:bg-primary-hover active:scale-95 shrink-0"
-                    >
-                      <MIcon name="add" className="text-[18px] sm:text-[20px]" />
-                    </button>
+                    {!p.isPack && (
+                      <button
+                        type="button"
+                        aria-label={`Ajouter ${p.nom}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToCart(p);
+                        }}
+                        className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-primary text-white transition-all hover:bg-primary-hover active:scale-95 shrink-0"
+                      >
+                        <MIcon name="add" className="text-[18px] sm:text-[20px]" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

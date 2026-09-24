@@ -41,6 +41,27 @@ export interface ApiCategory {
   en_accueil?: boolean | null;
 }
 
+/** Produit inclus dans un pack — quantité dans `pivot.qte` (table produit_pack). */
+export interface ApiBundleItem {
+  id: number;
+  nom: string;
+  prix?: number | string;
+  pivot?: { qte?: number | string };
+}
+
+/** Pack — modèle `Pack` brut (GET /bundles : disponibles + `products` ; admin : + `produits`). */
+export interface ApiBundle {
+  id: number;
+  nom: string;
+  description?: string | null;
+  prix_total: number | string;
+  prix_minimum?: number | string | null;
+  img_url?: string | null;
+  disponible?: boolean;
+  products?: ApiBundleItem[];
+  produits?: ApiBundleItem[];
+}
+
 /** Zone de livraison — exactement `ZoneResource` (GET /zones). */
 export interface ApiZone {
   id: number;
