@@ -10,8 +10,19 @@ import { add } from '../../../store/slices/cart/cartSlice';
 import { submitOffer } from '../../../store/slices/negotiation/negotiationSlice';
 import type { Product } from '../../../types/models';
 import { useLanguage } from '../../../context/LanguageContext';
-import { catalogApi, type ApiProduct } from '../../../services/api';
+import { catalogApi, type ApiCategory, type ApiProduct } from '../../../services/api';
 import { absImageUrl } from '../../../utils/imageUrl';
+import { categoryKind, type CategoryKind } from '../../../utils/categoryKind';
+
+/** Icônes de la maquette accueil (Categories Grid), par famille — icone non persistée côté backend (B-17). */
+const HOME_KIND_ICON: Record<CategoryKind, string> = {
+  vegetable: 'potted_plant',
+  fish: 'set_meal',
+  grain: 'grain',
+  spice: 'liquor',
+  pack: 'shopping_basket',
+  other: 'category',
+};
 
 interface SelectionItem {
   id: string;
@@ -54,18 +65,39 @@ export default function HomePage() {
       });
   }, []);
 
+  // Catégories réelles — GET /api/categories (F-07). Échec → tuiles de la maquette conservées.
+  const [apiCats, setApiCats] = useState<ApiCategory[] | null>(null);
+  useEffect(() => {
+    catalogApi
+      .getCategories()
+      .then((res) => {
+        const list: ApiCategory[] = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        if (list.length > 0) setApiCats(list);
+      })
+      .catch((err) => console.warn('API categories fallback for home:', err));
+  }, []);
+
   const atoutsList = [
     { icon: 'payments', titre: t('home.atouts.a1Title'), texte: t('home.atouts.a1Text') },
     { icon: 'local_shipping', titre: t('home.atouts.a2Title'), texte: t('home.atouts.a2Text') },
     { icon: 'location_on', titre: t('home.atouts.a3Title'), texte: t('home.atouts.a3Text') },
   ];
 
-  const categoriesList = [
-    { icon: 'potted_plant', nom: t('categories.vegetables') },
-    { icon: 'set_meal', nom: t('categories.fish') },
-    { icon: 'liquor', nom: t('categories.spices') },
-    { icon: 'shopping_basket', nom: t('categories.packs') },
-  ];
+  // 4 tuiles comme la maquette : 3 catégories réelles (celles marquées en_accueil d'abord — champ
+  // non persisté aujourd'hui, B-17) + « Packs ». Clic → catalogue déjà filtré (?cat=).
+  const categoriesList: { icon: string; nom: string; cat?: string }[] = apiCats
+    ? [
+        ...[...apiCats.filter((c) => c.en_accueil), ...apiCats.filter((c) => !c.en_accueil)]
+          .slice(0, 3)
+          .map((c) => ({ icon: c.icone || HOME_KIND_ICON[categoryKind(c)], nom: c.nom, cat: `c${c.id}` })),
+        { icon: 'shopping_basket', nom: t('categories.packs'), cat: 'pack' },
+      ]
+    : [
+        { icon: 'potted_plant', nom: t('categories.vegetables') },
+        { icon: 'set_meal', nom: t('categories.fish') },
+        { icon: 'liquor', nom: t('categories.spices') },
+        { icon: 'shopping_basket', nom: t('categories.packs') },
+      ];
 
   const addToCart = (item: SelectionItem) => {
     const product: Product = {
@@ -143,8 +175,8 @@ export default function HomePage() {
           <div className="grid grid-cols-2 gap-3 sm:gap-md md:grid-cols-4">
             {categoriesList.map((c) => (
               <div
-                key={c.nom}
-                onClick={() => navigate({ to: '/catalogue' })}
+                key={c.cat ?? c.nom}
+                onClick={() => navigate({ to: '/catalogue', search: c.cat ? { cat: c.cat } : {} })}
                 className="bento-hover group flex cursor-pointer flex-col items-center gap-sm rounded-[14px] border border-transparent bg-warm-low p-4 sm:p-lg hover:border-primary-light"
               >
                 <MIcon name={c.icon} className="text-[36px] sm:text-[48px] text-primary-shade transition-transform group-hover:scale-110" />

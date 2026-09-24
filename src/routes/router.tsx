@@ -83,8 +83,10 @@ const catalogueRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/catalogue',
   component: CatalogPage,
-  validateSearch: (search: Record<string, unknown>): { q?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { q?: string; cat?: string } => ({
     q: typeof search.q === 'string' ? search.q : undefined,
+    // ?cat=c{id} (catégorie API) ou ?cat=pack — lien depuis les tuiles de l'accueil
+    cat: typeof search.cat === 'string' ? search.cat : undefined,
   }),
 });
 const produitRoute = createRoute({ getParentRoute: () => rootRoute, path: '/produit/$productId', component: ProductPage });

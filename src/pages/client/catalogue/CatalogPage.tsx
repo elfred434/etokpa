@@ -8,12 +8,27 @@ import MIcon from '../../../components/shared/MIcon';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import type { CategoryId, Product } from '../../../types/models';
-import { catalogApi, type ApiProduct } from '../../../services/api';
+import { catalogApi, type ApiCategory, type ApiProduct } from '../../../services/api';
 import { absImageUrl } from '../../../utils/imageUrl';
+import { categoryKind, type CategoryKind } from '../../../utils/categoryKind';
 
 /* ---- Données exactes du code.html « catalogue_tokpa » ---- */
 
-type CatFilter = 'all' | CategoryId;
+/** 'all' | familles du design (repli si GET /categories échoue) | `c{id}` = catégorie réelle de l'API. */
+type CatFilter = 'all' | CategoryId | `c${number}`;
+
+/** Icônes de la maquette catalogue, par famille — pour les catégories réelles (icone non persistée, B-17). */
+const KIND_ICON: Record<CategoryKind, string> = {
+  vegetable: 'eco',
+  fish: 'restaurant',
+  grain: 'grain',
+  spice: 'soup_kitchen',
+  pack: 'shopping_basket',
+  other: 'category',
+};
+
+/** ?cat= (tuiles de l'accueil) → filtre initial : « c{id} » = catégorie API, « pack » = Packs & Bundles. */
+const parseCat = (v: string): CatFilter => (/^c\d+$/.test(v) ? (v as CatFilter) : v === 'pack' ? 'pack' : 'all');
 
 const CATEGORIES: { id: CatFilter; icon: string; nom: string }[] = [
   { id: 'all', icon: 'grid_view', nom: 'Tous les produits' },
@@ -44,6 +59,8 @@ interface CatalogProduct {
   stock: 'available' | 'low' | 'none';
   icon: string;
   cat: CategoryId;
+  /** id réel de ProductResource.categorie (filtre par catégorie API, rattaché à sa racine). */
+  catRawId?: number;
   /** Image réelle = ProductResource.image_url résolue par absImageUrl (même source que l'admin) ; absente → dégradé + icône. */
   image?: string | null;
 }
@@ -60,7 +77,7 @@ const INITIAL_PRODUCTS: CatalogProduct[] = [
   { id: 'c9', nom: 'Ail violet local', zoneId: 'dantokpa', meta: 'Dantokpa · 250g', quantite: '250g', prix: 500, prixLabel: '500 FCFA', stock: 'none', icon: 'spa', cat: 'spice' },
 ];
 
-const CAT_TITLES: Record<CatFilter, string> = {
+const CAT_TITLES: Record<'all' | CategoryId, string> = {
   all: 'Légumes frais',
   vegetable: 'Légumes & Fruits',
   fish: 'Poissons & Viandes',
@@ -86,18 +103,67 @@ export default function CatalogPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const q = useRouterState({ select: (s) => (s.location.search as { q?: string }).q ?? '' });
+  const catParam = useRouterState({ select: (s) => (s.location.search as { cat?: string }).cat ?? '' });
 
   const [productsList, setProductsList] = useState<CatalogProduct[]>(INITIAL_PRODUCTS);
   const [search, setSearch] = useState(q);
-  const [cat, setCat] = useState<CatFilter>('all');
+  const [cat, setCat] = useState<CatFilter>(() => parseCat(catParam));
   const [zones, setZones] = useState<string[]>(['dantokpa']);
   const [maxPrice, setMaxPrice] = useState(7500);
   const [dispoOnly, setDispoOnly] = useState(true);
-  const [touched, setTouched] = useState(false);
+  const [touched, setTouched] = useState(() => parseCat(catParam) !== 'all');
   const [sort, setSort] = useState('pop');
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [page, setPage] = useState(1);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  // Catégories réelles — GET /api/categories (F-07 : impact immédiat sur le catalogue).
+  // null = non chargées → repli sur la liste de la maquette (CATEGORIES) et le classement par famille.
+  const [apiCats, setApiCats] = useState<ApiCategory[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    catalogApi
+      .getCategories()
+      .then((res) => {
+        const list: ApiCategory[] = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        if (alive && list.length > 0) setApiCats(list);
+      })
+      .catch((err) => console.warn('API categories error (liste de la maquette conservée):', err));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Sous-catégorie → catégorie racine (le filtre de la barre latérale porte sur les racines)
+  const rootOf = useMemo(() => {
+    const m = new Map<number, number>();
+    const walk = (c: ApiCategory, root: number) => {
+      m.set(c.id, root);
+      (c.children ?? []).forEach((ch) => walk(ch, root));
+    };
+    (apiCats ?? []).forEach((c) => walk(c, c.id));
+    return m;
+  }, [apiCats]);
+
+  const categories = useMemo<{ id: CatFilter; icon: string; nom: string }[]>(
+    () =>
+      apiCats
+        ? [
+            CATEGORIES[0], // « Tous les produits »
+            ...apiCats.map((c) => ({
+              id: `c${c.id}` as CatFilter,
+              icon: c.icone || KIND_ICON[categoryKind(c)],
+              nom: c.nom,
+            })),
+            CATEGORIES[CATEGORIES.length - 1], // « Packs & Bundles »
+          ]
+        : CATEGORIES,
+    [apiCats],
+  );
+
+  const catTitle = cat.startsWith('c')
+    ? (categories.find((c) => c.id === cat)?.nom ?? 'Catalogue')
+    : CAT_TITLES[cat as 'all' | CategoryId];
 
   // Connection API Backend GET /api/products — 100 premiers, nouveautés d'abord, recherche q (debounce)
   useEffect(() => {
@@ -120,6 +186,7 @@ export default function CatalogPage() {
             stock: p.disponible === false || Number(p.stock) <= 0 ? 'none' : Number(p.stock) <= 5 ? 'low' : 'available',
             icon: mapApiCategory(p.categorie) === 'fish' ? 'set_meal' : mapApiCategory(p.categorie) === 'grain' ? 'nutrition' : mapApiCategory(p.categorie) === 'spice' ? 'restaurant' : mapApiCategory(p.categorie) === 'pack' ? 'package_2' : 'eco',
             cat: mapApiCategory(p.categorie),
+            catRawId: p.categorie?.id,
             image: absImageUrl(p.image_url ?? p.img_url),
           }));
           setProductsList(fetched);
@@ -139,7 +206,14 @@ export default function CatalogPage() {
     const needle = search.trim().toLowerCase();
     if (needle) items = items.filter((p) => p.nom.toLowerCase().includes(needle) || p.meta.toLowerCase().includes(needle));
     if (touched) {
-      if (cat !== 'all') items = items.filter((p) => p.cat === cat);
+      if (cat !== 'all') {
+        if (cat.startsWith('c')) {
+          const id = Number(cat.slice(1));
+          items = items.filter((p) => p.catRawId != null && (rootOf.get(p.catRawId) ?? p.catRawId) === id);
+        } else {
+          items = items.filter((p) => p.cat === cat);
+        }
+      }
       if (zones.length > 0) items = items.filter((p) => zones.includes(p.zoneId));
       items = items.filter((p) => p.prix <= maxPrice);
       if (dispoOnly) items = items.filter((p) => p.stock === 'available');
@@ -148,7 +222,7 @@ export default function CatalogPage() {
     if (sort === 'desc') items.sort((a, b) => b.prix - a.prix);
     if (sort === 'new') items.reverse();
     return items;
-  }, [search, touched, cat, zones, maxPrice, dispoOnly, sort, productsList]);
+  }, [search, touched, cat, zones, maxPrice, dispoOnly, sort, productsList, rootOf]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const currentPage = Math.min(page, totalPages);
@@ -163,7 +237,7 @@ export default function CatalogPage() {
     setSearch('');
     setSort('pop');
     setPage(1);
-    if (q) navigate({ to: '/catalogue', search: {} });
+    if (q || catParam) navigate({ to: '/catalogue', search: {} });
   };
 
   const toggleZone = (zoneId: string) => {
@@ -226,7 +300,7 @@ export default function CatalogPage() {
           <div className="rounded-xl border-[0.5px] border-line bg-white p-md shadow-sm">
             <h3 className="mb-md font-h3 text-h3">Catégories</h3>
             <nav className="space-y-1">
-              {CATEGORIES.map((c) => (
+              {categories.map((c) => (
                 <button
                   key={c.id}
                   type="button"
@@ -346,7 +420,7 @@ export default function CatalogPage() {
                 <div>
                   <h4 className="mb-sm font-h3 text-h3 text-on-surface">Catégories</h4>
                   <div className="grid grid-cols-2 gap-2">
-                    {CATEGORIES.map((c) => (
+                    {categories.map((c) => (
                       <button
                         key={c.id}
                         type="button"
@@ -469,7 +543,7 @@ export default function CatalogPage() {
           </div>
           <div className="mb-md flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:mb-lg">
             <div>
-              <h2 className="font-h1 text-h1 text-on-surface">{CAT_TITLES[cat]}</h2>
+              <h2 className="font-h1 text-h1 text-on-surface">{catTitle}</h2>
               <p className="mt-1 text-ink-2">
                 {filtered.length} produits trouvés
               </p>

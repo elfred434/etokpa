@@ -28,11 +28,17 @@ export interface ApiProduct {
   };
 }
 
+/** Catégorie — GET /api/categories : racines (parent_id null) triées par nom, avec `children`. */
 export interface ApiCategory {
   id: number;
   nom: string;
   slug: string;
-  icone?: string;
+  description?: string | null;
+  parent_id?: number | null;
+  children?: ApiCategory[];
+  /** Prévus par le design mais pas encore persistés côté backend (B-17) : utilisés s'ils arrivent. */
+  icone?: string | null;
+  en_accueil?: boolean | null;
 }
 
 /** Zone de livraison — exactement `ZoneResource` (GET /zones). */
