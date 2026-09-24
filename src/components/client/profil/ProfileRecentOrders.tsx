@@ -18,7 +18,7 @@ export default function ProfileRecentOrders() {
     <section className="mb-md">
       <div className="mb-sm flex items-center justify-between">
         <h3 className="font-h3 text-h3 text-ink">{t('profile.myOrders')}</h3>
-        <Link to="/panier" className="font-label text-xs font-bold text-primary hover:underline sm:text-sm">
+        <Link to="/commandes" className="font-label text-xs font-bold text-primary hover:underline sm:text-sm">
           {t('common.seeAll')}
         </Link>
       </div>

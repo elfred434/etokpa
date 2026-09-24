@@ -4,6 +4,7 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
+import Pagination from '../../../components/shared/Pagination';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { ordersApi } from '../../../services/api';
@@ -40,7 +41,16 @@ const STATUT_LABELS: Record<string, { fr: string; en: string }> = {
   annule: { fr: 'Annulée', en: 'Cancelled' },
 };
 
-/** Pastilles de statut du design Stitch (theme.css `.status` + variantes). */
+/** Pastilles de statut — design de base (comme Profil / commandes récentes). */
+const STATUT_BADGE: Record<string, string> = {
+  en_attente: 'bg-[#FFFBEB] text-amber-text border-[#FDE68A]',
+  en_preparation: 'bg-primary-tint text-primary-dark border-primary-light',
+  en_livraison: 'bg-primary-tint text-primary-dark border-primary-light',
+  livre: 'bg-success-light text-success-dark border-success-light',
+  annule: 'bg-error-light text-error-dark border-error/20',
+};
+
+/** Pastilles `.status-*` du thème — uniquement dans la modale (validée en l'état). */
 const STATUT_CLASS: Record<string, string> = {
   en_attente: 'status-pending',
   en_preparation: 'status-preparing',
@@ -115,48 +125,51 @@ export default function OrdersListPage() {
           {/* En-tête */}
           <div className="flex flex-wrap items-center justify-between gap-2 mb-lg">
             <h1 className="font-h1 text-h1 text-on-surface">{isFr ? 'Mes commandes' : 'My orders'}</h1>
-            <span className="label text-text-secondary bg-white border border-line rounded-button px-3 py-1.5">
+            <span className="text-micro text-text-secondary bg-white border border-border-default rounded-lg px-3 py-1.5">
               {total} {isFr ? 'commande(s)' : 'order(s)'}
             </span>
           </div>
 
           {error && (
-            <div className="mb-lg p-3 bg-error-light border border-error/20 rounded-card text-xs font-semibold text-error-dark leading-relaxed">
+            <div className="mb-lg p-3 bg-error-light border border-error/20 rounded-lg text-xs font-semibold text-error-dark leading-relaxed">
               {error}
             </div>
           )}
 
           {loading ? (
-            <div className="card p-lg space-y-md" aria-busy="true">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <div key={i} className="skeleton h-5 rounded-lg" style={{ width: `${100 - i * 8}%` }} />
-              ))}
+            <div className="py-2xl flex justify-center bg-white rounded-lg border border-border-default">
+              <MIcon name="sync" className="text-primary text-3xl animate-spin" />
             </div>
           ) : orders.length === 0 ? (
-            <div className="card py-xl">
+            <div className="py-xl bg-white rounded-lg border border-border-default">
               <EmptyState
                 icon={<MIcon name="receipt_long" className="text-4xl text-primary" />}
                 title={isFr ? 'Aucune commande' : 'No orders yet'}
                 description={isFr ? 'Vos commandes apparaîtront ici.' : 'Your orders will appear here.'}
                 action={
-                  <button type="button" className="btn btn-primary" onClick={() => navigate({ to: '/catalogue' })}>
+                  <button
+                    type="button"
+                    className="px-lg py-3 bg-primary-container text-white rounded-lg font-bold cursor-pointer"
+                    onClick={() => navigate({ to: '/catalogue' })}
+                  >
                     {isFr ? 'Explorer le marché' : 'Browse the market'}
                   </button>
                 }
               />
             </div>
           ) : (
-            <div className="card overflow-hidden">
-              <div className="overflow-x-auto">
+            /* Tableau — design de base (sans barre de défilement : colonnes responsives + scrollbar masquée) */
+            <div className="bg-white rounded-lg border border-border-default overflow-hidden">
+              <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <table className="w-full text-left text-body">
                   <thead>
-                    <tr className="border-b border-line bg-warm label text-text-secondary">
+                    <tr className="border-b border-border-default bg-bg-secondary text-micro font-bold text-text-secondary uppercase">
                       <th className="px-md py-sm">Réf</th>
-                      <th className="px-md py-sm">{isFr ? 'Date' : 'Date'}</th>
-                      <th className="px-md py-sm">{isFr ? 'Articles' : 'Items'}</th>
+                      <th className="hidden lg:table-cell px-md py-sm">{isFr ? 'Date' : 'Date'}</th>
+                      <th className="hidden sm:table-cell px-md py-sm">{isFr ? 'Articles' : 'Items'}</th>
                       <th className="px-md py-sm">{isFr ? 'Total' : 'Total'}</th>
                       <th className="px-md py-sm">{isFr ? 'Statut' : 'Status'}</th>
-                      <th className="px-md py-sm">{isFr ? 'Livreur' : 'Rider'}</th>
+                      <th className="hidden lg:table-cell px-md py-sm">{isFr ? 'Livreur' : 'Rider'}</th>
                       <th className="px-md py-sm text-right">{isFr ? 'Actions' : 'Actions'}</th>
                     </tr>
                   </thead>
@@ -167,20 +180,28 @@ export default function OrdersListPage() {
                         <tr
                           key={o.id}
                           onClick={() => setSelected(o)}
-                          className="border-b border-line/60 last:border-0 hover:bg-primary-lighter/50 cursor-pointer transition-colors"
+                          className="border-b border-border-default/60 last:border-0 hover:bg-bg-secondary cursor-pointer transition-colors"
                         >
                           <td className="px-md py-sm font-bold text-text-main">#{o.id}</td>
-                          <td className="px-md py-sm text-text-secondary">{fmtDate(o.created_at)}</td>
-                          <td className="px-md py-sm text-text-secondary">{articlesCount(o)}</td>
-                          <td className="px-md py-sm price text-text-main">
+                          <td className="hidden lg:table-cell px-md py-sm text-text-secondary">
+                            {fmtDate(o.created_at)}
+                          </td>
+                          <td className="hidden sm:table-cell px-md py-sm text-text-secondary">{articlesCount(o)}</td>
+                          <td className="px-md py-sm font-price text-text-main whitespace-nowrap">
                             {Number(o.montant_total ?? 0).toLocaleString('fr-FR')} FCFA
                           </td>
                           <td className="px-md py-sm">
-                            <span className={`status ${STATUT_CLASS[o.statut] ?? ''}`}>
+                            <span
+                              className={`inline-flex items-center gap-xs px-md py-xs rounded-full text-micro font-bold border whitespace-nowrap ${
+                                STATUT_BADGE[o.statut] ?? 'bg-bg-secondary text-text-secondary border-border-default'
+                              }`}
+                            >
                               {isFr ? label.fr : label.en}
                             </span>
                           </td>
-                          <td className="px-md py-sm text-text-secondary">{o.livreur?.nom_complet ?? '—'}</td>
+                          <td className="hidden lg:table-cell px-md py-sm text-text-secondary">
+                            {o.livreur?.nom_complet ?? '—'}
+                          </td>
                           <td className="px-md py-sm text-right">
                             <button
                               type="button"
@@ -188,7 +209,7 @@ export default function OrdersListPage() {
                                 e.stopPropagation();
                                 handleSuivre(o.id);
                               }}
-                              className="btn btn-secondary btn-sm"
+                              className="inline-flex items-center gap-xs px-md py-xs rounded-lg bg-primary-tint border border-primary-light text-primary-container text-micro font-bold hover:bg-primary-lighter active:scale-95 transition-all cursor-pointer whitespace-nowrap"
                             >
                               <MIcon name="near_me" className="text-[14px]" />
                               {isFr ? 'Suivre' : 'Track'}
@@ -200,33 +221,11 @@ export default function OrdersListPage() {
                   </tbody>
                 </table>
               </div>
-
-              {/* Pagination (serveur — paginate(15)) */}
-              {lastPage > 1 && (
-                <div className="flex items-center justify-between gap-md px-md py-sm border-t border-line bg-warm">
-                  <button
-                    type="button"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    className="btn btn-ghost btn-sm"
-                  >
-                    ← {isFr ? 'Précédent' : 'Previous'}
-                  </button>
-                  <span className="label text-text-secondary">
-                    {isFr ? 'Page' : 'Page'} {page} / {lastPage}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={page >= lastPage}
-                    onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
-                    className="btn btn-ghost btn-sm"
-                  >
-                    {isFr ? 'Suivant' : 'Next'} →
-                  </button>
-                </div>
-              )}
             </div>
           )}
+
+          {/* Pagination — MÊME composant que Notifications / Profil (carrés 40px, page active orange) */}
+          {lastPage > 1 && <Pagination page={page} pageCount={lastPage} onChange={setPage} className="mt-8" />}
         </div>
       </main>
 
