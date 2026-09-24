@@ -5,13 +5,14 @@ import MIcon from '../../shared/MIcon';
 interface AdminLayoutProps {
   children: ReactNode;
   currentPath?: string;
+  mainClassName?: string;
 }
 
 /**
  * AdminLayout — chrome complet admin, copie conforme du design Stitch :
  * sidebar sombre + top bar fixe (recherche, notifications, aide, profil) + canvas.
  */
-export default function AdminLayout({ children, currentPath }: AdminLayoutProps) {
+export default function AdminLayout({ children, currentPath, mainClassName }: AdminLayoutProps) {
   return (
     <div className="bg-bg-app text-on-surface font-body min-h-screen">
       <AdminSidebar currentPath={currentPath} />
@@ -55,7 +56,7 @@ export default function AdminLayout({ children, currentPath }: AdminLayoutProps)
       </header>
 
       {/* MAIN CONTENT CANVAS */}
-      <main className="ml-64 pt-[52px] min-h-screen p-lg space-y-lg">{children}</main>
+      <main className={mainClassName ?? 'ml-64 pt-[52px] min-h-screen p-lg space-y-lg'}>{children}</main>
     </div>
   );
 }
