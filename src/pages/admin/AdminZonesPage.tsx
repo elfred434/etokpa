@@ -1,40 +1,238 @@
-import { useDesignScript } from '../../utils/designRuntime';
-import DESIGN_SCRIPT from './_scripts/AdminZonesPage';
+import { useEffect, useState } from 'react';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import { adminApi } from '../../services/api';
+import { unwrap, listOf, fmtFcfa } from '../../services/api/unwrap';
+import { extractApiError, formatApiError } from '../../utils/apiError';
 
-const DESIGN_CSS = `
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-            display: inline-block;
-            vertical-align: middle;
-        }
-        .sidebar-dark { background-color: #111827; }
-        .map-container { background-color: #E8F4FD; position: relative; overflow: hidden; border-radius: 14px; }
-        .zone-poly { fill: #F97316; fill-opacity: 0.2; stroke: #F97316; stroke-width: 1; }
-        .zone-poly.active { fill-opacity: 0.4; stroke-width: 3; }
-        .card-shadow { border: 0.5px solid #E5E7EB; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }
-        .chip { border: 1px solid #e0c0b1; transition: all 0.2s ease; }
-        .chip:hover { transform: translateY(-1px); }
-    `;
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-/**
- * AdminZonesPage — copie conforme statique du design Stitch (code.html).
- * Interactions : script du design exécuté via useDesignScript (comportement copié).
- */
 export default function AdminZonesPage() {
-  useDesignScript(DESIGN_SCRIPT);
+  const [zones, setZones] = useState<any[]>([]);
+  const [landmarks, setLandmarks] = useState<any[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [lm, setLm] = useState<any | null>(null);
+  const [form, setForm] = useState({ nom: '', description: '', latitude: '', longitude: '' });
+
+  const charger = () => {
+    setLoading(true);
+    setErr(null);
+    Promise.all([adminApi.getZones(), adminApi.getLandmarks()])
+      .then(([z, l]) => {
+        setZones(listOf(unwrap(z)));
+        setLandmarks(listOf(unwrap(l)));
+      })
+      .catch((e) => setErr(formatApiError(extractApiError(e))))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    charger();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const enregistrerLm = async () => {
+    setErr(null);
+    setInfo(null);
+    try {
+      if (lm?.id) {
+        await adminApi.updateLandmark(lm.id, form);
+        setInfo(`Point de repère « ${form.nom} » mis à jour.`);
+      } else {
+        await adminApi.createLandmark(form);
+        setInfo(`Point de repère « ${form.nom} » créé.`);
+      }
+      setLm(null);
+      setForm({ nom: '', description: '', latitude: '', longitude: '' });
+      charger();
+    } catch (e) {
+      setErr(formatApiError(extractApiError(e)));
+    }
+  };
+
+  const supprimerLm = async (id: number) => {
+    setErr(null);
+    setInfo(null);
+    try {
+      await adminApi.deleteLandmark(id);
+      setInfo(`Point de repère #${id} supprimé.`);
+      charger();
+    } catch (e) {
+      setErr(formatApiError(extractApiError(e)));
+    }
+  };
 
   return (
     <AdminLayout currentPath="/admin/zones">
-      <style>{DESIGN_CSS}</style>
-  <header className="bg-bg-card h-16 px-lg flex justify-between items-center border-b border-border-default sticky top-0 z-40"> <div className="flex items-center gap-4"> <h1 className="font-h1 text-h2 text-text-main">Gestion des zones</h1> </div> <div className="flex items-center gap-md"> <button className="bg-primary text-on-primary flex items-center gap-2 px-md py-2.5 rounded-lg hover:bg-primary-hover active:scale-95 transition-all font-label"> <MIcon name="add" className="text-[20px]" />
-                        Nouvelle zone
-                    </button> <div className="h-8 w-px bg-border-default mx-2"></div> <div className="flex items-center gap-3"> <MIcon name="notifications" className="text-text-secondary cursor-pointer hover:text-primary transition-colors" /> <div className="w-8 h-8 rounded-full overflow-hidden border border-border-default"> <img alt="Manager Profile" data-alt="Close-up portrait of a professional Beninese male administrator with a warm smile, wearing a sharp business casual outfit in a bright, modern office environment. The lighting is soft and professional, reflecting a high-end corporate digital workspace aesthetic with warm orange and neutral gray tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7BHVtqSz0E_7C4P5x-2MCnq0qNpgTFTCvr_Kw4NuW2qFqcM2q5-8wju91keV9INvf9NYyGaeyBbgpVVOq4fRTXWMpK11N5IqK_tv4OhIa7Lqbt6x24D3BiZBKw4hfZ0TrNtYsXSBaglp38XfujUz9TwsuQZuLuP8rvQhJf4m9HRL3GS6tpCmnwot62S1NMw_Yq0-3n0Ci2DWP25bhfcAIRAkKMVZuSaJLoVWeIeZv1bipMPT-QY33VCv3V_ODBkj-l_8GLKikLqOb" /> </div> </div> </div> </header>  <div className="p-lg grid grid-cols-10 gap-gutter-desktop">  <div className="col-span-10 lg:col-span-4 space-y-md"> <div className="flex items-center justify-between mb-2"> <h2 className="font-h3 text-text-secondary uppercase tracking-widest text-micro">Liste des zones actives</h2> <span className="text-micro font-bold text-primary">3 Zones au total</span> </div>  <div className="bg-primary-tint border-2 border-primary rounded-[14px] p-5 card-shadow cursor-pointer transition-all"> <div className="flex justify-between items-start mb-4"> <div> <h3 className="font-h3 text-h3 text-text-main mb-1">Akpakpa</h3> <div className="flex items-center gap-2"> <span className="w-2 h-2 rounded-full bg-success"></span> <span className="text-secondary text-success font-medium">Active</span> </div> </div> <div className="flex gap-2"> <button className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-primary-light/20 text-primary transition-colors border border-primary-light/50"> <MIcon name="edit" className="text-[18px]" /> </button> <button className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-primary-light/20 text-primary transition-colors border border-primary-light/50"> <MIcon name="visibility" className="text-[18px]" /> </button> </div> </div> <p className="text-secondary text-text-secondary mb-4">3 managers · 12 livreurs · 8 points de repère</p> <div className="flex justify-between items-center pt-4 border-t border-primary-light/30"> <span className="text-secondary text-text-tertiary">Frais de livraison</span> <span className="font-price text-price text-primary">500 FCFA</span> </div> </div>  <div className="bg-bg-card border-[0.5px] border-border-default rounded-[14px] p-5 card-shadow hover:border-primary-light cursor-pointer group transition-all"> <div className="flex justify-between items-start mb-4"> <div> <h3 className="font-h3 text-h3 text-text-main mb-1">Cadjehoun</h3> <div className="flex items-center gap-2"> <span className="w-2 h-2 rounded-full bg-success"></span> <span className="text-secondary text-success font-medium">Active</span> </div> </div> <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity"> <button className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default"> <MIcon name="edit" className="text-[18px]" /> </button> <button className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default"> <MIcon name="visibility" className="text-[18px]" /> </button> </div> </div> <p className="text-secondary text-text-secondary mb-4">2 managers · 8 livreurs · 5 points de repère</p> <div className="flex justify-between items-center pt-4 border-t border-border-default"> <span className="text-secondary text-text-tertiary">Frais de livraison</span> <span className="font-price text-price text-primary">400 FCFA</span> </div> </div>  <div className="bg-bg-card border-[0.5px] border-border-default rounded-[14px] p-5 card-shadow hover:border-primary-light cursor-pointer group transition-all"> <div className="flex justify-between items-start mb-4"> <div> <h3 className="font-h3 text-h3 text-text-main mb-1">Fidjrossè</h3> <div className="flex items-center gap-2"> <span className="w-2 h-2 rounded-full bg-success"></span> <span className="text-secondary text-success font-medium">Active</span> </div> </div> <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity"> <button className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default"> <MIcon name="edit" className="text-[18px]" /> </button> <button className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default"> <MIcon name="visibility" className="text-[18px]" /> </button> </div> </div> <p className="text-secondary text-text-secondary mb-4">4 managers · 15 livreurs · 12 points de repère</p> <div className="flex justify-between items-center pt-4 border-t border-border-default"> <span className="text-secondary text-text-tertiary">Frais de livraison</span> <span className="font-price text-price text-primary">600 FCFA</span> </div> </div> </div>  <div className="col-span-10 lg:col-span-6 space-y-lg">  <div className="map-container h-[420px] card-shadow flex flex-col relative"> <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-sm border border-border-default"> <p className="text-micro font-bold text-text-main uppercase">Visualisation Géo</p> <p className="text-secondary text-text-secondary">Cotonou, Bénin</p> </div>  <div className="w-full h-full relative" id="map-canvas"> <div className="absolute inset-0 bg-[url('https://www.google.com/maps/vt/pb=!1m4!1m3!1i13!2i4835!3i3853!2m3!1e0!2sm!3i600000000!3m8!2sfr!3sbj!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!5f2')] opacity-40 mix-blend-multiply grayscale"></div>  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 800 500">  <path className="zone-poly active" d="M450,200 L550,180 L620,250 L580,350 L480,320 Z"></path>  <path className="zone-poly" d="M200,150 L320,130 L380,220 L330,300 L210,280 Z"></path>  <path className="zone-poly" d="M50,100 L180,80 L250,150 L200,280 L80,250 Z"></path>  <circle cx="530" cy="240" fill="#9d4300" r="6" stroke="white" strokeWidth="2"></circle> <text className="font-bold fill-primary-deep text-[12px]" x="545" y="245">Marché Dantokpa</text> </svg> </div> <div className="absolute bottom-4 right-4 flex gap-2"> <button className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md border border-border-default hover:bg-app text-text-main"> <MIcon name="zoom_in" /> </button> <button className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md border border-border-default hover:bg-app text-text-main"> <MIcon name="zoom_out" /> </button> <button className="bg-white px-md h-10 rounded-full flex items-center gap-2 shadow-md border border-border-default hover:bg-app text-text-main font-label"> <MIcon name="layers" />
-                                Calques
-                            </button> </div> </div>  <div className="bg-bg-card p-lg rounded-[14px] card-shadow"> <div className="flex items-center justify-between mb-md"> <h2 className="font-h2 text-h2 text-text-main">Points de repère — Zone Akpakpa</h2> <button className="text-primary hover:text-primary-hover font-label flex items-center gap-1 group"> <MIcon name="add_circle" className="text-[18px]" />
-                                Ajouter
-                            </button> </div> <div className="flex flex-wrap gap-3"> <div className="chip flex items-center gap-2 px-3 py-2 rounded-full bg-primary-tint text-primary-dark"> <MIcon name="location_on" className="text-[16px]" /> <span className="text-label">Carrefour Cadjehoun</span> </div> <div className="chip flex items-center gap-2 px-3 py-2 rounded-full bg-primary-tint text-primary-dark"> <MIcon name="location_on" className="text-[16px]" /> <span className="text-label">Pharmacie Sainte-Marie</span> </div> <div className="chip flex items-center gap-2 px-3 py-2 rounded-full bg-primary-tint text-primary-dark font-bold border-primary/30"> <MIcon name="location_on" className="text-[16px]" /> <span className="text-label">Marché Dantokpa</span> </div> <div className="chip flex items-center gap-2 px-3 py-2 rounded-full bg-primary-tint text-primary-dark"> <MIcon name="location_on" className="text-[16px]" /> <span className="text-label">École primaire CEG</span> </div> <div className="chip flex items-center gap-2 px-3 py-2 rounded-full bg-surface-container text-text-secondary border-dashed border-text-tertiary"> <span className="text-label">+ 4 autres</span> </div> </div> </div>  <div className="bg-bg-card p-lg rounded-[14px] card-shadow"> <h3 className="font-h3 text-h3 text-text-main mb-lg">Détails de la zone</h3> <form className="grid grid-cols-2 gap-md"> <div className="col-span-2 md:col-span-1 space-y-1"> <label className="text-secondary text-text-secondary">Nom de la zone</label> <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" value="Akpakpa" /> </div> <div className="col-span-2 md:col-span-1 space-y-1"> <label className="text-secondary text-text-secondary">Frais de livraison (FCFA)</label> <div className="relative"> <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-16" type="number" value="500" /> <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary font-bold text-micro">FCFA</span> </div> </div> <div className="col-span-2 space-y-1"> <label className="text-secondary text-text-secondary">Manager responsable</label> <div className="relative"> <select className="w-full h-11 px-md rounded-lg border-border-default appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-12 bg-white"> <option>Moussa Soglo (Zone Manager)</option> <option>Aissatou Bello</option> <option>Koffi Adjahi</option> </select> <MIcon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-tertiary" /> </div> </div> <div className="col-span-2 space-y-1"> <label className="text-secondary text-text-secondary">Description</label> <textarea className="w-full px-md py-2 rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" rows={3}>Zone commerciale dense incluant le grand marché. Accès facile via le pont, mais forte congestion aux heures de pointe.</textarea> </div> <div className="col-span-2 flex justify-end gap-3 mt-4"> <button className="px-md py-2.5 text-text-secondary font-label hover:bg-app rounded-lg transition-colors" type="button">Réinitialiser</button> <button className="bg-primary text-on-primary px-lg py-2.5 rounded-lg hover:bg-primary-hover active:scale-97 transition-all font-label" type="button">Enregistrer les modifications</button> </div> </form> </div> </div> </div>   
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-h2 font-h2 font-bold">Gestion des Zones</h1>
+          <p className="text-text-secondary">Données réelles — /admin/zones + /admin/landmarks</p>
+        </div>
+
+        {err && (
+          <div className="rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
+            <p className="font-bold">Erreur API</p>
+            <p>{err}</p>
+          </div>
+        )}
+        {info && <div className="rounded-lg border border-success bg-success-container p-4 text-label">{info}</div>}
+        {loading && <p className="text-label text-text-secondary">Chargement…</p>}
+
+        <div className="overflow-hidden rounded-lg border border-border-default bg-white shadow-sm">
+          <div className="border-b border-border-default px-lg py-4">
+            <h2 className="text-h3 font-h3 font-bold">Zones de livraison</h2>
+          </div>
+          {!loading && zones.length === 0 && <p className="p-lg text-label text-text-secondary">Aucune zone.</p>}
+          {zones.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-label">
+                <thead>
+                  <tr className="bg-bg-secondary text-left text-text-secondary">
+                    <th className="px-lg py-3 font-semibold">Nom</th>
+                    <th className="px-lg py-3 font-semibold">Ouverte</th>
+                    <th className="px-lg py-3 font-semibold">Min prix</th>
+                    <th className="px-lg py-3 font-semibold">Prix / km</th>
+                    <th className="px-lg py-3 font-semibold">Majoration heure</th>
+                    <th className="px-lg py-3 font-semibold">Repères</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {zones.map((z: any) => (
+                    <tr key={z.id} className="border-t border-border-default">
+                      <td className="px-lg py-3 font-semibold">{z.nom}</td>
+                      <td className="px-lg py-3">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-overline font-semibold ${
+                            z.open_zone ? 'bg-success-container text-on-surface' : 'bg-bg-secondary text-text-secondary'
+                          }`}
+                        >
+                          {z.open_zone ? 'Ouverte' : 'Fermée'}
+                        </span>
+                      </td>
+                      <td className="px-lg py-3">{fmtFcfa(z.min_prix)}</td>
+                      <td className="px-lg py-3">{fmtFcfa(z.km_prix ?? z.tarif_km)}</td>
+                      <td className="px-lg py-3">{z.maj_heure ?? '—'}</td>
+                      <td className="px-lg py-3">{Array.isArray(z.points_repere) ? z.points_repere.length : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div className="overflow-hidden rounded-lg border border-border-default bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-border-default px-lg py-4">
+            <h2 className="text-h3 font-h3 font-bold">Points de repère</h2>
+            <button
+              type="button"
+              className="btn btn-primary gap-2"
+              onClick={() => {
+                setLm({});
+                setForm({ nom: '', description: '', latitude: '', longitude: '' });
+              }}
+            >
+              <MIcon name="add" className="text-[18px]" />
+              Nouveau repère
+            </button>
+          </div>
+          {!loading && landmarks.length === 0 && (
+            <p className="p-lg text-label text-text-secondary">Aucun point de repère.</p>
+          )}
+          {landmarks.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-label">
+                <thead>
+                  <tr className="bg-bg-secondary text-left text-text-secondary">
+                    <th className="px-lg py-3 font-semibold">Nom</th>
+                    <th className="px-lg py-3 font-semibold">Description</th>
+                    <th className="px-lg py-3 font-semibold">Latitude</th>
+                    <th className="px-lg py-3 font-semibold">Longitude</th>
+                    <th className="px-lg py-3 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {landmarks.map((l: any) => (
+                    <tr key={l.id} className="border-t border-border-default">
+                      <td className="px-lg py-3 font-semibold">{l.nom}</td>
+                      <td className="px-lg py-3 text-text-secondary">{l.description ?? ''}</td>
+                      <td className="px-lg py-3">{l.latitude ?? '—'}</td>
+                      <td className="px-lg py-3">{l.longitude ?? '—'}</td>
+                      <td className="px-lg py-3">
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            className="font-semibold text-primary hover:underline"
+                            onClick={() => {
+                              setLm(l);
+                              setForm({
+                                nom: l.nom ?? '',
+                                description: l.description ?? '',
+                                latitude: l.latitude != null ? String(l.latitude) : '',
+                                longitude: l.longitude != null ? String(l.longitude) : '',
+                              });
+                            }}
+                          >
+                            Modifier
+                          </button>
+                          <button type="button" className="font-semibold text-error hover:underline" onClick={() => supprimerLm(l.id)}>
+                            Supprimer
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {lm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setLm(null)}>
+          <div
+            className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border-default p-4">
+              <h3 className="text-h3 font-h3 font-bold">{lm.id ? `Repère #${lm.id}` : 'Nouveau repère'}</h3>
+              <button type="button" onClick={() => setLm(null)} className="p-1 text-text-secondary hover:text-on-surface">
+                <MIcon name="close" className="text-[20px]" />
+              </button>
+            </div>
+            <div className="flex-1 space-y-3 overflow-y-auto p-4">
+              {[
+                { k: 'nom' as const, label: 'Nom' },
+                { k: 'description' as const, label: 'Description' },
+                { k: 'latitude' as const, label: 'Latitude' },
+                { k: 'longitude' as const, label: 'Longitude' },
+              ].map((f) => (
+                <div key={f.k} className="space-y-1">
+                  <label className="text-label text-text-secondary">{f.label}</label>
+                  <input
+                    type="text"
+                    value={form[f.k]}
+                    onChange={(e) => setForm({ ...form, [f.k]: e.target.value })}
+                    className="w-full rounded-lg border border-border-default px-3 py-2 text-label"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end gap-2 border-t border-border-default p-4">
+              <button type="button" className="btn btn-ghost" onClick={() => setLm(null)}>
+                Annuler
+              </button>
+              <button type="button" className="btn btn-primary" onClick={enregistrerLm}>
+                Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

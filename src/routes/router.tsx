@@ -107,7 +107,14 @@ const adminDashboardRoute = createRoute({ getParentRoute: () => rootRoute, path:
 const adminCategoriesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/categories', component: AdminCategoriesPage });
 const adminZonesPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/zones', component: AdminZonesPage });
 const adminUsersPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/utilisateurs', component: AdminUsersPage });
-const adminUserDetailPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/utilisateurs/detail', component: AdminUserDetailPage });
+const adminUserDetailPageRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/utilisateurs/detail',
+  component: AdminUserDetailPage,
+  validateSearch: (search: Record<string, unknown>): { id?: number } => ({
+    id: typeof search.id === 'string' ? Number(search.id) : typeof search.id === 'number' ? search.id : undefined,
+  }),
+});
 const adminLivreursPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/livreurs', component: AdminLivreursPage });
 const adminValidationsPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/validations', component: AdminValidationsPage });
 const adminLogsPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/logs', component: AdminLogsPage });

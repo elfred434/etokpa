@@ -1,101 +1,102 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
+import { managerApi } from '../../services/api';
+import { unwrap, listOf, fmtFcfa, heureCourte } from '../../services/api/unwrap';
+import { extractApiError, formatApiError } from '../../utils/apiError';
 
-type Cmd = {
-  id: string; heure: string; detail: string;
-  client: string; initC: string; tel: string;
-  marchand: string; etal: string;
-  livreur: string | null; initL: string; vehicule: string;
-  repere: string;
-  montant: string; paiement: string;
-  statut: string; action?: string;
-};
-
-const COMMANDES: Cmd[] = [
-  { id: '#TOK-2847', heure: '14:15', detail: '3 articles • Négocié', client: 'Kossi Ouédraogo', initC: 'KO', tel: '+229 97 12 45 80', marchand: 'Afi Mensah', etal: 'Dantokpa Hangar B-14', livreur: 'Jean Kouassi', initL: 'JK', vehicule: 'Moto #7492-BJ', repere: 'Face Pharmacie Akpakpa Centre', montant: '3 980 FCFA', paiement: 'MTN MoMo (Payé)', statut: 'En livraison' },
-  { id: '#TOK-2850', heure: '14:45', detail: '2 articles • Standard', client: 'Awa Mensah', initC: 'AM', tel: '+229 96 34 89 12', marchand: 'Blandine Gbaguidi', etal: 'Épices & Piments #C-2', livreur: null, initL: '', vehicule: '', repere: 'Carrefour Le Bélier, derrière le collège', montant: '5 100 FCFA', paiement: 'Moov Money (Payé)', statut: 'En attente', action: 'Assigner' },
-  { id: '#TOK-2845', heure: '14:02', detail: '4 articles • Pack Famille', client: 'Pascal Zinsou', initC: 'PZ', tel: '+229 61 78 90 23', marchand: 'Maman Chantal', etal: 'Ignames & Manioc Dantokpa', livreur: 'Boris Agossou', initL: 'BA', vehicule: 'Moto #4829-RB', repere: 'Hôpital de Zone Akpakpa, porte principale', montant: '12 400 FCFA', paiement: 'FedaPay CB (Payé)', statut: 'En préparation' },
-  { id: '#TOK-2839', heure: '13:10', detail: '1 article • Poissons frais', client: 'Fatima Salifou', initC: 'FS', tel: '+229 95 01 23 45', marchand: 'Pêcherie Cotonou Est', etal: 'Quai Dantokpa Pont', livreur: 'Salifou D.', initL: 'SD', vehicule: 'Moto #9120-BJ', repere: 'Immeuble NSIA Assurances, Akpakpa Cité Vie', montant: '7 800 FCFA', paiement: 'MTN MoMo (Livré 13:42)', statut: 'Livré' },
-  { id: '#TOK-2834', heure: '12:35', detail: '5 articles • Céréales', client: 'Marie Koné', initC: 'MK', tel: '+229 97 88 11 00', marchand: 'Dossou Grains & Farines', etal: 'Dantokpa Allée G', livreur: 'Jean Kouassi', initL: 'JK', vehicule: 'Moto #7492-BJ', repere: 'Pharmacie Saint-Charbel, face église catholique', montant: '6 250 FCFA', paiement: 'FedaPay (Payé)', statut: 'En livraison' },
-  { id: '#TOK-2828', heure: '11:15', detail: 'Rupture stock vendeur', client: 'Idriss Diallo', initC: 'ID', tel: '+229 66 54 32 10', marchand: 'Kouassi Légumes Bio', etal: 'Box #12 Dantokpa', livreur: null, initL: '', vehicule: '', repere: 'Carrefour Le Matin, Akpakpa Dodomè', montant: '4 500 FCFA', paiement: 'Remboursé MoMo', statut: 'Annulé' },
-  { id: '#TOK-2822', heure: '10:45', detail: '2 articles • Fruits locaux', client: 'Safi Alabi', initC: 'SA', tel: '+229 97 65 43 21', marchand: 'Verger du Sud', etal: 'Marché de fruits Akpakpa', livreur: 'Moussa Diallo', initL: 'MD', vehicule: 'Tricycle #8812-BJ', repere: 'Pharmacie Saint-Jean, Carrefour PK4', montant: '3 200 FCFA', paiement: 'MTN MoMo (Payé)', statut: 'En préparation' },
-];
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 const ONGLETS = [
-  { label: 'Toutes', n: 24, statut: null },
-  { label: 'En attente', n: 3, statut: 'En attente' },
-  { label: 'En préparation', n: 5, statut: 'En préparation' },
-  { label: 'En livraison', n: 8, statut: 'En livraison' },
-  { label: 'Livrées', n: 6, statut: 'Livré' },
-  { label: 'Annulées', n: 2, statut: 'Annulé' },
+  { label: 'Toutes', statut: null },
+  { label: 'En attente', statut: 'en_attente' },
+  { label: 'En préparation', statut: 'en_préparation' },
+  { label: 'En livraison', statut: 'en_livraison' },
+  { label: 'Livrées', statut: 'livrée' },
+  { label: 'Annulées', statut: 'annulée' },
 ];
 
-const SECTEURS = ['Tous les sous-secteurs', 'Pont Dantokpa / Céréales', 'Akpakpa Dodomè', 'Akpakpa Cotonou Centre', 'Quartier Sèkandji'];
-
 const STATUT_CLASS: Record<string, string> = {
-  'En attente': 'bg-bg-secondary text-text-secondary',
-  'En préparation': 'bg-primary-tint text-primary',
-  'En livraison': 'bg-tertiary-container/20 text-tertiary',
-  'Livré': 'bg-success-container text-on-surface',
-  'Annulé': 'bg-error-container text-on-error-container',
+  'en attente': 'bg-bg-secondary text-text-secondary',
+  'en_attente': 'bg-bg-secondary text-text-secondary',
+  'en préparation': 'bg-primary-tint text-primary',
+  'en_préparation': 'bg-primary-tint text-primary',
+  'en livraison': 'bg-tertiary-container/20 text-tertiary',
+  'en_livraison': 'bg-tertiary-container/20 text-tertiary',
+  'livrée': 'bg-success-container text-on-surface',
+  'livree': 'bg-success-container text-on-surface',
+  'annulée': 'bg-error-container text-on-error-container',
+  'annulee': 'bg-error-container text-on-error-container',
 };
 
 export default function ManagerOrdersPage() {
   const [onglet, setOnglet] = useState<string | null>(null);
-  const [secteur, setSecteur] = useState(SECTEURS[0]);
-  const [selection, setSelection] = useState<Cmd | null>(null);
-  const [creation, setCreation] = useState(false);
+  const [commandes, setCommandes] = useState<any[]>([]);
+  const [livreurs, setLivreurs] = useState<any[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selection, setSelection] = useState<any | null>(null);
+  const [assignation, setAssignation] = useState<any | null>(null);
+  const [livreurChoisi, setLivreurChoisi] = useState<string>('');
 
-  const lignes = useMemo(
-    () => COMMANDES.filter((c) => !onglet || c.statut === onglet),
-    [onglet],
-  );
+  const charger = (statut: string | null) => {
+    setLoading(true);
+    setErr(null);
+    managerApi
+      .getOrders(statut ? { statut } : { page: 1 })
+      .then((r) => setCommandes(listOf(unwrap(r))))
+      .catch((e) => setErr(formatApiError(extractApiError(e))))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    charger(onglet);
+    managerApi
+      .getLivreurs()
+      .then((r) => setLivreurs(listOf(unwrap(r))))
+      .catch(() => setLivreurs([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onglet]);
+
+  const confirmerAssignation = async () => {
+    if (!assignation || !livreurChoisi) return;
+    setErr(null);
+    setInfo(null);
+    try {
+      await managerApi.assignLivreur(assignation.id, Number(livreurChoisi));
+      setInfo(`Commande #${assignation.id} assignée avec succès.`);
+      setAssignation(null);
+      setLivreurChoisi('');
+      charger(onglet);
+    } catch (e) {
+      setErr(formatApiError(extractApiError(e)));
+    }
+  };
+
+  const lignes = useMemo(() => commandes, [commandes]);
 
   return (
     <ManagerLayout currentPath="/manager/commandes">
       <div className="space-y-6">
-        {/* En-tête */}
         <div>
           <p className="text-overline uppercase text-primary">Supervision Opérationnelle</p>
-          <p className="text-text-secondary">Flux en direct - Marché Dantokpa & Quartiers Akpakpa</p>
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-h2 font-h2 font-bold">Supervision & Gestion des Commandes</h1>
-            <div className="flex gap-2">
-              <button type="button" className="btn btn-ghost gap-2">
-                <MIcon name="download" className="text-[18px]" />
-                Exporter le rapport
-              </button>
-              <button type="button" className="btn btn-primary gap-2" onClick={() => setCreation(true)}>
-                <MIcon name="add" className="text-[18px]" />
-                Créer une commande manuelle
-              </button>
-            </div>
+          <p className="text-text-secondary">Données réelles — GET /manager/orders</p>
+          <h1 className="mt-2 text-h2 font-h2 font-bold">Supervision & Gestion des Commandes</h1>
+        </div>
+
+        {err && (
+          <div className="rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
+            <p className="font-bold">Erreur API</p>
+            <p>{err}</p>
           </div>
-        </div>
+        )}
+        {info && (
+          <div className="rounded-lg border border-success bg-success-container p-4 text-label">
+            {info}
+          </div>
+        )}
 
-        {/* KPI */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {[
-            { icon: 'shopping_cart', label: "Total Commandes (Aujourd'hui)", value: '42', sub: '+14% vs hier' },
-            { icon: 'two_wheeler', label: 'En cours de livraison', value: '8', sub: '5 motos, 3 tricycles' },
-            { icon: 'pending_actions', label: "En attente d'affectation", value: '3', sub: 'Priorité manager' },
-            { icon: 'payments', label: 'Volume Financier du Jour', value: '284 500', unit: 'FCFA', sub: '100% sécurisé FedaPay/MoMo' },
-          ].map((k) => (
-            <div key={k.label} className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
-              <div className="flex items-center gap-2">
-                <MIcon name={k.icon} className="text-primary text-[20px]" />
-                <p className="text-label text-text-secondary">{k.label}</p>
-              </div>
-              <p className="mt-2 text-h1 font-h1 font-bold">
-                {k.value} {k.unit && <span className="text-label text-text-secondary">{k.unit}</span>}
-              </p>
-              <p className="mt-1 text-label text-text-secondary">{k.sub}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Filtres */}
         <div className="flex flex-wrap items-center gap-2">
           {ONGLETS.map((o) => (
             <button
@@ -108,211 +109,201 @@ export default function ManagerOrdersPage() {
                   : 'border-border-default bg-white text-text-secondary hover:border-primary hover:text-primary'
               }`}
             >
-              {o.label} ({o.n})
+              {o.label}
             </button>
           ))}
-          <select
-            value={secteur}
-            onChange={(e) => setSecteur(e.target.value)}
-            className="ml-auto rounded-lg border border-border-default bg-white px-3 py-2 text-label"
-          >
-            {SECTEURS.map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>
         </div>
 
-        {/* Tableau */}
         <div className="overflow-hidden rounded-lg border border-border-default bg-white shadow-sm">
           <div className="border-b border-border-default px-lg py-4">
             <h2 className="text-h3 font-h3 font-bold">Liste des Commandes de la Zone</h2>
             <p className="text-label text-text-secondary">Cliquez sur une ligne pour afficher les détails complets</p>
           </div>
-          <p className="px-lg pt-3 text-label text-text-secondary">Affichage de {lignes.length} commandes actives</p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-label">
-              <thead>
-                <tr className="bg-bg-secondary text-left text-text-secondary">
-                  <th className="px-4 py-3 font-semibold">Commande</th>
-                  <th className="px-4 py-3 font-semibold">Client & Téléphone</th>
-                  <th className="px-4 py-3 font-semibold">Marchand / Étal</th>
-                  <th className="px-4 py-3 font-semibold">Livreur Assigné</th>
-                  <th className="px-4 py-3 font-semibold">Point de Repère</th>
-                  <th className="px-4 py-3 font-semibold">Montant</th>
-                  <th className="px-4 py-3 font-semibold">Statut</th>
-                  <th className="px-4 py-3 font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lignes.map((c) => (
-                  <tr
-                    key={c.id}
-                    onClick={() => setSelection(c)}
-                    className="cursor-pointer border-t border-border-default hover:bg-primary-tint/50"
-                  >
-                    <td className="px-4 py-3">
-                      <p className="font-semibold">{c.id}</p>
-                      <p className="text-text-secondary">{c.heure} · {c.detail}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-bg-secondary text-overline font-bold">
-                          {c.initC}
-                        </span>
-                        <div>
-                          <p className="font-semibold">{c.client}</p>
-                          <p className="text-text-secondary">{c.tel}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="font-semibold">{c.marchand}</p>
-                      <p className="text-text-secondary">{c.etal}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      {c.livreur ? (
-                        <div className="flex items-center gap-2">
-                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-tint text-overline font-bold text-primary">
-                            {c.initL}
-                          </span>
-                          <div>
-                            <p className="font-semibold">{c.livreur}</p>
-                            <p className="text-text-secondary">{c.vehicule}</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-text-tertiary">— Non affecté —</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">{c.repere}</td>
-                    <td className="px-4 py-3">
-                      <p className="font-semibold">{c.montant}</p>
-                      <p className="text-text-secondary">{c.paiement}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2.5 py-1 text-overline font-semibold ${STATUT_CLASS[c.statut]}`}>
-                        {c.statut}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {c.action ? (
-                        <button
-                          type="button"
-                          onClick={(e) => e.stopPropagation()}
-                          className="btn btn-primary px-3 py-1.5 text-label"
-                        >
-                          {c.action}
-                        </button>
-                      ) : (
-                        <button type="button" className="font-semibold text-tertiary hover:underline">
-                          Gérer
-                        </button>
-                      )}
-                    </td>
+          {loading && <p className="p-lg text-label text-text-secondary">Chargement…</p>}
+          {!loading && lignes.length === 0 && (
+            <p className="p-lg text-label text-text-secondary">Aucune commande pour ce filtre.</p>
+          )}
+          {!loading && lignes.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-label">
+                <thead>
+                  <tr className="bg-bg-secondary text-left text-text-secondary">
+                    <th className="px-4 py-3 font-semibold">Commande</th>
+                    <th className="px-4 py-3 font-semibold">Client & Téléphone</th>
+                    <th className="px-4 py-3 font-semibold">Articles</th>
+                    <th className="px-4 py-3 font-semibold">Livreur Assigné</th>
+                    <th className="px-4 py-3 font-semibold">Point de Repère</th>
+                    <th className="px-4 py-3 font-semibold">Montant</th>
+                    <th className="px-4 py-3 font-semibold">Statut</th>
+                    <th className="px-4 py-3 font-semibold">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {lignes.map((o: any) => {
+                    const livreur = o.livreur ?? null;
+                    const client = o.user ?? o.client ?? null;
+                    const statut = String(o.statut ?? '');
+                    return (
+                      <tr
+                        key={o.id}
+                        onClick={() => setSelection(o)}
+                        className="cursor-pointer border-t border-border-default hover:bg-primary-tint/50"
+                      >
+                        <td className="px-4 py-3">
+                          <p className="font-semibold">#{o.id}</p>
+                          <p className="text-text-secondary">{heureCourte(o.created_at)}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="font-semibold">{client?.nom_complet ?? '—'}</p>
+                          <p className="text-text-secondary">{client?.telephone ?? ''}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          {Array.isArray(o.items) ? `${o.items.length} article(s)` : '—'}
+                        </td>
+                        <td className="px-4 py-3">
+                          {livreur ? (
+                            <p className="font-semibold">{livreur.nom_complet ?? `Livreur #${livreur.id}`}</p>
+                          ) : (
+                            <span className="text-text-tertiary">— Non affecté —</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">{o.description_lieu ?? o.landmark?.nom ?? '—'}</td>
+                        <td className="px-4 py-3 font-semibold">{fmtFcfa(o.montant_total)}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-overline font-semibold ${
+                              STATUT_CLASS[statut.toLowerCase()] ?? 'bg-bg-secondary text-text-secondary'
+                            }`}
+                          >
+                            {statut}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {!livreur && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAssignation(o);
+                                setLivreurChoisi('');
+                              }}
+                              className="btn btn-primary px-3 py-1.5 text-label"
+                            >
+                              Assigner
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Modale détails commande */}
+      {/* Modale détails */}
       {selection && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setSelection(null)}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelection(null)}>
           <div
             className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-border-default p-4">
-              <h3 className="text-h3 font-h3 font-bold">{selection.id}</h3>
+              <h3 className="text-h3 font-h3 font-bold">Commande #{selection.id}</h3>
               <button type="button" onClick={() => setSelection(null)} className="p-1 text-text-secondary hover:text-on-surface">
                 <MIcon name="close" className="text-[20px]" />
               </button>
             </div>
-            <div className="flex-1 space-y-3 overflow-y-auto p-4">
-              <p className="text-label text-text-secondary">{selection.heure} · {selection.detail}</p>
-              <div className="grid grid-cols-2 gap-3 text-label">
+            <div className="flex-1 space-y-3 overflow-y-auto p-4 text-label">
+              <p className="text-text-secondary">{dateHeure(selection.created_at)} · {selection.statut}</p>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-text-secondary">Client</p>
-                  <p className="font-semibold">{selection.client} — {selection.tel}</p>
-                </div>
-                <div>
-                  <p className="text-text-secondary">Marchand / Étal</p>
-                  <p className="font-semibold">{selection.marchand} — {selection.etal}</p>
-                </div>
-                <div>
-                  <p className="text-text-secondary">Livreur assigné</p>
                   <p className="font-semibold">
-                    {selection.livreur ? `${selection.livreur} (${selection.vehicule})` : '— Non affecté —'}
+                    {(selection.user ?? selection.client)?.nom_complet ?? '—'} — {(selection.user ?? selection.client)?.telephone ?? ''}
                   </p>
                 </div>
                 <div>
+                  <p className="text-text-secondary">Livreur assigné</p>
+                  <p className="font-semibold">{selection.livreur?.nom_complet ?? '— Non affecté —'}</p>
+                </div>
+                <div>
                   <p className="text-text-secondary">Point de repère</p>
-                  <p className="font-semibold">{selection.repere}</p>
+                  <p className="font-semibold">{selection.description_lieu ?? selection.landmark?.nom ?? '—'}</p>
                 </div>
                 <div>
                   <p className="text-text-secondary">Montant</p>
-                  <p className="font-semibold">{selection.montant} — {selection.paiement}</p>
-                </div>
-                <div>
-                  <p className="text-text-secondary">Statut</p>
-                  <span className={`rounded-full px-2.5 py-1 text-overline font-semibold ${STATUT_CLASS[selection.statut]}`}>
-                    {selection.statut}
-                  </span>
+                  <p className="font-semibold">{fmtFcfa(selection.montant_total)}</p>
                 </div>
               </div>
+              {Array.isArray(selection.items) && selection.items.length > 0 && (
+                <div>
+                  <p className="text-text-secondary">Articles</p>
+                  <ul className="mt-1 space-y-1">
+                    {selection.items.map((it: any) => (
+                      <li key={it.id} className="flex justify-between rounded-lg bg-bg-app px-3 py-2">
+                        <span>
+                          {it.nom ?? `Produit #${it.product_id}`} × {it.quantite}
+                        </span>
+                        <span className="font-semibold">{fmtFcfa(it.prix_unitaire)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-2 border-t border-border-default p-4">
               <button type="button" className="btn btn-ghost" onClick={() => setSelection(null)}>
                 Fermer
               </button>
-              {!selection.livreur && (
-                <button type="button" className="btn btn-primary" onClick={() => setSelection(null)}>
-                  Assigner un livreur
-                </button>
-              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Modale création manuelle */}
-      {creation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setCreation(false)}>
+      {/* Modale assignation */}
+      {assignation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setAssignation(null)}>
           <div
             className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-border-default p-4">
-              <h3 className="text-h3 font-h3 font-bold">Créer une commande manuelle</h3>
-              <button type="button" onClick={() => setCreation(false)} className="p-1 text-text-secondary hover:text-on-surface">
+              <h3 className="text-h3 font-h3 font-bold">Assigner un livreur — #{assignation.id}</h3>
+              <button type="button" onClick={() => setAssignation(null)} className="p-1 text-text-secondary hover:text-on-surface">
                 <MIcon name="close" className="text-[20px]" />
               </button>
             </div>
-            <div className="flex-1 space-y-3 overflow-y-auto p-4">
-              {[
-                { label: 'Nom du client', ph: 'Nom complet' },
-                { label: 'Téléphone (Bénin)', ph: '+229 97 00 00 00' },
-                { label: 'Marchand / Étal', ph: 'Nom du vendeur et étal' },
-                { label: 'Point de repère', ph: 'Ex : Face Pharmacie Akpakpa Centre' },
-                { label: 'Montant (FCFA)', ph: '0' },
-              ].map((f) => (
-                <div key={f.label} className="space-y-1">
-                  <label className="text-label text-text-secondary">{f.label}</label>
-                  <input type="text" placeholder={f.ph} className="w-full rounded-lg border border-border-default px-3 py-2 text-label" />
-                </div>
+            <div className="flex-1 space-y-3 overflow-y-auto p-4 text-label">
+              {livreurs.length === 0 && <p className="text-text-secondary">Aucun livreur disponible dans la zone.</p>}
+              {livreurs.map((l: any) => (
+                <label
+                  key={l.id}
+                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 ${
+                    String(l.id) === livreurChoisi ? 'border-primary bg-primary-tint/50' : 'border-border-default'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="livreur"
+                    value={String(l.id)}
+                    checked={String(l.id) === livreurChoisi}
+                    onChange={() => setLivreurChoisi(String(l.id))}
+                    className="accent-primary"
+                  />
+                  <span className="flex-1 font-semibold">{l.nom_complet ?? `${l.prenom ?? ''} ${l.nom ?? ''}`}</span>
+                  <span className="text-text-secondary">{l.statut ?? ''} {l.telephone ?? ''}</span>
+                </label>
               ))}
             </div>
             <div className="flex justify-end gap-2 border-t border-border-default p-4">
-              <button type="button" className="btn btn-ghost" onClick={() => setCreation(false)}>
+              <button type="button" className="btn btn-ghost" onClick={() => setAssignation(null)}>
                 Annuler
               </button>
-              <button type="button" className="btn btn-primary" onClick={() => setCreation(false)}>
-                Créer la commande
+              <button type="button" className="btn btn-primary" onClick={confirmerAssignation} disabled={!livreurChoisi}>
+                Assigner
               </button>
             </div>
           </div>
@@ -320,4 +311,11 @@ export default function ManagerOrdersPage() {
       )}
     </ManagerLayout>
   );
+}
+
+function dateHeure(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso);
+  return d.toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }

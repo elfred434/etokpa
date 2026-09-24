@@ -1,32 +1,118 @@
-import { useDesignScript } from '../../utils/designRuntime';
-import DESIGN_SCRIPT from './_scripts/AdminLivreursPage';
+import { useEffect, useState } from 'react';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
-import MIcon from '../../components/shared/MIcon';
+import { adminApi } from '../../services/api';
+import { unwrap, listOf, dateCourte } from '../../services/api/unwrap';
+import { extractApiError, formatApiError } from '../../utils/apiError';
 
-const DESIGN_CSS = `
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        .sidebar-item-active { background-color: #fea619 !important; color: #684000 !important; font-weight: 700; border-radius: 0.5rem; }
-    `;
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-/**
- * AdminLivreursPage — copie conforme statique du design Stitch (code.html).
- * Interactions : script du design exécuté via useDesignScript (comportement copié).
- */
 export default function AdminLivreursPage() {
-  useDesignScript(DESIGN_SCRIPT);
+  const [livreurs, setLivreurs] = useState<any[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selection, setSelection] = useState<any | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    adminApi
+      .getUsers({ role: 'livreur' })
+      .then((r) => alive && setLivreurs(listOf(unwrap(r))))
+      .catch((e) => alive && setErr(formatApiError(extractApiError(e))))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   return (
     <AdminLayout currentPath="/admin/livreurs" mainClassName="ml-64 h-screen pt-[52px] p-lg flex gap-lg overflow-hidden">
-      <style>{DESIGN_CSS}</style>
-  <div className="flex-1 bg-white rounded-lg border border-border-default overflow-hidden flex flex-col"> <div className="overflow-x-auto"> <table className="w-full text-left border-collapse"> <thead className="bg-bg-secondary border-b border-border-default"> <tr> <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">Nom</th> <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">ID</th> <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">Zone</th> <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">Statut</th> <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">Succès (%)</th> <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider text-right">Actions</th> </tr> </thead> <tbody className="divide-y divide-border-default">  <tr className="hover:bg-primary-tint transition-colors cursor-pointer group" data-onclick="showDetails('L001', 'Koffi Mensah', 'Cotonou - Akpakpa', 'En course', '98%')"> <td className="px-md py-4"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-full overflow-hidden border border-border-default bg-surface-variant"> <img className="w-full h-full object-cover" data-alt="Close up portrait of a friendly West African male delivery rider smiling, wearing a safety helmet and reflective vest, clear bright daylight setting, vibrant urban colors." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwUgZtJopDev_ouNZaU75gIWnytKu2jW3g5Yh8LQ_aLdBF_AdvW6ni9-gHs3aOdYeN03JSpCPxPATKONpX_0vQm0a0_b2fyPfol_56VyYbwPIY9P1dOOGfOWm3G1bxRSExONs4lUtWlYWD6ZOzrvUb86bSxsSdrONX2h_EUbks8HUW6uMDTwZpdfqriEt12SPzw-dDihr0m6NNpFim1ZvjqZP_VgppKXWcvMa7vAEgp9B9jgZu3mxCnLwMSfTckTAG43cUGeufQhaU" /> </div> <span className="font-h3 text-h3">Koffi Mensah</span> </div> </td> <td className="px-md py-4 font-body text-text-secondary">#LVR-0922</td> <td className="px-md py-4 font-body text-text-secondary">Cotonou - Akpakpa</td> <td className="px-md py-4"> <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-light text-amber-text text-micro font-bold"> <span className="w-2 h-2 rounded-full bg-amber-text"></span>
-                                        En course
-                                    </span> </td> <td className="px-md py-4"> <div className="flex items-center gap-2"> <div className="w-16 h-2 bg-border-default rounded-full overflow-hidden"> <div className="h-full bg-success w-[98%]"></div> </div> <span className="font-body text-success font-bold">98%</span> </div> </td> <td className="px-md py-4 text-right space-x-2"> <button className="p-2 hover:text-primary transition-colors"><MIcon name="edit" className="text-[20px]" /></button> <button className="p-2 hover:text-error transition-colors"><MIcon name="delete" className="text-[20px]" /></button> </td> </tr>  <tr className="hover:bg-primary-tint transition-colors cursor-pointer group" data-onclick="showDetails('L002', 'Idriss Sossou', 'Calavi - Kpota', 'En ligne', '94%')"> <td className="px-md py-4"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-full overflow-hidden border border-border-default bg-surface-variant"> <img className="w-full h-full object-cover" data-alt="Portrait of a professional young African delivery professional standing beside a motorcycle, urban Benin setting at dusk, soft golden hour lighting, clean corporate atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBehIY8uejbEZdvG64ivrRYWOA0vpHbdOKpIV8237LMex7tlCzc6SfK1BQpDh38MPufMFnjLijKbiEOj9eN-CP8FtReRZ_7dFp04w3AuQXHVNBk-7BzdTqkAwh50-Tu7ZLoampiCcinxEd-j7-HSDV0ulwKlwm9G4kXQJ0zFkAx4Mj1ZJJREAeBd-MVviF9DGKKDSHtgtdnYGC3HAHlg1wNveYXUxM-uXpM9MLs4Hp_AsEnEAuTZOGLwaI0Fhr_mg4So0oNqvDomLdO" /> </div> <span className="font-h3 text-h3">Idriss Sossou</span> </div> </td> <td className="px-md py-4 font-body text-text-secondary">#LVR-1104</td> <td className="px-md py-4 font-body text-text-secondary">Calavi - Kpota</td> <td className="px-md py-4"> <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-light text-success-dark text-micro font-bold"> <span className="w-2 h-2 rounded-full bg-success"></span>
-                                        En ligne
-                                    </span> </td> <td className="px-md py-4"> <div className="flex items-center gap-2"> <div className="w-16 h-2 bg-border-default rounded-full overflow-hidden"> <div className="h-full bg-success w-[94%]"></div> </div> <span className="font-body text-success font-bold">94%</span> </div> </td> <td className="px-md py-4 text-right space-x-2"> <button className="p-2 hover:text-primary transition-colors"><MIcon name="edit" className="text-[20px]" /></button> <button className="p-2 hover:text-error transition-colors"><MIcon name="delete" className="text-[20px]" /></button> </td> </tr>  <tr className="hover:bg-primary-tint transition-colors cursor-pointer group" data-onclick="showDetails('L003', 'Abelle Gedo', 'Porto-Novo', 'Hors ligne', '89%')"> <td className="px-md py-4"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-full overflow-hidden border border-border-default bg-surface-variant"> <img className="w-full h-full object-cover" data-alt="Modern high-quality photography of a female delivery partner in Porto-Novo, bright daylight, professional attire with a branded TOKPa backpack, focused yet friendly expression, vibrant local background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBI3ugJXm8FU47IxJqUVApaphvqxn4mcoWF-wcT120NlCjWwhs_8t7sYZ3Jjje4t8BAsM1C_wqUyaFAPFJ1qJ4zJdy3DRdMTauUcq2k7-z8POWVre2ICqDTSJikTZJ95-0thnRhrnbMRtqz8i7PIB00Kp4J9OJzlsD0-YS9wotHSjNDpHfHSjEfUBnOAYZ9ZBJHXHRoml2VwOH3zT4FaUie9FwfV1HodagQs9MobMUPXl7-X8bWUBWDq8mpLhtPtCarvIHl9UfR5toU" /> </div> <span className="font-h3 text-h3">Abelle Gedo</span> </div> </td> <td className="px-md py-4 font-body text-text-secondary">#LVR-0855</td> <td className="px-md py-4 font-body text-text-secondary">Porto-Novo</td> <td className="px-md py-4"> <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-error-light text-error-dark text-micro font-bold"> <span className="w-2 h-2 rounded-full bg-error"></span>
-                                        Hors ligne
-                                    </span> </td> <td className="px-md py-4"> <div className="flex items-center gap-2"> <div className="w-16 h-2 bg-border-default rounded-full overflow-hidden"> <div className="h-full bg-info w-[89%]"></div> </div> <span className="font-body text-info-dark font-bold">89%</span> </div> </td> <td className="px-md py-4 text-right space-x-2"> <button className="p-2 hover:text-primary transition-colors"><MIcon name="edit" className="text-[20px]" /></button> <button className="p-2 hover:text-error transition-colors"><MIcon name="delete" className="text-[20px]" /></button> </td> </tr> </tbody> </table> </div>  <div className="mt-auto p-md border-t border-border-default flex justify-between items-center bg-bg-secondary"> <span className="text-secondary text-micro">Affichage de 1 à 10 sur 42 livreurs</span> <div className="flex gap-2"> <button className="px-3 py-1 border border-border-default rounded hover:bg-white transition-colors"><MIcon name="chevron_left" className="text-[18px] align-middle" /></button> <button className="px-3 py-1 border border-primary-container bg-primary-container text-white rounded text-label">1</button> <button className="px-3 py-1 border border-border-default rounded hover:bg-white transition-colors">2</button> <button className="px-3 py-1 border border-border-default rounded hover:bg-white transition-colors">3</button> <button className="px-3 py-1 border border-border-default rounded hover:bg-white transition-colors"><MIcon name="chevron_right" className="text-[18px] align-middle" /></button> </div> </div> </div>  <aside className="w-80 bg-white rounded-lg border border-border-default flex flex-col p-lg transition-all transform translate-x-0" id="detailPanel"> <div className="flex justify-between items-start mb-lg"> <h3 className="font-h2 text-h2 text-primary">Détails du Livreur</h3> <button className="text-text-secondary hover:text-text-main" data-onclick="closeDetails()"><MIcon name="close" /></button> </div> <div className="flex flex-col items-center mb-xl"> <div className="relative mb-md"> <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary-light"> <img className="w-full h-full object-cover" data-alt="High resolution profile shot of an African male courier, warm lighting, professional atmosphere, smiling confidently, soft-focus background of an office workspace." id="detailImg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFXqMWUNu20MY0q7Nr0f4bvkv1OshE74gu_Ah4xJYGLhRuE5KvdNPHitfHEz26UGQkaV7toqQnbZVE2Fx6vjEYRjPdGygEQNO55_up-v1t7LZNWiOtYpKmHBnZ4vmBrtTVAg9qjs1ch8jk_YqsBgb0GouDxBidel1hFSlacL96PZnedQzkjUkN0jPCh9bvlRpSrthgo9DeoP32n04mEjEvnvK-XyI2Cl2izAIwBFFdZFl4p-4WLJqb7YSpXIKYKJxCo8g7TnOAxDEZ" /> </div> <div className="absolute bottom-1 right-1 w-6 h-6 bg-success border-4 border-white rounded-full" id="detailStatusDot"></div> </div> <h4 className="font-h2 text-h2 text-center" id="detailName">Koffi Mensah</h4> <p className="text-text-secondary font-label" id="detailId">ID: #LVR-0922</p> </div> <div className="space-y-lg flex-1"> <div className="p-md bg-bg-secondary rounded-lg border border-border-default"> <p className="text-text-secondary text-micro uppercase mb-2">Performance Globale</p> <div className="flex justify-between items-end"> <span className="font-h1 text-h1 text-success" id="detailSuccess">98%</span> <span className="text-success text-label flex items-center"><MIcon name="trending_up" className="text-[16px]" /> +2.4%</span> </div> </div> <div className="space-y-md"> <div className="flex items-start gap-3"> <MIcon name="call" className="text-primary p-2 bg-primary-tint rounded-lg" /> <div> <p className="text-text-secondary text-micro">Téléphone</p> <p className="font-body font-medium">+229 97 00 00 00</p> </div> </div> <div className="flex items-start gap-3"> <MIcon name="motorcycle" className="text-primary p-2 bg-primary-tint rounded-lg" /> <div> <p className="text-text-secondary text-micro">Véhicule</p> <p className="font-body font-medium">Bajaj Pulsar (BJ-9921)</p> </div> </div> <div className="flex items-start gap-3"> <MIcon name="location_on" className="text-primary p-2 bg-primary-tint rounded-lg" /> <div> <p className="text-text-secondary text-micro">Zone Actuelle</p> <p className="font-body font-medium" id="detailZone">Cotonou - Akpakpa</p> </div> </div> </div> <div className="pt-lg border-t border-border-default"> <p className="font-label text-label mb-md">Activités récentes</p> <ul className="space-y-sm"> <li className="flex justify-between text-secondary"> <span className="font-body">Livraison #4421</span> <span className="font-micro">Il y a 10m</span> </li> <li className="flex justify-between text-secondary"> <span className="font-body">Prise en charge #4430</span> <span className="font-micro">Il y a 2h</span> </li> </ul> </div> </div> <div className="mt-xl flex gap-3"> <button className="flex-1 bg-white border border-primary-container text-primary-container py-2 rounded-lg font-bold hover:bg-primary-tint active:scale-97 transition-all">Contacter</button> <button className="flex-1 bg-primary-container text-white py-2 rounded-lg font-bold hover:bg-primary-hover active:scale-97 transition-all">Assigner</button> </div> </aside>  
+      <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border-default bg-white shadow-sm">
+        <div className="border-b border-border-default px-lg py-4">
+          <h1 className="text-h2 font-h2 font-bold">Gestion des Livreurs</h1>
+          <p className="text-label text-text-secondary">
+            Données réelles — GET /admin/users?role=livreur · Cliquez une ligne pour les détails
+          </p>
+        </div>
+        {err && (
+          <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
+            <p className="font-bold">Erreur API</p>
+            <p>{err}</p>
+          </div>
+        )}
+        <div className="flex-1 overflow-y-auto">
+          {loading && <p className="p-lg text-label text-text-secondary">Chargement…</p>}
+          {!loading && livreurs.length === 0 && <p className="p-lg text-label text-text-secondary">Aucun livreur.</p>}
+          {!loading && livreurs.length > 0 && (
+            <table className="w-full text-label">
+              <thead>
+                <tr className="bg-bg-secondary text-left text-text-secondary">
+                  <th className="px-lg py-3 font-semibold">Nom</th>
+                  <th className="px-lg py-3 font-semibold">Téléphone</th>
+                  <th className="px-lg py-3 font-semibold">Statut</th>
+                  <th className="px-lg py-3 font-semibold">Inscrit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {livreurs.map((l: any) => (
+                  <tr
+                    key={l.id}
+                    onClick={() => setSelection(l)}
+                    className={`cursor-pointer border-t border-border-default hover:bg-primary-tint/50 ${
+                      selection?.id === l.id ? 'bg-primary-tint' : ''
+                    }`}
+                  >
+                    <td className="px-lg py-3 font-semibold">{l.nom_complet ?? `${l.prenom ?? ''} ${l.nom ?? ''}`}</td>
+                    <td className="px-lg py-3">{l.telephone ?? '—'}</td>
+                    <td className="px-lg py-3">{l.statut ?? '—'}</td>
+                    <td className="px-lg py-3">{dateCourte(l.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      <aside className="w-80 shrink-0 overflow-y-auto rounded-lg border border-border-default bg-white p-lg">
+        <h3 className="text-h2 font-h2 font-bold text-primary">Détails du Livreur</h3>
+        {!selection && <p className="mt-4 text-label text-text-secondary">Sélectionnez une ligne du tableau.</p>}
+        {selection && (
+          <div className="mt-4 space-y-3 text-label">
+            <div>
+              <p className="text-text-secondary">Nom complet</p>
+              <p className="font-semibold">{selection.nom_complet ?? `${selection.prenom ?? ''} ${selection.nom ?? ''}`}</p>
+            </div>
+            <div>
+              <p className="text-text-secondary">ID</p>
+              <p className="font-semibold">ID: {selection.id}</p>
+            </div>
+            <div>
+              <p className="text-text-secondary">Email</p>
+              <p className="font-semibold">{selection.email ?? '—'}</p>
+            </div>
+            <div>
+              <p className="text-text-secondary">Téléphone</p>
+              <p className="font-semibold">{selection.telephone ?? '—'}</p>
+            </div>
+            <div>
+              <p className="text-text-secondary">Statut</p>
+              <p className="font-semibold">{selection.statut ?? '—'}</p>
+            </div>
+            <div>
+              <p className="text-text-secondary">Inscrit le</p>
+              <p className="font-semibold">{dateCourte(selection.created_at)}</p>
+            </div>
+            {selection.telephone && (
+              <a
+                href={`tel:${String(selection.telephone).replace(/\s/g, '')}`}
+                className="mt-2 block rounded-lg bg-primary-tint px-3 py-2 text-center font-semibold text-primary"
+              >
+                Appeler
+              </a>
+            )}
+          </div>
+        )}
+      </aside>
     </AdminLayout>
   );
 }

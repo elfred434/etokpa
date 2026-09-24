@@ -1,47 +1,169 @@
-import { useDesignScript } from '../../utils/designRuntime';
-import DESIGN_SCRIPT from './_scripts/AdminCategoriesPage';
+import { useEffect, useState } from 'react';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
-import MIcon from '../../components/shared/MIcon';
+import { adminApi } from '../../services/api';
+import { unwrap, listOf } from '../../services/api/unwrap';
+import { extractApiError, formatApiError } from '../../utils/apiError';
 
-const DESIGN_CSS = `
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-            vertical-align: middle;
-        }
-        .active-nav-item {
-            background-color: #f97316; /* Primary container simulation */
-            color: white;
-        }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            border-left: 1px solid rgba(229, 231, 235, 0.5);
-        }
-    `;
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-/**
- * AdminCategoriesPage — copie conforme statique du design Stitch (code.html).
- * Interactions : script du design exécuté via useDesignScript (comportement copié).
- */
 export default function AdminCategoriesPage() {
-  useDesignScript(DESIGN_SCRIPT);
+  const [cats, setCats] = useState<any[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selection, setSelection] = useState<any | null>(null);
+  const [form, setForm] = useState({ nom: '', description: '' });
+
+  const charger = () => {
+    setLoading(true);
+    setErr(null);
+    adminApi
+      .getCategories()
+      .then((r) => setCats(listOf(unwrap(r))))
+      .catch((e) => setErr(formatApiError(extractApiError(e))))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    charger();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const cliquerLigne = (c: any) => {
+    setSelection(c);
+    setForm({ nom: c.nom ?? '', description: c.description ?? '' });
+  };
+
+  const enregistrer = async () => {
+    setErr(null);
+    setInfo(null);
+    try {
+      if (selection?.id) {
+        await adminApi.updateCategory(selection.id, form);
+        setInfo(`Catégorie « ${form.nom} » mise à jour.`);
+      } else {
+        await adminApi.createCategory(form);
+        setInfo(`Catégorie « ${form.nom} » créée.`);
+      }
+      setSelection(null);
+      setForm({ nom: '', description: '' });
+      charger();
+    } catch (e) {
+      setErr(formatApiError(extractApiError(e)));
+    }
+  };
+
+  const supprimer = async () => {
+    if (!selection?.id) return;
+    setErr(null);
+    setInfo(null);
+    try {
+      await adminApi.deleteCategory(selection.id);
+      setInfo(`Catégorie #${selection.id} supprimée.`);
+      setSelection(null);
+      charger();
+    } catch (e) {
+      setErr(formatApiError(extractApiError(e)));
+    }
+  };
 
   return (
     <AdminLayout currentPath="/admin/categories" mainClassName="ml-64 h-screen pt-[52px] flex overflow-hidden">
-      <style>{DESIGN_CSS}</style>
-  <section className="flex-1 overflow-y-auto p-lg pb-xl"> <div className="max-w-[1152px] mx-auto space-y-lg">  <div className="flex justify-between items-end"> <div> <nav className="flex items-center gap-2 text-micro text-text-tertiary uppercase tracking-widest mb-2"> <span className="">Catalogue</span> <MIcon name="chevron_right" className="text-[14px]" /> <span className="text-primary font-bold">Catégories</span> </nav> <h1 className="font-h1 text-h1 text-on-surface">Gestion des Catégories</h1> </div> <button className="flex items-center gap-2 px-6 py-3 bg-primary-container text-white font-bold rounded-[10px] hover:bg-primary-hover active:scale-[0.97] transition-all shadow-lg shadow-primary-container/20"> <MIcon name="add_circle" /> <span className="">Ajouter une catégorie</span> </button> </div>  <div className="grid grid-cols-1 md:grid-cols-3 gap-md"> <div className="bg-bg-card p-md rounded-xl border border-border-default flex items-center gap-4"> <div className="w-12 h-12 bg-primary-tint rounded-lg flex items-center justify-center text-primary"> <MIcon name="category" className="text-[28px]" /> </div> <div> <p className="text-text-secondary text-micro uppercase font-bold tracking-tight">Total Catégories</p> <p className="text-h2 font-h2 text-on-surface">24</p> </div> </div> <div className="bg-bg-card p-md rounded-xl border border-border-default flex items-center gap-4"> <div className="w-12 h-12 bg-success-light rounded-lg flex items-center justify-center text-success-dark"> <MIcon name="check_circle" className="text-[28px]" /> </div> <div> <p className="text-text-secondary text-micro uppercase font-bold tracking-tight">Actives</p> <p className="text-h2 font-h2 text-on-surface">18</p> </div> </div> <div className="bg-bg-card p-md rounded-xl border border-border-default flex items-center gap-4"> <div className="w-12 h-12 bg-amber-light rounded-lg flex items-center justify-center text-amber-text"> <MIcon name="inventory" className="text-[28px]" /> </div> <div> <p className="text-text-secondary text-micro uppercase font-bold tracking-tight">Total Produits</p> <p className="text-h2 font-h2 text-on-surface">1,452</p> </div> </div> </div>  <div className="bg-bg-card rounded-xl border border-border-default overflow-hidden shadow-sm"> <table className="w-full text-left border-collapse"> <thead> <tr className="bg-bg-secondary border-b border-border-default"> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro">Catégorie</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro">Description</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro text-center">Produits</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro">Statut</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro text-right">Actions</th> </tr> </thead> <tbody className="divide-y divide-border-default">  <tr className="hover:bg-primary-tint/30 transition-colors group"> <td className="px-lg py-4"> <div className="flex items-center gap-4"> <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center text-primary-dark"> <MIcon name="nutrition" className="text-[24px]" /> </div> <div> <p className="font-h3 text-h3 text-on-surface">Légumes</p> <p className="text-micro text-primary font-bold">Frais &amp; Local</p> </div> </div> </td> <td className="px-lg py-4"> <p className="text-secondary text-text-secondary max-w-[320px] line-clamp-2">Tous types de légumes frais du marché : tomates, oignons, piments...</p> </td> <td className="px-lg py-4 text-center"> <span className="font-price text-on-surface">342</span> </td> <td className="px-lg py-4"> <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-light text-success-dark font-label text-micro border border-success/20"> <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
-                                        Active
-                                    </div> </td> <td className="px-lg py-4 text-right"> <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity"> <button className="p-2 text-text-secondary hover:text-primary hover:bg-primary-tint rounded-lg transition-all" title="Modifier"> <MIcon name="edit" className="text-[20px]" /> </button> <button className="p-2 text-text-secondary hover:text-error hover:bg-error-light rounded-lg transition-all" title="Supprimer"> <MIcon name="delete" className="text-[20px]" /> </button> </div> </td> </tr>  <tr className="hover:bg-primary-tint/30 transition-colors group"> <td className="px-lg py-4"> <div className="flex items-center gap-4"> <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-tertiary"> <MIcon name="set_meal" className="text-[24px]" /> </div> <div> <p className="font-h3 text-h3 text-on-surface">Poissons &amp; Viandes</p> <p className="text-micro text-tertiary font-bold">Protéines</p> </div> </div> </td> <td className="px-lg py-4"> <p className="text-secondary text-text-secondary max-w-[320px] line-clamp-2">Poissons frais, fumés et viandes de qualité supérieure.</p> </td> <td className="px-lg py-4 text-center"> <span className="font-price text-on-surface">128</span> </td> <td className="px-lg py-4"> <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-light text-success-dark font-label text-micro border border-success/20"> <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
-                                        Active
-                                    </div> </td> <td className="px-lg py-4 text-right"> <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity"> <button className="p-2 text-text-secondary hover:text-primary hover:bg-primary-tint rounded-lg transition-all"> <MIcon name="edit" className="text-[20px]" /> </button> <button className="p-2 text-text-secondary hover:text-error hover:bg-error-light rounded-lg transition-all"> <MIcon name="delete" className="text-[20px]" /> </button> </div> </td> </tr>  <tr className="hover:bg-primary-tint/30 transition-colors group"> <td className="px-lg py-4"> <div className="flex items-center gap-4"> <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-amber-text"> <MIcon name="liquor" className="text-[24px]" /> </div> <div> <p className="font-h3 text-h3 text-on-surface">Épices</p> <p className="text-micro text-amber-text font-bold">Assaisonnements</p> </div> </div> </td> <td className="px-lg py-4"> <p className="text-secondary text-text-secondary max-w-[320px] line-clamp-2">Piments séchés, mélanges d'épices traditionnels et huiles.</p> </td> <td className="px-lg py-4 text-center"> <span className="font-price text-on-surface">86</span> </td> <td className="px-lg py-4"> <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-light text-success-dark font-label text-micro border border-success/20"> <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
-                                        Active
-                                    </div> </td> <td className="px-lg py-4 text-right"> <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity"> <button className="p-2 text-text-secondary hover:text-primary hover:bg-primary-tint rounded-lg transition-all"> <MIcon name="edit" className="text-[20px]" /> </button> <button className="p-2 text-text-secondary hover:text-error hover:bg-error-light rounded-lg transition-all"> <MIcon name="delete" className="text-[20px]" /> </button> </div> </td> </tr>  <tr className="hover:bg-primary-tint/30 transition-colors group opacity-75"> <td className="px-lg py-4"> <div className="flex items-center gap-4"> <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-text-tertiary"> <MIcon name="coffee" className="text-[24px]" /> </div> <div> <p className="font-h3 text-h3 text-on-surface">Boissons</p> <p className="text-micro text-text-tertiary font-bold">Temporaire</p> </div> </div> </td> <td className="px-lg py-4"> <p className="text-secondary text-text-secondary max-w-[320px] line-clamp-2">Sodas, jus locaux et eaux minérales.</p> </td> <td className="px-lg py-4 text-center"> <span className="font-price text-on-surface">45</span> </td> <td className="px-lg py-4"> <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-text-tertiary font-label text-micro border border-border-default"> <span className="w-1.5 h-1.5 rounded-full bg-text-tertiary"></span>
-                                        Inactive
-                                    </div> </td> <td className="px-lg py-4 text-right"> <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity"> <button className="p-2 text-text-secondary hover:text-primary hover:bg-primary-tint rounded-lg transition-all"> <MIcon name="edit" className="text-[20px]" /> </button> <button className="p-2 text-text-secondary hover:text-error hover:bg-error-light rounded-lg transition-all"> <MIcon name="delete" className="text-[20px]" /> </button> </div> </td> </tr> </tbody> </table>  <div className="px-lg py-4 bg-bg-secondary flex justify-between items-center"> <p className="text-secondary text-text-secondary">Affichage de 1-4 sur 24 catégories</p> <div className="flex gap-2"> <button className="w-8 h-8 flex items-center justify-center rounded bg-white border border-border-default text-text-tertiary disabled:opacity-50" disabled={true}> <MIcon name="chevron_left" className="text-[18px]" /> </button> <button className="w-8 h-8 flex items-center justify-center rounded bg-primary-container text-white font-bold text-micro">1</button> <button className="w-8 h-8 flex items-center justify-center rounded bg-white border border-border-default text-text-secondary hover:bg-primary-tint text-micro">2</button> <button className="w-8 h-8 flex items-center justify-center rounded bg-white border border-border-default text-text-secondary hover:bg-primary-tint text-micro">3</button> <button className="w-8 h-8 flex items-center justify-center rounded bg-white border border-border-default text-text-secondary hover:bg-primary-tint"> <MIcon name="chevron_right" className="text-[18px]" /> </button> </div> </div> </div> </div> </section>  <aside className="w-96 glass-panel border-l border-border-default overflow-y-auto p-lg flex flex-col z-40"> <div className="flex items-center justify-between mb-lg"> <h3 className="font-h2 text-h2 text-on-surface">Éditer Catégorie</h3> <button className="p-2 text-text-tertiary hover:text-on-surface transition-colors"> <MIcon name="close" /> </button> </div> <form className="space-y-md flex-1">  <div className="space-y-xs"> <label className="font-label text-label text-text-secondary">Nom de la catégorie</label> <input className="w-full px-4 py-2.5 bg-white border-1.5 border-border-default rounded-[10px] focus:ring-4 focus:ring-primary-container/10 focus:border-primary-container transition-all" type="text" value="Légumes" /> </div>  <div className="space-y-xs"> <label className="font-label text-label text-text-secondary">Description</label> <textarea className="w-full px-4 py-2.5 bg-white border-1.5 border-border-default rounded-[10px] focus:ring-4 focus:ring-primary-container/10 focus:border-primary-container transition-all" rows={4}>Tous types de légumes frais du marché : tomates, oignons, piments, légumes feuilles et racines de saison.</textarea> </div>  <div className="space-y-xs"> <label className="font-label text-label text-text-secondary">Icône de catégorie</label> <div className="grid grid-cols-4 gap-2 p-2 bg-bg-app rounded-xl"> <button className="aspect-square flex items-center justify-center rounded-lg bg-primary-container text-white shadow-sm ring-2 ring-primary-container ring-offset-2" type="button"> <MIcon name="nutrition" /> </button> <button className="aspect-square flex items-center justify-center rounded-lg bg-white border border-border-default text-text-tertiary hover:border-primary-container hover:text-primary transition-all" type="button"> <MIcon name="set_meal" /> </button> <button className="aspect-square flex items-center justify-center rounded-lg bg-white border border-border-default text-text-tertiary hover:border-primary-container hover:text-primary transition-all" type="button"> <MIcon name="liquor" /> </button> <button className="aspect-square flex items-center justify-center rounded-lg bg-white border border-border-default text-text-tertiary hover:border-primary-container hover:text-primary transition-all" type="button"> <MIcon name="restaurant" /> </button> <button className="aspect-square flex items-center justify-center rounded-lg bg-white border border-border-default text-text-tertiary hover:border-primary-container hover:text-primary transition-all" type="button"> <MIcon name="bakery_dining" /> </button> <button className="aspect-square flex items-center justify-center rounded-lg bg-white border border-border-default text-text-tertiary hover:border-primary-container hover:text-primary transition-all" type="button"> <MIcon name="local_drink" /> </button> <button className="aspect-square flex items-center justify-center rounded-lg bg-white border border-border-default text-text-tertiary hover:border-primary-container hover:text-primary transition-all" type="button"> <MIcon name="egg" /> </button> <button className="aspect-square flex items-center justify-center rounded-lg bg-white border border-border-default text-text-tertiary hover:border-primary-container hover:text-primary transition-all" type="button"> <MIcon name="icecream" /> </button> </div> </div>  <div className="space-y-xs"> <label className="font-label text-label text-text-secondary">Thème de couleur</label> <div className="flex gap-3"> <button className="w-8 h-8 rounded-full bg-primary ring-2 ring-primary ring-offset-2" type="button"></button> <button className="w-8 h-8 rounded-full bg-tertiary hover:scale-110 transition-transform" type="button"></button> <button className="w-8 h-8 rounded-full bg-secondary-container hover:scale-110 transition-transform" type="button"></button> <button className="w-8 h-8 rounded-full bg-success hover:scale-110 transition-transform" type="button"></button> <button className="w-8 h-8 rounded-full bg-on-surface-variant hover:scale-110 transition-transform" type="button"></button> </div> </div>  <div className="flex items-center justify-between p-3 bg-primary-tint/50 rounded-xl"> <div> <p className="font-label text-label text-on-surface">Afficher sur l'accueil</p> <p className="text-micro text-text-secondary">La catégorie sera mise en avant</p> </div> <label className="relative inline-flex items-center cursor-pointer"> <input checked={true} className="sr-only peer" type="checkbox" /> <div className="w-11 h-6 bg-border-default peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div> </label> </div> </form> <div className="mt-lg pt-lg border-t border-border-default space-y-3"> <button className="w-full py-3 bg-primary-container text-white font-bold rounded-[10px] hover:bg-primary-hover active:scale-[0.97] transition-all shadow-md">
-                    Enregistrer les modifications
-                </button> <button className="w-full py-3 bg-transparent border border-primary text-primary font-bold rounded-[10px] hover:bg-primary-tint active:scale-[0.97] transition-all">
-                    Annuler
-                </button> </div> </aside>  <div className="fixed bottom-lg right-lg bg-on-surface text-white px-md py-3 rounded-lg shadow-xl translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3 z-[60]" id="toast"> <MIcon name="check_circle" className="text-success" /> <span className="font-label text-label">Modification enregistrée avec succès !</span> </div> 
+      <section className="flex-1 overflow-y-auto p-lg">
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="text-h2 font-h2 font-bold">Gestion des Catégories</h1>
+              <p className="text-text-secondary">Données réelles — /admin/categories (CRUD) · Cliquez une ligne pour l’éditer</p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                setSelection({});
+                setForm({ nom: '', description: '' });
+              }}
+            >
+              Nouvelle catégorie
+            </button>
+          </div>
+
+          {err && (
+            <div className="rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
+              <p className="font-bold">Erreur API</p>
+              <p>{err}</p>
+            </div>
+          )}
+          {info && <div className="rounded-lg border border-success bg-success-container p-4 text-label">{info}</div>}
+
+          <div className="overflow-hidden rounded-lg border border-border-default bg-white shadow-sm">
+            {loading && <p className="p-lg text-label text-text-secondary">Chargement…</p>}
+            {!loading && cats.length === 0 && <p className="p-lg text-label text-text-secondary">Aucune catégorie.</p>}
+            {!loading && cats.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-label">
+                  <thead>
+                    <tr className="bg-bg-secondary text-left text-text-secondary">
+                      <th className="px-lg py-3 font-semibold">Catégorie</th>
+                      <th className="px-lg py-3 font-semibold">Slug</th>
+                      <th className="px-lg py-3 font-semibold">Parent</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cats.map((c: any) => (
+                      <tr
+                        key={c.id}
+                        onClick={() => cliquerLigne(c)}
+                        className={`cursor-pointer border-t border-border-default hover:bg-primary-tint/50 ${
+                          selection?.id === c.id ? 'bg-primary-tint' : ''
+                        }`}
+                      >
+                        <td className="px-lg py-3 font-semibold">{c.nom}</td>
+                        <td className="px-lg py-3 text-text-secondary">{c.slug ?? ''}</td>
+                        <td className="px-lg py-3">{c.parent?.nom ?? c.parent_id ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <aside className="w-96 overflow-y-auto border-l border-border-default bg-white p-lg">
+        <h3 className="text-h2 font-h2 font-bold">{selection?.id ? 'Éditer Catégorie' : 'Nouvelle Catégorie'}</h3>
+        <div className="mt-4 space-y-3">
+          <div className="space-y-1">
+            <label className="text-label text-text-secondary">Nom de la catégorie</label>
+            <input
+              type="text"
+              value={form.nom}
+              onChange={(e) => setForm({ ...form, nom: e.target.value })}
+              className="w-full rounded-lg border border-border-default px-3 py-2 text-label"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-label text-text-secondary">Description</label>
+            <textarea
+              rows={4}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              className="w-full rounded-lg border border-border-default px-3 py-2 text-label"
+            />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <button type="button" className="btn btn-primary flex-1" onClick={enregistrer}>
+              Enregistrer
+            </button>
+            {selection?.id && (
+              <button type="button" className="btn btn-ghost text-error" onClick={supprimer}>
+                Supprimer
+              </button>
+            )}
+          </div>
+        </div>
+      </aside>
     </AdminLayout>
   );
 }

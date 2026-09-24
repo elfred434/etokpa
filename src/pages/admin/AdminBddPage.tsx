@@ -14,6 +14,10 @@ export default function AdminBddPage() {
 
   return (
     <AdminLayout currentPath="/admin/bdd-jobs">
+      <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
+        <p className="font-bold">Non branché — aucun endpoint backend (B-16)</p>
+        <p>Cet écran est un aperçu maquette (design Stitch) : aucune donnée réelle n’est affichée.</p>
+      </div>
       <style>{DESIGN_CSS}</style>
 <div className="flex flex-col w-full gap-xl pb-xl">  <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-md"> <div className="flex flex-col gap-xs"> <div className="flex items-center gap-xs"> <span className="font-micro text-micro text-primary uppercase font-bold tracking-wider">Moteur d'infrastructure primaire</span> <span className="text-text-tertiary text-micro font-mono">/</span> <span className="font-micro text-micro text-text-secondary font-mono">DATACENTER-BJ-01</span> </div> <h1 className="font-h1 text-h1 text-text-main tracking-tight flex items-center gap-sm"> <span className="">Base de Données &amp; Files de Traitement Asynchrones</span> <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-success-light text-success-dark font-micro text-micro font-bold">STABLE</span> </h1> <div className="flex flex-wrap items-center gap-sm mt-xs text-text-secondary font-secondary text-secondary"> <span className="flex items-center gap-xs"> <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span> <span className="font-mono text-text-main font-semibold">PostgreSQL 16.2</span> Master-Replica Sync
         </span> <span className="text-text-tertiary">•</span> <span className="flex items-center gap-xs"> <MIcon name="memory" className="text-[15px] text-tertiary" /> <span className="font-mono text-text-main font-semibold">Redis 7.2</span> Cluster High-Availability (3 nodes)

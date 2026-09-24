@@ -14,6 +14,10 @@ export default function AdminParametresPage() {
 
   return (
     <AdminLayout currentPath="/admin/parametres">
+      <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
+        <p className="font-bold">Non branché — aucun endpoint backend (B-16)</p>
+        <p>Cet écran est un aperçu maquette (design Stitch) : aucune donnée réelle n’est affichée.</p>
+      </div>
       <style>{DESIGN_CSS}</style>
 <div className="flex flex-col w-full">  <div className="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-sm bg-inverse-surface text-inverse-on-surface px-lg py-md rounded-xl shadow-xl" id="saveToast"> <MIcon name="check_circle" className="text-success text-[20px]" /> <div className="flex flex-col"> <span className="font-label text-label font-semibold text-inverse-on-surface">Modifications enregistrées</span> <span className="font-secondary text-secondary text-inverse-on-surface/80">Les règles métier ont été mises à jour avec succès sur Dantokpa.</span> </div> </div>  <div className="flex flex-col gap-lg mb-lg"> <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-md"> <div> <div className="flex items-center gap-xs text-text-secondary font-secondary text-secondary mb-xs"> <span className="">TOKPa Administration</span> <MIcon name="chevron_right" className="text-[14px]" /> <span className="text-primary-container font-label text-label font-medium">Paramètres de la Plateforme</span> </div> <h1 className="font-h1 text-h1 text-text-main tracking-tight">Paramètres Généraux &amp; Métier</h1> <p className="font-body text-body text-text-secondary mt-xs max-w-[768px]">
           Gérez les règles commerciales, la politique de livraison, les commissions et les horaires du marché Dantokpa sans compétences techniques.

@@ -1,146 +1,101 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
+import { managerApi } from '../../services/api';
+import { unwrap, fmtFcfa } from '../../services/api/unwrap';
+import { extractApiError, formatApiError } from '../../utils/apiError';
 
-const PERIODES = ['Aujourd’hui', '7 derniers jours', 'Ce Mois', 'Année'];
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-const KPIS = [
-  { icon: 'trending_up', label: "Volume d'Affaires", value: '2 450 000', unit: 'FCFA', delta: '+12%' },
-  { icon: 'shopping_basket', label: 'Commandes Total', value: '856', unit: '', delta: '+5%' },
-  { icon: 'task_alt', label: 'Taux de Livraison', value: '98.2%', unit: '', delta: 'Succès' },
-  { icon: 'delivery_dining', label: 'Livreurs Actifs', value: '24', unit: '/ 30', delta: '' },
-];
-
-const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-const HAUTEURS = [52, 68, 45, 80, 95, 72, 60];
-
-const MARCHES = [
-  { icon: 'storefront', nom: 'Dantokpa', sous: 'Grand Marché International', montant: '1 250 000 FCFA', part: '51%' },
-  { icon: 'shopping_bag', nom: 'Akpakpa Centre', sous: 'Zone Résidentielle & Commerces', montant: '820 000 FCFA', part: '33%' },
-  { icon: 'local_mall', nom: 'Sègbèya', sous: 'Marché de quartier', montant: '380 000 FCFA', part: '16%' },
-];
-
-const TOP5 = [
-  { nom: 'Koffi A.', courses: 142 },
-  { nom: 'Sena J.', courses: 138 },
-  { nom: 'Modeste T.', courses: 125 },
-  { nom: 'Jean B.', courses: 118 },
-  { nom: 'Aimé D.', courses: 98 },
+const PERIODES = [
+  { label: 'Aujourd’hui', param: 'jour' as const },
+  { label: '7 derniers jours', param: 'semaine' as const },
+  { label: 'Ce Mois', param: 'mois' as const },
 ];
 
 export default function ManagerStatsPage() {
-  const [periode, setPeriode] = useState(PERIODES[0]);
+  const [periode, setPeriode] = useState<'jour' | 'semaine' | 'mois'>('jour');
+  const [stats, setStats] = useState<any>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setErr(null);
+    managerApi
+      .getStats(periode)
+      .then((r) => alive && setStats(unwrap(r)))
+      .catch((e) => alive && setErr(formatApiError(extractApiError(e))))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [periode]);
+
+  const kpis = [
+    { icon: 'trending_up', label: "Volume d'Affaires", value: stats?.volume_affaires ?? stats?.ca ?? stats?.chiffre_affaires ?? '—' },
+    { icon: 'shopping_basket', label: 'Commandes Total', value: stats?.commandes_total ?? stats?.total_commandes ?? '—' },
+    { icon: 'task_alt', label: 'Taux de Livraison', value: stats?.taux_livraison ?? stats?.taux_succes ?? '—' },
+    { icon: 'delivery_dining', label: 'Livreurs Actifs', value: stats?.livreurs_actifs ?? '—' },
+  ];
 
   return (
     <ManagerLayout currentPath="/manager/statistiques">
       <div className="space-y-6">
-        {/* En-tête */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-h2 font-h2 font-bold">Statistiques de la Zone - Akpakpa</h1>
-            <p className="text-text-secondary">Bienvenue sur votre tableau de bord de performance localisée.</p>
+            <p className="text-text-secondary">Données réelles — GET /manager/stats</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {PERIODES.map((p) => (
               <button
-                key={p}
+                key={p.param}
                 type="button"
-                onClick={() => setPeriode(p)}
+                onClick={() => setPeriode(p.param)}
                 className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-label font-semibold transition ${
-                  periode === p
+                  periode === p.param
                     ? 'border-primary bg-primary text-white'
                     : 'border-border-default bg-white text-text-secondary hover:border-primary hover:text-primary'
                 }`}
               >
-                {p === PERIODES[0] && <MIcon name="calendar_today" className="text-[16px]" />}
-                {p}
+                {p.param === 'jour' && <MIcon name="calendar_today" className="text-[16px]" />}
+                {p.label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* KPI */}
+        {err && (
+          <div className="rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
+            <p className="font-bold">Erreur API</p>
+            <p>{err}</p>
+          </div>
+        )}
+        {loading && <p className="text-label text-text-secondary">Chargement…</p>}
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {KPIS.map((k) => (
+          {kpis.map((k) => (
             <div key={k.label} className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
               <div className="flex items-center gap-2">
                 <MIcon name={k.icon} className="text-primary text-[20px]" />
                 <p className="text-label text-text-secondary">{k.label}</p>
               </div>
               <p className="mt-2 text-h1 font-h1 font-bold">
-                {k.value} {k.unit && <span className="text-label text-text-secondary">{k.unit}</span>}
+                {typeof k.value === 'number' ? fmtFcfa(k.value) : k.value}
               </p>
-              {k.delta && (
-                <p className="mt-1 text-label font-semibold text-success">
-                  <MIcon name="trending_up" className="align-middle text-[16px]" /> {k.delta}
-                </p>
-              )}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          {/* Graphe */}
-          <div className="rounded-lg border border-border-default bg-white p-lg shadow-sm xl:col-span-2">
-            <h2 className="text-h3 font-h3 font-bold">Évolution des ventes (7 derniers jours)</h2>
-            <p className="text-label text-text-secondary">Volume (FCFA)</p>
-            <div className="mt-6 flex h-[240px] items-end justify-between gap-3">
-              {JOURS.map((j, i) => (
-                <div key={j} className="flex flex-1 flex-col items-center gap-2">
-                  <div
-                    className="w-full max-w-[48px] rounded-t-lg bg-primary"
-                    style={{ height: `${HAUTEURS[i]}%` }}
-                  />
-                  <p className="text-label text-text-secondary">{j}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Top marchés */}
+        {/* Phase dev : forme brute de la réponse pour caler le mapping */}
+        {stats != null && (
           <div className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
-            <div className="flex items-center justify-between">
-              <h2 className="text-h3 font-h3 font-bold">Top Marchés de la Zone</h2>
-              <button type="button" className="text-label font-semibold text-primary hover:underline">
-                Voir tout
-              </button>
-            </div>
-            <div className="mt-2">
-              {MARCHES.map((m) => (
-                <div key={m.nom} className="flex items-center gap-3 border-t border-border-default py-3 first:border-t-0">
-                  <MIcon name={m.icon} className="text-primary text-[20px]" />
-                  <div className="flex-1">
-                    <p className="text-label font-semibold">{m.nom}</p>
-                    <p className="text-label text-text-secondary">{m.sous}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-label font-semibold">{m.montant}</p>
-                    <p className="text-label text-text-secondary">{m.part}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <h2 className="text-h3 font-h3 font-bold">Réponse brute (phase dev)</h2>
+            <pre className="mt-2 overflow-x-auto rounded-lg bg-bg-app p-3 text-micro">{JSON.stringify(stats, null, 2)}</pre>
           </div>
-        </div>
-
-        {/* Performance livreurs */}
-        <div className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="text-h3 font-h3 font-bold">Performance Livreurs</h2>
-            <span className="rounded-full bg-bg-secondary px-2.5 py-1 text-overline font-semibold">Top 5</span>
-          </div>
-          <div className="mt-2">
-            {TOP5.map((l, i) => (
-              <div key={l.nom} className="flex items-center gap-3 border-t border-border-default py-3 first:border-t-0">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-tint text-label font-bold text-primary">
-                  {i + 1}
-                </span>
-                <p className="flex-1 text-label font-semibold">{l.nom}</p>
-                <p className="text-label text-text-secondary">{l.courses} courses</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
       </div>
     </ManagerLayout>
   );
