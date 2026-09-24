@@ -84,6 +84,25 @@ const STATUT_LABELS: Record<string, string> = {
  * - Reverb tracking.{id}           → livreur.position.updated (hook useRiderLocation)
  * - Reverb notifications.{userId}  → order.status.changed → rechargement du statut
  */
+/**
+ * Anti-IDOR UI : une commande n'est affichée que si elle figure dans MES commandes.
+ * `GET /orders` (OrderController@index) est filtré côté serveur par `user_id = auth()->id()`.
+ * Scan paginé borné à 20 pages (300 commandes) — au-delà, on refuse par prudence.
+ */
+async function isOwnOrder(id: number): Promise<boolean> {
+  let page = 1;
+  let last = 1;
+  do {
+    const res = await ordersApi.getOrders(page);
+    const raw = (res?.data ?? res ?? []) as Array<Record<string, unknown> & { data?: ApiOrder }>;
+    const list: ApiOrder[] = (Array.isArray(raw) ? raw : []).map((o) => (o.data ?? o) as ApiOrder);
+    if (list.some((o) => Number(o.id) === Number(id))) return true;
+    last = Number(res?.meta?.last_page ?? res?.last_page ?? 1);
+    page += 1;
+  } while (page <= last && page <= 20);
+  return false;
+}
+
 export default function OrderTrackingPage() {
   const { isFr } = useLanguage();
   const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
@@ -96,6 +115,7 @@ export default function OrderTrackingPage() {
   const [order, setOrder] = useState<ApiOrder | null>(null);
   const [tracking, setTracking] = useState<TrackingInfo | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [destCoords, setDestCoords] = useState<[number, number] | null>(null);
 
   // Chargement de la liste (pour le sélecteur quand pas de ?order=)
@@ -116,20 +136,41 @@ export default function OrderTrackingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
-  // Chargement commande + tracking quand selectedId change (ou statut refreshé)
+  // Sync URL (?order=) → sélection (édition manuelle de l'URL incluse — le garde-fou ci-dessous s'applique)
+  useEffect(() => {
+    if (search.order) setSelectedId(Number(search.order));
+  }, [search.order]);
+
+  // Chargement commande + tracking — UNIQUEMENT si la commande figure dans MES commandes
+  // (anti-IDOR côté UI : aucune donnée d'une commande étrangère n'est jamais affichée, y compris session admin/manager)
   useEffect(() => {
     if (!isAuthenticated || !selectedId) return;
-    ordersApi
-      .getOrder(selectedId)
-      .then((res) => {
-        const data = (res?.data ?? res) as ApiOrder;
-        setOrder(data);
-        return ordersApi.getTracking(selectedId).then((t) => setTracking(t as TrackingInfo));
-      })
-      .catch((err) => {
+    let alive = true;
+    setAccessDenied(false);
+    setOrder(null);
+    setTracking(null);
+    (async () => {
+      try {
+        const mine = await isOwnOrder(selectedId);
+        if (!alive) return;
+        if (!mine) {
+          console.warn(`[anti-IDOR] commande #${selectedId} absente de GET /orders (pas à cet utilisateur) → affichage bloqué`);
+          setAccessDenied(true);
+          return;
+        }
+        const res = await ordersApi.getOrder(selectedId);
+        if (!alive) return;
+        setOrder((res?.data ?? res) as ApiOrder);
+        const t = await ordersApi.getTracking(selectedId);
+        if (alive) setTracking(t as TrackingInfo);
+      } catch (err) {
         console.warn('Order/tracking error:', err);
-        setFetchError(formatApiError(extractApiError(err)));
-      });
+        if (alive) setFetchError(formatApiError(extractApiError(err)));
+      }
+    })();
+    return () => {
+      alive = false;
+    };
   }, [isAuthenticated, selectedId]);
 
   // Destination RÉELLE de la commande : landmark (point_reperes) → GPS via GET /zones.points_repere
@@ -169,12 +210,12 @@ export default function OrderTrackingPage() {
   useEffect(() => {
     if (!isAuthenticated) return;
     return subscribeRealtimeRefresh(['orders'], (e) => {
-      if (e.scope === 'orders' && selectedId) {
+      if (e.scope === 'orders' && selectedId && !accessDenied) {
         ordersApi.getOrder(selectedId).then((res) => setOrder((res?.data ?? res) as ApiOrder)).catch(() => {});
         ordersApi.getTracking(selectedId).then((t) => setTracking(t as TrackingInfo)).catch(() => {});
       }
     });
-  }, [isAuthenticated, selectedId]);
+  }, [isAuthenticated, selectedId, accessDenied]);
 
   // Position GPS réelle (GET /orders/{id}/tracking → position) : priorité sur la simulation
   const realPosition = useMemo<[number, number] | null>(() => {
@@ -187,7 +228,7 @@ export default function OrderTrackingPage() {
 
   const { riderCoords, estimatedMinutes, source } = useRiderLocation({
     orderId: selectedId ? String(selectedId) : undefined,
-    enabled: isAuthenticated && !!selectedId,
+    enabled: isAuthenticated && !!selectedId && !accessDenied,
     realPosition,
     destinationCoords: destCoords ?? undefined, // ETA vers la destination RÉELLE de la commande
     allowSimulation: search.simu === '1', // démo opt-in uniquement : sans ça, aucune position inventée
@@ -256,6 +297,27 @@ export default function OrderTrackingPage() {
                     onClick={() => navigate({ to: '/catalogue' })}
                   >
                     {isFr ? 'Explorer le marché' : 'Browse the market'}
+                  </button>
+                }
+              />
+            </div>
+          ) : accessDenied ? (
+            <div className="py-xl">
+              <EmptyState
+                icon={<MIcon name="lock" className="text-4xl text-error-dark" />}
+                title={isFr ? 'Commande introuvable' : 'Order not found'}
+                description={
+                  isFr
+                    ? 'Cette commande n’existe pas sur votre compte : elle ne peut pas être suivue ici.'
+                    : 'This order does not exist on your account: it cannot be tracked here.'
+                }
+                action={
+                  <button
+                    type="button"
+                    className="px-lg py-3 bg-primary-container text-white rounded-lg font-bold cursor-pointer"
+                    onClick={() => navigate({ to: '/commandes' })}
+                  >
+                    {isFr ? 'Mes commandes' : 'My orders'}
                   </button>
                 }
               />
