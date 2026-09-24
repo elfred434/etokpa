@@ -1,5 +1,7 @@
+import { useEffect, useRef, useState } from 'react';
 import { useRouterState, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
+import { paymentsApi } from '../../../services/api';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientFooter from '../../../components/layout/client/ClientFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
@@ -14,7 +16,17 @@ interface ConfirmationState {
   zoneNom?: string;
   landmarkNom?: string;
   nbItems?: number;
+  /** id du paiement (POST /payments/init) → statut réel via GET /payments/{id}. */
+  paymentId?: number;
 }
+
+/** Message selon `Payment::statut` — « reussi » = texte exact de la maquette Stitch. */
+const PAY_MSG: Record<string, string> = {
+  reussi: 'Votre paiement a été accepté par FedaPay',
+  en_attente: 'Paiement en attente de confirmation FedaPay',
+  echoue: 'Le paiement FedaPay a échoué',
+  rembourse: 'Votre paiement a été remboursé',
+};
 
 /**
  * Page Confirmation de Commande — Reproduction 100% intégrale et fidèle de Stitch HTML `confirmation_de_commande_tokpa/code.html`
@@ -27,6 +39,47 @@ export default function ConfirmationPage() {
   const zoneNom = state?.zoneNom ?? '—';
   const landmarkNom = state?.landmarkNom ?? '—';
   const orderNumber = state?.orderId ? `#TOK-${state.orderId}` : null;
+  const paymentId = state?.paymentId;
+
+  // Statut réel du paiement — GET /api/payments/{id}. Relu toutes les 5 s tant qu'il est
+  // « en_attente » (3 min max) et au retour sur l'onglet (le client revient de FedaPay).
+  const [payStatut, setPayStatut] = useState<string | null>(null);
+  const finalRef = useRef(false);
+  useEffect(() => {
+    if (!paymentId) return;
+    let alive = true;
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const load = async () => {
+      try {
+        const res = await paymentsApi.getPayment(paymentId);
+        const p = (res?.data ?? res) as { statut?: string } | undefined;
+        if (!alive) return;
+        const st = p?.statut ?? null;
+        setPayStatut(st);
+        finalRef.current = st !== null && st !== 'en_attente';
+        if (st === 'en_attente' && ++tries < 36) timer = setTimeout(load, 5000);
+      } catch (err) {
+        console.warn('Payment status error:', err);
+      }
+    };
+    void load();
+    const onFocus = () => {
+      if (finalRef.current) return;
+      clearTimeout(timer);
+      tries = 0;
+      void load();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [paymentId]);
+
+  const payMessage = (payStatut && PAY_MSG[payStatut]) || 'Votre commande a bien été enregistrée';
+  const totalLabel = payStatut === 'reussi' || payStatut === 'rembourse' ? 'Total payé' : 'Total à payer';
 
   return (
     <div className="bg-bg-app font-body text-text-main flex flex-col min-h-screen">
@@ -64,8 +117,8 @@ export default function ConfirmationPage() {
 
           {/* Title & Messaging */}
           <h1 className="font-h1 text-h1 text-text-main mb-sm font-bold">Commande confirmée !</h1>
-          <p className="font-body text-body text-text-secondary mb-md">
-            Votre commande a bien été enregistrée
+          <p className={`font-body text-body mb-md ${payStatut === 'echoue' ? 'text-error' : 'text-text-secondary'}`}>
+            {payMessage}
           </p>
 
           {/* Order Number Badge — numéro réel de la commande backend */}
@@ -78,7 +131,7 @@ export default function ConfirmationPage() {
           {/* Summary Box */}
           <div className="w-full bg-bg-secondary rounded-lg p-md mb-lg space-y-md text-left border border-border-default/50">
             <div className="flex justify-between items-center">
-              <span className="font-body text-text-secondary">Total payé</span>
+              <span className="font-body text-text-secondary">{totalLabel}</span>
               <span className="font-price text-price text-primary-container font-bold">
                 {total.toLocaleString('fr-FR')} FCFA
               </span>
