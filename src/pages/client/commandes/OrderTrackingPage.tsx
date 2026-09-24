@@ -69,13 +69,6 @@ const STATUT_FLOW: Record<string, number> = {
 };
 
 /** Libellés FR des statuts réels (dont `annule`). */
-const STATUT_LABELS: Record<string, string> = {
-  en_attente: 'En attente',
-  en_preparation: 'En préparation',
-  en_livraison: 'En livraison',
-  livre: 'Livrée',
-  annule: 'Annulée',
-};
 
 /**
  * OrderTrackingPage — Suivi de commande avec GPS temps réel (route protégée).
@@ -108,7 +101,13 @@ export default function OrderTrackingPage() {
       .then((res) => {
         const list: ApiOrder[] = (res?.data ?? res ?? []).map((o: Record<string, unknown> & { data?: ApiOrder }) => o.data ?? o);
         setAllOrders(list);
-        if (!selectedId && list.length > 0) setSelectedId(list[0].id);
+        if (!selectedId && list.length > 0) {
+          // sans ?order= : la commande active la plus récente (sinon la plus récente).
+          // Le choix d'une commande se fait via /commandes → « Suivre » — le sélecteur de
+          // statuts/commandes est réservé au livreur assigné (design Stitch), pas au client.
+          const active = list.find((o) => ['en_attente', 'en_preparation', 'en_livraison'].includes(o.statut));
+          setSelectedId((active ?? list[0]).id);
+        }
       })
       .catch((err) => {
         console.warn('Orders list error:', err);
@@ -306,27 +305,15 @@ export default function OrderTrackingPage() {
             </div>
           ) : (
             <>
-              {/* Sélecteur de commande — menu déroulant compact (les vraies « étapes » = le stepper ci-dessous) */}
-              {allOrders.length > 1 && (
-                <div className="mb-md">
-                  <label htmlFor="order-select" className="label text-text-secondary mb-xs block">
-                    {isFr ? 'Commande suivie' : 'Tracked order'}
-                  </label>
-                  <select
-                    id="order-select"
-                    value={selectedId ?? ''}
-                    onChange={(e) => setSelectedId(Number(e.target.value))}
-                    className="w-full sm:max-w-[420px] rounded-lg border border-border-default bg-white px-md py-sm text-body font-bold text-text-main cursor-pointer"
-                  >
-                    {allOrders.map((o) => (
-                      <option key={o.id} value={o.id}>
-                        #{o.id} · {STATUT_LABELS[o.statut] ?? o.statut}
-                        {o.created_at ? ` · ${new Date(o.created_at).toLocaleDateString('fr-FR')}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              {/* Commande suivie — EN LECTURE SEULE (aucune sélection de statut : réservée au livreur assigné) */}
+              <div className="flex justify-between items-center mb-md">
+                <span className="font-label text-label text-text-secondary">
+                  {isFr ? 'Commande' : 'Order'} #{selectedId}
+                </span>
+                <Link to="/commandes" className="text-label text-primary-container font-bold hover:underline">
+                  {isFr ? 'Toutes mes commandes' : 'All my orders'}
+                </Link>
+              </div>
 
               {/* Header Status with Live GPS Badge */}
               <div className="flex flex-wrap justify-between items-start mb-lg gap-2">
