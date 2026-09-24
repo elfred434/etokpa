@@ -71,6 +71,8 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [landmarks, setLandmarks] = useState<Landmark[]>([]);
   const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
+  // Nombre total de commandes — GET /dashboard (GET /orders est paginé par 15)
+  const [dashCount, setDashCount] = useState<number | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -139,7 +141,15 @@ export default function ProfilePage() {
       })
       .catch((err) => console.warn('Orders API error:', err));
 
-    Promise.allSettled([p1, p2]).then(() => setIsDataLoading(false));
+    const p3 = authApi
+      .getDashboard()
+      .then((d) => {
+        const n = Number(d?.commandes);
+        setDashCount(Number.isFinite(n) ? n : null);
+      })
+      .catch((err) => console.warn('Dashboard API error:', err));
+
+    Promise.allSettled([p1, p2, p3]).then(() => setIsDataLoading(false));
   }, [isAuthenticated]);
 
   if (isLoading || !isAuthenticated) {
@@ -156,7 +166,7 @@ export default function ProfilePage() {
   const userFullName =
     profile?.nom_complet || (profile?.prenom ? `${profile.prenom} ${profile.nom}` : 'Utilisateur TOKPa');
   const userRole = typeof profile?.role === 'object' ? profile.role.nom : profile?.role || 'Client';
-  const orderCount = recentOrders.length;
+  const orderCount = dashCount ?? recentOrders.length;
   const landmarkCount = landmarks.length;
 
   // ---- Points de repère (via PUT /profile, car GET /landmarks est cassé côté backend) ----

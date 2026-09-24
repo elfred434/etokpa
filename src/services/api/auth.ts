@@ -92,6 +92,13 @@ export const authApi = {
     return response.data;
   },
 
+  // GET /api/dashboard -> tableau de bord minimal (F-21), filtre selon le role :
+  // { commandes, en_cours, ca } — ca renseigne pour l'admin uniquement (null sinon)
+  getDashboard: async (): Promise<{ commandes: number; en_cours: number; ca: number | string | null }> => {
+    const response = await apiClient.get('/dashboard');
+    return response.data;
+  },
+
   // POST /api/auth/change-password -> changement de mot de passe
   changePassword: async (payload: { current_password: string; new_password: string; new_password_confirmation: string }) => {
     const response = await apiClient.post('/auth/change-password', payload);
