@@ -1,43 +1,126 @@
-import { useDesignScript } from '../../utils/designRuntime';
-import DESIGN_SCRIPT from './_scripts/ManagerDashboardPage';
+import { Link } from '@tanstack/react-router';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
 
-const DESIGN_CSS = `
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-            vertical-align: middle;
-        }
-        .active-nav-border {
-            border-left: 3px solid #f97316;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #E5E7EB;
-            border-radius: 10px;
-        }
-    `;
+const KPIS = [
+  { icon: 'shopping_cart', label: "Commandes aujourd'hui", value: '47', delta: '+12% vs hier', up: true, hint: '' },
+  { icon: 'payments', label: "Chiffre d'affaires", value: '84 200', unit: 'FCFA', delta: '+8%', up: true, hint: '' },
+  { icon: 'two_wheeler', label: 'Livreurs actifs', value: '8 / 12', delta: '', up: true, hint: '67% de l’équipe opérationnelle' },
+  { icon: 'task_alt', label: 'Taux de succès livraison', value: '94%', delta: '', up: true, hint: 'Objectif zone : 95%' },
+];
 
-/**
- * ManagerDashboardPage — copie conforme statique du design Stitch (code.html).
- * Interactions : script du design exécuté via useDesignScript (comportement copié).
- */
+const ROWS = [
+  { id: '#TKP-0842', client: 'Moussa Ibrahim', articles: '3 articles', statut: 'En préparation', livreur: 'Koffi B.', init: 'KB' },
+  { id: '#TKP-0843', client: 'Awa Diop', articles: '1 article', statut: 'En livraison', livreur: 'Yao A.', init: 'YA' },
+  { id: '#TKP-0844', client: 'Jean Sognon', articles: '5 articles', statut: 'En attente', livreur: null, init: '' },
+  { id: '#TKP-0845', client: 'Clara Dossou', articles: '2 articles', statut: 'En préparation', livreur: 'Pierre S.', init: 'PS' },
+  { id: '#TKP-0846', client: 'Ramatou L.', articles: '6 articles', statut: 'En attente', livreur: null, init: '' },
+  { id: '#TKP-0847', client: 'Ousmane G.', articles: '1 article', statut: 'En livraison', livreur: 'Koffi B.', init: 'KB' },
+];
+
+const STATUT_CLASS: Record<string, string> = {
+  'En préparation': 'bg-primary-tint text-primary',
+  'En livraison': 'bg-tertiary-container/20 text-tertiary',
+  'En attente': 'bg-bg-secondary text-text-secondary',
+};
+
 export default function ManagerDashboardPage() {
-  useDesignScript(DESIGN_SCRIPT);
-
   return (
     <ManagerLayout currentPath="/manager">
-      <style>{DESIGN_CSS}</style>
-  <header className="h-20 bg-bg-card flex items-center justify-between px-xl shrink-0 border-b border-border-default"> <div> <h1 className="font-h1 text-h1 text-text-main">Tableau de bord — Zone Akpakpa</h1> <p className="text-text-secondary text-secondary">Jeudi 12 juin · Cotonou</p> </div> <button className="flex items-center gap-2 px-md py-sm border border-border-default rounded-lg bg-white text-text-main hover:bg-surface-container transition-all scale-100 active:scale-95"> <MIcon name="download" /> <span className="font-label text-label">Exporter le rapport</span> </button> </header>  <div className="p-xl space-y-xl">  <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-lg">  <div className="bg-bg-card p-lg rounded-lg border border-border-default hover:shadow-sm transition-shadow"> <p className="text-text-secondary font-label text-label">Commandes aujourd'hui</p> <div className="mt-sm flex items-end gap-3"> <span className="font-h1 text-h1 text-text-main">47</span> <span className="text-success font-bold text-secondary mb-1 flex items-center"> <MIcon name="trending_up" className="text-[16px]" />
-                            +12% vs hier
-                        </span> </div> </div>  <div className="bg-bg-card p-lg rounded-lg border border-border-default hover:shadow-sm transition-shadow"> <p className="text-text-secondary font-label text-label">Chiffre d'affaires</p> <div className="mt-sm flex items-end gap-3"> <span className="font-h1 text-h1 text-text-main">84 200 <span className="text-h3 font-medium">FCFA</span></span> <span className="text-success font-bold text-secondary mb-1 flex items-center"> <MIcon name="trending_up" className="text-[16px]" />
-                            +8%
-                        </span> </div> </div>  <div className="bg-bg-card p-lg rounded-lg border border-border-default hover:shadow-sm transition-shadow"> <div className="flex justify-between items-center"> <p className="text-text-secondary font-label text-label">Livreurs actifs</p> <span className="text-text-main font-bold">8 / 12</span> </div> <div className="mt-md w-full bg-surface-container rounded-full h-2 overflow-hidden"> <div className="bg-primary h-full rounded-full" style={{width: '67%'}}></div> </div> <p className="mt-xs text-micro text-text-tertiary">67% de l'équipe opérationnelle</p> </div>  <div className="bg-bg-card p-lg rounded-lg border border-border-default hover:shadow-sm transition-shadow"> <p className="text-text-secondary font-label text-label">Taux de succès livraison</p> <div className="mt-sm"> <span className="font-h1 text-h1 text-success">94%</span> </div> <p className="mt-xs text-micro text-text-tertiary">Objectif zone : 95%</p> </div> </section>  <div className="grid grid-cols-1 lg:grid-cols-3 gap-xl">  <section className="lg:col-span-2 space-y-md"> <div className="flex items-center justify-between"> <h2 className="font-h2 text-h2 text-text-main">Commandes Actives</h2> <a className="text-primary font-label text-label hover:underline" href="#">Voir tout</a> </div> <div className="bg-bg-card rounded-lg border border-border-default overflow-hidden"> <div className="overflow-x-auto"> <table className="w-full text-left"> <thead className="bg-bg-secondary border-b border-border-default"> <tr> <th className="px-md py-4 text-micro uppercase tracking-wider text-text-secondary"># Commande</th> <th className="px-md py-4 text-micro uppercase tracking-wider text-text-secondary">Client</th> <th className="px-md py-4 text-micro uppercase tracking-wider text-text-secondary">Statut</th> <th className="px-md py-4 text-micro uppercase tracking-wider text-text-secondary">Livreur</th> <th className="px-md py-4 text-micro uppercase tracking-wider text-text-secondary">Actions</th> </tr> </thead> <tbody className="divide-y divide-border-default"><tr className="hover:bg-surface-container-low transition-colors"><td className="px-md py-4 font-label text-text-main font-semibold">#TKP-0842</td><td className="px-md py-4"><div className="flex flex-col"><span className="font-label text-text-main font-medium">Moussa Ibrahim</span><span className="text-micro text-text-tertiary">3 articles</span></div></td><td className="px-md py-4"><span className="px-3 py-1 bg-amber-light text-amber-text text-micro rounded-full font-bold">En préparation</span></td><td className="px-md py-4"><div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-success-light text-success flex items-center justify-center text-[10px] font-bold">KB</div><span className="text-secondary text-text-secondary">Koffi B.</span></div></td><td className="px-md py-4"><div className="flex items-center gap-2"><button data-onclick="openActionModal('#TKP-0842', 'Moussa Ibrahim', '3 articles (Riz, Huile, Épices)', 'Koffi B.', 'En préparation')" className="p-1.5 rounded-lg border border-border-default bg-white hover:bg-primary hover:text-white text-text-secondary transition-all flex items-center gap-1 text-micro font-medium" title="Gérer la commande"><MIcon name="visibility" className="text-[16px]" /><span className="">Gérer</span></button></div></td></tr><tr className="hover:bg-surface-container-low transition-colors"><td className="px-md py-4 font-label text-text-main font-semibold">#TKP-0843</td><td className="px-md py-4"><div className="flex flex-col"><span className="font-label text-text-main font-medium">Awa Diop</span><span className="text-micro text-text-tertiary">1 article</span></div></td><td className="px-md py-4"><span className="px-3 py-1 bg-blue-50 text-blue-600 text-micro rounded-full font-bold">En livraison</span></td><td className="px-md py-4"><div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-success-light text-success flex items-center justify-center text-[10px] font-bold">YA</div><span className="text-secondary text-text-secondary">Yao A.</span></div></td><td className="px-md py-4"><div className="flex items-center gap-2"><button data-onclick="openActionModal('#TKP-0843', 'Awa Diop', '1 article (Pagne Wax)', 'Yao A.', 'En livraison')" className="p-1.5 rounded-lg border border-border-default bg-white hover:bg-primary hover:text-white text-text-secondary transition-all flex items-center gap-1 text-micro font-medium" title="Gérer la commande"><MIcon name="visibility" className="text-[16px]" /><span className="">Gérer</span></button></div></td></tr><tr className="hover:bg-surface-container-low transition-colors"><td className="px-md py-4 font-label text-text-main font-semibold">#TKP-0844</td><td className="px-md py-4"><div className="flex flex-col"><span className="font-label text-text-main font-medium">Jean Sognon</span><span className="text-micro text-text-tertiary">5 articles</span></div></td><td className="px-md py-4"><span className="px-3 py-1 bg-gray-100 text-gray-600 text-micro rounded-full font-bold">En attente</span></td><td className="px-md py-4"><button data-onclick="openActionModal('#TKP-0844', 'Jean Sognon', '5 articles (Produits vivriers)', 'Non assigné', 'En attente')" className="px-3 py-1 bg-primary-tint text-primary-dark border border-primary-light rounded-md text-micro font-bold flex items-center gap-1 hover:bg-primary-light transition-all">Assigner<MIcon name="expand_more" className="text-[14px]" /></button></td><td className="px-md py-4"><div className="flex items-center gap-2"><button data-onclick="openActionModal('#TKP-0844', 'Jean Sognon', '5 articles (Produits vivriers)', 'Non assigné', 'En attente')" className="p-1.5 rounded-lg border border-border-default bg-white hover:bg-primary hover:text-white text-text-secondary transition-all flex items-center gap-1 text-micro font-medium" title="Gérer la commande"><MIcon name="visibility" className="text-[16px]" /><span className="">Gérer</span></button></div></td></tr><tr className="hover:bg-surface-container-low transition-colors"><td className="px-md py-4 font-label text-text-main font-semibold">#TKP-0845</td><td className="px-md py-4"><div className="flex flex-col"><span className="font-label text-text-main font-medium">Clara Dossou</span><span className="text-micro text-text-tertiary">2 articles</span></div></td><td className="px-md py-4"><span className="px-3 py-1 bg-amber-light text-amber-text text-micro rounded-full font-bold">En préparation</span></td><td className="px-md py-4"><div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-success-light text-success flex items-center justify-center text-[10px] font-bold">PS</div><span className="text-secondary text-text-secondary">Pierre S.</span></div></td><td className="px-md py-4"><div className="flex items-center gap-2"><button data-onclick="openActionModal('#TKP-0845', 'Clara Dossou', '2 articles (Savons, Huile de palme)', 'Pierre S.', 'En préparation')" className="p-1.5 rounded-lg border border-border-default bg-white hover:bg-primary hover:text-white text-text-secondary transition-all flex items-center gap-1 text-micro font-medium" title="Gérer la commande"><MIcon name="visibility" className="text-[16px]" /><span className="">Gérer</span></button></div></td></tr><tr className="hover:bg-surface-container-low transition-colors"><td className="px-md py-4 font-label text-text-main font-semibold">#TKP-0846</td><td className="px-md py-4"><div className="flex flex-col"><span className="font-label text-text-main font-medium">Ramatou L.</span><span className="text-micro text-text-tertiary">6 articles</span></div></td><td className="px-md py-4"><span className="px-3 py-1 bg-gray-100 text-gray-600 text-micro rounded-full font-bold">En attente</span></td><td className="px-md py-4"><button data-onclick="openActionModal('#TKP-0846', 'Ramatou L.', '6 articles (Légumes frais)', 'Non assigné', 'En attente')" className="px-3 py-1 bg-primary-tint text-primary-dark border border-primary-light rounded-md text-micro font-bold flex items-center gap-1 hover:bg-primary-light transition-all">Assigner<MIcon name="expand_more" className="text-[14px]" /></button></td><td className="px-md py-4"><div className="flex items-center gap-2"><button data-onclick="openActionModal('#TKP-0846', 'Ramatou L.', '6 articles (Légumes frais)', 'Non assigné', 'En attente')" className="p-1.5 rounded-lg border border-border-default bg-white hover:bg-primary hover:text-white text-text-secondary transition-all flex items-center gap-1 text-micro font-medium" title="Gérer la commande"><MIcon name="visibility" className="text-[16px]" /><span className="">Gérer</span></button></div></td></tr><tr className="hover:bg-surface-container-low transition-colors border-none"><td className="px-md py-4 font-label text-text-main font-semibold">#TKP-0847</td><td className="px-md py-4"><div className="flex flex-col"><span className="font-label text-text-main font-medium">Ousmane G.</span><span className="text-micro text-text-tertiary">1 article</span></div></td><td className="px-md py-4"><span className="px-3 py-1 bg-blue-50 text-blue-600 text-micro rounded-full font-bold">En livraison</span></td><td className="px-md py-4"><div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-success-light text-success flex items-center justify-center text-[10px] font-bold">KB</div><span className="text-secondary text-text-secondary">Koffi B.</span></div></td><td className="px-md py-4"><div className="flex items-center gap-2"><button data-onclick="openActionModal('#TKP-0847', 'Ousmane G.', '1 article (Colis Express Akpakpa)', 'Koffi B.', 'En livraison')" className="p-1.5 rounded-lg border border-border-default bg-white hover:bg-primary hover:text-white text-text-secondary transition-all flex items-center gap-1 text-micro font-medium" title="Gérer la commande"><MIcon name="visibility" className="text-[16px]" /><span className="">Gérer</span></button></div></td></tr></tbody> </table> </div> </div> </section>  <section className="space-y-md"> <div className="flex items-center justify-between"> <h2 className="font-h2 text-h2 text-text-main">Équipe Zone</h2> <a className="text-primary font-label text-label hover:underline" href="#">Gestion</a> </div> <div className="bg-bg-card rounded-lg border border-border-default divide-y divide-border-default">  <div className="p-lg hover:bg-surface-container-low transition-all"> <div className="flex items-start justify-between"> <div className="flex gap-3"> <div className="relative"> <div className="w-12 h-12 rounded-lg bg-success-light text-success flex items-center justify-center font-bold text-h2">KB</div> <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white bg-success"></div> </div> <div className="flex flex-col"> <span className="font-label text-text-main font-bold">Koffi B.</span> <span className="text-micro text-text-secondary">Secteur Cica-Mica</span> <div className="flex items-center text-amber-text mt-1"> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <MIcon name="star_half" className="text-[14px]" /> <span className="text-micro ml-1 font-bold">4.8</span> </div> </div> </div> <div className="text-right"> <span className="text-micro font-bold text-success uppercase">En ligne</span> <p className="text-micro text-text-tertiary mt-1">8 courses</p> </div> </div> </div>  <div className="p-lg hover:bg-surface-container-low transition-all"> <div className="flex items-start justify-between"> <div className="flex gap-3"> <div className="relative"> <div className="w-12 h-12 rounded-lg bg-success-light text-success flex items-center justify-center font-bold text-h2">YA</div> <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white bg-blue-500"></div> </div> <div className="flex flex-col"> <span className="font-label text-text-main font-bold">Yao A.</span> <span className="text-micro text-text-secondary">Secteur Pont</span> <div className="flex items-center text-amber-text mt-1"> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <span className="text-micro ml-1 font-bold">5.0</span> </div> </div> </div> <div className="text-right"> <span className="text-micro font-bold text-blue-600 uppercase">En course</span> <p className="text-micro text-text-tertiary mt-1">12 courses</p> </div> </div> </div>  <div className="p-lg hover:bg-surface-container-low transition-all"> <div className="flex items-start justify-between"> <div className="flex gap-3"> <div className="relative"> <div className="w-12 h-12 rounded-lg bg-success-light text-success flex items-center justify-center font-bold text-h2">PS</div> <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white bg-success"></div> </div> <div className="flex flex-col"> <span className="font-label text-text-main font-bold">Pierre S.</span> <span className="text-micro text-text-secondary">Akpakpa Centre</span> <div className="flex items-center text-amber-text mt-1"> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <span className="text-micro ml-1 font-bold">3.2</span> </div> </div> </div> <div className="text-right"> <span className="text-micro font-bold text-success uppercase">En ligne</span> <p className="text-micro text-text-tertiary mt-1">5 courses</p> </div> </div> </div>  <div className="p-lg hover:bg-surface-container-low transition-all"> <div className="flex items-start justify-between"> <div className="flex gap-3"> <div className="relative"> <div className="w-12 h-12 rounded-lg bg-success-light text-success flex items-center justify-center font-bold text-h2 opacity-50">DM</div> <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white bg-gray-400"></div> </div> <div className="flex flex-col opacity-50"> <span className="font-label text-text-main font-bold">Djidjo M.</span> <span className="text-micro text-text-secondary">Secteur Marché</span> <div className="flex items-center text-amber-text mt-1"> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <MIcon name="star" className="text-[14px]" /> <span className="text-micro ml-1 font-bold">4.0</span> </div> </div> </div> <div className="text-right"> <span className="text-micro font-bold text-text-tertiary uppercase">Hors ligne</span> <p className="text-micro text-text-tertiary mt-1">0 courses</p> </div> </div> </div> </div> </section> </div> </div>  <button className="fixed bottom-lg right-lg w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary-hover transition-transform active:scale-95 z-[60]"> <MIcon name="add" className="text-[28px]" /> </button> <div id="action-modal" className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 transition-all duration-200 hidden"><div className="bg-white rounded-xl shadow-2xl max-w-[512px] w-full overflow-hidden border border-border-default flex flex-col"><div className="px-6 py-4 border-b border-border-default flex items-center justify-between bg-bg-secondary"><div className="flex items-center gap-2"><MIcon name="tune" className="text-primary text-[24px]" /><div><h3 className="font-h2 text-[18px] text-text-main font-bold" id="modal-order-id">#TKP-0000</h3><p className="text-micro text-text-secondary">Gestion rapide par le Manager de zone</p></div></div><button data-onclick="closeActionModal()" className="w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:text-text-main hover:bg-gray-200 transition-colors"><MIcon name="close" className="text-[20px]" /></button></div><div className="p-6 space-y-4"><div className="grid grid-cols-2 gap-3 p-3 bg-bg-app rounded-lg border border-border-default text-secondary"><div><span className="text-micro uppercase text-text-tertiary block font-medium">Client</span><span className="font-bold text-text-main" id="modal-client-name">-</span></div><div><span className="text-micro uppercase text-text-tertiary block font-medium">Statut actuel</span><span className="font-bold text-primary" id="modal-order-status">-</span></div><div><span className="text-micro uppercase text-text-tertiary block font-medium">Livreur assigné</span><span className="font-bold text-text-main" id="modal-courier-name">-</span></div><div><span className="text-micro uppercase text-text-tertiary block font-medium">Articles</span><span className="font-bold text-text-main" id="modal-items-desc">-</span></div></div><div><p className="font-label font-bold text-text-main mb-2">Actions rapides du Manager</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-2"><button data-onclick="alert('Action : Réassignation livreur initiée pour ' + document.getElementById('modal-order-id').innerText); closeActionModal();" className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border-default bg-white hover:border-primary hover:bg-primary-tint text-left text-secondary transition-all"><MIcon name="swap_horiz" className="text-primary text-[20px]" /><span className="font-medium text-text-main text-[13px]">Réassigner livreur</span></button><button data-onclick="alert('Statut mis à jour avec succès'); closeActionModal();" className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border-default bg-white hover:border-primary hover:bg-primary-tint text-left text-secondary transition-all"><MIcon name="check_circle" className="text-success text-[20px]" /><span className="font-medium text-text-main text-[13px]">Changer statut</span></button><button data-onclick="alert('Appel du coursier / client en cours...'); closeActionModal();" className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border-default bg-white hover:border-primary hover:bg-primary-tint text-left text-secondary transition-all"><MIcon name="call" className="text-blue-600 text-[20px]" /><span className="font-medium text-text-main text-[13px]">Contacter livreur</span></button><button data-onclick="if(confirm('Voulez-vous vraiment annuler cette commande ?'))&#123; alert('Commande annulée'); closeActionModal(); &#125;" className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border-default bg-white hover:border-red-300 hover:bg-red-50 text-left text-secondary transition-all"><MIcon name="cancel" className="text-red-500 text-[20px]" /><span className="font-medium text-red-600 text-[13px]">Annuler commande</span></button></div></div></div><div className="px-6 py-3 border-t border-border-default bg-bg-secondary flex justify-end gap-2"><button data-onclick="closeActionModal()" className="px-4 py-2 border border-border-default rounded-lg bg-white text-text-main hover:bg-gray-100 font-label text-label transition-all">Fermer</button></div></div></div>
+      <div className="space-y-6">
+        {/* En-tête */}
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-h2 font-h2 font-bold">Tableau de bord — Zone Akpakpa</h1>
+            <p className="text-text-secondary">Jeudi 12 juin · Cotonou</p>
+          </div>
+          <button type="button" className="btn btn-ghost gap-2">
+            <MIcon name="download" className="text-[18px]" />
+            Exporter le rapport
+          </button>
+        </div>
+
+        {/* KPI */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {KPIS.map((k) => (
+            <div key={k.label} className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+              <div className="flex items-center gap-2">
+                <MIcon name={k.icon} className="text-primary text-[20px]" />
+                <p className="text-label text-text-secondary">{k.label}</p>
+              </div>
+              <p className="mt-2 text-h1 font-h1 font-bold">
+                {k.value} {k.unit && <span className="text-label text-text-secondary">{k.unit}</span>}
+              </p>
+              {k.delta && (
+                <p className="mt-1 text-label font-semibold text-success">
+                  <MIcon name="trending_up" className="align-middle text-[16px]" /> {k.delta}
+                </p>
+              )}
+              {k.hint && <p className="mt-1 text-label text-text-secondary">{k.hint}</p>}
+            </div>
+          ))}
+        </div>
+
+        {/* Commandes actives */}
+        <div className="overflow-hidden rounded-lg border border-border-default bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-border-default px-lg py-4">
+            <h2 className="text-h3 font-h3 font-bold">Commandes Actives</h2>
+            <Link to="/manager/commandes" className="text-label font-semibold text-primary hover:underline">
+              Voir tout
+            </Link>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-label">
+              <thead>
+                <tr className="bg-bg-secondary text-left text-text-secondary">
+                  <th className="px-lg py-3 font-semibold"># Commande</th>
+                  <th className="px-lg py-3 font-semibold">Client</th>
+                  <th className="px-lg py-3 font-semibold">Statut</th>
+                  <th className="px-lg py-3 font-semibold">Livreur</th>
+                  <th className="px-lg py-3 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ROWS.map((r) => (
+                  <tr key={r.id} className="border-t border-border-default">
+                    <td className="px-lg py-3 font-semibold">{r.id}</td>
+                    <td className="px-lg py-3">
+                      <p className="font-semibold">{r.client}</p>
+                      <p className="text-text-secondary">{r.articles}</p>
+                    </td>
+                    <td className="px-lg py-3">
+                      <span className={`rounded-full px-2.5 py-1 text-overline font-semibold ${STATUT_CLASS[r.statut]}`}>
+                        {r.statut}
+                      </span>
+                    </td>
+                    <td className="px-lg py-3">
+                      {r.livreur ? (
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-tint text-overline font-bold text-primary">
+                            {r.init}
+                          </span>
+                          {r.livreur}
+                        </div>
+                      ) : (
+                        <button type="button" className="flex items-center gap-1 font-semibold text-primary">
+                          Assigner
+                          <MIcon name="expand_more" className="text-[16px]" />
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-lg py-3">
+                      <button type="button" className="flex items-center gap-1 font-semibold text-tertiary hover:underline">
+                        <MIcon name="visibility" className="text-[16px]" />
+                        Gérer
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </ManagerLayout>
   );
 }

@@ -1,59 +1,239 @@
-import { useDesignScript } from '../../utils/designRuntime';
-import DESIGN_SCRIPT from './_scripts/ManagerEquipePage';
+import { useMemo, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
 
-const DESIGN_CSS = `
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-            vertical-align: middle;
-        }
-        .scale-97:active {
-            transform: scale(0.97);
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #E5E7EB;
-            border-radius: 10px;
-        }
-    `;
+type Livreur = {
+  nom: string; init: string; zone: string; statut: 'En ligne' | 'En course' | 'Hors ligne';
+  courses: number; note: string; succes: string; badge?: string;
+};
 
-/**
- * ManagerEquipePage — copie conforme statique du design Stitch (code.html).
- * Interactions : script du design exécuté via useDesignScript (comportement copié).
- */
+const LIVREURS: Livreur[] = [
+  { nom: 'Kofi B.', init: 'KB', zone: 'Marché', statut: 'En course', courses: 6, note: '4.8', succes: '96% succès' },
+  { nom: 'Yao A.', init: 'YA', zone: 'Akpakpa', statut: 'En ligne', courses: 12, note: '5.0', succes: '100% succès' },
+  { nom: 'Djidjo M.', init: 'DM', zone: 'Cadjehoun', statut: 'Hors ligne', courses: 0, note: '4.0', succes: '88% succès', badge: 'Nouveau Livreur' },
+];
+
+const STATUSES = ['Tous les statuts', 'En ligne', 'En course', 'Hors ligne'];
+const ZONES = ['Toutes les zones', 'Akpakpa', 'Cadjehoun', 'Marché'];
+
+const STATUT_CLASS: Record<string, string> = {
+  'En ligne': 'bg-success-container text-on-surface',
+  'En course': 'bg-tertiary-container/20 text-tertiary',
+  'Hors ligne': 'bg-bg-secondary text-text-secondary',
+};
+
 export default function ManagerEquipePage() {
-  useDesignScript(DESIGN_SCRIPT);
+  const [statut, setStatut] = useState(STATUSES[0]);
+  const [zone, setZone] = useState(ZONES[0]);
+  const [ajout, setAjout] = useState(false);
+  const [etape, setEtape] = useState(1);
+
+  const livs = useMemo(
+    () =>
+      LIVREURS.filter(
+        (l) =>
+          (statut === STATUSES[0] || l.statut === statut) &&
+          (zone === ZONES[0] || l.zone === zone),
+      ),
+    [statut, zone],
+  );
+
+  const ouvrirAjout = () => {
+    setEtape(1);
+    setAjout(true);
+  };
 
   return (
     <ManagerLayout currentPath="/manager/equipe">
-      <style>{DESIGN_CSS}</style>
-  <header className="sticky top-0 z-10 flex justify-between items-center h-[52px] px-lg w-full bg-white dark:bg-surface border-b border-border-default dark:border-outline backdrop-blur-md bg-opacity-90"> <div className="flex items-center gap-md"> <div className="relative"> <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-text-tertiary"> <MIcon name="search" className="!text-[18px]" /> </span> <input className="bg-bg-secondary border-none rounded-full py-1.5 pl-10 pr-4 text-secondary font-secondary focus:ring-1 focus:ring-primary-container w-64" placeholder="Rechercher..." type="text" /> </div> </div> <div className="flex items-center gap-md"> <button className="text-text-secondary hover:text-primary transition-colors relative"> <MIcon name="notifications" /> <span className="absolute top-0 right-0 w-2 h-2 bg-primary-container rounded-full border border-white"></span> </button> <div className="flex items-center gap-xs"> <span className="text-label font-label text-text-main hidden md:block">Manager Akpakpa</span> <div className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden border border-outline-variant"> <MIcon name="account_circle" className="text-on-surface-variant" /> </div> </div> </div> </header>  <div className="p-lg max-w-[1200px] mx-auto">  <div className="flex flex-col md:flex-row md:items-end justify-between gap-md mb-xl"> <div> <h2 className="text-h1 font-h1 text-on-surface">Mon équipe — Zone Akpakpa</h2> <div className="flex items-center gap-sm mt-xs"> <span className="text-secondary font-secondary flex items-center gap-xs"> <span className="w-2 h-2 bg-text-tertiary rounded-full"></span> 12 livreurs
-                            </span> <span className="text-secondary font-secondary flex items-center gap-xs"> <span className="w-2 h-2 bg-success rounded-full"></span> 8 actifs
-                            </span> <span className="text-secondary font-secondary flex items-center gap-xs"> <span className="w-2 h-2 bg-text-tertiary/40 rounded-full"></span> 4 hors ligne
-                            </span> </div> </div> <button className="bg-primary-container hover:bg-primary-hover text-white font-label text-label py-3 px-lg rounded-[10px] flex items-center gap-sm transition-transform scale-97 shadow-md" data-onclick="toggleModal()"> <MIcon name="person_add" className="!text-[20px]" />
-                        Ajouter un livreur
-                    </button> </div>  <div className="flex flex-wrap items-center gap-md mb-lg"> <div className="flex-1 min-w-[280px]"> <div className="relative group"> <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-text-tertiary group-focus-within:text-primary transition-colors"> <MIcon name="search" /> </span> <input className="w-full bg-white border border-border-default rounded-[10px] py-2.5 pl-10 pr-4 text-body font-body focus:ring-[3px] focus:ring-primary-container/15 focus:border-primary-container outline-none transition-all" placeholder="Rechercher par nom..." type="text" /> </div> </div> <div className="w-full md:w-48"> <select className="w-full bg-white border border-border-default rounded-[10px] py-2.5 px-4 text-body font-body focus:ring-[3px] focus:ring-primary-container/15 focus:border-primary-container outline-none appearance-none cursor-pointer"> <option value="">Tous les statuts</option> <option value="online">En ligne</option> <option value="delivery">En course</option> <option value="offline">Hors ligne</option> </select> </div> <div className="w-full md:w-48"> <select className="w-full bg-white border border-border-default rounded-[10px] py-2.5 px-4 text-body font-body focus:ring-[3px] focus:ring-primary-container/15 focus:border-primary-container outline-none appearance-none cursor-pointer"> <option value="">Toutes les zones</option> <option value="akpakpa">Akpakpa</option> <option value="cadjehoun">Cadjehoun</option> <option value="marche">Marché</option> </select> </div> </div>  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">  <div className="bg-white rounded-[14px] border border-border-default p-lg hover:shadow-lg transition-shadow group"> <div className="flex justify-between items-start mb-md"> <div className="flex items-center gap-md"> <div className="w-12 h-12 rounded-full bg-success-light text-success-dark font-bold flex items-center justify-center text-h3">KB</div> <div> <h4 className="text-h3 font-h3 text-on-surface">Kofi B.</h4> <p className="text-secondary font-secondary text-text-secondary">Cadjehoun</p> </div> </div> <span className="inline-flex items-center px-3 py-1 rounded-full bg-success-light text-success-dark text-micro font-micro border border-success/20"> <span className="w-1.5 h-1.5 rounded-full bg-success mr-1.5"></span> En ligne
-                            </span> </div> <div className="space-y-sm mb-lg"> <div className="flex justify-between text-secondary font-secondary"> <span className="text-text-tertiary">Courses aujourd'hui</span> <span className="text-on-surface font-medium">6 courses</span> </div> <div className="w-full bg-bg-secondary h-2 rounded-full overflow-hidden"> <div className="bg-primary-container h-full rounded-full transition-all duration-1000" style={{width: '75%'}}></div> </div> <div className="flex items-center justify-between mt-sm"> <div className="flex items-center gap-1 text-amber-text font-bold text-label"> <MIcon name="star" className="!text-[16px] text-amber-hover" />
-                                    4.8
-                                </div> <div className="text-micro font-micro text-text-tertiary">96% succès</div> </div> </div> <div className="flex items-center gap-sm pt-md border-t border-border-default"> <button className="flex-1 py-2 px-3 rounded-lg bg-bg-secondary text-text-main text-label font-label hover:bg-border-default transition-colors">Voir les courses</button> <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-primary/20 text-primary hover:bg-primary-tint transition-colors"> <MIcon name="edit" className="!text-[18px]" /> </button> <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-info/20 text-info hover:bg-info-light transition-colors"> <MIcon name="call" className="!text-[18px]" /> </button> </div> </div>  <div className="bg-white rounded-[14px] border border-border-default p-lg hover:shadow-lg transition-shadow group"> <div className="flex justify-between items-start mb-md"> <div className="flex items-center gap-md"> <div className="w-12 h-12 rounded-full bg-info-light text-info-dark font-bold flex items-center justify-center text-h3">YA</div> <div> <h4 className="text-h3 font-h3 text-on-surface">Yao A.</h4> <p className="text-secondary font-secondary text-text-secondary">Akpakpa</p> </div> </div> <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-light text-amber-text text-micro font-micro border border-amber-hover/20"> <span className="w-1.5 h-1.5 rounded-full bg-amber-hover mr-1.5"></span> En course
-                            </span> </div> <div className="space-y-sm mb-lg"> <div className="flex justify-between text-secondary font-secondary"> <span className="text-text-tertiary">Courses aujourd'hui</span> <span className="text-on-surface font-medium">12 courses</span> </div> <div className="w-full bg-bg-secondary h-2 rounded-full overflow-hidden"> <div className="bg-primary-container h-full rounded-full" style={{width: '100%'}}></div> </div> <div className="flex items-center justify-between mt-sm"> <div className="flex items-center gap-1 text-amber-text font-bold text-label"> <MIcon name="star" className="!text-[16px] text-amber-hover" />
-                                    5.0
-                                </div> <div className="text-micro font-micro text-text-tertiary">100% succès</div> </div> </div> <div className="flex items-center gap-sm pt-md border-t border-border-default"> <button className="flex-1 py-2 px-3 rounded-lg bg-bg-secondary text-text-main text-label font-label hover:bg-border-default transition-colors">Voir les courses</button> <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-primary/20 text-primary hover:bg-primary-tint transition-colors"> <MIcon name="edit" className="!text-[18px]" /> </button> <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-info/20 text-info hover:bg-info-light transition-colors"> <MIcon name="call" className="!text-[18px]" /> </button> </div> </div>  <div className="bg-white rounded-[14px] border border-border-default p-lg hover:shadow-lg transition-shadow group"> <div className="flex justify-between items-start mb-md"> <div className="flex items-center gap-md"> <div className="w-12 h-12 rounded-full bg-surface-container-highest text-text-tertiary font-bold flex items-center justify-center text-h3">DM</div> <div> <h4 className="text-h3 font-h3 text-on-surface">Djidjo M.</h4> <p className="text-secondary font-secondary text-text-secondary">Marché</p> </div> </div> <span className="inline-flex items-center px-3 py-1 rounded-full bg-bg-secondary text-text-tertiary text-micro font-micro border border-border-default"> <span className="w-1.5 h-1.5 rounded-full bg-text-tertiary mr-1.5"></span> Hors ligne
-                            </span> </div> <div className="space-y-sm mb-lg"> <div className="flex justify-between text-secondary font-secondary"> <span className="text-text-tertiary">Courses aujourd'hui</span> <span className="text-on-surface font-medium">0 courses</span> </div> <div className="w-full bg-bg-secondary h-2 rounded-full overflow-hidden"> <div className="bg-primary-container h-full rounded-full" style={{width: '0%'}}></div> </div> <div className="flex items-center justify-between mt-sm"> <div className="flex items-center gap-1 text-text-tertiary font-bold text-label"> <MIcon name="star" className="!text-[16px] text-text-tertiary" />
-                                    4.0
-                                </div> <div className="text-micro font-micro text-text-tertiary">88% succès</div> </div> </div> <div className="flex items-center gap-sm pt-md border-t border-border-default"> <button className="flex-1 py-2 px-3 rounded-lg bg-bg-secondary text-text-main text-label font-label hover:bg-border-default transition-colors">Voir les courses</button> <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-primary/20 text-primary hover:bg-primary-tint transition-colors"> <MIcon name="edit" className="!text-[18px]" /> </button> <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-info/20 text-info hover:bg-info-light transition-colors"> <MIcon name="call" className="!text-[18px]" /> </button> </div> </div> </div> </div>  <div className="fixed inset-0 z-50 flex items-center justify-center bg-on-background/40 backdrop-blur-sm p-lg transition-opacity duration-300 opacity-100" id="addRiderModal" data-onclick="if(event.target === this) &#123; toggleModal(); &#125;"><div className="bg-white w-full max-w-[576px] rounded-[14px] shadow-2xl border-2 border-primary-container overflow-hidden transition-transform duration-300 translate-y-8 max-h-[90vh] flex flex-col" data-onclick="event.stopPropagation()"> <div className="flex justify-between items-center px-lg py-md border-b border-border-default"> <div> <h3 className="text-h3 font-h3 text-on-surface font-bold">Nouveau Livreur</h3> <p className="text-secondary font-secondary text-text-secondary mt-0.5">Enregistrement et vérification de la flotte</p> </div> <button type="button" className="text-text-tertiary hover:text-error transition-colors p-1 rounded-lg hover:bg-bg-secondary" data-onclick="if(window.goToStep) window.goToStep(1); toggleModal();"> <MIcon name="close" /> </button> </div>  <div className="px-lg pt-md pb-sm bg-bg-secondary border-b border-border-default"> <div className="flex items-center justify-between">  <div className="flex items-center gap-sm" id="step1-indicator"> <div id="step1-badge" className="w-8 h-8 rounded-full bg-primary-container text-white font-bold text-label flex items-center justify-center shadow-sm">
-          1
-        </div> <div> <p className="text-label font-label font-bold text-on-surface" id="step1-title">Informations générales</p> <p className="text-micro font-micro text-text-secondary">Profil &amp; contact</p> </div> </div>  <div className="flex-1 h-0.5 mx-4 bg-border-default relative" id="stepper-line"> <div className="absolute left-0 top-0 h-full bg-primary-container transition-all duration-300" id="stepper-progress" style={{width: '0%'}}></div> </div>  <div className="flex items-center gap-sm opacity-60" id="step2-indicator"> <div id="step2-badge" className="w-8 h-8 rounded-full bg-border-default text-text-secondary font-bold text-label flex items-center justify-center">
-          2
-        </div> <div> <p className="text-label font-label font-medium text-text-secondary" id="step2-title">Documents &amp; Véhicule</p> <p className="text-micro font-micro text-text-secondary">CIP, permis &amp; plaque</p> </div> </div> </div> </div>  <div className="p-lg overflow-y-auto custom-scrollbar flex-1">  <div id="step1-panel" className="space-y-md"> <div className="space-y-xs"> <label className="text-label font-label text-text-secondary ml-1 font-medium">Nom complet <span className="text-[#f97316]">*</span></label> <input id="rider-name" className="w-full bg-white border border-border-default rounded-[10px] py-2.5 px-4 text-body font-body focus:ring-[3px] focus:ring-primary-container/15 focus:border-primary-container outline-none transition-all" placeholder="Ex: Koffi Mensah Dossou" type="text" required={true} /> </div> <div className="grid grid-cols-1 md:grid-cols-2 gap-md"> <div className="space-y-xs"> <label className="text-label font-label text-text-secondary ml-1 font-medium">Téléphone (Bénin) <span className="text-[#f97316]">*</span></label> <div className="relative"> <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-text-tertiary text-body font-medium">+229</span> <input id="rider-phone" className="w-full bg-white border border-border-default rounded-[10px] py-2.5 pl-14 pr-4 text-body font-body focus:ring-[3px] focus:ring-primary-container/15 focus:border-primary-container outline-none transition-all" placeholder="97 00 00 00" type="tel" required={true} /> </div> </div> <div className="space-y-xs"> <label className="text-label font-label text-text-secondary ml-1 font-medium">Email (Optionnel)</label> <input className="w-full bg-white border border-border-default rounded-[10px] py-2.5 px-4 text-body font-body focus:ring-[3px] focus:ring-primary-container/15 focus:border-primary-container outline-none transition-all" placeholder="livreur@exemple.bj" type="email" /> </div> </div> <div className="grid grid-cols-1 md:grid-cols-2 gap-md"> <div className="space-y-xs"> <label className="text-label font-label text-text-secondary ml-1 font-medium">Zone assignée <span className="text-[#f97316]">*</span></label> <div className="relative"> <select className="w-full bg-white border border-border-default rounded-[10px] py-2.5 px-4 text-body font-body focus:ring-[3px] focus:ring-primary-container/15 focus:border-primary-container outline-none appearance-none cursor-pointer"> <option value="akpakpa" selected={true}>Zone Akpakpa</option> <option value="cadjehoun">Zone Cadjehoun</option> <option value="marche">Zone Marché Dantokpa</option> <option value="fidjrosse">Zone Fidjrossè / Haie Vive</option> </select> <MIcon name="expand_more" className="absolute right-3 top-3 text-text-tertiary pointer-events-none !text-[18px]" /> </div> </div> <div className="space-y-xs"> <label className="text-label font-label text-text-secondary ml-1 font-medium">Expérience de livraison</label> <div className="relative"> <select className="w-full bg-white border border-border-default rounded-[10px] py-2.5 px-4 text-body font-body focus:ring-[3px] focus:ring-primary-container/15 focus:border-primary-container outline-none appearance-none cursor-pointer"> <option value="beginner">Débutant (&lt; 1 an)</option> <option value="intermediate" selected={true}>Intermédiaire (1 à 3 ans)</option> <option value="expert">Expert (&gt; 3 ans)</option> </select> <MIcon name="expand_more" className="absolute right-3 top-3 text-text-tertiary pointer-events-none !text-[18px]" /> </div> </div> </div> </div>  <div id="step2-panel" className="space-y-md hidden"> <div className="p-md rounded-[10px] bg-primary-tint border border-primary/20 flex items-start gap-sm"> <MIcon name="verified_user" className="text-[#f97316] !text-[20px] mt-0.5" /> <p className="text-secondary font-secondary text-on-surface">Conformément aux normes ANIP / Ministère des Transports du Bénin, renseignez les pièces officielles du livreur.</p> </div> <div className="space-y-xs"> <label className="text-label font-label text-text-secondary ml-1 font-medium">Numéro CIP / NPI (Certificat d'Identification Personnelle) <span className="text-[#f97316]">*</span></label> <input className="w-full bg-white border border-border-default rounded-[10px] py-2.5 px-4 text-body font-body focus:ring-[3px] focus:ring-primary-container/15 focus:border-primary-container outline-none transition-all tracking-wider" placeholder="Ex: 1029 4829 1048" type="text" /> </div> <div className="grid grid-cols-1 md:grid-cols-2 gap-md"> <div className="space-y-xs"> <label className="text-label font-label text-text-secondary ml-1 font-medium">Type de véhicule <span className="text-[#f97316]">*</span></label> <div className="relative"> <select className="w-full bg-white border border-border-default rounded-[10px] py-2.5 px-4 text-body font-body focus:ring-[3px] focus:ring-primary-container/15 focus:border-primary-container outline-none appearance-none cursor-pointer"> <option value="moto_taxi">Moto-Taxi Zémidjan</option> <option value="moto_perso" selected={true}>Moto personnelle</option> <option value="tricycle">Tricycle utilitaire</option> <option value="velo">Vélo / Vélo cargo</option> </select> <MIcon name="expand_more" className="absolute right-3 top-3 text-text-tertiary pointer-events-none !text-[18px]" /> </div> </div> <div className="space-y-xs"> <label className="text-label font-label text-text-secondary ml-1 font-medium">Numéro d'immatriculation / Plaque <span className="text-[#f97316]">*</span></label> <input className="w-full bg-white border border-border-default rounded-[10px] py-2.5 px-4 text-body font-body focus:ring-[3px] focus:ring-primary-container/15 focus:border-primary-container outline-none transition-all uppercase" placeholder="Ex: AY 4829 RB" type="text" /> </div> </div> <div className="space-y-xs"> <label className="text-label font-label text-text-secondary ml-1 font-medium">Numéro de Permis de conduire (Catégorie A1/A)</label> <input className="w-full bg-white border border-border-default rounded-[10px] py-2.5 px-4 text-body font-body focus:ring-[3px] focus:ring-primary-container/15 focus:border-primary-container outline-none transition-all" placeholder="Ex: BEN-2021-99482" type="text" /> </div>  <div className="space-y-xs"> <label className="text-label font-label text-text-secondary ml-1 font-medium">Pièce CIP / Permis scanné (Recto/Verso)</label> <div className="border-2 border-dashed border-border-default hover:border-primary-container rounded-[10px] p-md text-center bg-bg-secondary cursor-pointer transition-colors group"> <MIcon name="cloud_upload" className="text-text-tertiary group-hover:text-primary !text-[28px]" /> <p className="text-label font-label text-text-main font-medium mt-1">Glissez vos documents ici ou <span className="text-[#f97316] underline">parcourir</span></p> <p className="text-micro font-micro text-text-tertiary mt-0.5">PNG, JPG ou PDF jusqu'à 5 Mo</p> </div> </div>  <label className="flex items-start gap-sm pt-xs cursor-pointer select-none"> <input type="checkbox" id="certify-checkbox" className="mt-0.5 rounded border-border-default text-[#f97316] focus:ring-primary-container cursor-pointer" /> <span className="text-secondary font-secondary text-text-secondary leading-tight">
-          Je certifie sur l'honneur l'exactitude et l'authenticité des pièces d'identité et documents de transport fournis.
-        </span> </label> </div> </div>  <div className="p-lg border-t border-border-default bg-white flex items-center justify-between gap-md">  <div id="step1-buttons" className="flex items-center justify-between w-full gap-md"> <button type="button" className="flex-1 py-3 px-md border border-border-default rounded-[10px] text-text-secondary font-label text-label hover:bg-bg-secondary transition-colors scale-97" data-onclick="if(window.goToStep) window.goToStep(1); toggleModal();">Annuler</button> <button type="button" className="flex-1 py-3 px-md bg-primary-container text-white rounded-[10px] font-label text-label hover:bg-primary-hover shadow-md transition-all scale-97 active:shadow-sm flex items-center justify-center gap-xs font-semibold" data-onclick="if(window.goToStep) window.goToStep(1); toggleModal();"> <span className="">Continuer vers Étape 2</span> <MIcon name="arrow_forward" className="!text-[18px]" /> </button> </div>  <div id="step2-buttons" className="flex items-center justify-between w-full gap-md hidden"> <button type="button" className="py-3 px-md border border-border-default rounded-[10px] text-text-secondary font-label text-label hover:bg-bg-secondary transition-colors scale-97 flex items-center gap-xs" data-onclick="if(window.goToStep) window.goToStep(1); toggleModal();"> <MIcon name="arrow_back" className="!text-[18px]" /> <span className="">Retour</span> </button> <button type="button" className="flex-1 py-3 px-md bg-primary-container text-white rounded-[10px] font-label text-label hover:bg-primary-hover shadow-md transition-all scale-97 active:shadow-sm flex items-center justify-center gap-xs font-semibold" data-onclick="if(window.goToStep) window.goToStep(1); toggleModal();"> <MIcon name="check_circle" className="!text-[18px]" /> <span className="">Finaliser et enregistrer le livreur</span> </button> </div> </div> </div> </div>  
+      <div className="space-y-6">
+        {/* En-tête */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-h2 font-h2 font-bold">Mon équipe — Zone Akpakpa</h1>
+            <div className="mt-2 flex flex-wrap gap-2 text-label">
+              <span className="rounded-full bg-bg-secondary px-2.5 py-1 font-semibold">12 livreurs</span>
+              <span className="rounded-full bg-success-container px-2.5 py-1 font-semibold">8 actifs</span>
+              <span className="rounded-full bg-bg-secondary px-2.5 py-1 font-semibold">4 hors ligne</span>
+            </div>
+          </div>
+          <button type="button" className="btn btn-primary gap-2" onClick={ouvrirAjout}>
+            <MIcon name="person_add" className="text-[18px]" />
+            Ajouter un livreur
+          </button>
+        </div>
+
+        {/* Filtres */}
+        <div className="flex flex-wrap gap-2">
+          <select
+            value={statut}
+            onChange={(e) => setStatut(e.target.value)}
+            className="rounded-lg border border-border-default bg-white px-3 py-2 text-label"
+          >
+            {STATUSES.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+          <select
+            value={zone}
+            onChange={(e) => setZone(e.target.value)}
+            className="rounded-lg border border-border-default bg-white px-3 py-2 text-label"
+          >
+            {ZONES.map((z) => (
+              <option key={z}>{z}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Cartes livreurs */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {livs.map((l) => (
+            <div key={l.nom} className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+              <div className="flex items-center gap-3">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-tint text-h3 font-bold text-primary">
+                  {l.init}
+                </span>
+                <div className="flex-1">
+                  <p className="text-h3 font-h3 font-bold">{l.nom}</p>
+                  <p className="text-label text-text-secondary">Zone {l.zone}</p>
+                </div>
+                <span className={`rounded-full px-2.5 py-1 text-overline font-semibold ${STATUT_CLASS[l.statut]}`}>
+                  {l.statut}
+                </span>
+              </div>
+              {l.badge && (
+                <p className="mt-3 rounded-lg bg-primary-tint px-3 py-1.5 text-label font-semibold text-primary">{l.badge}</p>
+              )}
+              <div className="mt-4 flex items-center justify-between text-label">
+                <div>
+                  <p className="text-text-secondary">Courses aujourd’hui</p>
+                  <p className="font-semibold">{l.courses} courses</p>
+                </div>
+                <div className="text-right">
+                  <p className="flex items-center gap-1 font-semibold">
+                    <MIcon name="star" className="text-[16px] text-primary" />
+                    {l.note}
+                  </p>
+                  <p className="text-text-secondary">{l.succes}</p>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center gap-2 border-t border-border-default pt-3">
+                <button type="button" className="flex-1 rounded-lg bg-primary-tint px-3 py-2 text-label font-semibold text-primary">
+                  Voir les courses
+                </button>
+                <button type="button" className="rounded-lg border border-border-default p-2 text-text-secondary hover:text-primary">
+                  <MIcon name="edit" className="text-[18px]" />
+                </button>
+                <a
+                  href="tel:+22997000000"
+                  className="rounded-lg border border-border-default p-2 text-text-secondary hover:text-primary"
+                >
+                  <MIcon name="call" className="text-[18px]" />
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Modale « Nouveau Livreur » (2 étapes) */}
+      {ajout && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setAjout(false)}>
+          <div
+            className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border-default p-4">
+              <div>
+                <h3 className="text-h3 font-h3 font-bold">Nouveau Livreur</h3>
+                <p className="text-label text-text-secondary">Enregistrement et vérification de la flotte</p>
+              </div>
+              <button type="button" onClick={() => setAjout(false)} className="p-1 text-text-secondary hover:text-on-surface">
+                <MIcon name="close" className="text-[20px]" />
+              </button>
+            </div>
+            {/* Étapes */}
+            <div className="flex gap-4 border-b border-border-default p-4 text-label">
+              {[
+                { n: 1, t: 'Informations générales', s: 'Profil & contact' },
+                { n: 2, t: 'Documents & Véhicule', s: 'CIP, permis & plaque' },
+              ].map((e) => (
+                <div key={e.n} className={`flex flex-1 items-center gap-2 ${etape === e.n ? 'text-primary' : 'text-text-tertiary'}`}>
+                  <span
+                    className={`flex h-7 w-7 items-center justify-center rounded-full font-bold ${
+                      etape >= e.n ? 'bg-primary text-white' : 'bg-bg-secondary'
+                    }`}
+                  >
+                    {e.n}
+                  </span>
+                  <div>
+                    <p className="font-semibold">{e.t}</p>
+                    <p className="text-text-secondary">{e.s}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex-1 space-y-3 overflow-y-auto p-4">
+              {etape === 1 ? (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-label text-text-secondary">Nom complet</label>
+                    <input type="text" className="w-full rounded-lg border border-border-default px-3 py-2 text-label" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-label text-text-secondary">Téléphone (Bénin)</label>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-lg bg-bg-secondary px-3 py-2 text-label">+229</span>
+                      <input type="text" className="flex-1 rounded-lg border border-border-default px-3 py-2 text-label" />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-label text-text-secondary">Email (Optionnel)</label>
+                    <input type="text" className="w-full rounded-lg border border-border-default px-3 py-2 text-label" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-label text-text-secondary">Zone assignée</label>
+                    <select className="w-full rounded-lg border border-border-default bg-white px-3 py-2 text-label">
+                      <option>Zone Akpakpa</option>
+                      <option>Zone Cadjehoun</option>
+                      <option>Zone Marché Dantokpa</option>
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {['CIP (pièce d’identité professionnelle)', 'Permis de conduire', 'Plaque du véhicule', 'Carte grise / attestation'].map(
+                    (f) => (
+                      <div key={f} className="space-y-1">
+                        <label className="text-label text-text-secondary">{f}</label>
+                        <input type="text" className="w-full rounded-lg border border-border-default px-3 py-2 text-label" />
+                      </div>
+                    ),
+                  )}
+                </>
+              )}
+            </div>
+            <div className="flex justify-between gap-2 border-t border-border-default p-4">
+              <button type="button" className="btn btn-ghost" onClick={() => setAjout(false)}>
+                Annuler
+              </button>
+              {etape === 1 ? (
+                <button type="button" className="btn btn-primary" onClick={() => setEtape(2)}>
+                  Étape suivante
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button type="button" className="btn btn-ghost" onClick={() => setEtape(1)}>
+                    Retour
+                  </button>
+                  <button type="button" className="btn btn-primary" onClick={() => setAjout(false)}>
+                    Enregistrer le livreur
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </ManagerLayout>
   );
 }

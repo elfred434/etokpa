@@ -1,115 +1,323 @@
-import { useDesignScript } from '../../utils/designRuntime';
-import DESIGN_SCRIPT from './_scripts/ManagerOrdersPage';
+import { useMemo, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
+import MIcon from '../../components/shared/MIcon';
 
-const DESIGN_CSS = `
-    .badge-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #F3F4F6;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #D1D5DB;
-      border-radius: 3px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #9CA3AF;
-    }
-    .clickable-row {
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .clickable-row:hover {
-      background-color: #FFF7ED;
-    }
-    .btn-action:active {
-      transform: scale(0.97);
-    }
-  `;
+type Cmd = {
+  id: string; heure: string; detail: string;
+  client: string; initC: string; tel: string;
+  marchand: string; etal: string;
+  livreur: string | null; initL: string; vehicule: string;
+  repere: string;
+  montant: string; paiement: string;
+  statut: string; action?: string;
+};
 
-/**
- * ManagerOrdersPage — copie conforme statique du design Stitch (code.html).
- * Interactions : script du design exécuté via useDesignScript (comportement copié).
- */
+const COMMANDES: Cmd[] = [
+  { id: '#TOK-2847', heure: '14:15', detail: '3 articles • Négocié', client: 'Kossi Ouédraogo', initC: 'KO', tel: '+229 97 12 45 80', marchand: 'Afi Mensah', etal: 'Dantokpa Hangar B-14', livreur: 'Jean Kouassi', initL: 'JK', vehicule: 'Moto #7492-BJ', repere: 'Face Pharmacie Akpakpa Centre', montant: '3 980 FCFA', paiement: 'MTN MoMo (Payé)', statut: 'En livraison' },
+  { id: '#TOK-2850', heure: '14:45', detail: '2 articles • Standard', client: 'Awa Mensah', initC: 'AM', tel: '+229 96 34 89 12', marchand: 'Blandine Gbaguidi', etal: 'Épices & Piments #C-2', livreur: null, initL: '', vehicule: '', repere: 'Carrefour Le Bélier, derrière le collège', montant: '5 100 FCFA', paiement: 'Moov Money (Payé)', statut: 'En attente', action: 'Assigner' },
+  { id: '#TOK-2845', heure: '14:02', detail: '4 articles • Pack Famille', client: 'Pascal Zinsou', initC: 'PZ', tel: '+229 61 78 90 23', marchand: 'Maman Chantal', etal: 'Ignames & Manioc Dantokpa', livreur: 'Boris Agossou', initL: 'BA', vehicule: 'Moto #4829-RB', repere: 'Hôpital de Zone Akpakpa, porte principale', montant: '12 400 FCFA', paiement: 'FedaPay CB (Payé)', statut: 'En préparation' },
+  { id: '#TOK-2839', heure: '13:10', detail: '1 article • Poissons frais', client: 'Fatima Salifou', initC: 'FS', tel: '+229 95 01 23 45', marchand: 'Pêcherie Cotonou Est', etal: 'Quai Dantokpa Pont', livreur: 'Salifou D.', initL: 'SD', vehicule: 'Moto #9120-BJ', repere: 'Immeuble NSIA Assurances, Akpakpa Cité Vie', montant: '7 800 FCFA', paiement: 'MTN MoMo (Livré 13:42)', statut: 'Livré' },
+  { id: '#TOK-2834', heure: '12:35', detail: '5 articles • Céréales', client: 'Marie Koné', initC: 'MK', tel: '+229 97 88 11 00', marchand: 'Dossou Grains & Farines', etal: 'Dantokpa Allée G', livreur: 'Jean Kouassi', initL: 'JK', vehicule: 'Moto #7492-BJ', repere: 'Pharmacie Saint-Charbel, face église catholique', montant: '6 250 FCFA', paiement: 'FedaPay (Payé)', statut: 'En livraison' },
+  { id: '#TOK-2828', heure: '11:15', detail: 'Rupture stock vendeur', client: 'Idriss Diallo', initC: 'ID', tel: '+229 66 54 32 10', marchand: 'Kouassi Légumes Bio', etal: 'Box #12 Dantokpa', livreur: null, initL: '', vehicule: '', repere: 'Carrefour Le Matin, Akpakpa Dodomè', montant: '4 500 FCFA', paiement: 'Remboursé MoMo', statut: 'Annulé' },
+  { id: '#TOK-2822', heure: '10:45', detail: '2 articles • Fruits locaux', client: 'Safi Alabi', initC: 'SA', tel: '+229 97 65 43 21', marchand: 'Verger du Sud', etal: 'Marché de fruits Akpakpa', livreur: 'Moussa Diallo', initL: 'MD', vehicule: 'Tricycle #8812-BJ', repere: 'Pharmacie Saint-Jean, Carrefour PK4', montant: '3 200 FCFA', paiement: 'MTN MoMo (Payé)', statut: 'En préparation' },
+];
+
+const ONGLETS = [
+  { label: 'Toutes', n: 24, statut: null },
+  { label: 'En attente', n: 3, statut: 'En attente' },
+  { label: 'En préparation', n: 5, statut: 'En préparation' },
+  { label: 'En livraison', n: 8, statut: 'En livraison' },
+  { label: 'Livrées', n: 6, statut: 'Livré' },
+  { label: 'Annulées', n: 2, statut: 'Annulé' },
+];
+
+const SECTEURS = ['Tous les sous-secteurs', 'Pont Dantokpa / Céréales', 'Akpakpa Dodomè', 'Akpakpa Cotonou Centre', 'Quartier Sèkandji'];
+
+const STATUT_CLASS: Record<string, string> = {
+  'En attente': 'bg-bg-secondary text-text-secondary',
+  'En préparation': 'bg-primary-tint text-primary',
+  'En livraison': 'bg-tertiary-container/20 text-tertiary',
+  'Livré': 'bg-success-container text-on-surface',
+  'Annulé': 'bg-error-container text-on-error-container',
+};
+
 export default function ManagerOrdersPage() {
-  useDesignScript(DESIGN_SCRIPT);
+  const [onglet, setOnglet] = useState<string | null>(null);
+  const [secteur, setSecteur] = useState(SECTEURS[0]);
+  const [selection, setSelection] = useState<Cmd | null>(null);
+  const [creation, setCreation] = useState(false);
+
+  const lignes = useMemo(
+    () => COMMANDES.filter((c) => !onglet || c.statut === onglet),
+    [onglet],
+  );
 
   return (
     <ManagerLayout currentPath="/manager/commandes">
-      <style>{DESIGN_CSS}</style>
-  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"> <div> <div className="flex items-center gap-2 mb-1"> <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-[#C2410C]">Supervision Opérationnelle</span> <span className="text-xs text-gray-400">•</span> <span className="text-xs text-gray-500 font-medium">Flux en direct - Marché Dantokpa &amp; Quartiers Akpakpa</span> </div> <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Supervision &amp; Gestion des Commandes</h1> <p className="text-sm text-gray-500 mt-0.5">Suivez le statut des paniers du marché, affectez les livreurs et contrôlez les livraisons en temps réel.</p> </div> <div className="flex items-center gap-3"> <button className="btn-action flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-[10px] text-sm font-medium transition-all shadow-xs"> <i className="ti ti-download text-base text-gray-500"></i> <span className="">Exporter le rapport</span> </button> <button data-onclick="openNewOrderModal()" className="btn-action flex items-center gap-2 px-4 py-2.5 bg-[#F97316] hover:bg-[#EA580C] text-white rounded-[10px] text-sm font-semibold transition-all shadow-sm shadow-orange-500/20"> <i className="ti ti-plus text-base"></i> <span className="">Créer une commande manuelle</span> </button> </div> </div>  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">  <div className="bg-white p-4 rounded-[14px] border border-gray-200/80 shadow-xs flex items-center justify-between"> <div> <span className="text-xs font-medium text-gray-500">Total Commandes (Aujourd'hui)</span> <div className="text-2xl font-bold text-gray-900 mt-1">42</div> <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 mt-1"> <i className="ti ti-trending-up text-xs"></i> +14% vs hier
-            </span> </div> <div className="w-12 h-12 rounded-xl bg-orange-50 text-[#F97316] flex items-center justify-center"> <i className="ti ti-shopping-cart text-2xl"></i> </div> </div>  <div className="bg-white p-4 rounded-[14px] border border-gray-200/80 shadow-xs flex items-center justify-between"> <div> <span className="text-xs font-medium text-gray-500">En cours de livraison</span> <div className="text-2xl font-bold text-[#F97316] mt-1">8</div> <span className="text-xs text-gray-500 mt-1 block">5 motos, 3 tricycles</span> </div> <div className="w-12 h-12 rounded-xl bg-orange-100/60 text-[#C2410C] flex items-center justify-center"> <i className="ti ti-motorbike text-2xl"></i> </div> </div>  <div className="bg-white p-4 rounded-[14px] border border-gray-200/80 shadow-xs flex items-center justify-between"> <div> <span className="text-xs font-medium text-gray-500">En attente d'affectation</span> <div className="text-2xl font-bold text-amber-600 mt-1">3</div> <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 mt-1"> <i className="ti ti-clock text-xs"></i> Priorité manager
-            </span> </div> <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center"> <i className="ti ti-user-exclamation text-2xl"></i> </div> </div>  <div className="bg-white p-4 rounded-[14px] border border-gray-200/80 shadow-xs flex items-center justify-between"> <div> <span className="text-xs font-medium text-gray-500">Volume Financier du Jour</span> <div className="text-2xl font-bold text-gray-900 mt-1">284 500 <span className="text-sm font-semibold text-gray-500">FCFA</span></div> <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 mt-1"> <i className="ti ti-shield-check text-xs"></i> 100% sécurisé FedaPay/MoMo
-            </span> </div> <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"> <i className="ti ti-coins text-2xl"></i> </div> </div> </div>  <div className="bg-white p-4 rounded-[14px] border border-gray-200 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">  <div className="relative flex-1 max-w-[448px]"> <i className="ti ti-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-base"></i> <input type="text" id="orderSearchInput" data-onkeyup="filterOrders()" placeholder="Rechercher par n° commande, client, livreur, point de repère..." className="w-full pl-10 pr-4 py-2 rounded-[10px] border border-gray-300 text-sm focus:outline-hidden focus:border-[#F97316] focus:ring-3 focus:ring-orange-500/15 transition-all" /> </div>  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 custom-scrollbar"> <button data-onclick="setStatusFilter('ALL', this)" className="status-tab-btn px-3 py-1.5 rounded-[8px] text-xs font-semibold bg-[#F97316] text-white transition-all">
-            Toutes (24)
-          </button> <button data-onclick="setStatusFilter('EN_ATTENTE', this)" className="status-tab-btn px-3 py-1.5 rounded-[8px] text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all">
-            En attente (3)
-          </button> <button data-onclick="setStatusFilter('EN_PREPARATION', this)" className="status-tab-btn px-3 py-1.5 rounded-[8px] text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all">
-            En préparation (5)
-          </button> <button data-onclick="setStatusFilter('EN_LIVRAISON', this)" className="status-tab-btn px-3 py-1.5 rounded-[8px] text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all">
-            En livraison (8)
-          </button> <button data-onclick="setStatusFilter('LIVRE', this)" className="status-tab-btn px-3 py-1.5 rounded-[8px] text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all">
-            Livrées (6)
-          </button> <button data-onclick="setStatusFilter('ANNULE', this)" className="status-tab-btn px-3 py-1.5 rounded-[8px] text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all">
-            Annulées (2)
-          </button> </div>  <div className="flex items-center gap-2"> <select className="py-2 px-3 border border-gray-300 rounded-[10px] text-xs text-gray-700 bg-white focus:outline-hidden focus:border-[#F97316]"> <option>Tous les sous-secteurs</option> <option>Pont Dantokpa / Céréales</option> <option>Akpakpa Dodomè</option> <option>Akpakpa Cotonou Centre</option> <option>Quartier Sèkandji</option> </select> </div> </div>  <div className="bg-white rounded-[14px] border border-gray-200 shadow-xs overflow-hidden"> <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between"> <div className="flex items-center gap-2"> <h2 className="text-base font-semibold text-gray-900">Liste des Commandes de la Zone</h2> <span className="text-xs text-gray-400">|</span> <span className="text-xs text-gray-500 font-medium"><i className="ti ti-pointer text-xs text-[#F97316]"></i> Cliquez sur une ligne pour afficher les détails complets</span> </div> <span className="text-xs text-gray-500">Affichage de <strong className="text-gray-900">7</strong> commandes actives</span> </div> <div className="overflow-x-auto"> <table className="w-full text-left border-collapse" id="ordersTable"> <thead> <tr className="bg-gray-50/80 border-b border-gray-200 text-[12px] font-semibold text-gray-600 uppercase tracking-wider"> <th className="py-3.5 px-6">Commande</th> <th className="py-3.5 px-6">Client &amp; Téléphone</th> <th className="py-3.5 px-6">Marchand / Étal</th> <th className="py-3.5 px-6">Livreur Assigné</th> <th className="py-3.5 px-6">Point de Repère</th> <th className="py-3.5 px-6">Montant</th> <th className="py-3.5 px-6">Statut</th> <th className="py-3.5 px-6 text-right">Actions</th> </tr> </thead> <tbody className="divide-y divide-gray-100 text-sm" id="tableBody">  <tr className="clickable-row group" data-onclick="openOrderModal('TOK-2847')"> <td className="py-4 px-6"> <div className="flex items-center gap-2"> <span className="font-bold text-[#F97316] group-hover:underline">#TOK-2847</span> <span className="text-[11px] text-gray-400">14:15</span> </div> <span className="text-[11px] text-gray-500">3 articles • Négocié</span> </td> <td className="py-4 px-6"> <div className="flex items-center gap-3"> <div className="w-8 h-8 rounded-full bg-orange-100 text-[#C2410C] font-semibold flex items-center justify-center text-xs shrink-0">
-                      KO
-                    </div> <div> <div className="font-medium text-gray-900">Kossi Ouédraogo</div> <div className="text-xs text-gray-500">+229 97 12 45 80</div> </div> </div> </td> <td className="py-4 px-6"> <div className="font-medium text-gray-900">Afi Mensah</div> <div className="text-xs text-gray-500">Dantokpa Hangar B-14</div> </td> <td className="py-4 px-6"> <div className="flex items-center gap-2"> <div className="w-7 h-7 rounded-full bg-emerald-100 text-[#065F46] font-semibold flex items-center justify-center text-xs shrink-0">
-                      JK
-                    </div> <div> <span className="font-medium text-gray-800 text-xs block">Jean Kouassi</span> <span className="text-[11px] text-gray-400">Moto #7492-BJ</span> </div> </div> </td> <td className="py-4 px-6"> <div className="text-xs font-medium text-gray-900">Face Pharmacie Akpakpa Centre</div> <div className="text-[11px] text-gray-500">Carrefour PK3</div> </td> <td className="py-4 px-6"> <div className="font-bold text-[#F97316]">3 980 FCFA</div> <div className="text-[11px] text-emerald-600 font-medium">MTN MoMo (Payé)</div> </td> <td className="py-4 px-6"> <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] text-xs font-medium bg-[#FFF7ED] text-[#9A3412] border border-[#FED7AA]"> <span className="badge-dot bg-[#F97316]"></span> En livraison
-                  </span> </td> <td className="py-4 px-6 text-right" data-onclick="event.stopPropagation()"> <div className="flex items-center justify-end gap-1.5"> <button data-onclick="openOrderModal('TOK-2847')" title="Voir détails" className="p-1.5 text-gray-500 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors"> <i className="ti ti-eye text-base"></i> </button> <button data-onclick="reassignRider('TOK-2847')" title="Changer livreur" className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"> <i className="ti ti-user-check text-base"></i> </button> </div> </td> </tr>  <tr className="clickable-row group bg-amber-50/20" data-onclick="openOrderModal('TOK-2850')"> <td className="py-4 px-6"> <div className="flex items-center gap-2"> <span className="font-bold text-[#F97316] group-hover:underline">#TOK-2850</span> <span className="text-[11px] text-amber-600 font-semibold">14:45</span> </div> <span className="text-[11px] text-gray-500">2 articles • Standard</span> </td> <td className="py-4 px-6"> <div className="flex items-center gap-3"> <div className="w-8 h-8 rounded-full bg-orange-100 text-[#C2410C] font-semibold flex items-center justify-center text-xs shrink-0">
-                      AM
-                    </div> <div> <div className="font-medium text-gray-900">Awa Mensah</div> <div className="text-xs text-gray-500">+229 96 34 89 12</div> </div> </div> </td> <td className="py-4 px-6"> <div className="font-medium text-gray-900">Blandine Gbaguidi</div> <div className="text-xs text-gray-500">Épices &amp; Piments #C-08</div> </td> <td className="py-4 px-6"> <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-lg font-medium border border-amber-300"> <i className="ti ti-alert-triangle text-xs"></i> Non assigné
-                  </span> </td> <td className="py-4 px-6"> <div className="text-xs font-medium text-gray-900">Carrefour Le Bélier</div> <div className="text-[11px] text-gray-500">Derrière le collège</div> </td> <td className="py-4 px-6"> <div className="font-bold text-[#F97316]">5 100 FCFA</div> <div className="text-[11px] text-emerald-600 font-medium">Moov Money (Payé)</div> </td> <td className="py-4 px-6"> <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] text-xs font-medium bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A]"> <span className="badge-dot bg-[#F59E0B]"></span> En attente
-                  </span> </td> <td className="py-4 px-6 text-right" data-onclick="event.stopPropagation()"> <div className="flex items-center justify-end gap-1.5"> <button data-onclick="assignRiderQuick('TOK-2850')" className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium rounded-lg shadow-xs transition-colors flex items-center gap-1"> <i className="ti ti-plus text-xs"></i> Assigner
-                    </button> <button data-onclick="openOrderModal('TOK-2850')" title="Voir détails" className="p-1.5 text-gray-500 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors"> <i className="ti ti-eye text-base"></i> </button> </div> </td> </tr>  <tr className="clickable-row group" data-onclick="openOrderModal('TOK-2845')"> <td className="py-4 px-6"> <div className="flex items-center gap-2"> <span className="font-bold text-[#F97316] group-hover:underline">#TOK-2845</span> <span className="text-[11px] text-gray-400">14:02</span> </div> <span className="text-[11px] text-gray-500">4 articles • Pack Famille</span> </td> <td className="py-4 px-6"> <div className="flex items-center gap-3"> <div className="w-8 h-8 rounded-full bg-orange-100 text-[#C2410C] font-semibold flex items-center justify-center text-xs shrink-0">
-                      PZ
-                    </div> <div> <div className="font-medium text-gray-900">Pascal Zinsou</div> <div className="text-xs text-gray-500">+229 61 78 90 23</div> </div> </div> </td> <td className="py-4 px-6"> <div className="font-medium text-gray-900">Maman Chantal</div> <div className="text-xs text-gray-500">Ignames &amp; Manioc Dantokpa</div> </td> <td className="py-4 px-6"> <div className="flex items-center gap-2"> <div className="w-7 h-7 rounded-full bg-emerald-100 text-[#065F46] font-semibold flex items-center justify-center text-xs shrink-0">
-                      BA
-                    </div> <div> <span className="font-medium text-gray-800 text-xs block">Boris Agossou</span> <span className="text-[11px] text-gray-400">Moto #4829-RB</span> </div> </div> </td> <td className="py-4 px-6"> <div className="text-xs font-medium text-gray-900">Hôpital de Zone Akpakpa</div> <div className="text-[11px] text-gray-500">Porte principale gardien</div> </td> <td className="py-4 px-6"> <div className="font-bold text-[#F97316]">12 400 FCFA</div> <div className="text-[11px] text-emerald-600 font-medium">FedaPay CB (Payé)</div> </td> <td className="py-4 px-6"> <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] text-xs font-medium bg-[#EFF6FF] text-[#1E40AF] border border-[#BFDBFE]"> <span className="badge-dot bg-[#3B82F6]"></span> En préparation
-                  </span> </td> <td className="py-4 px-6 text-right" data-onclick="event.stopPropagation()"> <div className="flex items-center justify-end gap-1.5"> <button data-onclick="openOrderModal('TOK-2845')" title="Voir détails" className="p-1.5 text-gray-500 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors"> <i className="ti ti-eye text-base"></i> </button> <button title="Notifier marchand" className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"> <i className="ti ti-bell-ringing text-base"></i> </button> </div> </td> </tr>  <tr className="clickable-row group" data-onclick="openOrderModal('TOK-2839')"> <td className="py-4 px-6"> <div className="flex items-center gap-2"> <span className="font-bold text-[#F97316] group-hover:underline">#TOK-2839</span> <span className="text-[11px] text-gray-400">13:10</span> </div> <span className="text-[11px] text-gray-500">1 article • Poissons frais</span> </td> <td className="py-4 px-6"> <div className="flex items-center gap-3"> <div className="w-8 h-8 rounded-full bg-orange-100 text-[#C2410C] font-semibold flex items-center justify-center text-xs shrink-0">
-                      FS
-                    </div> <div> <div className="font-medium text-gray-900">Fatima Salifou</div> <div className="text-xs text-gray-500">+229 95 01 23 45</div> </div> </div> </td> <td className="py-4 px-6"> <div className="font-medium text-gray-900">Pêcherie Cotonou Est</div> <div className="text-xs text-gray-500">Quai Dantokpa Pont</div> </td> <td className="py-4 px-6"> <div className="flex items-center gap-2"> <div className="w-7 h-7 rounded-full bg-emerald-100 text-[#065F46] font-semibold flex items-center justify-center text-xs shrink-0">
-                      SD
-                    </div> <div> <span className="font-medium text-gray-800 text-xs block">Salifou D.</span> <span className="text-[11px] text-gray-400">Moto #9120-BJ</span> </div> </div> </td> <td className="py-4 px-6"> <div className="text-xs font-medium text-gray-900">Immeuble NSIA Assurances</div> <div className="text-[11px] text-gray-500">Akpakpa Cité Vie Nouvelle</div> </td> <td className="py-4 px-6"> <div className="font-bold text-[#F97316]">7 800 FCFA</div> <div className="text-[11px] text-emerald-600 font-medium">MTN MoMo (Livré 13:42)</div> </td> <td className="py-4 px-6"> <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] text-xs font-medium bg-[#ECFDF5] text-[#065F46] border border-[#6EE7B7]"> <span className="badge-dot bg-[#10B981]"></span> Livré
-                  </span> </td> <td className="py-4 px-6 text-right" data-onclick="event.stopPropagation()"> <button data-onclick="openOrderModal('TOK-2839')" title="Voir détails" className="p-1.5 text-gray-500 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors"> <i className="ti ti-eye text-base"></i> </button> </td> </tr>  <tr className="clickable-row group" data-onclick="openOrderModal('TOK-2834')"> <td className="py-4 px-6"> <div className="flex items-center gap-2"> <span className="font-bold text-[#F97316] group-hover:underline">#TOK-2834</span> <span className="text-[11px] text-gray-400">12:35</span> </div> <span className="text-[11px] text-gray-500">5 articles • Céréales</span> </td> <td className="py-4 px-6"> <div className="flex items-center gap-3"> <div className="w-8 h-8 rounded-full bg-orange-100 text-[#C2410C] font-semibold flex items-center justify-center text-xs shrink-0">
-                      MK
-                    </div> <div> <div className="font-medium text-gray-900">Marie Koné</div> <div className="text-xs text-gray-500">+229 97 88 11 00</div> </div> </div> </td> <td className="py-4 px-6"> <div className="font-medium text-gray-900">Dossou Grains &amp; Farines</div> <div className="text-xs text-gray-500">Dantokpa Allée 3</div> </td> <td className="py-4 px-6"> <div className="flex items-center gap-2"> <div className="w-7 h-7 rounded-full bg-emerald-100 text-[#065F46] font-semibold flex items-center justify-center text-xs shrink-0">
-                      JK
-                    </div> <div> <span className="font-medium text-gray-800 text-xs block">Jean Kouassi</span> <span className="text-[11px] text-gray-400">Moto #7492-BJ</span> </div> </div> </td> <td className="py-4 px-6"> <div className="text-xs font-medium text-gray-900">Pharmacie Saint-Charbel</div> <div className="text-[11px] text-gray-500">Face église catholique</div> </td> <td className="py-4 px-6"> <div className="font-bold text-[#F97316]">6 250 FCFA</div> <div className="text-[11px] text-emerald-600 font-medium">FedaPay (Payé)</div> </td> <td className="py-4 px-6"> <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] text-xs font-medium bg-[#FFF7ED] text-[#9A3412] border border-[#FED7AA]"> <span className="badge-dot bg-[#F97316]"></span> En livraison
-                  </span> </td> <td className="py-4 px-6 text-right" data-onclick="event.stopPropagation()"> <button data-onclick="openOrderModal('TOK-2834')" title="Voir détails" className="p-1.5 text-gray-500 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors"> <i className="ti ti-eye text-base"></i> </button> </td> </tr>  <tr className="clickable-row group bg-red-50/20" data-onclick="openOrderModal('TOK-2828')"> <td className="py-4 px-6"> <div className="flex items-center gap-2"> <span className="font-bold text-gray-500 line-through">#TOK-2828</span> <span className="text-[11px] text-gray-400">11:15</span> </div> <span className="text-[11px] text-red-600">Rupture stock vendeur</span> </td> <td className="py-4 px-6"> <div className="flex items-center gap-3"> <div className="w-8 h-8 rounded-full bg-orange-100 text-[#C2410C] font-semibold flex items-center justify-center text-xs shrink-0">
-                      ID
-                    </div> <div> <div className="font-medium text-gray-900">Idriss Diallo</div> <div className="text-xs text-gray-500">+229 66 54 32 10</div> </div> </div> </td> <td className="py-4 px-6"> <div className="font-medium text-gray-900">Kouassi Légumes Bio</div> <div className="text-xs text-gray-500">Box #12 Dantokpa</div> </td> <td className="py-4 px-6"> <span className="text-xs text-gray-400 italic">— Non affecté —</span> </td> <td className="py-4 px-6"> <div className="text-xs font-medium text-gray-900">Carrefour Le Matin</div> <div className="text-[11px] text-gray-500">Akpakpa Dodomè</div> </td> <td className="py-4 px-6"> <div className="font-bold text-gray-400">4 500 FCFA</div> <div className="text-[11px] text-red-600 font-medium">Remboursé MoMo</div> </td> <td className="py-4 px-6"> <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] text-xs font-medium bg-[#FEF2F2] text-[#991B1B] border border-[#FCA5A5]"> <span className="badge-dot bg-[#EF4444]"></span> Annulé
-                  </span> </td> <td className="py-4 px-6 text-right" data-onclick="event.stopPropagation()"> <button data-onclick="openOrderModal('TOK-2828')" title="Voir détails" className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"> <i className="ti ti-eye text-base"></i> </button> </td> </tr>  <tr className="clickable-row group" data-onclick="openOrderModal('TOK-2822')"> <td className="py-4 px-6"> <div className="flex items-center gap-2"> <span className="font-bold text-[#F97316] group-hover:underline">#TOK-2822</span> <span className="text-[11px] text-gray-400">10:45</span> </div> <span className="text-[11px] text-gray-500">2 articles • Fruits locaux</span> </td> <td className="py-4 px-6"> <div className="flex items-center gap-3"> <div className="w-8 h-8 rounded-full bg-orange-100 text-[#C2410C] font-semibold flex items-center justify-center text-xs shrink-0">
-                      SA
-                    </div> <div> <div className="font-medium text-gray-900">Safi Alabi</div> <div className="text-xs text-gray-500">+229 97 65 43 21</div> </div> </div> </td> <td className="py-4 px-6"> <div className="font-medium text-gray-900">Verger du Sud</div> <div className="text-xs text-gray-500">Marché de fruits Akpakpa</div> </td> <td className="py-4 px-6"> <div className="flex items-center gap-2"> <div className="w-7 h-7 rounded-full bg-emerald-100 text-[#065F46] font-semibold flex items-center justify-center text-xs shrink-0">
-                      MD
-                    </div> <div> <span className="font-medium text-gray-800 text-xs block">Moussa Diallo</span> <span className="text-[11px] text-gray-400">Tricycle #8812-BJ</span> </div> </div> </td> <td className="py-4 px-6"> <div className="text-xs font-medium text-gray-900">Pharmacie Saint-Jean</div> <div className="text-[11px] text-gray-500">Carrefour PK4</div> </td> <td className="py-4 px-6"> <div className="font-bold text-[#F97316]">3 200 FCFA</div> <div className="text-[11px] text-emerald-600 font-medium">MTN MoMo (Payé)</div> </td> <td className="py-4 px-6"> <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] text-xs font-medium bg-[#EFF6FF] text-[#1E40AF] border border-[#BFDBFE]"> <span className="badge-dot bg-[#3B82F6]"></span> En préparation
-                  </span> </td> <td className="py-4 px-6 text-right" data-onclick="event.stopPropagation()"> <button data-onclick="openOrderModal('TOK-2822')" title="Voir détails" className="p-1.5 text-gray-500 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors"> <i className="ti ti-eye text-base"></i> </button> </td> </tr> </tbody> </table> </div>  <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500"> <div className="">
-            Affichage de <strong>1 à 7</strong> sur <strong>24</strong> commandes enregistrées aujourd'hui
-          </div> <div className="flex items-center gap-1"> <button className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50" disabled={true}> <i className="ti ti-chevron-left"></i> </button> <button className="px-3 py-1.5 rounded-lg font-semibold bg-[#F97316] text-white">1</button> <button className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">2</button> <button className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">3</button> <button className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">4</button> <button className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"> <i className="ti ti-chevron-right"></i> </button> </div> </div> </div>   <div id="orderDetailModal" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 transition-all duration-200"> <div className="bg-white w-full max-w-[768px] rounded-[16px] shadow-2xl border border-gray-200 overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-150">  <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/80 flex items-center justify-between sticky top-0 z-10"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#F97316] flex items-center justify-center font-bold text-lg"> <i className="ti ti-receipt"></i> </div> <div> <div className="flex items-center gap-2"> <h3 className="text-lg font-bold text-gray-900" id="modalOrderId">Commande #TOK-2847</h3> <span id="modalStatusBadge" className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[10px] text-xs font-medium border bg-[#FFF7ED] text-[#9A3412] border-[#FED7AA]"><span className="badge-dot bg-[#F97316]"></span> En livraison</span> </div> <p className="text-xs text-gray-500" id="modalOrderTime">Aujourd'hui à 14:15 • Marché Dantokpa vers Akpakpa Centre</p> </div> </div> <button data-onclick="closeOrderModal()" className="w-8 h-8 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200/80 flex items-center justify-center transition-colors"> <i className="ti ti-x text-lg"></i> </button> </div>  <div className="p-6 overflow-y-auto custom-scrollbar space-y-6 flex-1 text-sm">  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">  <div className="bg-gray-50 p-3.5 rounded-[12px] border border-gray-200/70"> <div className="flex items-center justify-between mb-2"> <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1"> <i className="ti ti-user text-[#F97316]"></i> Client
-              </span> <span className="text-[10px] bg-orange-100 text-[#C2410C] font-semibold px-1.5 py-0.5 rounded">Vérifié</span> </div> <div className="font-bold text-gray-900" id="modalClientName">Kossi Ouédraogo</div> <div className="text-xs text-gray-600 mt-0.5" id="modalClientPhone">+229 97 12 45 80</div> <div className="mt-2 text-xs text-gray-500 flex items-center gap-1"> <i className="ti ti-star-filled text-amber-500 text-[11px]"></i> <span className="">4.9 (18 commandes passées)</span> </div> <div className="mt-2 pt-2 border-t border-gray-200 flex gap-2"> <a href="tel:+22997124580" className="flex-1 py-1 text-center bg-white border border-gray-200 rounded text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors"> <i className="ti ti-phone text-xs mr-1 text-[#F97316]"></i>Appeler
-              </a> <button className="flex-1 py-1 text-center bg-white border border-gray-200 rounded text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors"> <i className="ti ti-message text-xs mr-1 text-blue-600"></i>Message
-              </button> </div> </div>   <div className="bg-gray-50 p-3.5 rounded-[12px] border border-gray-200/70"> <div className="flex items-center justify-between mb-2"> <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1"> <i className="ti ti-motorbike text-[#10B981]"></i> Livreur
-              </span> <span className="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-1.5 py-0.5 rounded">En course</span> </div> <div className="font-bold text-gray-900" id="modalRiderName">Jean Kouassi</div> <div className="text-xs text-gray-600 mt-0.5" id="modalRiderVehicule">Moto-Taxi • #7492-BJ</div> <div className="mt-2 text-xs text-emerald-600 font-medium flex items-center gap-1"> <span className="w-2 h-2 rounded-full bg-emerald-500"></span> <span className="">À 8 min du point client</span> </div> <div className="mt-2 pt-2 border-t border-gray-200 flex gap-2"> <a href="tel:+22997001122" className="flex-1 py-1 text-center bg-white border border-gray-200 rounded text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors"> <i className="ti ti-phone text-xs mr-1 text-[#10B981]"></i>Appeler
-              </a> <button data-onclick="reassignRider('modal')" className="flex-1 py-1 text-center bg-white border border-gray-200 rounded text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors"> <i className="ti ti-arrows-exchange text-xs mr-1 text-orange-600"></i>Réassigner
-              </button> </div> </div> </div>  <div className="bg-orange-50/50 p-4 rounded-[12px] border border-orange-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3"> <div className="flex items-start gap-3"> <div className="w-8 h-8 rounded-lg bg-[#F97316] text-white flex items-center justify-center shrink-0 mt-0.5"> <i className="ti ti-map-pin text-lg"></i> </div> <div> <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Point de Repère de Remise Client</div> <div className="text-sm font-bold text-gray-900" id="modalLandmark">Face Pharmacie Akpakpa Centre, Carrefour PK3</div> <div className="text-xs text-gray-600 mt-0.5 italic">Consigne : « Appeler à l'arrivée devant le portail vert, paiement déjà validé sur MoMo. »</div> </div> </div> <div className="text-right shrink-0"> <span className="text-xs text-gray-500 block">Distance estimée</span> <span className="text-sm font-bold text-gray-900">2.8 km • ~12 min</span> </div> </div>  <div> <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between"> <span className="">Articles de la commande (Marché Dantokpa)</span> <span className="text-[#F97316] font-medium lowercase">Prix négocié garanti</span> </h4> <div className="border border-gray-200 rounded-[12px] overflow-hidden"> <table className="w-full text-left text-xs"> <thead className="bg-gray-50 text-gray-500 border-b border-gray-200"> <tr> <th className="py-2.5 px-4 font-semibold">Produit</th> <th className="py-2.5 px-4 font-semibold">Quantité</th> <th className="py-2.5 px-4 font-semibold">Prix Unitaire</th> <th className="py-2.5 px-4 font-semibold text-right">Sous-total</th> </tr> </thead> <tbody className="divide-y divide-gray-100" id="modalItemsTable"> <tr> <td className="py-3 px-4 flex items-center gap-2"> <span className="w-6 h-6 rounded bg-orange-100 text-[#C2410C] flex items-center justify-center text-xs"> <i className="ti ti-basket"></i> </span> <div> <span className="font-medium text-gray-900 block">Tomates fraîches du jour</span> <span className="text-[11px] text-gray-400">Variété Akpakpa • Panier 2kg</span> </div> </td> <td className="py-3 px-4 font-medium text-gray-700">1 panier (2kg)</td> <td className="py-3 px-4 text-gray-600">1 800 FCFA</td> <td className="py-3 px-4 font-bold text-gray-900 text-right">1 800 FCFA</td> </tr> <tr> <td className="py-3 px-4 flex items-center gap-2"> <span className="w-6 h-6 rounded bg-orange-100 text-[#C2410C] flex items-center justify-center text-xs"> <i className="ti ti-basket"></i> </span> <div> <span className="font-medium text-gray-900 block">Piments verts &amp; Oignons violets</span> <span className="text-[11px] text-gray-400">Lot assaisonnement frais</span> </div> </td> <td className="py-3 px-4 font-medium text-gray-700">1 lot</td> <td className="py-3 px-4 text-gray-600">1 380 FCFA</td> <td className="py-3 px-4 font-bold text-gray-900 text-right">1 380 FCFA</td> </tr> </tbody> <tfoot className="bg-gray-50/80 border-t border-gray-200"> <tr> <td colSpan={3} className="py-2 px-4 text-right text-gray-500 font-medium">Sous-total articles :</td> <td className="py-2 px-4 text-right font-medium text-gray-900">3 180 FCFA</td> </tr> <tr> <td colSpan={3} className="py-1.5 px-4 text-right text-gray-500 font-medium">Frais de livraison (Zone Akpakpa) :</td> <td className="py-1.5 px-4 text-right font-medium text-gray-900">800 FCFA</td> </tr> <tr className="border-t border-gray-200 text-sm"> <td colSpan={3} className="py-2.5 px-4 text-right font-bold text-gray-900">Total réglé (Séquestre MoMo) :</td> <td className="py-2.5 px-4 text-right font-bold text-[#F97316] text-base" id="modalTotalAmount">3 980 FCFA</td> </tr> </tfoot> </table> </div> </div>  <div> <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Historique d'exécution</h4> <div className="space-y-2 border-l-2 border-orange-300 ml-2 pl-4 text-xs"> <div className="relative"> <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-[#10B981]"></span> <span className="font-semibold text-gray-800">14:15</span> — Commande validée et payée via MTN Mobile Money.
-            </div> <div className="relative"> <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-[#10B981]"></span> <span className="font-semibold text-gray-800">14:20</span> — Vendeuse Afi M. confirme la préparation du panier.
-            </div> <div className="relative"> <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-[#F97316]"></span> <span className="font-semibold text-gray-800">14:25</span> — Livreur Jean Kouassi a récupéré la marchandise. Trajet en cours vers Akpakpa.
-            </div> </div> </div> </div>  <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-wrap items-center justify-between gap-3 sticky bottom-0 z-10"> <div className="flex items-center gap-2"> <button data-onclick="markAsDelivered()" className="btn-action px-3.5 py-2 rounded-[10px] bg-emerald-50 text-[#065F46] hover:bg-emerald-100 border border-emerald-300 text-xs font-semibold transition-colors flex items-center gap-1.5"> <i className="ti ti-check text-sm"></i> Forcer statut « Livré »
-          </button> <button data-onclick="reportDispute()" className="btn-action px-3.5 py-2 rounded-[10px] bg-red-50 text-[#991B1B] hover:bg-red-100 border border-red-300 text-xs font-semibold transition-colors flex items-center gap-1.5"> <i className="ti ti-alert-circle text-sm"></i> Ouvrir un Litige
-          </button> </div> <div className="flex items-center gap-2"> <button data-onclick="closeOrderModal()" className="btn-action px-4 py-2 rounded-[10px] bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 text-xs font-medium transition-colors">
-            Fermer
-          </button> <button data-onclick="printReceipt()" className="btn-action px-4 py-2 rounded-[10px] bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5"> <i className="ti ti-printer text-sm"></i> Imprimer bordereau
-          </button> </div> </div> </div> </div>  <div id="toastNotification" className="fixed bottom-6 right-6 bg-gray-900 text-white px-4 py-3 rounded-[12px] shadow-lg flex items-center gap-3 text-xs font-medium z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none"> <i className="ti ti-check-circle text-[#10B981] text-base"></i> <span id="toastMessage" className="">Action effectuée avec succès</span> </div> 
+      <div className="space-y-6">
+        {/* En-tête */}
+        <div>
+          <p className="text-overline uppercase text-primary">Supervision Opérationnelle</p>
+          <p className="text-text-secondary">Flux en direct - Marché Dantokpa & Quartiers Akpakpa</p>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-h2 font-h2 font-bold">Supervision & Gestion des Commandes</h1>
+            <div className="flex gap-2">
+              <button type="button" className="btn btn-ghost gap-2">
+                <MIcon name="download" className="text-[18px]" />
+                Exporter le rapport
+              </button>
+              <button type="button" className="btn btn-primary gap-2" onClick={() => setCreation(true)}>
+                <MIcon name="add" className="text-[18px]" />
+                Créer une commande manuelle
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { icon: 'shopping_cart', label: "Total Commandes (Aujourd'hui)", value: '42', sub: '+14% vs hier' },
+            { icon: 'two_wheeler', label: 'En cours de livraison', value: '8', sub: '5 motos, 3 tricycles' },
+            { icon: 'pending_actions', label: "En attente d'affectation", value: '3', sub: 'Priorité manager' },
+            { icon: 'payments', label: 'Volume Financier du Jour', value: '284 500', unit: 'FCFA', sub: '100% sécurisé FedaPay/MoMo' },
+          ].map((k) => (
+            <div key={k.label} className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+              <div className="flex items-center gap-2">
+                <MIcon name={k.icon} className="text-primary text-[20px]" />
+                <p className="text-label text-text-secondary">{k.label}</p>
+              </div>
+              <p className="mt-2 text-h1 font-h1 font-bold">
+                {k.value} {k.unit && <span className="text-label text-text-secondary">{k.unit}</span>}
+              </p>
+              <p className="mt-1 text-label text-text-secondary">{k.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Filtres */}
+        <div className="flex flex-wrap items-center gap-2">
+          {ONGLETS.map((o) => (
+            <button
+              key={o.label}
+              type="button"
+              onClick={() => setOnglet(o.statut)}
+              className={`rounded-full border px-3 py-1.5 text-label font-semibold transition ${
+                onglet === o.statut
+                  ? 'border-primary bg-primary text-white'
+                  : 'border-border-default bg-white text-text-secondary hover:border-primary hover:text-primary'
+              }`}
+            >
+              {o.label} ({o.n})
+            </button>
+          ))}
+          <select
+            value={secteur}
+            onChange={(e) => setSecteur(e.target.value)}
+            className="ml-auto rounded-lg border border-border-default bg-white px-3 py-2 text-label"
+          >
+            {SECTEURS.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Tableau */}
+        <div className="overflow-hidden rounded-lg border border-border-default bg-white shadow-sm">
+          <div className="border-b border-border-default px-lg py-4">
+            <h2 className="text-h3 font-h3 font-bold">Liste des Commandes de la Zone</h2>
+            <p className="text-label text-text-secondary">Cliquez sur une ligne pour afficher les détails complets</p>
+          </div>
+          <p className="px-lg pt-3 text-label text-text-secondary">Affichage de {lignes.length} commandes actives</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-label">
+              <thead>
+                <tr className="bg-bg-secondary text-left text-text-secondary">
+                  <th className="px-4 py-3 font-semibold">Commande</th>
+                  <th className="px-4 py-3 font-semibold">Client & Téléphone</th>
+                  <th className="px-4 py-3 font-semibold">Marchand / Étal</th>
+                  <th className="px-4 py-3 font-semibold">Livreur Assigné</th>
+                  <th className="px-4 py-3 font-semibold">Point de Repère</th>
+                  <th className="px-4 py-3 font-semibold">Montant</th>
+                  <th className="px-4 py-3 font-semibold">Statut</th>
+                  <th className="px-4 py-3 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lignes.map((c) => (
+                  <tr
+                    key={c.id}
+                    onClick={() => setSelection(c)}
+                    className="cursor-pointer border-t border-border-default hover:bg-primary-tint/50"
+                  >
+                    <td className="px-4 py-3">
+                      <p className="font-semibold">{c.id}</p>
+                      <p className="text-text-secondary">{c.heure} · {c.detail}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-bg-secondary text-overline font-bold">
+                          {c.initC}
+                        </span>
+                        <div>
+                          <p className="font-semibold">{c.client}</p>
+                          <p className="text-text-secondary">{c.tel}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-semibold">{c.marchand}</p>
+                      <p className="text-text-secondary">{c.etal}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      {c.livreur ? (
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-tint text-overline font-bold text-primary">
+                            {c.initL}
+                          </span>
+                          <div>
+                            <p className="font-semibold">{c.livreur}</p>
+                            <p className="text-text-secondary">{c.vehicule}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-text-tertiary">— Non affecté —</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">{c.repere}</td>
+                    <td className="px-4 py-3">
+                      <p className="font-semibold">{c.montant}</p>
+                      <p className="text-text-secondary">{c.paiement}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`rounded-full px-2.5 py-1 text-overline font-semibold ${STATUT_CLASS[c.statut]}`}>
+                        {c.statut}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {c.action ? (
+                        <button
+                          type="button"
+                          onClick={(e) => e.stopPropagation()}
+                          className="btn btn-primary px-3 py-1.5 text-label"
+                        >
+                          {c.action}
+                        </button>
+                      ) : (
+                        <button type="button" className="font-semibold text-tertiary hover:underline">
+                          Gérer
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Modale détails commande */}
+      {selection && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setSelection(null)}
+        >
+          <div
+            className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border-default p-4">
+              <h3 className="text-h3 font-h3 font-bold">{selection.id}</h3>
+              <button type="button" onClick={() => setSelection(null)} className="p-1 text-text-secondary hover:text-on-surface">
+                <MIcon name="close" className="text-[20px]" />
+              </button>
+            </div>
+            <div className="flex-1 space-y-3 overflow-y-auto p-4">
+              <p className="text-label text-text-secondary">{selection.heure} · {selection.detail}</p>
+              <div className="grid grid-cols-2 gap-3 text-label">
+                <div>
+                  <p className="text-text-secondary">Client</p>
+                  <p className="font-semibold">{selection.client} — {selection.tel}</p>
+                </div>
+                <div>
+                  <p className="text-text-secondary">Marchand / Étal</p>
+                  <p className="font-semibold">{selection.marchand} — {selection.etal}</p>
+                </div>
+                <div>
+                  <p className="text-text-secondary">Livreur assigné</p>
+                  <p className="font-semibold">
+                    {selection.livreur ? `${selection.livreur} (${selection.vehicule})` : '— Non affecté —'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-text-secondary">Point de repère</p>
+                  <p className="font-semibold">{selection.repere}</p>
+                </div>
+                <div>
+                  <p className="text-text-secondary">Montant</p>
+                  <p className="font-semibold">{selection.montant} — {selection.paiement}</p>
+                </div>
+                <div>
+                  <p className="text-text-secondary">Statut</p>
+                  <span className={`rounded-full px-2.5 py-1 text-overline font-semibold ${STATUT_CLASS[selection.statut]}`}>
+                    {selection.statut}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-border-default p-4">
+              <button type="button" className="btn btn-ghost" onClick={() => setSelection(null)}>
+                Fermer
+              </button>
+              {!selection.livreur && (
+                <button type="button" className="btn btn-primary" onClick={() => setSelection(null)}>
+                  Assigner un livreur
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale création manuelle */}
+      {creation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setCreation(false)}>
+          <div
+            className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border-default p-4">
+              <h3 className="text-h3 font-h3 font-bold">Créer une commande manuelle</h3>
+              <button type="button" onClick={() => setCreation(false)} className="p-1 text-text-secondary hover:text-on-surface">
+                <MIcon name="close" className="text-[20px]" />
+              </button>
+            </div>
+            <div className="flex-1 space-y-3 overflow-y-auto p-4">
+              {[
+                { label: 'Nom du client', ph: 'Nom complet' },
+                { label: 'Téléphone (Bénin)', ph: '+229 97 00 00 00' },
+                { label: 'Marchand / Étal', ph: 'Nom du vendeur et étal' },
+                { label: 'Point de repère', ph: 'Ex : Face Pharmacie Akpakpa Centre' },
+                { label: 'Montant (FCFA)', ph: '0' },
+              ].map((f) => (
+                <div key={f.label} className="space-y-1">
+                  <label className="text-label text-text-secondary">{f.label}</label>
+                  <input type="text" placeholder={f.ph} className="w-full rounded-lg border border-border-default px-3 py-2 text-label" />
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end gap-2 border-t border-border-default p-4">
+              <button type="button" className="btn btn-ghost" onClick={() => setCreation(false)}>
+                Annuler
+              </button>
+              <button type="button" className="btn btn-primary" onClick={() => setCreation(false)}>
+                Créer la commande
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </ManagerLayout>
   );
 }

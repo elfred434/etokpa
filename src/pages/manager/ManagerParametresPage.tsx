@@ -1,42 +1,265 @@
-import { useDesignScript } from '../../utils/designRuntime';
-import DESIGN_SCRIPT from './_scripts/ManagerParametresPage';
+import { useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
+import MIcon from '../../components/shared/MIcon';
 
-const DESIGN_CSS = `
-    .btn-press:active {
-      transform: scale(0.97);
-    }
-  `;
+const ONGLETS = ['Zone & Tarification', 'Règles d’attribution', 'Alertes & Notifications', 'Compte & Sécurité'];
 
-/**
- * ManagerParametresPage — copie conforme statique du design Stitch (code.html).
- * Interactions : script du design exécuté via useDesignScript (comportement copié).
- */
+function Ligne({ label, aide, children }: { label: string; aide?: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-default py-3 first:border-t-0">
+      <div>
+        <p className="text-label font-semibold">{label}</p>
+        {aide && <p className="text-label text-text-secondary">{aide}</p>}
+      </div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+const inputCls = 'w-44 rounded-lg border border-border-default px-3 py-2 text-label';
+
 export default function ManagerParametresPage() {
-  useDesignScript(DESIGN_SCRIPT);
+  const [onglet, setOnglet] = useState(ONGLETS[0]);
+  const [enregistre, setEnregistre] = useState(false);
+
+  const enregistrer = () => {
+    setEnregistre(true);
+    setTimeout(() => setEnregistre(false), 2500);
+  };
 
   return (
     <ManagerLayout currentPath="/manager/parametres">
-      <style>{DESIGN_CSS}</style>
-  <header className="h-16 bg-white border-b border-[#E5E7EB] px-8 flex items-center justify-between sticky top-0 z-20"> <div className="flex items-center gap-3"> <div> <h1 className="text-lg font-semibold text-[#111827] flex items-center gap-2">
-            Paramètres de la Zone &amp; Préférences
-          </h1> <p className="text-xs text-[#6B7280]">Gérez la tarification locale, l'attribution des courses, les notifications et votre compte manager.</p> </div> </div> <div className="flex items-center gap-4">  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#ECFDF5] border border-[#6EE7B7] rounded-full text-xs font-medium text-[#065F46]"> <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></span> <span className="">Zone Ouverte &amp; Opérationnelle</span> </div>  <button className="relative p-2 rounded-lg text-[#6B7280] hover:text-[#111827] hover:bg-gray-100 transition-colors"> <i className="ti ti-bell text-xl"></i> <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#F97316] rounded-full"></span> </button>  <div className="flex items-center gap-2.5 pl-3 border-l border-gray-200"> <div className="w-8 h-8 rounded-full bg-[#EFF6FF] text-[#1D4ED8] flex items-center justify-center font-bold text-xs border border-blue-200">
-            SM
-          </div> <span className="text-xs font-medium text-[#111827]">Serge Migan</span> </div> </div> </header>  <div className="p-8 max-w-[1152px] w-full mx-auto space-y-6 pb-28">  <div className="flex items-center gap-2 border-b border-gray-200 pb-2 overflow-x-auto text-sm font-medium"> <button className="tab-btn px-4 py-2 text-[#F97316] border-b-2 border-[#F97316] font-semibold flex items-center gap-2 bg-[#FFF7ED] rounded-t-lg transition-colors" id="tab-btn-zone" data-onclick="switchTab('zone')"> <i className="ti ti-map-pin"></i> <span className="">Zone &amp; Tarification</span> </button> <button className="tab-btn px-4 py-2 text-[#6B7280] hover:text-[#111827] hover:bg-white rounded-t-lg transition-colors flex items-center gap-2" id="tab-btn-attribution" data-onclick="switchTab('attribution')"> <i className="ti ti-motorbike"></i> <span className="">Règles d'attribution</span> </button> <button className="tab-btn px-4 py-2 text-[#6B7280] hover:text-[#111827] hover:bg-white rounded-t-lg transition-colors flex items-center gap-2" id="tab-btn-notifications" data-onclick="switchTab('notifications')"> <i className="ti ti-bell"></i> <span className="">Alertes &amp; Notifications</span> </button> <button className="tab-btn px-4 py-2 text-[#6B7280] hover:text-[#111827] hover:bg-white rounded-t-lg transition-colors flex items-center gap-2" id="tab-btn-account" data-onclick="switchTab('account')"> <i className="ti ti-user"></i> <span className="">Compte &amp; Sécurité</span> </button> </div>  <section className="tab-panel space-y-6 block" id="panel-zone">  <div className="bg-white rounded-[14px] border border-[#E5E7EB] p-6 shadow-sm space-y-5"> <div className="flex items-center justify-between border-b border-gray-100 pb-4"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-xl bg-[#FFF7ED] text-[#F97316] flex items-center justify-center border border-[#FED7AA]"> <i className="ti ti-map-2 text-xl"></i> </div> <div> <h2 className="text-base font-semibold text-[#111827]">Périmètre Opérationnel — Zone Akpakpa</h2> <p className="text-xs text-[#6B7280]">Définition de la couverture géographique et des marchés couverts</p> </div> </div> <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-[#ECFDF5] text-[#065F46] border border-[#6EE7B7] flex items-center gap-1.5"> <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span> Assignée
-            </span> </div> <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> <div> <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Nom officiel de la zone</label> <input className="w-full bg-white border border-[#E5E7EB] rounded-[10px] px-3.5 py-2.5 text-sm font-medium text-[#111827] focus:outline-none focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 transition-all" type="text" value="Zone Littoral - Akpakpa (Sègbèya - Avotrou)" /> </div> <div> <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Marché pivot d'approvisionnement</label> <select className="w-full bg-white border border-[#E5E7EB] rounded-[10px] px-3.5 py-2.5 text-sm font-medium text-[#111827] focus:outline-none focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 transition-all"> <option selected={true}>Grand Marché Dantokpa (Hall Central)</option> <option>Marché de Sègbèya (Vivriers)</option> <option>Marché Saint-Michel</option> </select> </div> </div>  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2"> <div> <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Créneau d'activité quotidienne</label> <div className="flex items-center gap-2"> <input className="w-full bg-white border border-[#E5E7EB] rounded-[10px] px-3 py-2 text-xs font-medium text-[#111827]" type="time" value="06:30" /> <span className="text-xs text-gray-400">à</span> <input className="w-full bg-white border border-[#E5E7EB] rounded-[10px] px-3 py-2 text-xs font-medium text-[#111827]" type="time" value="21:00" /> </div> </div> </div>  <div className="flex items-center justify-between p-3.5 bg-[#F9FAFB] rounded-xl border border-gray-200"> <div className="flex items-center gap-3"> <i className="ti ti-power text-emerald-600 text-lg"></i> <div> <p className="text-sm font-semibold text-[#111827]">Ouverture de la zone aux commandes clients</p> <p className="text-xs text-[#6B7280]">Permet l'enregistrement de commandes et l'assignation de courses aux livreurs</p> </div> </div> <label className="relative inline-flex items-center cursor-pointer"> <input checked={true} className="sr-only peer" type="checkbox" /> <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#10B981]"></div> </label> </div> </div>  <div className="bg-white rounded-[14px] border border-[#E5E7EB] p-6 shadow-sm space-y-5"> <div className="flex items-center justify-between border-b border-gray-100 pb-4"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-xl bg-[#FEF3C7] text-[#D97706] flex items-center justify-center border border-[#FDE68A]"> <i className="ti ti-coins text-xl"></i> </div> <div> <h2 className="text-base font-semibold text-[#111827]">Barème Tarifaire &amp; Frais de Course</h2> <p className="text-xs text-[#6B7280]">Calcul automatique de la course de livraison en FCFA pour les clients et rétribution livreurs</p> </div> </div> <span className="text-xs text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 font-medium">Tarification Dynamique Active</span> </div> <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> <div> <label className="block text-xs font-medium text-[#6B7280] mb-1">Forfait de base (0 à 3 km)</label> <div className="relative"> <input className="w-full bg-white border border-[#E5E7EB] rounded-[10px] pl-3 pr-14 py-2.5 text-sm font-semibold text-[#111827] focus:outline-none focus:border-[#F97316]" type="number" value="700" /> <span className="absolute right-3 top-2.5 text-xs font-bold text-[#F97316]">FCFA</span> </div> <p className="text-[11px] text-gray-400 mt-1">Minimum facturé par course</p> </div> <div> <label className="block text-xs font-medium text-[#6B7280] mb-1">Prix au kilomètre au-delà de 3 km</label> <div className="relative"> <input className="w-full bg-white border border-[#E5E7EB] rounded-[10px] pl-3 pr-14 py-2.5 text-sm font-semibold text-[#111827] focus:outline-none focus:border-[#F97316]" type="number" value="150" /> <span className="absolute right-3 top-2.5 text-xs font-bold text-[#F97316]">FCFA</span> </div> <p className="text-[11px] text-gray-400 mt-1">Par km supplémentaire</p> </div> <div> <label className="block text-xs font-medium text-[#6B7280] mb-1">Majoration heure de pointe (17h-20h)</label> <div className="relative"> <input className="w-full bg-white border border-[#E5E7EB] rounded-[10px] pl-3 pr-14 py-2.5 text-sm font-semibold text-[#111827] focus:outline-none focus:border-[#F97316]" type="number" value="300" /> <span className="absolute right-3 top-2.5 text-xs font-bold text-[#F97316]">FCFA</span> </div> <p className="text-[11px] text-gray-400 mt-1">Heures d'affluence Akpakpa</p> </div> </div>  <div className="p-4 bg-[#FFF7ED] rounded-xl border border-[#FED7AA]/60 flex flex-col md:flex-row md:items-center justify-between gap-3"> <div> <p className="text-sm font-semibold text-[#9A3412]">Part garantie reversée au livreur partenaire</p> <p className="text-xs text-[#C2410C]">Sur 1 000 FCFA facturés au client, 800 FCFA sont automatiquement crédités au portefeuille du coursier.</p> </div> <div className="flex items-center gap-2"> <span className="text-xl font-bold text-[#F97316]">80 %</span> <span className="text-xs text-gray-500">(20% plateforme)</span> </div> </div> </div> </section>  <section className="tab-panel space-y-6 hidden" id="panel-attribution"> <div className="bg-white rounded-[14px] border border-[#E5E7EB] p-6 shadow-sm space-y-5"> <div className="flex items-center justify-between border-b border-gray-100 pb-4"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] text-[#1D4ED8] flex items-center justify-center border border-blue-200"> <i className="ti ti-route text-xl"></i> </div> <div> <h2 className="text-base font-semibold text-[#111827]">Attribution &amp; Dispatch des Livreurs</h2> <p className="text-xs text-[#6B7280]">Algorithme de dispatch des livreurs connectés sur le secteur Akpakpa</p> </div> </div> <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">Algorithme V2.4</span> </div>  <div className="space-y-3"> <label className="flex items-start gap-3 p-4 rounded-xl border-2 border-[#F97316] bg-[#FFF7ED]/30 cursor-pointer transition-all"> <input checked={true} className="mt-1 accent-[#F97316] text-[#F97316] focus:ring-[#F97316]" name="dispatch_mode" type="radio" /> <div className="flex-1 text-xs"> <div className="flex items-center justify-between"> <span className="font-semibold text-sm text-[#111827]">Attribution automatique au plus proche (Recommandé)</span> <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-medium">Actif</span> </div> <p className="text-gray-600 mt-1">La commande est proposée au coursier le plus proche avec un délai d'acceptation de 45 secondes avant réassignation automatique.</p> </div> </label> <label className="flex items-start gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#F97316]/50 cursor-pointer bg-white transition-all"> <input className="mt-1 accent-[#F97316] text-[#F97316] focus:ring-[#F97316]" name="dispatch_mode" type="radio" /> <div className="flex-1 text-xs"> <div className="flex items-center justify-between"> <span className="font-semibold text-sm text-[#111827]">Diffusion ouverte (Premier arrivé, premier servi)</span> <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">Secondaire</span> </div> <p className="text-gray-500 mt-1">Notification instantanée à l'ensemble des livreurs actifs de la zone. Le premier livreur qui valide prend la course.</p> </div> </label> </div>  <div className="pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-5"> <div> <label className="block text-xs font-semibold text-[#111827] mb-1">Délai d'acceptation par livreur</label> <div className="flex items-center gap-3"> <select className="w-full bg-white border border-[#E5E7EB] rounded-[10px] px-3.5 py-2.5 text-xs font-medium text-[#111827] focus:outline-none focus:border-[#F97316]"> <option>30 secondes</option> <option selected={true}>45 secondes (conseillé)</option> <option>60 secondes</option> <option>90 secondes</option> </select> </div> <p className="text-[11px] text-gray-400 mt-1">Temps accordé avant proposition au livreur suivant</p> </div> <div> <label className="block text-xs font-semibold text-[#111827] mb-1">Délai maximum avant relance critique</label> <div className="flex items-center gap-3"> <select className="w-full bg-white border border-[#E5E7EB] rounded-[10px] px-3.5 py-2.5 text-xs font-medium text-[#111827] focus:outline-none focus:border-[#F97316]"> <option>3 minutes</option> <option selected={true}>5 minutes sans coursier trouvé</option> <option>8 minutes</option> </select> </div> <p className="text-[11px] text-gray-400 mt-1">Déclenche un appel du superviseur ou bascule en diffusion d'urgence</p> </div> </div>  <div className="p-4 bg-[#F9FAFB] rounded-xl border border-gray-200 space-y-3"> <h3 className="text-xs font-semibold text-[#111827] flex items-center gap-1.5"> <i className="ti ti-shield-check text-[#F97316]"></i> Priorités et règles d'exclusion
-            </h3> <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs"> <label className="flex items-center gap-2.5 text-gray-700 cursor-pointer"> <input checked={true} className="accent-[#F97316] w-4 h-4 rounded" type="checkbox" /> <span className="">Prioriser les livreurs notés ≥ 4.5 étoiles</span> </label> <label className="flex items-center gap-2.5 text-gray-700 cursor-pointer"> <input checked={true} className="accent-[#F97316] w-4 h-4 rounded" type="checkbox" /> <span className="">Limiter à 2 courses simultanées par coursier moto</span> </label> <label className="flex items-center gap-2.5 text-gray-700 cursor-pointer"> <input checked={true} className="accent-[#F97316] w-4 h-4 rounded" type="checkbox" /> <span className="">Exclure temporairement après 3 refus successifs (15 min)</span> </label> <label className="flex items-center gap-2.5 text-gray-700 cursor-pointer"> <input checked={true} className="accent-[#F97316] w-4 h-4 rounded" type="checkbox" /> <span className="">Priorité aux courses prépayées Mobile Money (MTN/Moov)</span> </label> </div> </div> </div> </section>  <section className="tab-panel space-y-6 hidden" id="panel-notifications"> <div className="bg-white rounded-[14px] border border-[#E5E7EB] p-6 shadow-sm space-y-5"> <div className="flex items-center justify-between border-b border-gray-100 pb-4"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-xl bg-[#FFF7ED] text-[#F97316] flex items-center justify-center border border-[#FED7AA]"> <i className="ti ti-bell-ringing text-xl"></i> </div> <div> <h2 className="text-base font-semibold text-[#111827]">Configuration Détaillée des Alertes &amp; Seuils</h2> <p className="text-xs text-[#6B7280]">Définissez les incidents opérationnels nécessitant une notification immédiate</p> </div> </div> <span className="text-xs font-semibold text-[#F97316] bg-[#FFF7ED] px-3 py-1 rounded-full border border-[#FED7AA]">Surveillance 24/7 Active</span> </div>  <div className="divide-y divide-gray-100"> <div className="py-3.5 flex items-center justify-between"> <div> <p className="text-sm font-semibold text-[#111827]">Alerte livreurs insuffisants</p> <p className="text-xs text-[#6B7280]">Déclenche une alerte sonore et notification si moins de 5 livreurs sont actifs sur la zone Akpakpa</p> </div> <label className="relative inline-flex items-center cursor-pointer"> <input checked={true} className="sr-only peer" type="checkbox" /> <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#F97316]"></div> </label> </div> <div className="py-3.5 flex items-center justify-between"> <div> <p className="text-sm font-semibold text-[#111827]">Retard critique de course (&gt; 40 minutes)</p> <p className="text-xs text-[#6B7280]">Avertit le manager dès qu'une commande excède 40 minutes entre l'achat au marché et la livraison</p> </div> <label className="relative inline-flex items-center cursor-pointer"> <input checked={true} className="sr-only peer" type="checkbox" /> <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#F97316]"></div> </label> </div> <div className="py-3.5 flex items-center justify-between"> <div> <p className="text-sm font-semibold text-[#111827]">Litiges &amp; réclamations clients</p> <p className="text-xs text-[#6B7280]">Signalement instantané par Push et SMS en cas de contestation de panier ou produit manquant</p> </div> <label className="relative inline-flex items-center cursor-pointer"> <input checked={true} className="sr-only peer" type="checkbox" /> <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#F97316]"></div> </label> </div> <div className="py-3.5 flex items-center justify-between"> <div> <p className="text-sm font-semibold text-[#111827]">Rapport journalier de performance</p> <p className="text-xs text-[#6B7280]">Synthèse chiffrée de clôture (courses réalisées, CA généré, incidents) envoyée chaque soir à 21h30</p> </div> <label className="relative inline-flex items-center cursor-pointer"> <input checked={true} className="sr-only peer" type="checkbox" /> <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#F97316]"></div> </label> </div> </div>  <div className="pt-4 border-t border-gray-100"> <h3 className="text-xs font-semibold text-[#111827] mb-3">Canaux de réception activés</h3> <div className="grid grid-cols-1 md:grid-cols-3 gap-3"> <div className="p-3 bg-[#F9FAFB] rounded-xl border border-gray-200 flex items-center justify-between"> <div className="flex items-center gap-2 text-xs font-medium text-gray-800"> <i className="ti ti-brand-whatsapp text-emerald-600 text-base"></i> <span className="">WhatsApp Manager</span> </div> <input checked={true} className="accent-[#F97316] w-4 h-4 rounded" type="checkbox" /> </div> <div className="p-3 bg-[#F9FAFB] rounded-xl border border-gray-200 flex items-center justify-between"> <div className="flex items-center gap-2 text-xs font-medium text-gray-800"> <i className="ti ti-device-mobile text-blue-600 text-base"></i> <span className="">SMS Prioritaire</span> </div> <input checked={true} className="accent-[#F97316] w-4 h-4 rounded" type="checkbox" /> </div> <div className="p-3 bg-[#F9FAFB] rounded-xl border border-gray-200 flex items-center justify-between"> <div className="flex items-center gap-2 text-xs font-medium text-gray-800"> <i className="ti ti-volume text-[#F97316] text-base"></i> <span className="">Sonnerie d'urgence</span> </div> <input checked={true} className="accent-[#F97316] w-4 h-4 rounded" type="checkbox" /> </div> </div> </div> </div> </section>  <section className="tab-panel space-y-6 hidden" id="panel-account"> <div className="grid grid-cols-1 md:grid-cols-3 gap-6">  <div className="md:col-span-2 bg-white rounded-[14px] border border-[#E5E7EB] p-6 shadow-sm space-y-5"> <div className="flex items-center justify-between border-b border-gray-100 pb-4"> <div className="flex items-center gap-3"> <div className="w-12 h-12 rounded-full bg-[#EFF6FF] text-[#1D4ED8] flex items-center justify-center font-bold text-base border-2 border-blue-200">
-                  SM
-                </div> <div> <h2 className="text-base font-bold text-[#111827]">Serge Migan</h2> <p className="text-xs text-[#6B7280]">Manager certifié TOKPa — Rôle Zone Akpakpa</p> </div> </div> <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full font-medium"> <i className="ti ti-circle-check"></i> Compte vérifié
-              </span> </div> <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> <div> <label className="block text-xs font-medium text-[#6B7280] mb-1">Email professionnel</label> <input className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-[10px] px-3.5 py-2.5 text-xs font-medium text-gray-800 focus:outline-none focus:border-[#F97316]" type="email" value="serge.migan@tokpa.bj" /> </div> <div> <label className="block text-xs font-medium text-[#6B7280] mb-1">Téléphone direct (Bénin)</label> <div className="flex items-center"> <span className="bg-[#F9FAFB] border border-r-0 border-[#E5E7EB] px-3 py-2.5 text-xs font-medium text-gray-500 rounded-l-[10px]">+229</span> <input className="w-full bg-white border border-[#E5E7EB] rounded-r-[10px] px-3.5 py-2.5 text-xs font-medium text-[#111827] focus:outline-none focus:border-[#F97316]" type="text" value="97 12 34 56" /> </div> </div> </div>  <div className="pt-4 border-t border-gray-100 space-y-4"> <div className="flex items-center justify-between"> <div> <h3 className="text-sm font-semibold text-[#111827]">Mot de passe de session</h3> <p className="text-xs text-gray-400">Dernière modification il y a 35 jours</p> </div> <button className="py-2 px-3.5 border border-gray-200 rounded-[10px] text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 btn-press transition-colors" data-onclick="alert('Formulaire de mise à jour du mot de passe envoyé sur serge.migan@tokpa.bj')"> <i className="ti ti-lock"></i> Modifier le mot de passe
-                </button> </div> <div className="flex items-center justify-between p-3.5 bg-[#F9FAFB] rounded-xl border border-gray-200"> <div className="flex items-center gap-3"> <i className="ti ti-shield-lock text-[#F97316] text-xl"></i> <div> <p className="text-xs font-semibold text-[#111827]">Validation en deux étapes (2FA)</p> <p className="text-[11px] text-[#6B7280]">Exiger un code OTP WhatsApp ou SMS à chaque connexion d'un nouvel appareil</p> </div> </div> <label className="relative inline-flex items-center cursor-pointer"> <input checked={true} className="sr-only peer" type="checkbox" /> <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#10B981]"></div> </label> </div> </div>  <div className="pt-2 border-t border-gray-100 space-y-2"> <div className="flex items-center justify-between"> <span className="text-xs font-semibold text-[#111827]">Sessions et appareils actifs (2)</span> <button className="text-xs text-red-600 hover:underline" data-onclick="alert('Toutes les autres sessions distantes ont été révoquées.')">Déconnecter les autres appareils</button> </div> <div className="p-3 bg-white border border-gray-200 rounded-lg flex items-center justify-between text-xs"> <div className="flex items-center gap-2.5"> <i className="ti ti-device-desktop text-gray-500 text-lg"></i> <div> <p className="font-medium text-gray-800">Chrome sur macOS — Cotonou, Bénin</p> <p className="text-[10px] text-emerald-600 font-medium">Session actuelle active</p> </div> </div> <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200">En cours</span> </div> <div className="p-3 bg-white border border-gray-200 rounded-lg flex items-center justify-between text-xs"> <div className="flex items-center gap-2.5"> <i className="ti ti-device-mobile text-gray-500 text-lg"></i> <div> <p className="font-medium text-gray-800">Application Manager Android (Infinix Note 12)</p> <p className="text-[10px] text-gray-400">Connecté hier à 19:42</p> </div> </div> <button className="text-red-500 hover:text-red-700 text-xs"><i className="ti ti-trash"></i></button> </div> </div> </div>  <div className="space-y-4"> <div className="bg-[#FFF7ED] rounded-[14px] border border-[#FED7AA] p-5 space-y-3"> <div className="flex items-center gap-2 text-[#9A3412] font-semibold text-xs"> <i className="ti ti-help-hexagon text-base"></i> <span className="">Besoin d'aide ou d'autorisation ?</span> </div> <p className="text-xs text-[#C2410C] leading-relaxed">
-                Pour modifier le polygone géographique cadastral ou déléguer votre rôle de Manager, contactez l'Administrateur central.
-              </p> <button className="w-full py-2 px-3 bg-white border border-[#FED7AA] rounded-[10px] text-xs font-semibold text-[#9A3412] hover:bg-[#FED7AA]/30 flex items-center justify-center gap-1.5 transition-colors"> <i className="ti ti-headset"></i> Contacter le Super Admin
-              </button> </div> <div className="bg-white rounded-[14px] border border-[#E5E7EB] p-5 space-y-3"> <h4 className="text-xs font-bold text-gray-900 flex items-center gap-2"> <i className="ti ti-info-circle text-[#F97316]"></i> Charte d'utilisation Manager
-              </h4> <p className="text-[11px] text-gray-500 leading-normal">
-                Conformément aux CGU TOKPa Bénin, le manager s'engage à assurer la fluidité de la logistique du marché et l'équité de dispatch entre les livreurs.
-              </p> </div> </div> </div> </section> </div>  <div className="fixed bottom-0 right-0 left-64 bg-white/95 backdrop-blur-md border-t border-[#E5E7EB] py-3.5 px-8 flex items-center justify-between z-20 shadow-lg"> <div className="flex items-center gap-2 text-xs text-[#6B7280]"> <i className="ti ti-info-circle text-[#F97316]"></i> <span className="">Toutes les modifications prennent effet immédiatement sur l'application livreurs et clients de la Zone Akpakpa.</span> </div> <div className="flex items-center gap-3"> <button className="px-4 py-2 border border-gray-300 rounded-[10px] text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors btn-press">
-          Annuler
-        </button> <button className="px-5 py-2.5 bg-[#F97316] hover:bg-[#EA580C] text-white rounded-[10px] text-xs font-semibold flex items-center gap-2 shadow-sm transition-all btn-press" data-onclick="alert('Paramètres de la Zone enregistrés avec succès !')"> <i className="ti ti-check text-sm"></i> <span className="">Enregistrer les modifications</span> </button> </div> </div>  
+      <div className="space-y-6">
+        {/* En-tête */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-h2 font-h2 font-bold">Paramètres de la Zone & Préférences</h1>
+            <p className="text-label font-semibold text-success">Zone Ouverte & Opérationnelle</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-label font-bold text-white">
+              SM
+            </span>
+            <p className="text-label font-semibold">Serge Migan</p>
+          </div>
+        </div>
+
+        {/* Onglets */}
+        <div className="flex flex-wrap gap-2 border-b border-border-default pb-2">
+          {ONGLETS.map((o) => (
+            <button
+              key={o}
+              type="button"
+              onClick={() => setOnglet(o)}
+              className={`rounded-lg px-3 py-2 text-label font-semibold transition ${
+                onglet === o ? 'bg-primary text-white' : 'text-text-secondary hover:bg-bg-secondary'
+              }`}
+            >
+              {o}
+            </button>
+          ))}
+        </div>
+
+        {onglet === ONGLETS[0] && (
+          <div className="space-y-6">
+            {/* Périmètre */}
+            <section className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+              <div className="flex items-center justify-between">
+                <h2 className="text-h3 font-h3 font-bold">Périmètre Opérationnel — Zone Akpakpa</h2>
+                <span className="rounded-full bg-success-container px-2.5 py-1 text-overline font-semibold">Assignée</span>
+              </div>
+              <p className="text-label text-text-secondary">
+                Définition de la couverture géographique et des marchés couverts
+              </p>
+              <div className="mt-4">
+                <Ligne label="Nom officiel de la zone">
+                  <input type="text" defaultValue="Zone Akpakpa" className={inputCls} />
+                </Ligne>
+                <Ligne label="Marché pivot d’approvisionnement">
+                  <div className="space-y-1 text-label">
+                    {['Grand Marché Dantokpa (Hall Central)', 'Marché de Sègbèya (Vivriers)', 'Marché Saint-Michel'].map((m) => (
+                      <label key={m} className="flex items-center gap-2">
+                        <input type="checkbox" defaultChecked className="accent-primary" />
+                        {m}
+                      </label>
+                    ))}
+                  </div>
+                </Ligne>
+                <Ligne label="Rayon de couverture maximal">
+                  <select className={inputCls} defaultValue="12 km (Akpakpa)">
+                    <option>3 km (local)</option>
+                    <option>12 km (Akpakpa)</option>
+                    <option>25 km (Grand Cotonou)</option>
+                  </select>
+                </Ligne>
+                <Ligne label="Créneau d’activité quotidienne">
+                  <div className="flex items-center gap-2">
+                    <input type="time" defaultValue="07:00" className={inputCls} />
+                    <span className="text-text-secondary">→</span>
+                    <input type="time" defaultValue="21:00" className={inputCls} />
+                  </div>
+                </Ligne>
+                <Ligne
+                  label="Ouverture de la zone aux commandes clients"
+                  aide="Permet l’enregistrement de commandes et l’assignation de courses aux livreurs"
+                >
+                  <input type="checkbox" defaultChecked className="h-5 w-5 accent-primary" />
+                </Ligne>
+              </div>
+            </section>
+
+            {/* Tarification */}
+            <section className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+              <div className="flex items-center justify-between">
+                <h2 className="text-h3 font-h3 font-bold">Barème Tarifaire & Frais de Course</h2>
+                <span className="rounded-full bg-primary-tint px-2.5 py-1 text-overline font-semibold text-primary">
+                  Tarification Dynamique Active
+                </span>
+              </div>
+              <div className="mt-4">
+                <Ligne label="Forfait de base (0 à 3 km)">
+                  <div className="flex items-center gap-2">
+                    <input type="text" placeholder="0" className={inputCls} />
+                    <span className="text-label text-text-secondary">FCFA</span>
+                  </div>
+                </Ligne>
+                <Ligne label="Minimum facturé par course">
+                  <div className="flex items-center gap-2">
+                    <input type="text" placeholder="0" className={inputCls} />
+                    <span className="text-label text-text-secondary">FCFA</span>
+                  </div>
+                </Ligne>
+                <Ligne label="Prix au kilomètre au-delà de 3 km" aide="Par km supplémentaire">
+                  <div className="flex items-center gap-2">
+                    <input type="text" placeholder="0" className={inputCls} />
+                    <span className="text-label text-text-secondary">FCFA</span>
+                  </div>
+                </Ligne>
+                <Ligne label="Majoration heure de pointe (17h-20h)" aide="Heures d’affluence Akpakpa">
+                  <input type="text" placeholder="%" className={inputCls} />
+                </Ligne>
+                <Ligne label="Part garantie reversée au livreur partenaire" aide="(20% plateforme)">
+                  <div className="flex items-center gap-2">
+                    <input type="text" defaultValue="80 %" className={inputCls} />
+                  </div>
+                </Ligne>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {onglet === ONGLETS[1] && (
+          <section className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-h3 font-h3 font-bold">Attribution & Dispatch des Livreurs</h2>
+              <span className="rounded-full bg-bg-secondary px-2.5 py-1 text-overline font-semibold">Algorithme V2.4</span>
+            </div>
+            <p className="text-label text-text-secondary">
+              Algorithme de dispatch des livreurs connectés sur le secteur Akpakpa
+            </p>
+            <div className="mt-4">
+              <Ligne label="Attribution automatique au plus proche (Recommandé)" aide="Actif">
+                <input type="radio" name="dispatch" defaultChecked className="h-4 w-4 accent-primary" />
+              </Ligne>
+              <Ligne label="Diffusion ouverte (Premier arrivé, premier servi)" aide="Secondaire">
+                <input type="radio" name="dispatch" className="h-4 w-4 accent-primary" />
+              </Ligne>
+              <Ligne label="Délai d’acceptation par livreur" aide="Temps accordé avant proposition au livreur suivant">
+                <select className={inputCls} defaultValue="45 secondes (conseillé)">
+                  <option>30 secondes</option>
+                  <option>45 secondes (conseillé)</option>
+                  <option>60 secondes</option>
+                  <option>90 secondes</option>
+                </select>
+              </Ligne>
+              <Ligne
+                label="Délai maximum avant relance critique"
+                aide="Déclenche un appel du superviseur ou bascule en diffusion d’urgence"
+              >
+                <select className={inputCls} defaultValue="5 minutes sans coursier trouvé">
+                  <option>3 minutes</option>
+                  <option>5 minutes sans coursier trouvé</option>
+                  <option>8 minutes</option>
+                </select>
+              </Ligne>
+              <div className="border-t border-border-default py-3">
+                <p className="text-label font-semibold">Priorités et règles d’exclusion</p>
+                <div className="mt-2 space-y-1 text-label">
+                  {[
+                    'Prioriser les livreurs notés ≥ 4.5 étoiles',
+                    'Limiter à 2 courses simultanées par coursier moto',
+                    'Exclure temporairement après 3 refus successifs (15 min)',
+                    'Priorité aux courses prépayées Mobile Money (MTN/Moov)',
+                  ].map((r) => (
+                    <label key={r} className="flex items-center gap-2">
+                      <input type="checkbox" defaultChecked className="accent-primary" />
+                      {r}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {onglet === ONGLETS[2] && (
+          <section className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+            <h2 className="text-h3 font-h3 font-bold">Configuration Détaillée des Alertes & Seuils</h2>
+            <p className="text-label text-text-secondary">Alertes Manager & Seuils</p>
+            <div className="mt-4">
+              <Ligne label="Alerte livreurs insuffisants" aide="Si moins de 5 livreurs sont actifs">
+                <input type="checkbox" defaultChecked className="h-5 w-5 accent-primary" />
+              </Ligne>
+              <Ligne label="Retard critique de course">
+                <div className="flex items-center gap-2">
+                  <input type="text" defaultValue="40 min" className={inputCls} />
+                </div>
+              </Ligne>
+              <Ligne label="Litiges & réclamations clients" aide="Signalement immédiat par SMS / Push">
+                <input type="checkbox" defaultChecked className="h-5 w-5 accent-primary" />
+              </Ligne>
+            </div>
+          </section>
+        )}
+
+        {onglet === ONGLETS[3] && (
+          <section className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-h3 font-h3 font-bold">Manager certifié TOKPa</h2>
+              <span className="rounded-full bg-success-container px-2.5 py-1 text-overline font-semibold">Compte vérifié</span>
+            </div>
+            <div className="mt-4">
+              <Ligne label="Email professionnel">
+                <input type="text" placeholder="manager@tokpa.bj" className={inputCls} />
+              </Ligne>
+              <Ligne label="Téléphone direct (Bénin)">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-lg bg-bg-secondary px-3 py-2 text-label">+229</span>
+                  <input type="text" className={inputCls} />
+                </div>
+              </Ligne>
+              <Ligne label="Mot de passe de session">
+                <button type="button" className="btn btn-ghost">
+                  Modifier le mot de passe
+                </button>
+              </Ligne>
+            </div>
+          </section>
+        )}
+
+        {/* Barre d’enregistrement */}
+        <div className="flex items-center justify-end gap-3">
+          {enregistre && (
+            <p className="flex items-center gap-1 text-label font-semibold text-success">
+              <MIcon name="task_alt" className="text-[16px]" />
+              Modifications enregistrées avec succès
+            </p>
+          )}
+          <button type="button" className="btn btn-primary" onClick={enregistrer}>
+            Enregistrer les modifications
+          </button>
+        </div>
+      </div>
     </ManagerLayout>
   );
 }

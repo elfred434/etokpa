@@ -1,43 +1,147 @@
-import { useDesignScript } from '../../utils/designRuntime';
-import DESIGN_SCRIPT from './_scripts/ManagerStatsPage';
+import { useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
 
-const DESIGN_CSS = `
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        .bento-card {
-            background-color: #FFFFFF;
-            border-radius: 14px;
-            transition: transform 0.2s ease;
-            border: 0.5px solid #E5E7EB;
-        }
-        .bento-card:hover {
-            transform: translateY(-2px);
-        }
-        .chart-container {
-            height: 300px;
-            width: 100%;
-            background: linear-gradient(180deg, rgba(249, 115, 22, 0.05) 0%, rgba(249, 115, 22, 0) 100%);
-        }
-    `;
+const PERIODES = ['Aujourd’hui', '7 derniers jours', 'Ce Mois', 'Année'];
 
-/**
- * ManagerStatsPage — copie conforme statique du design Stitch (code.html).
- * Interactions : script du design exécuté via useDesignScript (comportement copié).
- */
+const KPIS = [
+  { icon: 'trending_up', label: "Volume d'Affaires", value: '2 450 000', unit: 'FCFA', delta: '+12%' },
+  { icon: 'shopping_basket', label: 'Commandes Total', value: '856', unit: '', delta: '+5%' },
+  { icon: 'task_alt', label: 'Taux de Livraison', value: '98.2%', unit: '', delta: 'Succès' },
+  { icon: 'delivery_dining', label: 'Livreurs Actifs', value: '24', unit: '/ 30', delta: '' },
+];
+
+const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const HAUTEURS = [52, 68, 45, 80, 95, 72, 60];
+
+const MARCHES = [
+  { icon: 'storefront', nom: 'Dantokpa', sous: 'Grand Marché International', montant: '1 250 000 FCFA', part: '51%' },
+  { icon: 'shopping_bag', nom: 'Akpakpa Centre', sous: 'Zone Résidentielle & Commerces', montant: '820 000 FCFA', part: '33%' },
+  { icon: 'local_mall', nom: 'Sègbèya', sous: 'Marché de quartier', montant: '380 000 FCFA', part: '16%' },
+];
+
+const TOP5 = [
+  { nom: 'Koffi A.', courses: 142 },
+  { nom: 'Sena J.', courses: 138 },
+  { nom: 'Modeste T.', courses: 125 },
+  { nom: 'Jean B.', courses: 118 },
+  { nom: 'Aimé D.', courses: 98 },
+];
+
 export default function ManagerStatsPage() {
-  useDesignScript(DESIGN_SCRIPT);
+  const [periode, setPeriode] = useState(PERIODES[0]);
 
   return (
     <ManagerLayout currentPath="/manager/statistiques">
-      <style>{DESIGN_CSS}</style>
-  <header className="flex justify-between items-center mb-xl"> <div> <h1 className="text-h1 font-h1 text-on-surface">Statistiques de la Zone - Akpakpa</h1> <p className="text-body font-body text-text-secondary">Bienvenue sur votre tableau de bord de performance localisée.</p> </div> <div className="flex items-center gap-md"> <div className="bg-white border border-border-default px-md py-sm rounded-lg flex items-center gap-sm"> <MIcon name="calendar_today" className="text-text-secondary" /> <select className="bg-transparent border-none focus:ring-0 text-label font-label cursor-pointer p-0 pr-lg"> <option>Aujourd'hui</option> <option selected={true}>7 derniers jours</option> <option>Ce Mois</option> <option>Année</option> </select> </div> <button className="bg-white p-sm border border-border-default rounded-lg hover:bg-bg-secondary"> <MIcon name="notifications" className="text-text-main" /> </button> <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-light"> <img alt="Avatar Manager" data-alt="A professional headshot of a West African business manager in a clean modern office setting. He is wearing a crisp white shirt and a smart navy blazer, smiling confidently. The lighting is bright and warm, reflecting a corporate yet welcoming atmosphere with high-end digital agency vibes." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuZ7cftQChyzYoiIyuuE6UjKnJbMytx0BqVCQabJarNvXAw2V-oZsEYJ84cvIJpiNGPYuRY9kL96aOVrJlJwko2kIugcs7Q9MA5sCv40cbO8_pflnsAnFfhYFbCW9oicUuLGpvg4M9ZlRncTKUWezhqCU_GP6_u2Y6IFx1o8a_ph-hHmI36RWiTvgSsv9MU3rwMFHLneMtyrjJqtZ-uVALiYj_Szd4iO3ppRUmByLvBtpxxNfHEwsK-Z1e7iRVxCa0RZFMF91e2Y1h" /> </div> </div> </header>  <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-lg mb-xl">  <div className="bento-card p-lg"> <div className="flex justify-between items-start mb-md"> <div className="p-sm bg-primary-tint rounded-lg"> <MIcon name="payments" className="text-primary" /> </div> <span className="text-success text-label font-label flex items-center bg-success-light px-sm py-xs rounded-full"> <MIcon name="trending_up" className="!text-[16px] mr-1" /> +12%
-                    </span> </div> <p className="text-secondary font-secondary text-text-secondary">Volume d'Affaires</p> <p className="text-price font-price text-primary mt-xs">2 450 000 FCFA</p> </div>  <div className="bento-card p-lg"> <div className="flex justify-between items-start mb-md"> <div className="p-sm bg-info-light rounded-lg"> <MIcon name="shopping_basket" className="text-info" /> </div> <span className="text-success text-label font-label flex items-center bg-success-light px-sm py-xs rounded-full"> <MIcon name="trending_up" className="!text-[16px] mr-1" /> +5%
-                    </span> </div> <p className="text-secondary font-secondary text-text-secondary">Commandes Total</p> <p className="text-h1 font-h1 text-text-main mt-xs">856</p> </div>  <div className="bento-card p-lg" style={{borderColor: 'rgb(229, 231, 235)'}}> <div className="flex justify-between items-start mb-md"> <div className="p-sm bg-success-light rounded-lg"> <MIcon name="task_alt" className="text-success" /> </div> <span className="text-success text-label font-label flex items-center px-sm py-xs">
-                        Succès
-                    </span> </div> <p className="text-secondary font-secondary text-text-secondary">Taux de Livraison</p> <p className="text-h1 font-h1 text-text-main mt-xs">98.2%</p> </div>  <div className="bento-card p-lg"> <div className="flex justify-between items-start mb-md"> <div className="p-sm bg-amber-light rounded-lg"> <MIcon name="delivery_dining" className="text-amber-hover" /> </div> <div className="flex -space-x-2"> <div className="w-6 h-6 rounded-full border border-white bg-gray-300"></div> <div className="w-6 h-6 rounded-full border border-white bg-gray-400"></div> <div className="w-6 h-6 rounded-full border border-white bg-gray-500"></div> </div> </div> <p className="text-secondary font-secondary text-text-secondary">Livreurs Actifs</p> <p className="text-h1 font-h1 text-text-main mt-xs">24 <span className="text-text-tertiary font-h3">/ 30</span></p> </div> </section>  <section className="bento-card p-lg mb-xl" style={{borderColor: 'rgb(229, 231, 235)'}}> <div className="flex justify-between items-center mb-lg"> <h3 className="text-h3 font-h3 text-text-main">Évolution des ventes (7 derniers jours)</h3> <div className="flex items-center gap-md"> <div className="flex items-center gap-xs"> <span className="w-3 h-3 rounded-full bg-primary"></span> <span className="text-micro font-micro text-text-secondary">Volume (FCFA)</span> </div> </div> </div> <div className="chart-container relative flex items-end justify-between px-md pb-md">  <svg className="absolute inset-0 w-full h-full preserve-3d" preserveAspectRatio="none" viewBox="0 0 1000 300"> <defs> <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1"> <stop offset="0%" stop-color="#f97316" stop-opacity="0.3"></stop> <stop offset="100%" stop-color="#f97316" stop-opacity="0"></stop> </linearGradient> </defs> <path d="M0,250 L142,210 L285,240 L428,180 L571,150 L714,100 L857,120 L1000,80 L1000,300 L0,300 Z" fill="url(#chartGradient)"></path> <path d="M0,250 L142,210 L285,240 L428,180 L571,150 L714,100 L857,120 L1000,80" fill="none" stroke="#f97316" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4"></path> </svg>  <div className="w-full flex justify-between absolute bottom-0 px-lg translate-y-6"> <span className="text-label font-label text-text-tertiary">Lun</span> <span className="text-label font-label text-text-tertiary">Mar</span> <span className="text-label font-label text-text-tertiary">Mer</span> <span className="text-label font-label text-text-tertiary">Jeu</span> <span className="text-label font-label text-text-tertiary">Ven</span> <span className="text-label font-label text-text-tertiary">Sam</span> <span className="text-label font-label text-text-tertiary">Dim</span> </div> </div> </section>  <div className="grid grid-cols-1 lg:grid-cols-5 gap-lg">  <section className="lg:col-span-3 bento-card p-lg" style={{borderColor: 'rgb(229, 231, 235)'}}> <div className="flex justify-between items-center mb-lg"> <h3 className="text-h3 font-h3 text-text-main">Top Marchés de la Zone</h3> <button className="text-primary text-label font-label hover:underline">Voir tout</button> </div> <div className="space-y-md">  <div className="flex items-center justify-between p-md bg-bg-secondary rounded-lg border border-border-default border-l-[3px] border-l-primary"> <div className="flex items-center gap-md"> <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center border border-border-default"> <MIcon name="storefront" className="text-primary" /> </div> <div> <p className="text-label font-label text-text-main">Dantokpa</p> <p className="text-secondary font-secondary text-text-secondary">Grand Marché International</p> </div> </div> <div className="text-right"> <p className="text-label font-label text-text-main">1,250,000 FCFA</p> <div className="flex items-center gap-sm mt-xs"> <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden"> <div className="bg-primary h-full" style={{width: '51%'}}></div> </div> <span className="text-micro font-micro text-text-secondary">51%</span> </div> </div> </div>  <div className="flex items-center justify-between p-md border border-border-default rounded-lg"> <div className="flex items-center gap-md"> <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center border border-border-default"> <MIcon name="shopping_bag" className="text-primary" /> </div> <div> <p className="text-label font-label text-text-main">Akpakpa Centre</p> <p className="text-secondary font-secondary text-text-secondary">Zone Résidentielle &amp; Commerces</p> </div> </div> <div className="text-right"> <p className="text-label font-label text-text-main">820,000 FCFA</p> <div className="flex items-center gap-sm mt-xs"> <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden"> <div className="bg-primary h-full" style={{width: '33%'}}></div> </div> <span className="text-micro font-micro text-text-secondary">33%</span> </div> </div> </div>  <div className="flex items-center justify-between p-md border border-border-default rounded-lg"> <div className="flex items-center gap-md"> <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center border border-border-default"> <MIcon name="local_mall" className="text-primary" /> </div> <div> <p className="text-label font-label text-text-main">Sègbèya</p> <p className="text-secondary font-secondary text-text-secondary">Marché de quartier</p> </div> </div> <div className="text-right"> <p className="text-label font-label text-text-main">380,000 FCFA</p> <div className="flex items-center gap-sm mt-xs"> <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden"> <div className="bg-primary h-full" style={{width: '16%'}}></div> </div> <span className="text-micro font-micro text-text-secondary">16%</span> </div> </div> </div> </div> </section>  <section className="lg:col-span-2 bento-card p-lg" style={{borderColor: 'rgb(229, 231, 235)'}}> <div className="flex justify-between items-center mb-lg"> <h3 className="text-h3 font-h3 text-text-main">Performance Livreurs</h3> <span className="bg-primary-tint text-primary text-micro font-micro px-sm py-xs rounded-full">Top 5</span> </div> <div className="divide-y divide-border-default">  <div className="flex items-center justify-between py-md group"> <div className="flex items-center gap-md"> <div className="relative"> <img className="w-10 h-10 rounded-full object-cover" data-alt="Close up portrait of a young Beninese delivery rider wearing an orange branded TOKPa polo shirt and a professional helmet. He looks motivated and friendly, standing outdoors in Cotonou during daylight. High detail, vibrant and sharp commercial photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCL6S5dv5gMZMUQRhTHVMuSntm5tCA5amhaO2GszdxKus-DoKPjjHwwNOd2I8QjMltgZL9OsHgJewDVgO1Kp9e35sysPd_G1HdqyOldYoh0yRQrnD4dwgbRoWtdrfViNQ_gdY1sxe5nbo-XV5l_hXADxIbRdvkYj1b2y92pdnrjIULJyRzAr1aalUms80Y2OiWvdHD9dDQilF9O2tPo3MhDS-szirO1T2hkafXpxSAhRHTpZHBGv5EWH3et1Ryf62ja37uvzYO-7PnL" /> <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-success rounded-full border-2 border-white"></div> </div> <div> <p className="text-label font-label text-text-main group-hover:text-primary transition-colors">Koffi A.</p> <p className="text-micro font-micro text-text-secondary">142 courses</p> </div> </div> <div className="text-right"> <div className="flex items-center text-amber-text"> <MIcon name="star" className="!text-[16px]" /> <span className="text-label font-label ml-1">4.9</span> </div> </div> </div>  <div className="flex items-center justify-between py-md group"> <div className="flex items-center gap-md"> <img className="w-10 h-10 rounded-full object-cover" data-alt="A focused young African delivery professional smiling warmly, wearing a professional uniform. The background is a slightly blurred city street in West Africa with warm sunlight. Clean, corporate, and trustworthy aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbri8SC3vKfX2tSqBUrmsOo3L-2jAwu0_Qk6CFLak7eUkNCTqofZvaQX0FMhVvsmWWDI8yFP-_WiMciZuoCPPvbK347WL-jP-Mz_WVK8478nZy6vW8G6bSumIMMs63D1O0zTXIpsCinUrg-8L1ehhxHi1ujhp4IViqHD1ZtERmjan6A613hhCk1WixSe_4C4u8x3FUoVUD8Vpgmik5suXLbEEx46HIGKuEeudxOps8AtSZh_vWcOnAR0lAEAtf_HER9LKEcjSGrIM5" /> <div> <p className="text-label font-label text-text-main group-hover:text-primary transition-colors">Sena J.</p> <p className="text-micro font-micro text-text-secondary">138 courses</p> </div> </div> <div className="text-right"> <div className="flex items-center text-amber-text"> <MIcon name="star" className="!text-[16px]" /> <span className="text-label font-label ml-1">4.8</span> </div> </div> </div>  <div className="flex items-center justify-between py-md group"> <div className="flex items-center gap-md"> <img className="w-10 h-10 rounded-full object-cover" data-alt="Portrait of a reliable African delivery agent in a modern urban setting. Lighting is professional and bright, emphasizing a high-end service brand identity. Crisp and clear imagery for a digital dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBm6F1MDZkz3n4LmSIXdCnPoNXzhyEXgly2trKG0noq6eNseRR-Dx8YdZxeZa3cpE1qbz_9ZH-cqvPE5uv54_rxGY7ETvNEonV_Th5SiMWvHjNsIVXyUBGnExxIElJV6MfD3_KiuqDHyo2GagpvrUM5aG2bY6HzDs_S0uHnFNKT2qx0wWDLYl5Y-OLWFY9lWVcwpUJgt3J9mGfp1A2uaSzWYpviUmjaUvzOQFA6Tcy9U3UsEj_SOG7KFVq_J1tnW1Dcje7oDQQzwdr8" /> <div> <p className="text-label font-label text-text-main group-hover:text-primary transition-colors">Modeste T.</p> <p className="text-micro font-micro text-text-secondary">125 courses</p> </div> </div> <div className="text-right"> <div className="flex items-center text-amber-text"> <MIcon name="star" className="!text-[16px]" /> <span className="text-label font-label ml-1">4.8</span> </div> </div> </div>  <div className="flex items-center justify-between py-md group"> <div className="flex items-center gap-md"> <img className="w-10 h-10 rounded-full object-cover" data-alt="African delivery fleet member with a professional and friendly look, high quality digital interface photography. Bright sunlight and clean environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuADYHOHsdCna2Sm7C4MAgaKWWPxoaGfmUc-Khf8SwyiL2l8t4Gw5NFpPv-20YB1grmYajzZcBfVuj7lSYbs5NXqkJVjvHuLvWvpU8w06Tohx3qQGuuc12uavjdJjzFStzVZ4jKNQ8pxtDiNntEqafkyYFGA1iDJX2fzx0bz1pOR4gYUHzMGXoXFid_9dem9gKruRIqCp3tUC7KPbnRmEsMJrZRApVELbzZotLRLL2jveLBdLzjPtINkZ_VkuLho7BFKFP6s065zFwHO" /> <div> <p className="text-label font-label text-text-main group-hover:text-primary transition-colors">Jean B.</p> <p className="text-micro font-micro text-text-secondary">118 courses</p> </div> </div> <div className="text-right"> <div className="flex items-center text-amber-text"> <MIcon name="star" className="!text-[16px]" /> <span className="text-label font-label ml-1">4.7</span> </div> </div> </div>  <div className="flex items-center justify-between py-md group border-b-0"> <div className="flex items-center gap-md"> <img className="w-10 h-10 rounded-full object-cover" data-alt="Professional delivery driver headshot, West African heritage, vibrant colors, soft lighting, 8k resolution, for a modern marketplace application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKrvb2Fd6xrS0-Xb5pLXx6OmirPpqdplnZUxxAcrpIvpVUtplt2ZkUbFpzAUFCR0qKbYf2u4mxVsHDLFzJOKKGhGqm6lhXoYu9ecWMB5l98_TglxIzfILxE85Et2eA81lfnxHSP1YPm_AlSTzcpJ87oQxVho4CB0oT8WUX058m87QybWtvnoSF-EMvR7Ea5QPcPeZl528bc0rZeQULJyaI3Q40DBqrSOtBR3cBtry0HOqN6cn3LX_vbFbaIm3uEgmxPPxMg3V0FsRz" /> <div> <p className="text-label font-label text-text-main group-hover:text-primary transition-colors">Aimé D.</p> <p className="text-micro font-micro text-text-secondary">98 courses</p> </div> </div> <div className="text-right"> <div className="flex items-center text-amber-text"> <MIcon name="star" className="!text-[16px]" /> <span className="text-label font-label ml-1">4.6</span> </div> </div> </div> </div> </section> </div>  
+      <div className="space-y-6">
+        {/* En-tête */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-h2 font-h2 font-bold">Statistiques de la Zone - Akpakpa</h1>
+            <p className="text-text-secondary">Bienvenue sur votre tableau de bord de performance localisée.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {PERIODES.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPeriode(p)}
+                className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-label font-semibold transition ${
+                  periode === p
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-border-default bg-white text-text-secondary hover:border-primary hover:text-primary'
+                }`}
+              >
+                {p === PERIODES[0] && <MIcon name="calendar_today" className="text-[16px]" />}
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* KPI */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {KPIS.map((k) => (
+            <div key={k.label} className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+              <div className="flex items-center gap-2">
+                <MIcon name={k.icon} className="text-primary text-[20px]" />
+                <p className="text-label text-text-secondary">{k.label}</p>
+              </div>
+              <p className="mt-2 text-h1 font-h1 font-bold">
+                {k.value} {k.unit && <span className="text-label text-text-secondary">{k.unit}</span>}
+              </p>
+              {k.delta && (
+                <p className="mt-1 text-label font-semibold text-success">
+                  <MIcon name="trending_up" className="align-middle text-[16px]" /> {k.delta}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          {/* Graphe */}
+          <div className="rounded-lg border border-border-default bg-white p-lg shadow-sm xl:col-span-2">
+            <h2 className="text-h3 font-h3 font-bold">Évolution des ventes (7 derniers jours)</h2>
+            <p className="text-label text-text-secondary">Volume (FCFA)</p>
+            <div className="mt-6 flex h-[240px] items-end justify-between gap-3">
+              {JOURS.map((j, i) => (
+                <div key={j} className="flex flex-1 flex-col items-center gap-2">
+                  <div
+                    className="w-full max-w-[48px] rounded-t-lg bg-primary"
+                    style={{ height: `${HAUTEURS[i]}%` }}
+                  />
+                  <p className="text-label text-text-secondary">{j}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Top marchés */}
+          <div className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-h3 font-h3 font-bold">Top Marchés de la Zone</h2>
+              <button type="button" className="text-label font-semibold text-primary hover:underline">
+                Voir tout
+              </button>
+            </div>
+            <div className="mt-2">
+              {MARCHES.map((m) => (
+                <div key={m.nom} className="flex items-center gap-3 border-t border-border-default py-3 first:border-t-0">
+                  <MIcon name={m.icon} className="text-primary text-[20px]" />
+                  <div className="flex-1">
+                    <p className="text-label font-semibold">{m.nom}</p>
+                    <p className="text-label text-text-secondary">{m.sous}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-label font-semibold">{m.montant}</p>
+                    <p className="text-label text-text-secondary">{m.part}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Performance livreurs */}
+        <div className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-h3 font-h3 font-bold">Performance Livreurs</h2>
+            <span className="rounded-full bg-bg-secondary px-2.5 py-1 text-overline font-semibold">Top 5</span>
+          </div>
+          <div className="mt-2">
+            {TOP5.map((l, i) => (
+              <div key={l.nom} className="flex items-center gap-3 border-t border-border-default py-3 first:border-t-0">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-tint text-label font-bold text-primary">
+                  {i + 1}
+                </span>
+                <p className="flex-1 text-label font-semibold">{l.nom}</p>
+                <p className="text-label text-text-secondary">{l.courses} courses</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </ManagerLayout>
   );
 }
