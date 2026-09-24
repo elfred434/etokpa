@@ -93,9 +93,6 @@ export default function Verification2faPage() {
               <MIcon name="schedule" className="text-sm" />
               {expired ? 'Code expiré' : `Le code expire dans ${formatTime(secondsLeft)}`}
             </span>
-            <span className="text-[11px] text-text-tertiary">
-              💡 Code de test rapide : <strong className="text-primary-container font-mono">123456</strong>
-            </span>
           </div>
 
           {error && !blocked && (
