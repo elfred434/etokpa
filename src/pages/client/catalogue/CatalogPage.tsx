@@ -111,7 +111,9 @@ export default function CatalogPage() {
   const [search, setSearch] = useState(q);
   const [cat, setCat] = useState<CatFilter>(() => parseCat(catParam));
   const [zones, setZones] = useState<string[]>(['dantokpa']);
-  const [maxPrice, setMaxPrice] = useState(7500);
+  // Prix max choisi au curseur ; null = aucune limite (la maquette figeait value="7500", ce qui masquait
+  // tout article plus cher dès qu'une catégorie était choisie).
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [dispoOnly, setDispoOnly] = useState(true);
   const [touched, setTouched] = useState(() => parseCat(catParam) !== 'all');
   const [sort, setSort] = useState('pop');
@@ -178,6 +180,14 @@ export default function CatalogPage() {
     };
   }, []);
   const packMode = cat === 'pack' && apiPacks !== null;
+
+  // Plafond du curseur prix : article le plus cher de la liste affichée (produits, ou packs), arrondi
+  // aux 500 F supérieurs, jamais moins que les 10 000 de la maquette.
+  const priceCeil = useMemo(() => {
+    const base = packMode && apiPacks ? apiPacks : productsList;
+    const top = base.reduce((m, p) => Math.max(m, Number(p.prix) || 0), 0);
+    return Math.max(10000, Math.ceil(top / 500) * 500);
+  }, [packMode, apiPacks, productsList]);
 
   // Sous-catégorie → catégorie racine (le filtre de la barre latérale porte sur les racines)
   const rootOf = useMemo(() => {
@@ -246,6 +256,13 @@ export default function CatalogPage() {
 
   const touch = () => setTouched(true);
 
+  // Curseur prix (bureau + mobile) : ramené tout à droite = plus de limite.
+  const onPriceChange = (v: number) => {
+    touch();
+    setMaxPrice(v >= priceCeil ? null : v);
+    setPage(1);
+  };
+
   const filtered = useMemo(() => {
     let items = [...(packMode && apiPacks ? apiPacks : productsList)];
     const needle = search.trim().toLowerCase();
@@ -260,7 +277,7 @@ export default function CatalogPage() {
         }
       }
       if (zones.length > 0) items = items.filter((p) => zones.includes(p.zoneId));
-      items = items.filter((p) => p.prix <= maxPrice);
+      if (maxPrice !== null) items = items.filter((p) => p.prix <= maxPrice);
       if (dispoOnly) items = items.filter((p) => p.stock === 'available');
     }
     if (sort === 'asc') items.sort((a, b) => a.prix - b.prix);
@@ -276,7 +293,7 @@ export default function CatalogPage() {
   const resetFilters = () => {
     setCat('all');
     setZones(['dantokpa']);
-    setMaxPrice(7500);
+    setMaxPrice(null);
     setDispoOnly(true);
     setTouched(false);
     setSearch('');
@@ -388,24 +405,20 @@ export default function CatalogPage() {
             <div className="mt-8 border-t border-line pt-6">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="font-h3 text-h3">Prix (FCFA)</h3>
-                <span className="text-micro font-bold text-primary">10 000 max</span>
+                <span className="text-micro font-bold text-primary">{(maxPrice ?? priceCeil).toLocaleString('fr-FR')} max</span>
               </div>
               <input
                 type="range"
                 min={0}
-                max={10000}
+                max={priceCeil}
                 step={50}
-                value={maxPrice}
-                onChange={(e) => {
-                  touch();
-                  setMaxPrice(Number(e.target.value));
-                  setPage(1);
-                }}
+                value={Math.min(maxPrice ?? priceCeil, priceCeil)}
+                onChange={(e) => onPriceChange(Number(e.target.value))}
                 className="range-tokpa h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-warm-container accent-primary"
               />
               <div className="mt-2 flex justify-between text-micro text-ink-3">
                 <span>0</span>
-                <span>10k</span>
+                <span>{(priceCeil / 1000).toLocaleString('fr-FR')}k</span>
               </div>
             </div>
 
@@ -506,19 +519,15 @@ export default function CatalogPage() {
                 <div className="border-t border-line pt-4">
                   <div className="mb-2 flex items-center justify-between">
                     <h4 className="font-h3 text-h3 text-on-surface">Prix max</h4>
-                    <span className="text-xs font-bold text-primary">{maxPrice.toLocaleString('fr-FR')} FCFA</span>
+                    <span className="text-xs font-bold text-primary">{(maxPrice ?? priceCeil).toLocaleString('fr-FR')} FCFA</span>
                   </div>
                   <input
                     type="range"
                     min={0}
-                    max={10000}
+                    max={priceCeil}
                     step={500}
-                    value={maxPrice}
-                    onChange={(e) => {
-                      touch();
-                      setMaxPrice(Number(e.target.value));
-                      setPage(1);
-                    }}
+                    value={Math.min(maxPrice ?? priceCeil, priceCeil)}
+                    onChange={(e) => onPriceChange(Number(e.target.value))}
                     className="range-tokpa h-2 w-full cursor-pointer appearance-none rounded-lg bg-page"
                   />
                 </div>
