@@ -19,7 +19,7 @@ interface SelectionItem {
   lieu: string;
   prixLabel: string;
   prix: number;
-  image: string;
+  image: string | null;
   badge: 'Disponible' | 'Stock Limité';
 }
 
@@ -42,7 +42,8 @@ export default function HomePage() {
             lieu: 'Marché Dantokpa',
             prixLabel: `${p.prix.toLocaleString('fr-FR')} FCFA`,
             prix: p.prix,
-            image: absImageUrl(p.image_url ?? p.img_url) || '/images/design/tomates-1kg.png',
+            // Même source que l'admin ; pas d'image → null = dégradé (plus de fausse photo tomates, y compris au panier)
+            image: absImageUrl(p.image_url ?? p.img_url),
             badge: p.stock > 5 ? 'Disponible' : 'Stock Limité',
           }));
           setSelection(fetched);
@@ -77,7 +78,7 @@ export default function HomePage() {
       categorie: 'vegetable',
       stock: item.badge === 'Disponible' ? 'available' : 'low',
       badges: [],
-      image: item.image,
+      image: item.image ?? undefined,
     };
     dispatch(add({ product }));
     toast.success(isFr ? `${item.nom} ajouté au panier` : `${item.nom} added to cart`);
@@ -171,7 +172,7 @@ export default function HomePage() {
                   className="bento-hover group cursor-pointer overflow-hidden rounded-[14px] border border-line bg-white p-md shadow-xs"
                 >
                   <div className="relative mb-md h-48 sm:h-40 overflow-hidden rounded-[10px] bg-page flex items-center justify-center">
-                    {item.image.startsWith('/') ? (
+                    {!item.image ? (
                       <div className="w-full h-full bg-gradient-to-br from-primary-lighter to-primary-light flex items-center justify-center">
                         <MIcon name="shopping_bag" className="text-4xl text-primary" />
                       </div>

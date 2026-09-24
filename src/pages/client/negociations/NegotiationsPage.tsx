@@ -11,6 +11,7 @@ import { acceptCounterOffer, setProposals, type NegotiationItem } from '../../..
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { negotiationApi } from '../../../services/api';
+import { absImageUrl } from '../../../utils/imageUrl';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import type { Product } from '../../../types/models';
 
@@ -41,7 +42,7 @@ export default function NegotiationsPage() {
             id: String(p.id),
             productId: String(p.product_id || p.product?.id || '1'),
             productName: p.product?.nom || 'Produit du marché',
-            productImage: p.product?.image_url,
+            productImage: absImageUrl(p.product?.image_url) ?? undefined,
             vendorName: 'Marché Dantokpa',
             originalPrice: Number(p.product?.prix) || Number(p.prix_propose) || 0,
             proposedPrice: Number(p.prix_propose),

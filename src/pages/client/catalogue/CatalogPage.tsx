@@ -9,6 +9,7 @@ import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import type { CategoryId, Product } from '../../../types/models';
 import { catalogApi, type ApiProduct } from '../../../services/api';
+import { absImageUrl } from '../../../utils/imageUrl';
 
 /* ---- Données exactes du code.html « catalogue_tokpa » ---- */
 
@@ -43,6 +44,8 @@ interface CatalogProduct {
   stock: 'available' | 'low' | 'none';
   icon: string;
   cat: CategoryId;
+  /** Image réelle = ProductResource.image_url résolue par absImageUrl (même source que l'admin) ; absente → dégradé + icône. */
+  image?: string | null;
 }
 
 const INITIAL_PRODUCTS: CatalogProduct[] = [
@@ -117,6 +120,7 @@ export default function CatalogPage() {
             stock: p.disponible === false || Number(p.stock) <= 0 ? 'none' : Number(p.stock) <= 5 ? 'low' : 'available',
             icon: mapApiCategory(p.categorie) === 'fish' ? 'set_meal' : mapApiCategory(p.categorie) === 'grain' ? 'nutrition' : mapApiCategory(p.categorie) === 'spice' ? 'restaurant' : mapApiCategory(p.categorie) === 'pack' ? 'package_2' : 'eco',
             cat: mapApiCategory(p.categorie),
+            image: absImageUrl(p.image_url ?? p.img_url),
           }));
           setProductsList(fetched);
         })
@@ -180,6 +184,7 @@ export default function CatalogPage() {
       stock: p.stock === 'none' ? 'out' : p.stock === 'low' ? 'low' : 'available',
       badges: p.promo ? ['promo'] : [],
       negotiated: p.prixAncienLabel ? { oldPrice: 1000 } : undefined,
+      image: p.image ?? undefined,
     };
     dispatch(add({ product }));
     toast.success(`${p.nom} ajouté au panier`);
@@ -530,7 +535,11 @@ export default function CatalogPage() {
                   className="group cursor-pointer overflow-hidden rounded-xl border-[0.5px] border-line bg-white transition-all hover:shadow-md"
                 >
                   <div className="relative flex h-[110px] items-center justify-center bg-gradient-to-br from-primary-lighter to-primary-light">
-                    <MIcon name={p.icon} className="text-[40px] text-primary-hover" />
+                    {p.image ? (
+                      <img src={p.image} alt={p.nom} className="absolute inset-0 h-full w-full object-cover" />
+                    ) : (
+                      <MIcon name={p.icon} className="text-[40px] text-primary-hover" />
+                    )}
                     {badges(p)}
                   </div>
                   <div className="p-md">
@@ -569,7 +578,11 @@ export default function CatalogPage() {
                 >
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className="relative flex h-[70px] w-[90px] sm:h-[80px] sm:w-[110px] shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary-lighter to-primary-light">
-                      <MIcon name={p.icon} className="text-[28px] sm:text-[32px] text-primary-hover" />
+                      {p.image ? (
+                        <img src={p.image} alt={p.nom} className="absolute inset-0 h-full w-full rounded-lg object-cover" />
+                      ) : (
+                        <MIcon name={p.icon} className="text-[28px] sm:text-[32px] text-primary-hover" />
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <h4 className="text-xs sm:text-label font-semibold text-ink line-clamp-1">{p.nom}</h4>

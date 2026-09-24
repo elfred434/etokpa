@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { store, } from '../store';
 import { useAppDispatch, useAppSelector } from '../hooks/useStore';
 import { add, clear } from '../store/slices/cart/cartSlice';
-import { cartApi } from '../services/api';
+import { cartApi, catalogApi, type ApiProduct } from '../services/api';
+import { absImageUrl } from '../utils/imageUrl';
 import type { Product } from '../types/models';
 
 interface ServerCartItem {
@@ -13,6 +14,21 @@ interface ServerCartItem {
 }
 
 type LocalItem = { product: { id: string }; quantite: number };
+
+/**
+ * Le panier serveur (`GET /cart`) ne contient pas d'image : on la reprend du produit
+ * (`GET /products/{id}` → `image_url`), résolue par `absImageUrl` comme dans l'admin.
+ * Échec (produit supprimé, réseau) → pas d'image = dégradé du panier.
+ */
+function fetchProductImage(productId: number): Promise<string | undefined> {
+  return catalogApi
+    .getProduct(productId)
+    .then((res) => {
+      const p = (res?.data ?? res) as ApiProduct | undefined;
+      return absImageUrl(p?.image_url ?? p?.img_url) ?? undefined;
+    })
+    .catch(() => undefined);
+}
 
 /**
  * Synchronisation Panier Redux ⇄ Panier backend (Redis, clé `cart:{user_id}`).
@@ -44,16 +60,19 @@ export function useCartSync(sessionKey: number): void {
 
     cartApi
       .getCart()
-      .then((res) => {
+      .then(async (res) => {
         if (cancelled) return;
         const serverItems: ServerCartItem[] = res?.data ?? [];
         const local = localItems();
 
         if (serverItems.length > 0) {
+          // Images des articles (requêtes en parallèle) — le panier serveur n'en porte pas.
+          const images = await Promise.all(serverItems.map((it) => fetchProductImage(it.product_id)));
+          if (cancelled) return;
           // Le serveur est la vérité : on aligne le Redux sur l'état serveur
           // (évite tout décalage local/serveur, ex. multi-appareils).
           dispatch(clear());
-          for (const it of serverItems) {
+          serverItems.forEach((it, i) => {
             const product: Product = {
               id: String(it.product_id),
               nom: it.nom,
@@ -64,9 +83,10 @@ export function useCartSync(sessionKey: number): void {
               categorie: 'vegetable',
               stock: 'available',
               badges: [],
+              image: images[i],
             };
             dispatch(add({ product, quantity: it.quantite }));
-          }
+          });
         } else if (local.length > 0) {
           // Panier serveur vide mais panier local non vide → on pousse le local au serveur
           for (const it of local) {
