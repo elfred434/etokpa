@@ -40,12 +40,13 @@ const STATUT_LABELS: Record<string, { fr: string; en: string }> = {
   annule: { fr: 'Annulée', en: 'Cancelled' },
 };
 
-const STATUT_BADGE: Record<string, string> = {
-  en_attente: 'bg-[#FFFBEB] text-amber-text border-[#FDE68A]',
-  en_preparation: 'bg-primary-tint text-primary-dark border-primary-light',
-  en_livraison: 'bg-primary-tint text-primary-dark border-primary-light',
-  livre: 'bg-success-light text-success-dark border-success-light',
-  annule: 'bg-error-light text-error-dark border-error/20',
+/** Pastilles de statut du design Stitch (theme.css `.status` + variantes). */
+const STATUT_CLASS: Record<string, string> = {
+  en_attente: 'status-pending',
+  en_preparation: 'status-preparing',
+  en_livraison: 'status-shipping',
+  livre: 'status-delivered',
+  annule: 'status-cancelled',
 };
 
 const articlesCount = (o: ApiOrder) => (o.items ?? []).reduce((s, it) => s + Number(it.quantite ?? 0), 0);
@@ -114,44 +115,42 @@ export default function OrdersListPage() {
           {/* En-tête */}
           <div className="flex flex-wrap items-center justify-between gap-2 mb-lg">
             <h1 className="font-h1 text-h1 text-on-surface">{isFr ? 'Mes commandes' : 'My orders'}</h1>
-            <span className="text-micro text-text-secondary bg-white border border-border-default rounded-lg px-3 py-1.5">
+            <span className="label text-text-secondary bg-white border border-line rounded-button px-3 py-1.5">
               {total} {isFr ? 'commande(s)' : 'order(s)'}
             </span>
           </div>
 
           {error && (
-            <div className="mb-lg p-3 bg-error-light border border-error/20 rounded-lg text-xs font-semibold text-error-dark leading-relaxed">
+            <div className="mb-lg p-3 bg-error-light border border-error/20 rounded-card text-xs font-semibold text-error-dark leading-relaxed">
               {error}
             </div>
           )}
 
           {loading ? (
-            <div className="py-2xl flex justify-center bg-white rounded-lg border border-border-default">
-              <MIcon name="sync" className="text-primary text-3xl animate-spin" />
+            <div className="card p-lg space-y-md" aria-busy="true">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="skeleton h-5 rounded-lg" style={{ width: `${100 - i * 8}%` }} />
+              ))}
             </div>
           ) : orders.length === 0 ? (
-            <div className="py-xl bg-white rounded-lg border border-border-default">
+            <div className="card py-xl">
               <EmptyState
                 icon={<MIcon name="receipt_long" className="text-4xl text-primary" />}
                 title={isFr ? 'Aucune commande' : 'No orders yet'}
                 description={isFr ? 'Vos commandes apparaîtront ici.' : 'Your orders will appear here.'}
                 action={
-                  <button
-                    type="button"
-                    className="px-lg py-3 bg-primary-container text-white rounded-lg font-bold cursor-pointer"
-                    onClick={() => navigate({ to: '/catalogue' })}
-                  >
+                  <button type="button" className="btn btn-primary" onClick={() => navigate({ to: '/catalogue' })}>
                     {isFr ? 'Explorer le marché' : 'Browse the market'}
                   </button>
                 }
               />
             </div>
           ) : (
-            <div className="bg-white rounded-lg border border-border-default overflow-hidden">
+            <div className="card overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-body">
                   <thead>
-                    <tr className="border-b border-border-default bg-bg-secondary text-micro font-bold text-text-secondary uppercase">
+                    <tr className="border-b border-line bg-warm label text-text-secondary">
                       <th className="px-md py-sm">Réf</th>
                       <th className="px-md py-sm">{isFr ? 'Date' : 'Date'}</th>
                       <th className="px-md py-sm">{isFr ? 'Articles' : 'Items'}</th>
@@ -168,20 +167,16 @@ export default function OrdersListPage() {
                         <tr
                           key={o.id}
                           onClick={() => setSelected(o)}
-                          className="border-b border-border-default/60 last:border-0 hover:bg-bg-secondary cursor-pointer transition-colors"
+                          className="border-b border-line/60 last:border-0 hover:bg-primary-lighter/50 cursor-pointer transition-colors"
                         >
                           <td className="px-md py-sm font-bold text-text-main">#{o.id}</td>
                           <td className="px-md py-sm text-text-secondary">{fmtDate(o.created_at)}</td>
                           <td className="px-md py-sm text-text-secondary">{articlesCount(o)}</td>
-                          <td className="px-md py-sm font-price text-text-main">
+                          <td className="px-md py-sm price text-text-main">
                             {Number(o.montant_total ?? 0).toLocaleString('fr-FR')} FCFA
                           </td>
                           <td className="px-md py-sm">
-                            <span
-                              className={`inline-flex items-center gap-xs px-md py-xs rounded-full text-micro font-bold border ${
-                                STATUT_BADGE[o.statut] ?? 'bg-bg-secondary text-text-secondary border-border-default'
-                              }`}
-                            >
+                            <span className={`status ${STATUT_CLASS[o.statut] ?? ''}`}>
                               {isFr ? label.fr : label.en}
                             </span>
                           </td>
@@ -193,7 +188,7 @@ export default function OrdersListPage() {
                                 e.stopPropagation();
                                 handleSuivre(o.id);
                               }}
-                              className="inline-flex items-center gap-xs px-md py-xs rounded-lg bg-primary-tint border border-primary-light text-primary-container text-micro font-bold hover:bg-primary-lighter active:scale-95 transition-all cursor-pointer"
+                              className="btn btn-secondary btn-sm"
                             >
                               <MIcon name="near_me" className="text-[14px]" />
                               {isFr ? 'Suivre' : 'Track'}
@@ -208,23 +203,23 @@ export default function OrdersListPage() {
 
               {/* Pagination (serveur — paginate(15)) */}
               {lastPage > 1 && (
-                <div className="flex items-center justify-between gap-md px-md py-sm border-t border-border-default bg-bg-secondary">
+                <div className="flex items-center justify-between gap-md px-md py-sm border-t border-line bg-warm">
                   <button
                     type="button"
                     disabled={page <= 1}
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    className="px-md py-xs rounded-lg border border-border-default bg-white text-micro font-bold disabled:opacity-40 cursor-pointer"
+                    className="btn btn-ghost btn-sm"
                   >
                     ← {isFr ? 'Précédent' : 'Previous'}
                   </button>
-                  <span className="text-micro text-text-secondary">
+                  <span className="label text-text-secondary">
                     {isFr ? 'Page' : 'Page'} {page} / {lastPage}
                   </span>
                   <button
                     type="button"
                     disabled={page >= lastPage}
                     onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
-                    className="px-md py-xs rounded-lg border border-border-default bg-white text-micro font-bold disabled:opacity-40 cursor-pointer"
+                    className="btn btn-ghost btn-sm"
                   >
                     {isFr ? 'Suivant' : 'Next'} →
                   </button>
@@ -235,18 +230,18 @@ export default function OrdersListPage() {
         </div>
       </main>
 
-      {/* MODALE DÉTAILS COMMANDE */}
+      {/* MODALE DÉTAILS COMMANDE — même gabarit que NegotiationModal (largeur arbitraire : max-w-lg = bug TW4) */}
       {selected && (
         <div
-          className="fixed inset-0 z-[500] bg-black/50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[500] flex items-center justify-center bg-black/50 p-4 animate-fade-in"
           onClick={() => setSelected(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
+            className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* En-tête modale */}
-            <div className="flex items-start justify-between gap-md p-lg border-b border-border-default sticky top-0 bg-white">
+            <div className="flex items-start justify-between gap-md p-lg border-b border-line bg-warm">
               <div>
                 <h2 className="font-h2 text-h2 text-on-surface">
                   {isFr ? 'Commande' : 'Order'} #{selected.id}
@@ -254,11 +249,7 @@ export default function OrdersListPage() {
                 <p className="text-micro text-text-secondary mt-xs">{fmtDateTime(selected.created_at)}</p>
               </div>
               <div className="flex items-center gap-sm">
-                <span
-                  className={`inline-flex items-center gap-xs px-md py-xs rounded-full text-micro font-bold border ${
-                    STATUT_BADGE[selected.statut] ?? 'bg-bg-secondary text-text-secondary border-border-default'
-                  }`}
-                >
+                <span className={`status ${STATUT_CLASS[selected.statut] ?? ''}`}>
                   {isFr
                     ? (STATUT_LABELS[selected.statut]?.fr ?? selected.statut)
                     : (STATUT_LABELS[selected.statut]?.en ?? selected.statut)}
@@ -266,24 +257,28 @@ export default function OrdersListPage() {
                 <button
                   type="button"
                   onClick={() => setSelected(null)}
-                  className="w-8 h-8 rounded-lg border border-border-default flex items-center justify-center hover:bg-bg-secondary cursor-pointer"
+                  aria-label={isFr ? 'Fermer' : 'Close'}
+                  className="w-8 h-8 rounded-button border border-line flex items-center justify-center hover:bg-white transition-colors cursor-pointer"
                 >
                   <MIcon name="close" className="text-[18px]" />
                 </button>
               </div>
             </div>
 
-            <div className="p-lg space-y-lg">
+            {/* Corps scrollable */}
+            <div className="p-lg space-y-lg overflow-y-auto">
               {/* Articles */}
               <section>
-                <h3 className="font-label text-body font-bold text-text-main mb-sm flex items-center gap-xs">
-                  <MIcon name="shopping_bag" className="text-[18px] text-primary-container" />
+                <h3 className="label text-text-main mb-sm flex items-center gap-xs">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary-lighter text-primary-dark">
+                    <MIcon name="shopping_bag" className="text-[16px]" />
+                  </span>
                   {isFr ? 'Articles' : 'Items'}
                 </h3>
                 <table className="w-full text-body">
                   <tbody>
                     {(selected.items ?? []).map((it) => (
-                      <tr key={it.id} className="border-b border-border-default/60 last:border-0">
+                      <tr key={it.id} className="border-b border-line/60 last:border-0">
                         <td className="py-xs pr-sm text-text-main">{it.nom ?? `Produit #${it.product_id}`}</td>
                         <td className="py-xs px-sm text-text-secondary whitespace-nowrap">× {it.quantite}</td>
                         <td className="py-xs px-sm text-text-secondary whitespace-nowrap">
@@ -301,14 +296,13 @@ export default function OrdersListPage() {
                     )}
                   </tbody>
                 </table>
-                <div className="mt-sm space-y-xs text-body border-t border-border-default pt-sm">
+                <div className="mt-sm space-y-xs text-body border-t border-line pt-sm">
                   <div className="flex justify-between text-text-secondary">
                     <span>{isFr ? 'Sous-total produits' : 'Items subtotal'}</span>
                     <span>
-                      {(articlesCount(selected) >= 0
-                        ? (selected.items ?? []).reduce((s, it) => s + Number(it.prix_unitaire) * Number(it.quantite), 0)
-                        : 0
-                      ).toLocaleString('fr-FR')}{' '}
+                      {(selected.items ?? [])
+                        .reduce((s, it) => s + Number(it.prix_unitaire) * Number(it.quantite), 0)
+                        .toLocaleString('fr-FR')}{' '}
                       FCFA
                     </span>
                   </div>
@@ -318,18 +312,20 @@ export default function OrdersListPage() {
                   </div>
                   <div className="flex justify-between font-bold text-text-main">
                     <span>{isFr ? 'Total' : 'Total'}</span>
-                    <span className="font-price">{money(selected.montant_total)}</span>
+                    <span className="price">{money(selected.montant_total)}</span>
                   </div>
                 </div>
               </section>
 
               {/* Livraison */}
               <section>
-                <h3 className="font-label text-body font-bold text-text-main mb-sm flex items-center gap-xs">
-                  <MIcon name="local_shipping" className="text-[18px] text-primary-container" />
+                <h3 className="label text-text-main mb-sm flex items-center gap-xs">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary-lighter text-primary-dark">
+                    <MIcon name="local_shipping" className="text-[16px]" />
+                  </span>
                   {isFr ? 'Livraison' : 'Delivery'}
                 </h3>
-                <div className="bg-bg-secondary rounded-lg p-md space-y-xs text-body">
+                <div className="bg-warm rounded-card p-md space-y-xs text-body">
                   <p className="text-text-main font-bold">{selected.landmark?.nom ?? '—'}</p>
                   {selected.description_lieu && (
                     <p className="text-text-secondary">{selected.description_lieu}</p>
@@ -343,7 +339,7 @@ export default function OrdersListPage() {
                             {' · '}
                             <a
                               href={`tel:${selected.livreur.telephone.replace(/\s/g, '')}`}
-                              className="text-primary-container font-bold hover:underline"
+                              className="text-primary-dark font-bold hover:underline"
                             >
                               {selected.livreur.telephone}
                             </a>
@@ -359,11 +355,13 @@ export default function OrdersListPage() {
 
               {/* Paiement */}
               <section>
-                <h3 className="font-label text-body font-bold text-text-main mb-sm flex items-center gap-xs">
-                  <MIcon name="credit_card" className="text-[18px] text-primary-container" />
+                <h3 className="label text-text-main mb-sm flex items-center gap-xs">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary-lighter text-primary-dark">
+                    <MIcon name="credit_card" className="text-[16px]" />
+                  </span>
                   {isFr ? 'Paiement' : 'Payment'}
                 </h3>
-                <div className="bg-bg-secondary rounded-lg p-md text-body text-text-secondary">
+                <div className="bg-warm rounded-card p-md text-body text-text-secondary">
                   {selected.payment ? (
                     <div className="flex justify-between">
                       <span>
@@ -381,19 +379,11 @@ export default function OrdersListPage() {
 
               {/* Actions modale */}
               <div className="flex gap-sm">
-                <button
-                  type="button"
-                  onClick={() => handleSuivre(selected.id)}
-                  className="flex-1 bg-primary-container hover:bg-primary-hover text-white font-bold py-3 rounded-lg flex items-center justify-center gap-sm transition-all cursor-pointer"
-                >
+                <button type="button" onClick={() => handleSuivre(selected.id)} className="btn btn-primary flex-1">
                   <MIcon name="near_me" />
                   {isFr ? 'Suivre cette commande' : 'Track this order'}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setSelected(null)}
-                  className="px-lg bg-white border border-border-default text-text-secondary font-bold py-3 rounded-lg hover:bg-bg-secondary transition-all cursor-pointer"
-                >
+                <button type="button" onClick={() => setSelected(null)} className="btn btn-ghost">
                   {isFr ? 'Fermer' : 'Close'}
                 </button>
               </div>
