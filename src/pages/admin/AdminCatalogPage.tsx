@@ -5,6 +5,7 @@ import { adminApi } from '../../services/api';
 import { useLiveRows } from '../../services/api/useLiveRows';
 import { unwrap, listOf, fmtFcfa } from '../../services/api/unwrap';
 import { absImageUrl } from '../../utils/imageUrl';
+import { extractApiError, formatApiError } from '../../utils/apiError';
 import DESIGN_SCRIPT from './_scripts/AdminCatalogPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
@@ -86,18 +87,18 @@ export default function AdminCatalogPage() {
       } else if (edition?.id) await adminApi.updateProduct(edition.id, champs);
       else await adminApi.createProduct(champs);
       fermer(); reload();
-    } catch (e: any) { window.alert(String(e?.message ?? e)); }
+    } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
   };
   const supprimer = async (id: number) => {
-    try { await adminApi.deleteProduct(id); reload(); } catch (e: any) { window.alert(String(e?.message ?? e)); }
+    try { await adminApi.deleteProduct(id); reload(); } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
   };
   const supprimerCat = async (c: any) => {
     if (!window.confirm(`Supprimer la catégorie « ${c.nom} » ?`)) return;
-    try { await adminApi.deleteCategory(c.id); loadCats(); reload(); } catch (e: any) { window.alert(String(e?.message ?? e)); }
+    try { await adminApi.deleteCategory(c.id); loadCats(); reload(); } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
   };
   const supprimerPack = async (b: any) => {
     if (!window.confirm(`Supprimer le pack « ${b.nom} » ?`)) return;
-    try { await adminApi.deleteBundle(b.id); loadPacks(); } catch (e: any) { window.alert(String(e?.message ?? e)); }
+    try { await adminApi.deleteBundle(b.id); loadPacks(); } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
   };
   const qMin = q.trim().toLowerCase();
   const produitsF = produits.filter((p: any) => {
