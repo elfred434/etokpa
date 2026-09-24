@@ -32,6 +32,16 @@ export default function AdminCatalogPage() {
   const [dispoF, setDispoF] = useState('');
   const [edition, setEdition] = useState<any | null>(null);
   const [form, setForm] = useState({ nom: '', description: '', prix: '', prix_minimum: '', stock: '', categorie_id: '' });
+  // Mode « pack » de la MÊME modale (POST/PUT /admin/bundles) : champs du modèle Pack + produits inclus.
+  const [mode, setMode] = useState<'produit' | 'pack'>('produit');
+  const [packForm, setPackForm] = useState<{
+    nom: string;
+    description: string;
+    prix_total: string;
+    prix_minimum: string;
+    disponible: boolean;
+    items: { id: string; qte: string }[];
+  }>({ nom: '', description: '', prix_total: '', prix_minimum: '', disponible: true, items: [] });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -68,6 +78,7 @@ export default function AdminCatalogPage() {
   });
   const ouvrir = (pr: any) => {
     revokeObjectUrl();
+    setMode('produit');
     setEdition(pr ?? {});
     setImageFile(null);
     setImagePreview(absImageUrl(pr?.image_url ?? pr?.img_url));
@@ -87,6 +98,45 @@ export default function AdminCatalogPage() {
       } else if (edition?.id) await adminApi.updateProduct(edition.id, champs);
       else await adminApi.createProduct(champs);
       fermer(); reload();
+    } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
+  };
+  /* ---- Packs (F-08) : même modale en mode « pack » ---- */
+  const ouvrirPack = (b: any) => {
+    revokeObjectUrl();
+    setMode('pack');
+    setEdition(b ?? {});
+    const inclus: any[] = b?.produits ?? b?.products ?? [];
+    setPackForm({
+      nom: b?.nom ?? '',
+      description: b?.description ?? '',
+      prix_total: b?.prix_total != null ? String(Number(b.prix_total)) : '',
+      prix_minimum: b?.prix_minimum != null ? String(Number(b.prix_minimum)) : '',
+      disponible: b?.disponible !== false,
+      items: inclus.map((p: any) => ({ id: String(p.id), qte: String(p.pivot?.qte ?? 1) })),
+    });
+  };
+  const enregistrerPack = async () => {
+    if (!packForm.nom.trim()) { window.alert('Le nom du pack est obligatoire.'); return; }
+    if (packForm.prix_total.trim() === '' || !Number.isFinite(Number(packForm.prix_total))) { window.alert('Le prix total est obligatoire.'); return; }
+    // Produits inclus : lignes complètes seulement ; doublons fusionnés (le backend synchronise par id)
+    const qtes = new Map<number, number>();
+    packForm.items.forEach((it) => {
+      const id = Number(it.id);
+      if (!id) return;
+      qtes.set(id, (qtes.get(id) ?? 0) + Math.max(1, Math.floor(Number(it.qte) || 1)));
+    });
+    const payload = {
+      nom: packForm.nom.trim(),
+      description: packForm.description.trim() || null,
+      prix_total: Number(packForm.prix_total),
+      prix_minimum: packForm.prix_minimum.trim() === '' ? null : Number(packForm.prix_minimum),
+      disponible: packForm.disponible,
+      products: [...qtes].map(([id, qte]) => ({ id, qte })),
+    };
+    try {
+      if (edition?.id) await adminApi.updateBundle(edition.id, payload);
+      else await adminApi.createBundle(payload);
+      fermer(); loadPacks();
     } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
   };
   const supprimer = async (id: number) => {
@@ -125,7 +175,9 @@ export default function AdminCatalogPage() {
       )}
       {loading && <p className="m-lg text-label text-text-secondary">Chargement des données réelles…</p>}
       <div className="m-lg">
-        <button type="button" className="btn btn-primary" onClick={() => ouvrir(null)}>+ Nouveau produit (réel)</button>
+        <button type="button" className="btn btn-primary" onClick={() => (tab === 'packs' ? ouvrirPack(null) : ouvrir(null))}>
+          {tab === 'packs' ? '+ Nouveau pack (réel)' : '+ Nouveau produit (réel)'}
+        </button>
       </div>
       <style>{DESIGN_CSS}</style>
   <header className="h-16 flex justify-between items-center px-lg bg-white sticky top-0 z-40 border-b border-border-default"> <div className="flex items-center gap-4"> <span className="font-h2 text-h2 font-bold text-primary">Gestion du catalogue</span> </div> <div className="flex items-center gap-6"> <div className="relative hidden lg:block"> <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" /> <input className="pl-10 pr-4 py-2 bg-bg-secondary border border-border-default rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all w-64" placeholder="Rechercher un produit..." type="text" value={q} onChange={(e) => setQ(e.target.value)} /> </div> <div className="flex items-center gap-4 border-l border-border-default pl-6">  </div> </div> </header>  <div className="p-lg space-y-lg">  <div className="flex flex-col md:flex-row md:items-center justify-between gap-md"> <div className="flex gap-lg border-b border-border-default w-full md:w-auto"> {([['produits', `Produits (${produitsF.length})`], ['categories', `Catégories (${catsF.length})`], ['packs', `Packs (${packsF.length})`]] as const).map(([k, label]) => (
@@ -168,7 +220,7 @@ export default function AdminCatalogPage() {
                     <td className="py-4 px-md text-text-secondary">{b.description ?? '—'}</td>
                     <td className="py-4 px-md font-price text-primary">{fmtFcfa(Number(b.prix_total ?? b.prix_minimum ?? 0))}</td>
                     <td className="py-4 px-md"> <span className={`px-2 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 w-fit ${b.disponible !== false ? 'bg-success-light text-success-dark' : 'bg-bg-secondary text-text-secondary'}`}> <span className={`w-1.5 h-1.5 rounded-full ${b.disponible !== false ? 'bg-success' : 'bg-text-tertiary'}`}></span> {b.disponible !== false ? 'Disponible' : 'Rupture'} </span> </td>
-                    <td className="py-4 px-md text-right"> <div className="flex gap-2 justify-end"> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimerPack(b)}>Supprimer</button> </div> </td>
+                    <td className="py-4 px-md text-right"> <div className="flex gap-2 justify-end"> <button type="button" className="font-semibold text-primary hover:underline" onClick={() => ouvrirPack(b)}>Modifier</button> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimerPack(b)}>Supprimer</button> </div> </td>
                   </tr>
                 ))}
                 {((tab === 'produits' && produitsF.length === 0) || (tab === 'categories' && catsF.length === 0) || (tab === 'packs' && packsF.length === 0)) && (
@@ -179,10 +231,45 @@ export default function AdminCatalogPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={fermer}>
           <div className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl" onClick={(e: any) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border-default p-4">
-              <h3 className="text-h3 font-h3 font-bold">{edition.id ? 'Modifier le produit' : 'Nouveau produit'}</h3>
+              <h3 className="text-h3 font-h3 font-bold">
+                {mode === 'pack' ? (edition.id ? 'Modifier le pack' : 'Nouveau pack') : edition.id ? 'Modifier le produit' : 'Nouveau produit'}
+              </h3>
               <button type="button" onClick={fermer}>Fermer</button>
             </div>
             <div className="flex-1 space-y-3 overflow-y-auto p-4 text-label">
+              {mode === 'pack' ? (
+                <>
+                  <div><p className="text-text-secondary">Nom du pack — obligatoire</p><input value={packForm.nom} onChange={(e) => setPackForm({ ...packForm, nom: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+                  <div><p className="text-text-secondary">Description</p><textarea rows={2} value={packForm.description} onChange={(e) => setPackForm({ ...packForm, description: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><p className="text-text-secondary">Prix total (FCFA) — obligatoire</p><input type="number" min={0} value={packForm.prix_total} onChange={(e) => setPackForm({ ...packForm, prix_total: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+                    <div><p className="text-text-secondary">Prix minimum (FCFA)</p><input type="number" min={0} value={packForm.prix_minimum} onChange={(e) => setPackForm({ ...packForm, prix_minimum: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+                  </div>
+                  <div>
+                    <p className="text-text-secondary">Produits inclus</p>
+                    <div className="mt-1 space-y-2">
+                      {packForm.items.length === 0 && <p className="text-xs text-text-tertiary">Aucun produit pour l'instant.</p>}
+                      {packForm.items.map((it, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <select value={it.id} onChange={(e) => setPackForm({ ...packForm, items: packForm.items.map((x, j) => (j === i ? { ...x, id: e.target.value } : x)) })} className="min-w-0 flex-1 rounded-lg border border-border-default bg-white px-3 py-2">
+                            <option value="">— Choisir un produit —</option>
+                            {produits.map((p: any) => <option key={p.id} value={String(p.id)}>{p.nom}</option>)}
+                          </select>
+                          <input type="number" min={1} aria-label="Quantité" value={it.qte} onChange={(e) => setPackForm({ ...packForm, items: packForm.items.map((x, j) => (j === i ? { ...x, qte: e.target.value } : x)) })} className="w-20 rounded-lg border border-border-default px-3 py-2" />
+                          <button type="button" aria-label="Retirer ce produit" className="text-text-tertiary hover:text-error" onClick={() => setPackForm({ ...packForm, items: packForm.items.filter((_, j) => j !== i) })}><MIcon name="close" /></button>
+                        </div>
+                      ))}
+                      <button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => setPackForm({ ...packForm, items: [...packForm.items, { id: '', qte: '1' }] })}>+ Ajouter un produit</button>
+                    </div>
+                  </div>
+                  {/* Interrupteur « Disponible à la vente » — repris de la modale du design (editModal) */}
+                  <div className="flex items-center justify-between py-2 px-md bg-primary-tint/50 rounded-lg border border-primary/10">
+                    <div className="flex items-center gap-3"> <MIcon name="check_circle" className="text-primary" /> <div> <p className="text-body font-bold text-on-surface">Disponible à la vente</p> <p className="text-xs text-text-secondary">Afficher ce pack dans le catalogue public</p> </div> </div>
+                    <label className="relative inline-flex items-center cursor-pointer"> <input checked={packForm.disponible} onChange={(e) => setPackForm({ ...packForm, disponible: e.target.checked })} className="sr-only peer" type="checkbox" /> <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div> </label>
+                  </div>
+                </>
+              ) : (
+                <>
               <div><p className="text-text-secondary">Nom</p><input value={form.nom} onChange={(e: any) => setForm({ ...form, nom: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
               <div><p className="text-text-secondary">Description</p><textarea rows={2} value={form.description} onChange={(e: any) => setForm({ ...form, description: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
               <div><p className="text-text-secondary">Prix (FCFA)</p><input value={form.prix} onChange={(e: any) => setForm({ ...form, prix: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
@@ -224,10 +311,12 @@ export default function AdminCatalogPage() {
                   onChange={(e) => { pickImage(e.target.files?.[0]); e.target.value = ''; }}
                 />
               </div>
+                </>
+              )}
             </div>
             <div className="flex justify-end gap-2 border-t border-border-default p-4">
               <button type="button" className="btn btn-ghost" onClick={fermer}>Annuler</button>
-              <button type="button" className="btn btn-primary" onClick={enregistrer}>Enregistrer</button>
+              <button type="button" className="btn btn-primary" onClick={mode === 'pack' ? enregistrerPack : enregistrer}>Enregistrer</button>
             </div>
           </div>
         </div>
