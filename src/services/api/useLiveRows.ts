@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import type { MouseEvent } from 'react';
+import { invokeDesign } from '../../utils/designRuntime';
 import { unwrap, listOf } from './unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 
@@ -39,3 +41,31 @@ export function useLiveRows(fetcher: () => Promise<unknown>, deps: unknown[] = [
 
   return { rows, err, loading, reload };
 }
+
+/** Nom de zone depuis un objet ZoneResource ou une chaîne (évite le crash « object as React child »). */
+export const zoneNom = (z: unknown): string =>
+  z && typeof z === 'object' ? String((z as any).nom ?? '—') : String((z as any) ?? '—') || '—';
+
+/** Échappe une valeur pour un handler `data-onclick="fn('…')"` du design. */
+export const escArg = (s: unknown): string =>
+  String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+/** Dispatche le `data-onclick` de l'élément courant dans le scope du design. */
+export function fireDesign(e: MouseEvent<HTMLElement>): void {
+  const el = e.currentTarget;
+  const code = el.getAttribute('data-onclick') || '';
+  if (!code) return;
+  invokeDesign(code, el, e.nativeEvent ?? (e as unknown as Event));
+}
+
+/** Initiales (avatar rond du design). */
+export const initials = (nom: unknown): string =>
+  String(nom ?? '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((m) => m[0]!.toUpperCase())
+    .join('') || '—';
+
+/** Date courte honnête depuis un ISO. */
+export const dateShort = (s: unknown): string => String(s ?? '').slice(0, 10) || '—';

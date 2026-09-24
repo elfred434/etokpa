@@ -93,12 +93,28 @@ function enhanceModals(rt: Runtime): Array<() => void> {
   return offs;
 }
 
+let currentRuntime: Runtime | null = null;
+
+/** Dispatche un handler `data-on*` dans le scope du script du design (lignes dynamiques). */
+export function invokeDesign(code: string, el: Element, event: Event): void {
+  if (!currentRuntime) {
+    console.warn('[designScript] runtime non initialisé pour :', code);
+    return;
+  }
+  try {
+    currentRuntime.invoke.call(el, code.replace(/\bthis\b/g, 'el'), el, event);
+  } catch (err) {
+    console.warn('[designScript] action', code, err);
+  }
+}
+
 export function useDesignScript(script: string) {
   useEffect(() => {
     if (!script.trim()) return;
     let rt: Runtime;
     try {
       rt = build(script);
+      currentRuntime = rt;
     } catch (err) {
       console.warn('[designScript] erreur à la lecture du script du design :', err);
       return;

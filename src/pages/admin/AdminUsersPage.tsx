@@ -1,8 +1,7 @@
 import { useDesignScript } from '../../utils/designRuntime';
 import { Link } from '@tanstack/react-router';
 import { adminApi } from '../../services/api';
-import { useLiveRows } from '../../services/api/useLiveRows';
-import { dateCourte } from '../../services/api/unwrap';
+import { useLiveRows, zoneNom, escArg, fireDesign, initials, dateShort } from '../../services/api/useLiveRows';
 import DESIGN_SCRIPT from './_scripts/AdminUsersPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 
@@ -20,6 +19,25 @@ const DESIGN_CSS = `
  * AdminUsersPage — copie conforme statique du design Stitch (code.html).
  * Interactions : script du design exécuté via useDesignScript (comportement copié).
  */
+const ROLE_UI: Record<string, { av: string; badge: string; icon: string; label: (id: unknown) => string }> = {
+  vendeur: { av: 'bg-amber-100 text-amber-800', badge: 'bg-amber-50 text-amber-800 border border-amber-200', icon: 'ti ti-building-store text-xs', label: () => 'Vendeur' },
+  livreur: { av: 'bg-emerald-100 text-emerald-800', badge: 'bg-emerald-50 text-emerald-800 border border-emerald-200', icon: 'ti ti-motorbike text-xs', label: (id) => `Livreur (#${id})` },
+  client: { av: 'bg-orange-100 text-orange-800', badge: 'bg-orange-50 text-orange-800 border border-orange-200', icon: 'ti ti-user text-xs', label: () => 'Client' },
+};
+const DEFAULT_ROLE_UI = { av: 'bg-blue-100 text-blue-800', badge: 'bg-blue-50 text-blue-800 border border-blue-200', icon: 'ti ti-shield-check text-xs', label: () => 'Manager Zone' };
+const STATUT_UI: Record<string, { badge: string; dot: string }> = {
+  'Actif': { badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200', dot: 'bg-emerald-500' },
+  'En attente': { badge: 'bg-amber-50 text-amber-700 border border-amber-200', dot: 'bg-amber-500' },
+  'Suspendu': { badge: 'bg-red-50 text-red-700 border border-red-200', dot: 'bg-red-500' },
+};
+const statutFr = (s: unknown): string => {
+  const v = String(s ?? '').toLowerCase();
+  if (v.includes('attente') || v.includes('pending')) return 'En attente';
+  if (v.includes('suspend') || v.includes('bloqu')) return 'Suspendu';
+  if (v.includes('actif') || v.includes('valide') || v.includes('active')) return 'Actif';
+  return '';
+};
+
 export default function AdminUsersPage() {
   useDesignScript(DESIGN_SCRIPT);
   const { rows: users, err, loading, reload } = useLiveRows(() => adminApi.getUsers({ page: 1 }), []);
@@ -48,18 +66,58 @@ export default function AdminUsersPage() {
               Livreurs (418)
             </button> <button className="role-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-white/80 transition-all" data-role="manager" data-onclick="filterRole('manager')">
               Managers (24)
-            </button> </div>  <div className="flex items-center gap-2.5"> <div className="flex items-center gap-2"> <span className="text-xs text-gray-400 font-medium">Statut :</span> <select className="text-xs bg-white border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary" id="statusFilter" data-onchange="applyFilters()"> <option value="all">Tous les statuts</option> <option value="Actif">Actifs</option> <option value="En attente">En attente</option> <option value="Suspendu">Suspendus</option> </select> </div> <div className="flex items-center gap-2"> <span className="text-xs text-gray-400 font-medium">Zone :</span> <select className="text-xs bg-white border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary" id="zoneFilter" data-onchange="applyFilters()"> <option value="all">Toutes les zones</option> <option value="Dantokpa">Dantokpa</option> <option value="Akpakpa">Akpakpa</option> <option value="Cadjehoun">Cadjehoun</option> <option value="Fidjrossè">Fidjrossè</option> <option value="Porto-Novo">Porto-Novo</option> </select> </div> </div> </div>  <div className="overflow-x-auto"> <table className="w-full text-left border-collapse" id="usersTable"> <thead> <tr className="border-b border-gray-200 bg-gray-50 text-[11px] font-semibold text-gray-500 uppercase tracking-wider"> <th className="py-3 px-4">Utilisateur</th> <th className="py-3 px-4">Rôle</th> <th className="py-3 px-4">Téléphone &amp; WhatsApp</th> <th className="py-3 px-4">Zone Principale</th> <th className="py-3 px-4">Statut</th> <th className="py-3 px-4">Activité / Inscription</th> <th className="py-3 px-4 text-right">Actions</th> </tr> </thead> <tbody>
-                {users.map((u: any) => (
-                  <tr key={u.id} className="border-t border-border-default text-label">
-                    <td className="px-lg py-3 font-semibold">{u.nom_complet ?? `${u.prenom ?? ''} ${u.nom ?? ''}`}</td>
-                    <td className="px-lg py-3">{typeof u.role === 'object' ? u.role?.nom : u.role}</td>
-                    <td className="px-lg py-3">{u.telephone ?? '—'}</td>
-                    <td className="px-lg py-3">{u.zone ?? u.profil?.zone ?? '—'}</td>
-                    <td className="px-lg py-3">{u.statut ?? '—'}</td>
-                    <td className="px-lg py-3">{dateCourte(u.created_at)}</td>
-                    <td className="px-lg py-3"><Link to="/admin/utilisateurs/detail" search={{ id: u.id }} className="font-semibold text-primary hover:underline">Détails</Link></td>
-                  </tr>
-                ))}
+            </button> </div>  <div className="flex items-center gap-2.5"> <div className="flex items-center gap-2"> <span className="text-xs text-gray-400 font-medium">Statut :</span> <select className="text-xs bg-white border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary" id="statusFilter" data-onchange="applyFilters()"> <option value="all">Tous les statuts</option> <option value="Actif">Actifs</option> <option value="En attente">En attente</option> <option value="Suspendu">Suspendus</option> </select> </div> <div className="flex items-center gap-2"> <span className="text-xs text-gray-400 font-medium">Zone :</span> <select className="text-xs bg-white border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary" id="zoneFilter" data-onchange="applyFilters()"> <option value="all">Toutes les zones</option> <option value="Dantokpa">Dantokpa</option> <option value="Akpakpa">Akpakpa</option> <option value="Cadjehoun">Cadjehoun</option> <option value="Fidjrossè">Fidjrossè</option> <option value="Porto-Novo">Porto-Novo</option> </select> </div> </div> </div>  <div className="overflow-x-auto"> <table className="w-full text-left border-collapse" id="usersTable"> <thead> <tr className="border-b border-gray-200 bg-gray-50 text-[11px] font-semibold text-gray-500 uppercase tracking-wider"> <th className="py-3 px-4">Utilisateur</th> <th className="py-3 px-4">Rôle</th> <th className="py-3 px-4">Téléphone &amp; WhatsApp</th> <th className="py-3 px-4">Zone Principale</th> <th className="py-3 px-4">Statut</th> <th className="py-3 px-4">Activité / Inscription</th> <th className="py-3 px-4 text-right">Actions</th> </tr> </thead> <tbody className="divide-y divide-gray-100 text-xs" id="tableBody">
+                {users.map((u: any) => {
+                  const nom = u.nom_complet ?? u.name ?? '—';
+                  const role = String(u.role ?? 'client');
+                  const rui = ROLE_UI[role] ?? DEFAULT_ROLE_UI;
+                  const roleLabel = rui.label(u.id);
+                  const zone = zoneNom(u.zone ?? u.profil?.zone);
+                  const zoneCourt = zone.split('(')[0].split('-')[0].split('·')[0].trim() || zone;
+                  const st = statutFr(u.statut);
+                  const stLabel = st || String(u.statut ?? '—');
+                  const sui = STATUT_UI[st] ?? { badge: 'bg-gray-100 text-gray-600 border border-gray-200', dot: 'bg-gray-400' };
+                  const tel = u.telephone ?? '—';
+                  const inscription = dateShort(u.created_at);
+                  const activite = `${inscription}${u.commandes_count != null ? ` · ${u.commandes_count} cmds` : ''}`;
+                  const codeModal = `openUserModal('${escArg(nom)}', '${escArg(roleLabel)}', '${escArg(u.email ?? '')}', '${escArg(tel)}', '${escArg(zone)}', '${escArg(stLabel)}', '${escArg(activite)}', '${escArg(inscription)}')`;
+                  return (
+                    <tr key={u.id} className="hover:bg-orange-50/40 transition-colors user-row cursor-pointer" data-role={role} data-status={stLabel} data-zone={zoneCourt} data-onclick={codeModal} onClick={fireDesign}>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-full font-bold flex items-center justify-center text-xs shrink-0 ${rui.av}`}>{initials(nom)}</div>
+                          <div>
+                            <Link to="/admin/utilisateurs/detail" search={{ id: u.id }} className="font-semibold text-gray-900" onClick={(e) => e.stopPropagation()}>{nom}</Link>
+                            <p className="text-[11px] text-gray-400">{u.email ?? '—'}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium ${rui.badge}`}>
+                          <i className={rui.icon}></i> {roleLabel}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-gray-700">{tel}</td>
+                      <td className="py-3.5 px-4 text-gray-700">{zone}</td>
+                      <td className="py-3.5 px-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium ${sui.badge}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${sui.dot}`}></span> {stLabel}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-gray-500">{activite}</td>
+                      <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button className="p-1.5 text-gray-400 hover:text-primary hover:bg-orange-50 rounded-lg transition-colors" data-onclick={`editUser(event, '${escArg(nom)}', '${escArg(roleLabel)}')`} onClick={fireDesign} title="Modifier">
+                            <i className="ti ti-edit text-base"></i>
+                          </button>
+                          <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" data-onclick={`toggleUserStatus(event, '${escArg(nom)}')`} onClick={fireDesign} title="Suspendre">
+                            <i className="ti ti-user-x text-base"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody> </table> </div>  <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500 bg-gray-50/50"> <p>Affichage de <span className="font-semibold text-gray-800">1</span> à <span className="font-semibold text-gray-800">6</span> sur <span className="font-semibold text-gray-800">3 842</span> utilisateurs</p> <div className="flex items-center gap-1"> <button className="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-40" disabled={true}> <i className="ti ti-chevron-left text-xs"></i> </button> <button className="px-3 py-1.5 rounded-lg bg-primary text-white font-semibold">1</button> <button className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100">2</button> <button className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100">3</button> <span className="px-1 text-gray-400">...</span> <button className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100">641</button> <button className="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100"> <i className="ti ti-chevron-right text-xs"></i> </button> </div> </div> </div> </div>  <div className="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 backdrop-blur-xs" id="userModal"> <div className="bg-white rounded-[16px] shadow-2xl max-w-[512px] w-full overflow-hidden border border-gray-200 animate-in fade-in zoom-in duration-150">  <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-full bg-orange-100 text-primary font-bold flex items-center justify-center text-sm" id="modalAvatar">
             AM
           </div> <div> <h3 className="text-base font-bold text-gray-900" id="modalName">Afi Mensah</h3> <p className="text-xs font-medium text-amber-700" id="modalRoleBadge">Vendeur · Marché Dantokpa</p> </div> </div> <button className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-200 transition-colors" data-onclick="closeUserModal()"> <i className="ti ti-x text-lg"></i> </button> </div>  <div className="p-6 space-y-4 text-xs"> <div className="grid grid-cols-2 gap-4"> <div className="p-3 bg-gray-50 rounded-xl border border-gray-100"> <span className="text-gray-400 block font-medium">Adresse Email</span> <span className="font-semibold text-gray-800 text-sm mt-0.5 block truncate" id="modalEmail">afi.mensah@gmail.com</span> </div> <div className="p-3 bg-gray-50 rounded-xl border border-gray-100"> <span className="text-gray-400 block font-medium">Numéro de téléphone</span> <span className="font-semibold text-gray-800 text-sm mt-0.5 block font-mono" id="modalPhone">+229 97 12 34 56</span> </div> </div> <div className="grid grid-cols-2 gap-4"> <div className="p-3 bg-gray-50 rounded-xl border border-gray-100"> <span className="text-gray-400 block font-medium">Zone d'assignation / Adresse</span> <span className="font-semibold text-gray-800 mt-0.5 block" id="modalZone">Dantokpa - Hangar C4</span> </div> <div className="p-3 bg-gray-50 rounded-xl border border-gray-100"> <span className="text-gray-400 block font-medium">Statut du compte</span> <div className="mt-1"> <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200" id="modalStatus"> <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Actif
