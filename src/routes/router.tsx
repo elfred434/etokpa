@@ -18,6 +18,7 @@ import OrdersListPage from '../pages/client/commandes/OrdersListPage';
 import MessagingPage from '../pages/client/messagerie/MessagingPage';
 import AdminCatalogPage from '../pages/admin/catalogue/AdminCatalogPage';
 import AdminCategoriesPage from '../pages/admin/categories/AdminCategoriesPage';
+import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import SystemBridge from '../components/system/SystemBridge';
 
@@ -84,6 +85,7 @@ const orderTrackingRoute = createRoute({
 const ordersListRoute = createRoute({ getParentRoute: () => rootRoute, path: '/commandes', component: OrdersListPage });
 const messagingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/messagerie', component: MessagingPage });
 const adminCatalogueRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/catalogue', component: AdminCatalogPage });
+const adminDashboardRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin', component: AdminDashboardPage });
 const adminCategoriesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/categories', component: AdminCategoriesPage });
 // Route temporaire de review des composants (retirée à la fin du Sprint 1).
 const previewRoute = createRoute({ getParentRoute: () => rootRoute, path: '/preview', component: PreviewPage });
@@ -104,6 +106,7 @@ const routeTree = rootRoute.addChildren([
   ordersListRoute,
   orderTrackingRoute,
   messagingRoute,
+  adminDashboardRoute,
   adminCatalogueRoute,
   adminCategoriesRoute,
   previewRoute,
