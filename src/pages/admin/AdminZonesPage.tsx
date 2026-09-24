@@ -187,6 +187,7 @@ export default function AdminZonesPage() {
   const [tileIdx, setTileIdx] = useState(0);
   const [modal, setModal] = useState<null | 'zone' | 'lm'>(null);
   const [lmForm, setLmForm] = useState(LM_INIT);
+  const [lmEditId, setLmEditId] = useState<number | null>(null); // null = création, sinon PUT /admin/landmarks/{id}
   const [zoneForm, setZoneForm] = useState(ZONE_INIT);
   const [zonePts, setZonePts] = useState<Pt[]>([]);
 
@@ -327,7 +328,20 @@ export default function AdminZonesPage() {
       window.alert("Créez d'abord une zone (avec ses points à la limite).");
       return;
     }
+    setLmEditId(null);
     setLmForm({ ...LM_INIT, zone_id: String(sel?.id ?? zones[0].id) });
+    setModal('lm');
+  };
+  /* Modification d'un repère existant : même modale, pré-remplie (PUT /admin/landmarks/{id}) */
+  const openLmEdit = (lm: any) => {
+    setLmEditId(Number(lm.id));
+    setLmForm({
+      zone_id: String(lm.zone_id ?? ''),
+      nom: String(lm.nom ?? ''),
+      description: String(lm.description ?? ''),
+      latitude: lm.latitude != null && lm.latitude !== '' ? String(lm.latitude) : '',
+      longitude: lm.longitude != null && lm.longitude !== '' ? String(lm.longitude) : '',
+    });
     setModal('lm');
   };
   const saveLm = async () => {
@@ -343,17 +357,37 @@ export default function AdminZonesPage() {
     const lat = Number(lmForm.latitude);
     const lng = Number(lmForm.longitude);
     const hasGeo = lmForm.latitude.trim() !== '' && lmForm.longitude.trim() !== '' && Number.isFinite(lat) && Number.isFinite(lng);
+    const payload = {
+      zone_id: zoneId,
+      nom: lmForm.nom.trim(),
+      description: lmForm.description || null,
+      latitude: hasGeo ? lat : null,
+      longitude: hasGeo ? lng : null,
+    };
     try {
-      await adminApi.createLandmark({
-        zone_id: zoneId,
-        nom: lmForm.nom.trim(),
-        description: lmForm.description || null,
-        latitude: hasGeo ? lat : null,
-        longitude: hasGeo ? lng : null,
-      });
-      // La forme suit ses points : si le nouveau point est à la limite, il élargit la zone
-      if (hasGeo) await saveZoneShape(zoneId, [...geoPtsOf(zoneId), { lat, lng }]);
+      if (lmEditId !== null) {
+        const old: any = landmarks.find((l: any) => Number(l.id) === lmEditId);
+        await adminApi.updateLandmark(lmEditId, payload);
+        // La zone = enveloppe de ses points : si la position ou la zone change, on recalcule
+        // la forme de la zone du repère (et celle de l'ancienne zone s'il a changé de zone).
+        const oldZoneId = Number(old?.zone_id);
+        const moved =
+          !old ||
+          oldZoneId !== zoneId ||
+          String(old.latitude ?? '') !== String(payload.latitude ?? '') ||
+          String(old.longitude ?? '') !== String(payload.longitude ?? '');
+        if (moved) {
+          const updated = landmarks.map((l: any) => (Number(l.id) === lmEditId ? { ...l, ...payload } : l));
+          await saveZoneShape(zoneId, geoPtsOf(zoneId, updated));
+          if (oldZoneId && oldZoneId !== zoneId) await saveZoneShape(oldZoneId, geoPtsOf(oldZoneId, updated));
+        }
+      } else {
+        await adminApi.createLandmark(payload);
+        // La forme suit ses points : si le nouveau point est à la limite, il élargit la zone
+        if (hasGeo) await saveZoneShape(zoneId, [...geoPtsOf(zoneId), { lat, lng }]);
+      }
       setModal(null);
+      setLmEditId(null);
       reloadLm();
       reload();
     } catch (e) {
@@ -563,7 +597,7 @@ export default function AdminZonesPage() {
                             </button> </div> <div className="flex flex-wrap gap-3">
                 {lmSel.length === 0 && <span className="text-secondary text-text-secondary">Aucun point de repère enregistré pour cette zone.</span>}
                 {lmSel.map((lm: any) => (
-                  <div key={lm.id} className="chip group flex items-center gap-2 px-3 py-2 rounded-full bg-primary-tint text-primary-dark"> <MIcon name="location_on" className="text-[16px]" /> <span className="text-label">{lm.nom}</span> <button className="opacity-0 group-hover:opacity-100 transition-opacity text-primary-dark/70 hover:text-error" title="Supprimer" onClick={() => void delLm(lm)}> <MIcon name="close" className="text-[14px]" /> </button> </div>
+                  <div key={lm.id} className="chip group flex items-center gap-2 px-3 py-2 rounded-full bg-primary-tint text-primary-dark"> <MIcon name="location_on" className="text-[16px]" /> <span className="text-label">{lm.nom}</span> <button className="opacity-0 group-hover:opacity-100 transition-opacity text-primary-dark/70 hover:text-primary" title="Modifier" onClick={() => openLmEdit(lm)}> <MIcon name="edit" className="text-[14px]" /> </button> <button className="opacity-0 group-hover:opacity-100 transition-opacity text-primary-dark/70 hover:text-error" title="Supprimer" onClick={() => void delLm(lm)}> <MIcon name="close" className="text-[14px]" /> </button> </div>
                 ))}
               </div> </div>  <div className="bg-bg-card p-lg rounded-[14px] card-shadow"> <h3 className="font-h3 text-h3 text-text-main mb-lg">Détails de la zone</h3> <form className="grid grid-cols-2 gap-md" onSubmit={(e) => e.preventDefault()}> <div className="col-span-2 md:col-span-1 space-y-1"> <label className="text-secondary text-text-secondary">Nom de la zone</label> <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" value={f.nom} onChange={(e) => setF({ ...f, nom: e.target.value })} /> </div> <div className="col-span-2 md:col-span-1 space-y-1"> <label className="text-secondary text-text-secondary">Frais de livraison (FCFA)</label> <div className="relative"> <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-16" type="number" value={f.km_prix} onChange={(e) => setF({ ...f, km_prix: e.target.value })} /> <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary font-bold text-micro">FCFA</span> </div> </div> <div className="col-span-2 space-y-1"> <label className="text-secondary text-text-secondary">Manager responsable</label> <div className="relative"> <select className="w-full h-11 px-md rounded-lg border-border-default appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-12 bg-white" value={f.manager} onChange={(e) => setF({ ...f, manager: e.target.value })}> <option value="">— Aucun —</option>
                     {managers.map((m: any) => (
@@ -645,12 +679,12 @@ export default function AdminZonesPage() {
         </div>
       )}
 
-      {/* Modale « Nouveau point de repère » (intérieur ou à la limite) */}
+      {/* Modale « Nouveau / Modifier le point de repère » (intérieur ou à la limite) */}
       {modal === 'lm' && (
         <div className="fixed inset-0 z-[1200] bg-black/40 flex items-center justify-center p-4 pointer-events-none">
           <div className="bg-white rounded-[14px] shadow-xl w-full max-w-[480px] max-h-[90vh] overflow-y-auto design-modal-scroll p-lg pointer-events-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-lg">
-              <h3 className="font-h2 text-h2 text-on-surface">Nouveau point de repère</h3>
+              <h3 className="font-h2 text-h2 text-on-surface">{lmEditId !== null ? 'Modifier le point de repère' : 'Nouveau point de repère'}</h3>
               <button className="p-2 text-text-tertiary hover:text-on-surface transition-colors" onClick={() => setModal(null)}>
                 <MIcon name="close" />
               </button>
