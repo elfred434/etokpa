@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
@@ -8,6 +8,7 @@ import Pagination from '../../../components/shared/Pagination';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { ordersApi } from '../../../services/api';
+import { isOwnOrder } from '../../../utils/ownOrder';
 import { extractApiError, formatApiError } from '../../../utils/apiError';
 
 interface ApiOrderItem {
@@ -100,9 +101,37 @@ export default function OrdersListPage() {
       .finally(() => setLoading(false));
   }, [isAuthenticated, page]);
 
+  const search = useSearch({ from: '/commandes' }) as unknown as { detail?: string };
+
   const handleSuivre = (id: number) => {
     navigate({ to: '/commandes/suivi', search: { order: String(id) } });
   };
+
+  // Ouverture de la modale via ?detail={id} (profil → « Détails ») — garde-fou anti-IDOR
+  useEffect(() => {
+    const raw = search.detail;
+    if (!raw || !isAuthenticated || loading) return;
+    const id = Number(raw);
+    if (!Number.isFinite(id)) return;
+    let alive = true;
+    (async () => {
+      const inList = orders.some((o) => Number(o.id) === id);
+      if (!inList && !(await isOwnOrder(id))) {
+        console.warn(`[anti-IDOR] ?detail=${id} refusé (commande absente de GET /orders)`);
+        return;
+      }
+      try {
+        const res = await ordersApi.getOrder(id);
+        if (alive) setSelected((res?.data ?? res) as ApiOrder);
+      } catch (err) {
+        console.warn('Detail order error:', err);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.detail, isAuthenticated, loading]);
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -179,7 +208,17 @@ export default function OrdersListPage() {
                       return (
                         <tr
                           key={o.id}
-                          onClick={() => setSelected(o)}
+                          onClick={() => {
+                            setSelected(o);
+                            // recharge la version COMPLÈTE (payment chargé par show()) sans fermer la modale
+                            ordersApi
+                              .getOrder(o.id)
+                              .then((res) => {
+                                const full = (res?.data ?? res) as ApiOrder;
+                                setSelected((cur) => (cur?.id === full.id ? full : cur));
+                              })
+                              .catch(() => {});
+                          }}
                           className="border-b border-border-default/60 last:border-0 hover:bg-bg-secondary cursor-pointer transition-colors"
                         >
                           <td className="px-md py-sm font-bold text-text-main">#{o.id}</td>

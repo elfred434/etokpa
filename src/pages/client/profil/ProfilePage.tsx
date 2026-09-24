@@ -402,7 +402,7 @@ export default function ProfilePage() {
                   {isFr ? 'Mes commandes récentes' : 'Recent orders'}
                 </h3>
                 <Link
-                  to="/commandes/suivi"
+                  to="/commandes"
                   className="text-primary-container font-label text-label hover:underline font-bold"
                 >
                   {isFr ? 'Voir tout' : 'See all'}
@@ -438,8 +438,8 @@ export default function ProfilePage() {
                             {isFr ? o.statusFr : o.statusEn}
                           </span>
                           <Link
-                            to={o.active ? '/commandes/suivi' : '/messagerie'}
-                            search={o.active ? { order: String(o.id) } : {}}
+                            to={o.active ? '/commandes/suivi' : '/commandes'}
+                            search={o.active ? { order: String(o.id) } : { detail: String(o.id) }}
                             className="text-primary-container font-label text-label flex items-center gap-xs font-bold"
                           >
                             {o.active ? (isFr ? 'Suivre' : 'Track') : (isFr ? 'Détails' : 'Details')}

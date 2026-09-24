@@ -10,6 +10,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import { catalogApi, ordersApi } from '../../../services/api';
+import { isOwnOrder } from '../../../utils/ownOrder';
 import { extractApiError, formatApiError } from '../../../utils/apiError';
 
 interface ApiRider {
@@ -84,25 +85,6 @@ const STATUT_LABELS: Record<string, string> = {
  * - Reverb tracking.{id}           → livreur.position.updated (hook useRiderLocation)
  * - Reverb notifications.{userId}  → order.status.changed → rechargement du statut
  */
-/**
- * Anti-IDOR UI : une commande n'est affichée que si elle figure dans MES commandes.
- * `GET /orders` (OrderController@index) est filtré côté serveur par `user_id = auth()->id()`.
- * Scan paginé borné à 20 pages (300 commandes) — au-delà, on refuse par prudence.
- */
-async function isOwnOrder(id: number): Promise<boolean> {
-  let page = 1;
-  let last = 1;
-  do {
-    const res = await ordersApi.getOrders(page);
-    const raw = (res?.data ?? res ?? []) as Array<Record<string, unknown> & { data?: ApiOrder }>;
-    const list: ApiOrder[] = (Array.isArray(raw) ? raw : []).map((o) => (o.data ?? o) as ApiOrder);
-    if (list.some((o) => Number(o.id) === Number(id))) return true;
-    last = Number(res?.meta?.last_page ?? res?.last_page ?? 1);
-    page += 1;
-  } while (page <= last && page <= 20);
-  return false;
-}
-
 export default function OrderTrackingPage() {
   const { isFr } = useLanguage();
   const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
@@ -324,23 +306,25 @@ export default function OrderTrackingPage() {
             </div>
           ) : (
             <>
-              {/* Sélecteur de commande (plusieurs commandes) */}
+              {/* Sélecteur de commande — menu déroulant compact (les vraies « étapes » = le stepper ci-dessous) */}
               {allOrders.length > 1 && (
-                <div className="flex gap-xs overflow-x-auto pb-md mb-md">
-                  {allOrders.map((o) => (
-                    <button
-                      key={o.id}
-                      type="button"
-                      onClick={() => setSelectedId(o.id)}
-                      className={`flex-shrink-0 px-md py-xs rounded-full text-micro font-bold border transition-all cursor-pointer ${
-                        o.id === selectedId
-                          ? 'bg-primary-container text-white border-primary-container'
-                          : 'bg-white text-text-secondary border-border-default hover:border-primary-container'
-                      }`}
-                    >
-                      #{o.id} · {STATUT_LABELS[o.statut] ?? o.statut}
-                    </button>
-                  ))}
+                <div className="mb-md">
+                  <label htmlFor="order-select" className="label text-text-secondary mb-xs block">
+                    {isFr ? 'Commande suivie' : 'Tracked order'}
+                  </label>
+                  <select
+                    id="order-select"
+                    value={selectedId ?? ''}
+                    onChange={(e) => setSelectedId(Number(e.target.value))}
+                    className="w-full sm:max-w-[420px] rounded-lg border border-border-default bg-white px-md py-sm text-body font-bold text-text-main cursor-pointer"
+                  >
+                    {allOrders.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        #{o.id} · {STATUT_LABELS[o.statut] ?? o.statut}
+                        {o.created_at ? ` · ${new Date(o.created_at).toLocaleDateString('fr-FR')}` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
 
