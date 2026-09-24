@@ -29,8 +29,15 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      const hadSession = !!localStorage.getItem('tokpa_token');
       localStorage.removeItem('tokpa_token');
       localStorage.removeItem('tokpa_user');
+      // Session expirée ou révoquée (et pas un simple visiteur) : le panier et le temps réel se
+      // débranchent (SystemBridge), et la garde du router renvoie vers /connexion (routes/router.tsx).
+      if (hadSession) {
+        window.dispatchEvent(new Event('tokpa:auth-changed'));
+        window.dispatchEvent(new Event('tokpa:session-expired'));
+      }
     }
     return Promise.reject(error);
   }

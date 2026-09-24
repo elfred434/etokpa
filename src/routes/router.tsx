@@ -1,5 +1,6 @@
 import { createRootRoute, createRoute, createRouter, Outlet } from '@tanstack/react-router';
 import { Toaster } from 'react-hot-toast';
+import { redirectOnSessionExpired, requireSession } from './authGuard';
 import ConnexionPage from '../pages/auth/ConnexionPage';
 import InscriptionPage from '../pages/auth/InscriptionPage';
 import Verification2faPage from '../pages/auth/Verification2faPage';
@@ -41,6 +42,9 @@ import NotFoundPage from '../pages/NotFoundPage';
 import SystemBridge from '../components/system/SystemBridge';
 
 const rootRoute = createRootRoute({
+  // Garde globale : visiteur non connecté → /connexion sur toute page hors accueil et écrans d'auth
+  // (liste PUBLIC_PATHS et logique dans authGuard.ts).
+  beforeLoad: requireSession,
   component: () => (
     <>
       <SystemBridge />
@@ -176,6 +180,9 @@ const routeTree = rootRoute.addChildren([
 ]);
 
 export const router = createRouter({ routeTree });
+
+// Session perdue en cours de navigation (401 de l'API) → /connexion hors pages publiques (authGuard.ts).
+redirectOnSessionExpired(router);
 
 declare module '@tanstack/react-router' {
   interface Register {
