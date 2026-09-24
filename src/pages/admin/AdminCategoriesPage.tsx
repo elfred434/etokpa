@@ -1,16 +1,34 @@
-import { useState } from 'react';
+import { useDesignScript } from '../../utils/designRuntime';
+import DESIGN_SCRIPT from './_scripts/AdminCategoriesPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
 
+const DESIGN_CSS = `
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .active-nav-item {
+            background-color: #f97316; /* Primary container simulation */
+            color: white;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(229, 231, 235, 0.5);
+        }
+    `;
+
 /**
  * AdminCategoriesPage — copie conforme statique du design Stitch (code.html).
+ * Interactions : script du design exécuté via useDesignScript (comportement copié).
  */
 export default function AdminCategoriesPage() {
-  const [open, setOpen] = useState(false);
-  void open; void setOpen;
+  useDesignScript(DESIGN_SCRIPT);
 
   return (
     <AdminLayout currentPath="/admin/categories">
+      <style>{DESIGN_CSS}</style>
   <section className="flex-1 overflow-y-auto p-lg pb-xl"> <div className="max-w-6xl mx-auto space-y-lg">  <div className="flex justify-between items-end"> <div> <nav className="flex items-center gap-2 text-micro text-text-tertiary uppercase tracking-widest mb-2"> <span className="">Catalogue</span> <MIcon name="chevron_right" className="text-[14px]" /> <span className="text-primary font-bold">Catégories</span> </nav> <h1 className="font-h1 text-h1 text-on-surface">Gestion des Catégories</h1> </div> <button className="flex items-center gap-2 px-6 py-3 bg-primary-container text-white font-bold rounded-[10px] hover:bg-primary-hover active:scale-[0.97] transition-all shadow-lg shadow-primary-container/20"> <MIcon name="add_circle" /> <span className="">Ajouter une catégorie</span> </button> </div>  <div className="grid grid-cols-1 md:grid-cols-3 gap-md"> <div className="bg-bg-card p-md rounded-xl border border-border-default flex items-center gap-4"> <div className="w-12 h-12 bg-primary-tint rounded-lg flex items-center justify-center text-primary"> <MIcon name="category" className="text-[28px]" /> </div> <div> <p className="text-text-secondary text-micro uppercase font-bold tracking-tight">Total Catégories</p> <p className="text-h2 font-h2 text-on-surface">24</p> </div> </div> <div className="bg-bg-card p-md rounded-xl border border-border-default flex items-center gap-4"> <div className="w-12 h-12 bg-success-light rounded-lg flex items-center justify-center text-success-dark"> <MIcon name="check_circle" className="text-[28px]" /> </div> <div> <p className="text-text-secondary text-micro uppercase font-bold tracking-tight">Actives</p> <p className="text-h2 font-h2 text-on-surface">18</p> </div> </div> <div className="bg-bg-card p-md rounded-xl border border-border-default flex items-center gap-4"> <div className="w-12 h-12 bg-amber-light rounded-lg flex items-center justify-center text-amber-text"> <MIcon name="inventory" className="text-[28px]" /> </div> <div> <p className="text-text-secondary text-micro uppercase font-bold tracking-tight">Total Produits</p> <p className="text-h2 font-h2 text-on-surface">1,452</p> </div> </div> </div>  <div className="bg-bg-card rounded-xl border border-border-default overflow-hidden shadow-sm"> <table className="w-full text-left border-collapse"> <thead> <tr className="bg-bg-secondary border-b border-border-default"> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro">Catégorie</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro">Description</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro text-center">Produits</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro">Statut</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro text-right">Actions</th> </tr> </thead> <tbody className="divide-y divide-border-default">  <tr className="hover:bg-primary-tint/30 transition-colors group"> <td className="px-lg py-4"> <div className="flex items-center gap-4"> <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center text-primary-dark"> <MIcon name="nutrition" className="text-[24px]" /> </div> <div> <p className="font-h3 text-h3 text-on-surface">Légumes</p> <p className="text-micro text-primary font-bold">Frais &amp; Local</p> </div> </div> </td> <td className="px-lg py-4"> <p className="text-secondary text-text-secondary max-w-xs line-clamp-2">Tous types de légumes frais du marché : tomates, oignons, piments...</p> </td> <td className="px-lg py-4 text-center"> <span className="font-price text-on-surface">342</span> </td> <td className="px-lg py-4"> <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-light text-success-dark font-label text-micro border border-success/20"> <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
                                         Active
                                     </div> </td> <td className="px-lg py-4 text-right"> <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity"> <button className="p-2 text-text-secondary hover:text-primary hover:bg-primary-tint rounded-lg transition-all" title="Modifier"> <MIcon name="edit" className="text-[20px]" /> </button> <button className="p-2 text-text-secondary hover:text-error hover:bg-error-light rounded-lg transition-all" title="Supprimer"> <MIcon name="delete" className="text-[20px]" /> </button> </div> </td> </tr>  <tr className="hover:bg-primary-tint/30 transition-colors group"> <td className="px-lg py-4"> <div className="flex items-center gap-4"> <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-tertiary"> <MIcon name="set_meal" className="text-[24px]" /> </div> <div> <p className="font-h3 text-h3 text-on-surface">Poissons &amp; Viandes</p> <p className="text-micro text-tertiary font-bold">Protéines</p> </div> </div> </td> <td className="px-lg py-4"> <p className="text-secondary text-text-secondary max-w-xs line-clamp-2">Poissons frais, fumés et viandes de qualité supérieure.</p> </td> <td className="px-lg py-4 text-center"> <span className="font-price text-on-surface">128</span> </td> <td className="px-lg py-4"> <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-light text-success-dark font-label text-micro border border-success/20"> <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
