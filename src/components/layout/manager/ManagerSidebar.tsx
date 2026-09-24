@@ -1,20 +1,14 @@
-import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 
 type Item = { label: string; path: string; icon: string; badge?: string };
 
-const GROUP: { title: string; items: Item[] }[] = [
-  {
-    title: 'Zone Akpakpa',
-    items: [
-      { label: 'Tableau de bord', path: '/manager', icon: 'dashboard' },
-      { label: 'Commandes', path: '/manager/commandes', icon: 'shopping_cart', badge: '24' },
-      { label: 'Mon équipe', path: '/manager/equipe', icon: 'group' },
-      { label: 'Statistiques', path: '/manager/statistiques', icon: 'trending_up' },
-      { label: 'Litiges & Réclamations', path: '/manager/litiges', icon: 'gavel' },
-      { label: 'Paramètres', path: '/manager/parametres', icon: 'settings' },
-    ],
-  },
+const ITEMS: Item[] = [
+  { label: 'Tableau de bord', path: '/manager', icon: 'dashboard' },
+  { label: 'Commandes', path: '/manager/commandes', icon: 'shopping_cart', badge: '24' },
+  { label: 'Mon équipe', path: '/manager/equipe', icon: 'group' },
+  { label: 'Statistiques', path: '/manager/statistiques', icon: 'trending_up' },
+  { label: 'Litiges & Réclamations', path: '/manager/litiges', icon: 'gavel' },
+  { label: 'Paramètres', path: '/manager/parametres', icon: 'settings' },
 ];
 
 type Props = { currentPath: string };
@@ -43,38 +37,30 @@ export default function ManagerSidebar({ currentPath }: Props) {
           </span>
         </div>
       </div>
-      <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-2">
-        {GROUP.map((group) => (
-          <div key={group.title}>
-            <p className="px-3 pb-2 text-overline uppercase text-text-inverse-secondary">
-              {group.title}
-            </p>
-            <div className="space-y-1">
-              {group.items.map((item) => {
-                const active = currentPath === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-body transition ${
-                      active
-                        ? 'bg-primary text-white'
-                        : 'text-text-inverse-secondary hover:bg-white/5 hover:text-white'
-                    }`}
-                  >
-                    <MIcon name={item.icon} className="text-[18px]" />
-                    <span className="flex-1">{item.label}</span>
-                    {item.badge && (
-                      <span className="rounded-full bg-primary-container px-2 py-0.5 text-overline text-on-surface">
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
+        {ITEMS.map((item) => {
+          const active = currentPath === item.path;
+          return (
+            <a
+              key={item.path}
+              href={item.path}
+              aria-current={active ? 'page' : undefined}
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-body transition ${
+                active
+                  ? 'bg-primary text-white'
+                  : 'text-text-inverse-secondary hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <MIcon name={item.icon} className="text-[18px]" />
+              <span className="flex-1">{item.label}</span>
+              {item.badge && (
+                <span className="rounded-full bg-primary-container px-2 py-0.5 text-overline text-on-surface">
+                  {item.badge}
+                </span>
+              )}
+            </a>
+          );
+        })}
       </nav>
       <div className="border-t border-white/10 p-lg">
         <div className="flex items-center gap-3">

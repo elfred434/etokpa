@@ -1,4 +1,4 @@
-import { Link, useRouterState } from '@tanstack/react-router';
+import { useRouterState } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 
 interface AdminSidebarProps {
@@ -51,10 +51,15 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
         ? activePath === '/admin' || activePath === '/admin/'
         : activePath.startsWith(item.to);
     return (
-      <Link key={item.key} to={item.to} className={active ? ACTIVE_CLASS : IDLE_CLASS}>
+      <a
+        key={item.key}
+        href={item.to}
+        aria-current={active ? 'page' : undefined}
+        className={active ? ACTIVE_CLASS : IDLE_CLASS}
+      >
         <MIcon name={item.icon} />
         <span className="font-secondary text-body">{item.label}</span>
-      </Link>
+      </a>
     );
   };
 
