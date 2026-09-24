@@ -1,106 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useDesignScript } from '../../utils/designRuntime';
+import DESIGN_SCRIPT from './_scripts/AdminLogsPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
-import { adminApi } from '../../services/api';
-import { unwrap, listOf, dateCourte, metaOf } from '../../services/api/unwrap';
-import { extractApiError, formatApiError } from '../../utils/apiError';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+const DESIGN_CSS = `
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .timeline-line { width: 2px; background-color: #E5E7EB; left: 16px; top: 0; bottom: 0; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+    `;
 
+/**
+ * AdminLogsPage — copie conforme statique du design Stitch (code.html).
+ * Interactions : script du design exécuté via useDesignScript (comportement copié).
+ */
 export default function AdminLogsPage() {
-  const [logs, setLogs] = useState<any[]>([]);
-  const [meta, setMeta] = useState<{ page: number; total: number } | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [action, setAction] = useState('');
-
-  const charger = (page = 1) => {
-    setLoading(true);
-    setErr(null);
-    adminApi
-      .getAuditLogs({ page, action: action || undefined })
-      .then((r) => {
-        setLogs(listOf(unwrap(r)));
-        setMeta(metaOf(r));
-      })
-      .catch((e) => setErr(formatApiError(extractApiError(e))))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    charger(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useDesignScript(DESIGN_SCRIPT);
 
   return (
     <AdminLayout currentPath="/admin/logs">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-h2 font-h2 font-bold">Logs & Audit</h1>
-          <p className="text-text-secondary">Données réelles — GET /admin/audit-logs</p>
-        </div>
-
-        {err && (
-          <div className="rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
-            <p className="font-bold">Erreur API</p>
-            <p>{err}</p>
-          </div>
-        )}
-
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="text"
-            value={action}
-            onChange={(e) => setAction(e.target.value)}
-            placeholder="Filtrer par action…"
-            className="rounded-lg border border-border-default px-3 py-2 text-label"
-          />
-          <button type="button" className="btn btn-primary" onClick={() => charger(1)}>
-            Appliquer
-          </button>
-          {meta && (
-            <p className="ml-auto text-label text-text-secondary">
-              Page {meta.page} — {meta.total} entrées
-            </p>
-          )}
-        </div>
-
-        <div className="overflow-hidden rounded-lg border border-border-default bg-white shadow-sm">
-          {loading && <p className="p-lg text-label text-text-secondary">Chargement…</p>}
-          {!loading && logs.length === 0 && <p className="p-lg text-label text-text-secondary">Aucune entrée d’audit.</p>}
-          {!loading && logs.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-label">
-                <thead>
-                  <tr className="bg-bg-secondary text-left text-text-secondary">
-                    <th className="px-lg py-3 font-semibold">Date</th>
-                    <th className="px-lg py-3 font-semibold">Utilisateur</th>
-                    <th className="px-lg py-3 font-semibold">Action</th>
-                    <th className="px-lg py-3 font-semibold">Détails</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logs.map((l: any) => (
-                    <tr key={l.id} className="border-t border-border-default">
-                      <td className="px-lg py-3">{dateCourte(l.created_at)}</td>
-                      <td className="px-lg py-3">
-                        {l.user?.nom_complet ?? l.user_id ?? '—'}
-                      </td>
-                      <td className="px-lg py-3">
-                        <span className="rounded-full bg-primary-tint px-2.5 py-1 text-overline font-semibold text-primary">
-                          {l.action ?? l.description ?? '—'}
-                        </span>
-                      </td>
-                      <td className="px-lg py-3 text-text-secondary">
-                        {l.description ?? l.details ?? l.auditable_type ?? ''}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
+      <style>{DESIGN_CSS}</style>
+  <header className="flex justify-between items-end mb-xl"> <div> <div className="flex items-center gap-3 mb-2"> <i className="ti ti-clipboard-list text-primary text-3xl"></i> <h1 className="font-h1 text-h1 text-text-main">Logs &amp; Audit</h1> </div> <p className="font-body text-body text-text-secondary">2 847 événements enregistrés</p> </div> <div className="flex items-center gap-3"><button className="flex items-center gap-2 bg-white border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97"><i className="ti ti-download"></i> Exporter PDF</button><button className="flex items-center gap-2 bg-white border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97"><i className="ti ti-download"></i> Exporter CSV</button></div> </header>  <section className="bg-white border border-border-default rounded-[14px] p-lg mb-xl shadow-sm"> <div className="grid grid-cols-1 md:grid-cols-3 gap-md mb-md"> <div className="relative"> <label className="block text-secondary font-secondary text-text-secondary mb-1">Recherche</label> <div className="relative"> <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"></i> <input className="w-full pl-10 pr-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none transition-all" placeholder="Action / Utilisateur" type="text" /> </div> </div> <div> <label className="block text-secondary font-secondary text-text-secondary mb-1">Type d'action</label> <select className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none appearance-none bg-white"> <option>Tous les types</option> <option>Catalogue</option> <option>Utilisateurs</option> <option>Système</option> <option>Paiements</option> </select> </div> <div> <label className="block text-secondary font-secondary text-text-secondary mb-1">Rôle</label> <select className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none appearance-none bg-white"> <option>Tous les rôles</option> <option>Administrateur</option> <option>Vendeur</option> <option>Client</option> <option>Livreur</option> </select> </div> </div> <div className="flex items-center gap-md"> <div className="flex-1"> <label className="block text-secondary font-secondary text-text-secondary mb-1">Période</label> <div className="flex items-center gap-2 px-4 py-2 border-border-default border-[1.5px] rounded-[10px] bg-white"> <i className="ti ti-calendar text-text-secondary"></i> <span className="text-body text-text-main">12 juin 2025 → Aujourd'hui</span> </div> </div> <button className="self-end px-xl py-2 bg-primary-container text-white font-bold rounded-[10px] hover:bg-primary-hover transition-all active:scale-95">
+                    Appliquer
+                </button> </div> </section>  <section className="relative pl-md"> <div className="absolute timeline-line"></div> <div className="space-y-md relative">  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#F97316] ring-4 ring-[#F97316]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#F97316]/10 text-[#F97316] text-micro px-2 py-0.5 rounded-full font-bold">CATALOGUE</span> <h3 className="font-h3 text-h3 text-text-main">Produit 'Tomates fraîches' modifié</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">Aujourd'hui à 14h32</span> </div> <div className="bg-surface-container-low p-sm rounded-lg mb-md text-secondary border-l-4 border-[#F97316]"> <p className="font-medium text-text-secondary">Price: <span className="line-through">400</span> → <span className="text-primary font-bold">450 FCFA</span></p> </div> <div className="flex justify-between items-center"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-primary-fixed text-primary-deep rounded-full flex items-center justify-center text-micro font-bold">MG</div> <div className="text-secondary"> <span className="font-bold text-text-main">Marc G.</span> • <span className="text-text-secondary">Administrateur</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">192.168.1.12</code> </div> </div> </div>  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#10B981] ring-4 ring-[#10B981]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#10B981]/10 text-[#10B981] text-micro px-2 py-0.5 rounded-full font-bold">COMMANDE</span> <h3 className="font-h3 text-h3 text-text-main">Commande #TK-942 livrée avec succès</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">Aujourd'hui à 13h15</span> </div> <p className="text-body text-text-secondary mb-md">Confirmation de réception par le client à Abomey-Calavi.</p> <div className="flex justify-between items-center"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-micro font-bold">SK</div> <div className="text-secondary"> <span className="font-bold text-text-main">Samuel K.</span> • <span className="text-text-secondary">Livreur</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">102.44.18.xx</code> </div> </div> </div>  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#EF4444] ring-4 ring-[#EF4444]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#EF4444]/10 text-[#EF4444] text-micro px-2 py-0.5 rounded-full font-bold">SYSTEM</span> <h3 className="font-h3 text-h3 text-text-main">Échec de connexion répété</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">Aujourd'hui à 12h40</span> </div> <p className="text-body text-text-secondary mb-md">3 tentatives échouées pour l'utilisateur <span className="font-medium text-error-dark">'Vendeur Kofi'</span>. Compte temporairement suspendu.</p> <div className="flex justify-between items-center"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-red-100 text-red-700 rounded-full flex items-center justify-center text-micro font-bold">BK</div> <div className="text-secondary"> <span className="font-bold text-text-main">Basile K.</span> • <span className="text-text-secondary">Vendeur</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">41.85.162.24</code> </div> </div> </div>  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#3B82F6] ring-4 ring-[#3B82F6]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#3B82F6]/10 text-[#3B82F6] text-micro px-2 py-0.5 rounded-full font-bold">AUTH</span> <h3 className="font-h3 text-h3 text-text-main">Connexion Administrateur réussie</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">Aujourd'hui à 08h05</span> </div> <div className="flex justify-between items-center mt-2"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-micro font-bold">MG</div> <div className="text-secondary"> <span className="font-bold text-text-main">Marc G.</span> • <span className="text-text-secondary">Administrateur</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">192.168.1.12</code> </div> </div> </div>  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#3B82F6] ring-4 ring-[#3B82F6]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#3B82F6]/10 text-[#3B82F6] text-micro px-2 py-0.5 rounded-full font-bold">PAYMENT</span> <h3 className="font-h3 text-h3 text-text-main">Reversement effectué au vendeur</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">Hier à 17h50</span> </div> <p className="text-body text-text-secondary mb-md">Montant: <span className="font-bold text-text-main">15 400 FCFA</span> via Mobile Money (MTN).</p> <div className="flex justify-between items-center"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-primary-light text-primary-dark rounded-full flex items-center justify-center text-micro font-bold">SY</div> <div className="text-secondary"> <span className="font-bold text-text-main">Système TOKPa</span> • <span className="text-text-secondary">Automatique</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">Internal</code> </div> </div> </div>  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#F97316] ring-4 ring-[#F97316]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#F97316]/10 text-[#F97316] text-micro px-2 py-0.5 rounded-full font-bold">CONFIG</span> <h3 className="font-h3 text-h3 text-text-main">Mise à jour des frais de livraison</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">Hier à 11h22</span> </div> <p className="text-body text-text-secondary mb-md">Zone Cotonou : +50 FCFA par km supplémentaire.</p> <div className="flex justify-between items-center"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-primary-fixed text-primary-deep rounded-full flex items-center justify-center text-micro font-bold">AS</div> <div className="text-secondary"> <span className="font-bold text-text-main">Alice S.</span> • <span className="text-text-secondary">Super-Admin</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">192.168.1.15</code> </div> </div> </div>  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#EF4444] ring-4 ring-[#EF4444]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#EF4444]/10 text-[#EF4444] text-micro px-2 py-0.5 rounded-full font-bold">UTILISATEUR</span> <h3 className="font-h3 text-h3 text-text-main">Compte banni pour non-respect</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">14 Juin 2025</span> </div> <p className="text-body text-text-secondary mb-md">L'utilisateur 'Client_992' a été banni suite à 3 signalements confirmés.</p> <div className="flex justify-between items-center"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-primary-fixed text-primary-deep rounded-full flex items-center justify-center text-micro font-bold">MG</div> <div className="text-secondary"> <span className="font-bold text-text-main">Marc G.</span> • <span className="text-text-secondary">Administrateur</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">192.168.1.12</code> </div> </div> </div>  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#10B981] ring-4 ring-[#10B981]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#10B981]/10 text-[#10B981] text-micro px-2 py-0.5 rounded-full font-bold">VALIDATION</span> <h3 className="font-h3 text-h3 text-text-main">Nouveau vendeur validé</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">14 Juin 2025</span> </div> <p className="text-body text-text-secondary mb-md">Documents vérifiés pour 'Épicerie de Fidjrossè'.</p> <div className="flex justify-between items-center"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-micro font-bold">AS</div> <div className="text-secondary"> <span className="font-bold text-text-main">Alice S.</span> • <span className="text-text-secondary">Super-Admin</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">192.168.1.15</code> </div> </div> </div> </div> </section>  <footer className="mt-xl pt-lg border-t border-border-default flex flex-col md:flex-row justify-between items-center gap-md"> <p className="text-secondary text-text-secondary">Page 1 sur 285 · Afficher 
+                <button className="font-bold text-primary hover:underline">10</button> / 
+                <button className="hover:text-primary">25</button> / 
+                <button className="hover:text-primary">50</button> par page
+            </p> <div className="flex gap-2"> <button className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-secondary cursor-not-allowed opacity-50"> <i className="ti ti-chevron-left"></i> </button> <button className="w-10 h-10 flex items-center justify-center border border-primary-container rounded-lg bg-primary-container text-white font-bold">1</button> <button className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-main hover:bg-surface-container-low transition-colors">2</button> <button className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-main hover:bg-surface-container-low transition-colors">3</button> <span className="px-2 self-center">...</span> <button className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-main hover:bg-surface-container-low transition-colors">285</button> <button className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-main hover:bg-surface-container-low transition-colors"> <i className="ti ti-chevron-right"></i> </button> </div> </footer>  
     </AdminLayout>
   );
 }

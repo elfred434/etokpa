@@ -1,221 +1,81 @@
-import { useEffect, useState } from 'react';
+import { useDesignScript } from '../../utils/designRuntime';
 import { Link } from '@tanstack/react-router';
-import AdminLayout from '../../components/layout/admin/AdminLayout';
-import MIcon from '../../components/shared/MIcon';
 import { adminApi } from '../../services/api';
-import { unwrap, listOf, dateCourte, metaOf } from '../../services/api/unwrap';
-import { extractApiError, formatApiError } from '../../utils/apiError';
+import { useLiveRows } from '../../services/api/useLiveRows';
+import { dateCourte } from '../../services/api/unwrap';
+import DESIGN_SCRIPT from './_scripts/AdminUsersPage';
+import AdminLayout from '../../components/layout/admin/AdminLayout';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+const DESIGN_CSS = `
+    .btn-press:active {
+      transform: scale(0.97);
+    }
+    /* Modal transitions */
+    #userModal.active, #addUserModal.active {
+      display: flex !important;
+    }
+  `;
 
-const ROLES = ['Tous les rôles', 'client', 'livreur', 'manager', 'admin'];
-
+/**
+ * AdminUsersPage — copie conforme statique du design Stitch (code.html).
+ * Interactions : script du design exécuté via useDesignScript (comportement copié).
+ */
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [meta, setMeta] = useState<{ page: number; total: number } | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState(ROLES[0]);
-  const [nouveau, setNouveau] = useState<any | null>(null);
-  const [form, setForm] = useState({ prenom: '', nom: '', email: '', telephone: '', role: 'client' });
-
-  const charger = (page = 1) => {
-    setLoading(true);
-    setErr(null);
-    adminApi
-      .getUsers({ role: role === ROLES[0] ? undefined : role, page })
-      .then((r) => {
-        setUsers(listOf(unwrap(r)));
-        setMeta(metaOf(r));
-      })
-      .catch((e) => setErr(formatApiError(extractApiError(e))))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    charger(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role]);
-
-  const creer = async () => {
-    setErr(null);
-    setInfo(null);
-    try {
-      await adminApi.createUser(form);
-      setInfo('Utilisateur créé.');
-      setNouveau(null);
-      charger(1);
-    } catch (e) {
-      setErr(formatApiError(extractApiError(e)));
-    }
-  };
-
-  const supprimer = async (id: number) => {
-    setErr(null);
-    setInfo(null);
-    try {
-      await adminApi.deleteUser(id);
-      setInfo(`Utilisateur #${id} supprimé.`);
-      charger(1);
-    } catch (e) {
-      setErr(formatApiError(extractApiError(e)));
-    }
-  };
+  useDesignScript(DESIGN_SCRIPT);
+  const { rows: users, err, loading, reload } = useLiveRows(() => adminApi.getUsers({ page: 1 }), []);
+  void reload;
 
   return (
     <AdminLayout currentPath="/admin/utilisateurs">
-      <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-h2 font-h2 font-bold">Gestion des Utilisateurs</h1>
-            <p className="text-text-secondary">Données réelles — /admin/users (CRUD)</p>
-          </div>
-          <button
-            type="button"
-            className="btn btn-primary gap-2"
-            onClick={() => {
-              setNouveau({});
-              setForm({ prenom: '', nom: '', email: '', telephone: '', role: 'client' });
-            }}
-          >
-            <MIcon name="person_add" className="text-[18px]" />
-            Nouvel utilisateur
-          </button>
-        </div>
-
-        {err && (
-          <div className="rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
-            <p className="font-bold">Erreur API</p>
-            <p>{err}</p>
-          </div>
-        )}
-        {info && <div className="rounded-lg border border-success bg-success-container p-4 text-label">{info}</div>}
-
-        <div className="flex flex-wrap items-center gap-2">
-          {ROLES.map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRole(r)}
-              className={`rounded-full border px-3 py-1.5 text-label font-semibold transition ${
-                role === r
-                  ? 'border-primary bg-primary text-white'
-                  : 'border-border-default bg-white text-text-secondary hover:border-primary hover:text-primary'
-              }`}
-            >
-              {r}
-            </button>
-          ))}
-          {meta && <p className="ml-auto text-label text-text-secondary">{meta.total} utilisateurs</p>}
-        </div>
-
-        <div className="overflow-hidden rounded-lg border border-border-default bg-white shadow-sm">
-          {loading && <p className="p-lg text-label text-text-secondary">Chargement…</p>}
-          {!loading && users.length === 0 && <p className="p-lg text-label text-text-secondary">Aucun utilisateur.</p>}
-          {!loading && users.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-label">
-                <thead>
-                  <tr className="bg-bg-secondary text-left text-text-secondary">
-                    <th className="px-lg py-3 font-semibold">Nom</th>
-                    <th className="px-lg py-3 font-semibold">Email</th>
-                    <th className="px-lg py-3 font-semibold">Téléphone</th>
-                    <th className="px-lg py-3 font-semibold">Rôle</th>
-                    <th className="px-lg py-3 font-semibold">Statut</th>
-                    <th className="px-lg py-3 font-semibold">Inscrit</th>
-                    <th className="px-lg py-3 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u: any) => (
-                    <tr key={u.id} className="border-t border-border-default">
-                      <td className="px-lg py-3 font-semibold">{u.nom_complet ?? `${u.prenom ?? ''} ${u.nom ?? ''}`}</td>
-                      <td className="px-lg py-3">{u.email}</td>
-                      <td className="px-lg py-3">{u.telephone ?? '—'}</td>
-                      <td className="px-lg py-3">
-                        <span className="rounded-full bg-primary-tint px-2.5 py-1 text-overline font-semibold text-primary">
-                          {typeof u.role === 'object' ? u.role?.nom : u.role}
-                        </span>
-                      </td>
-                      <td className="px-lg py-3">{u.statut ?? '—'}</td>
-                      <td className="px-lg py-3">{dateCourte(u.created_at)}</td>
-                      <td className="px-lg py-3">
-                        <div className="flex gap-2">
-                          <Link
-                            to="/admin/utilisateurs/detail"
-                            search={{ id: u.id }}
-                            className="font-semibold text-primary hover:underline"
-                          >
-                            Détails
-                          </Link>
-                          <button type="button" className="font-semibold text-error hover:underline" onClick={() => supprimer(u.id)}>
-                            Supprimer
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {nouveau && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setNouveau(null)}>
-          <div
-            className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-border-default p-4">
-              <h3 className="text-h3 font-h3 font-bold">Nouvel utilisateur</h3>
-              <button type="button" onClick={() => setNouveau(null)} className="p-1 text-text-secondary hover:text-on-surface">
-                <MIcon name="close" className="text-[20px]" />
-              </button>
-            </div>
-            <div className="flex-1 space-y-3 overflow-y-auto p-4">
-              {[
-                { k: 'prenom' as const, label: 'Prénom' },
-                { k: 'nom' as const, label: 'Nom' },
-                { k: 'email' as const, label: 'Email' },
-                { k: 'telephone' as const, label: 'Téléphone (+229…)' },
-              ].map((f) => (
-                <div key={f.k} className="space-y-1">
-                  <label className="text-label text-text-secondary">{f.label}</label>
-                  <input
-                    type="text"
-                    value={form[f.k]}
-                    onChange={(e) => setForm({ ...form, [f.k]: e.target.value })}
-                    className="w-full rounded-lg border border-border-default px-3 py-2 text-label"
-                  />
-                </div>
-              ))}
-              <div className="space-y-1">
-                <label className="text-label text-text-secondary">Rôle</label>
-                <select
-                  value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value })}
-                  className="w-full rounded-lg border border-border-default bg-white px-3 py-2 text-label"
-                >
-                  {ROLES.slice(1).map((r) => (
-                    <option key={r}>{r}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 border-t border-border-default p-4">
-              <button type="button" className="btn btn-ghost" onClick={() => setNouveau(null)}>
-                Annuler
-              </button>
-              <button type="button" className="btn btn-primary" onClick={creer}>
-                Créer
-              </button>
-            </div>
-          </div>
+      {err && (
+        <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
+          <p className="font-bold">Erreur API</p>
+          <p>{err}</p>
         </div>
       )}
+      {loading && <p className="m-lg text-label text-text-secondary">Chargement des données réelles…</p>}
+      <style>{DESIGN_CSS}</style>
+  <header className="h-14 bg-white border-b border-gray-200 px-6 flex items-center justify-between shrink-0"> <div className="flex items-center gap-3"> <span className="text-xs text-gray-500 font-medium">Administration Centrale</span> <span className="text-gray-300">/</span> <span className="text-xs text-primary font-semibold">Gestion des Utilisateurs</span> </div> <div className="flex items-center gap-4">  <div className="relative w-64"> <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i> <input className="w-full pl-9 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" id="searchInput" placeholder="Rechercher nom, email, tél..." type="text" /> </div> <div className="h-4 w-px bg-gray-200"></div> <button className="relative p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"> <i className="ti ti-bell text-lg"></i> <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full"></span> </button> <button className="btn-press bg-primary hover:bg-primary-hover text-white text-xs font-medium px-3.5 py-2 rounded-[10px] flex items-center gap-1.5 shadow-sm transition-all" data-onclick="openAddUserModal()"> <i className="ti ti-user-plus text-sm"></i> <span>Ajouter un utilisateur</span> </button> </div> </header>  <div className="flex-1 overflow-y-auto p-6 space-y-6">  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"> <div> <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Gestion des Utilisateurs</h1> <p className="text-sm text-gray-500 mt-0.5">Supervisez, modifiez les rôles et gérez les comptes des clients, commerçants, coursiers et managers du marché.</p> </div>  <div className="flex items-center gap-2.5"> <button className="btn-press px-3 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-[10px] flex items-center gap-1.5 transition-all"> <i className="ti ti-download text-sm"></i> <span>Exporter CSV</span> </button> <button className="btn-press px-3 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-[10px] flex items-center gap-1.5 transition-all" data-onclick="resetFilters()"> <i className="ti ti-refresh text-sm"></i> <span>Actualiser</span> </button> </div> </div>  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">  <div className="bg-white p-4 rounded-[14px] border border-gray-200 shadow-sm flex items-center gap-4"> <div className="w-12 h-12 rounded-xl bg-orange-50 text-primary flex items-center justify-center text-xl shrink-0"> <i className="ti ti-users"></i> </div> <div> <p className="text-xs font-medium text-gray-500">Total Utilisateurs</p> <h3 className="text-xl font-bold text-gray-900 mt-0.5">3 842</h3> <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-0.5"> <i className="ti ti-trending-up"></i> +48 cette semaine
+            </p> </div> </div>  <div className="bg-white p-4 rounded-[14px] border border-gray-200 shadow-sm flex items-center gap-4"> <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0"> <i className="ti ti-shopping-cart"></i> </div> <div> <p className="text-xs font-medium text-gray-500">Clients Actifs</p> <h3 className="text-xl font-bold text-gray-900 mt-0.5">2 914</h3> <p className="text-[11px] text-gray-500 mt-0.5">76% du volume global</p> </div> </div>  <div className="bg-white p-4 rounded-[14px] border border-gray-200 shadow-sm flex items-center gap-4"> <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0"> <i className="ti ti-building-store"></i> </div> <div> <p className="text-xs font-medium text-gray-500">Commerçants (Dantokpa)</p> <h3 className="text-xl font-bold text-gray-900 mt-0.5">486</h3> <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-0.5"> <i className="ti ti-circle-check"></i> 98% vérifiés
+            </p> </div> </div>  <div className="bg-white p-4 rounded-[14px] border border-gray-200 shadow-sm flex items-center gap-4"> <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0"> <i className="ti ti-motorbike"></i> </div> <div> <p className="text-xs font-medium text-gray-500">Livreurs &amp; Managers</p> <h3 className="text-xl font-bold text-gray-900 mt-0.5">442</h3> <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-0.5"> <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> 184 en service
+            </p> </div> </div> </div>  <div className="bg-white rounded-[14px] border border-gray-200 shadow-sm overflow-hidden flex flex-col">  <div className="p-4 border-b border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50/50">  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0" id="roleFilters"> <button className="role-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-primary shadow-xs border border-primary/30 transition-all" data-role="all" data-onclick="filterRole('all')">
+              Tous (3 842)
+            </button> <button className="role-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-white/80 transition-all" data-role="client" data-onclick="filterRole('client')">
+              Clients (2 914)
+            </button> <button className="role-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-white/80 transition-all" data-role="vendeur" data-onclick="filterRole('vendeur')">
+              Vendeurs (486)
+            </button> <button className="role-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-white/80 transition-all" data-role="livreur" data-onclick="filterRole('livreur')">
+              Livreurs (418)
+            </button> <button className="role-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-white/80 transition-all" data-role="manager" data-onclick="filterRole('manager')">
+              Managers (24)
+            </button> </div>  <div className="flex items-center gap-2.5"> <div className="flex items-center gap-2"> <span className="text-xs text-gray-400 font-medium">Statut :</span> <select className="text-xs bg-white border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary" id="statusFilter" data-onchange="applyFilters()"> <option value="all">Tous les statuts</option> <option value="Actif">Actifs</option> <option value="En attente">En attente</option> <option value="Suspendu">Suspendus</option> </select> </div> <div className="flex items-center gap-2"> <span className="text-xs text-gray-400 font-medium">Zone :</span> <select className="text-xs bg-white border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary" id="zoneFilter" data-onchange="applyFilters()"> <option value="all">Toutes les zones</option> <option value="Dantokpa">Dantokpa</option> <option value="Akpakpa">Akpakpa</option> <option value="Cadjehoun">Cadjehoun</option> <option value="Fidjrossè">Fidjrossè</option> <option value="Porto-Novo">Porto-Novo</option> </select> </div> </div> </div>  <div className="overflow-x-auto"> <table className="w-full text-left border-collapse" id="usersTable"> <thead> <tr className="border-b border-gray-200 bg-gray-50 text-[11px] font-semibold text-gray-500 uppercase tracking-wider"> <th className="py-3 px-4">Utilisateur</th> <th className="py-3 px-4">Rôle</th> <th className="py-3 px-4">Téléphone &amp; WhatsApp</th> <th className="py-3 px-4">Zone Principale</th> <th className="py-3 px-4">Statut</th> <th className="py-3 px-4">Activité / Inscription</th> <th className="py-3 px-4 text-right">Actions</th> </tr> </thead> <tbody>
+                {users.map((u: any) => (
+                  <tr key={u.id} className="border-t border-border-default text-label">
+                    <td className="px-lg py-3 font-semibold">{u.nom_complet ?? `${u.prenom ?? ''} ${u.nom ?? ''}`}</td>
+                    <td className="px-lg py-3">{typeof u.role === 'object' ? u.role?.nom : u.role}</td>
+                    <td className="px-lg py-3">{u.telephone ?? '—'}</td>
+                    <td className="px-lg py-3">{u.zone ?? u.profil?.zone ?? '—'}</td>
+                    <td className="px-lg py-3">{u.statut ?? '—'}</td>
+                    <td className="px-lg py-3">{dateCourte(u.created_at)}</td>
+                    <td className="px-lg py-3"><Link to="/admin/utilisateurs/detail" search={{ id: u.id }} className="font-semibold text-primary hover:underline">Détails</Link></td>
+                  </tr>
+                ))}
+              </tbody> </table> </div>  <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500 bg-gray-50/50"> <p>Affichage de <span className="font-semibold text-gray-800">1</span> à <span className="font-semibold text-gray-800">6</span> sur <span className="font-semibold text-gray-800">3 842</span> utilisateurs</p> <div className="flex items-center gap-1"> <button className="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-40" disabled={true}> <i className="ti ti-chevron-left text-xs"></i> </button> <button className="px-3 py-1.5 rounded-lg bg-primary text-white font-semibold">1</button> <button className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100">2</button> <button className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100">3</button> <span className="px-1 text-gray-400">...</span> <button className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100">641</button> <button className="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100"> <i className="ti ti-chevron-right text-xs"></i> </button> </div> </div> </div> </div>  <div className="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 backdrop-blur-xs" id="userModal"> <div className="bg-white rounded-[16px] shadow-2xl max-w-[512px] w-full overflow-hidden border border-gray-200 animate-in fade-in zoom-in duration-150">  <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-full bg-orange-100 text-primary font-bold flex items-center justify-center text-sm" id="modalAvatar">
+            AM
+          </div> <div> <h3 className="text-base font-bold text-gray-900" id="modalName">Afi Mensah</h3> <p className="text-xs font-medium text-amber-700" id="modalRoleBadge">Vendeur · Marché Dantokpa</p> </div> </div> <button className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-200 transition-colors" data-onclick="closeUserModal()"> <i className="ti ti-x text-lg"></i> </button> </div>  <div className="p-6 space-y-4 text-xs"> <div className="grid grid-cols-2 gap-4"> <div className="p-3 bg-gray-50 rounded-xl border border-gray-100"> <span className="text-gray-400 block font-medium">Adresse Email</span> <span className="font-semibold text-gray-800 text-sm mt-0.5 block truncate" id="modalEmail">afi.mensah@gmail.com</span> </div> <div className="p-3 bg-gray-50 rounded-xl border border-gray-100"> <span className="text-gray-400 block font-medium">Numéro de téléphone</span> <span className="font-semibold text-gray-800 text-sm mt-0.5 block font-mono" id="modalPhone">+229 97 12 34 56</span> </div> </div> <div className="grid grid-cols-2 gap-4"> <div className="p-3 bg-gray-50 rounded-xl border border-gray-100"> <span className="text-gray-400 block font-medium">Zone d'assignation / Adresse</span> <span className="font-semibold text-gray-800 mt-0.5 block" id="modalZone">Dantokpa - Hangar C4</span> </div> <div className="p-3 bg-gray-50 rounded-xl border border-gray-100"> <span className="text-gray-400 block font-medium">Statut du compte</span> <div className="mt-1"> <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200" id="modalStatus"> <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Actif
+              </span> </div> </div> </div> <div className="p-3.5 bg-orange-50/50 rounded-xl border border-orange-100 space-y-1"> <div className="flex items-center justify-between"> <span className="text-gray-600 font-medium">Statistiques &amp; Performance</span> <span className="font-bold text-primary" id="modalStats">342 ventes validées</span> </div> <p className="text-[11px] text-gray-500">Inscrit sur TOKPa depuis le <span className="font-medium text-gray-700" id="modalDate">12 Janvier 2024</span> · Paiements mobile MTN/Moov vérifiés.</p> </div> <div className="pt-2 flex flex-col gap-2"> <label className="font-medium text-gray-700 block">Actions administratives :</label> <div className="flex items-center gap-2"> <button className="btn-press flex-1 py-2 px-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-[10px] flex items-center justify-center gap-1.5 transition-all"> <i className="ti ti-key text-sm"></i> <span>Réinitialiser mot de passe</span> </button> <button className="btn-press flex-1 py-2 px-3 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 font-medium rounded-[10px] flex items-center justify-center gap-1.5 transition-all"> <i className="ti ti-lock text-sm"></i> <span>Suspendre l'accès</span> </button> </div> </div> </div>  <div className="p-4 border-t border-gray-200 bg-gray-50 flex items-center justify-end gap-2.5"> <button className="btn-press px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all" data-onclick="closeUserModal()">
+          Fermer
+        </button> <button className="btn-press px-4 py-2 bg-primary hover:bg-primary-hover text-white font-medium rounded-[10px] shadow-sm transition-all" data-onclick="alert('Modifications enregistrées avec succès'); closeUserModal();">
+          Enregistrer les modifications
+        </button> </div> </div> </div>  <div className="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 backdrop-blur-xs overflow-y-auto" id="addUserModal"> <div className="bg-white rounded-[16px] shadow-2xl max-w-[576px] w-full overflow-hidden border border-gray-200 animate-in fade-in zoom-in duration-150 my-8">  <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50/80"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-xl bg-orange-50 text-primary flex items-center justify-center text-lg border border-orange-200"> <i className="ti ti-user-plus"></i> </div> <div> <h3 className="text-base font-bold text-gray-900">Ajouter un nouvel utilisateur</h3> <p className="text-xs text-gray-500">Créez un compte pour un client, vendeur, manager ou livreur</p> </div> </div> <button className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-200 transition-colors" data-onclick="closeAddUserModal()"> <i className="ti ti-x text-lg"></i> </button> </div>  <div className="px-6 pt-4 pb-3 border-b border-gray-100 bg-white"> <div className="flex items-center">  <div className="flex items-center gap-2 cursor-pointer" id="stepperStep1" data-onclick="goToStep(1)"> <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shadow-xs" id="stepperBadge1">
+              1
+            </div> <div className="text-left"> <span className="text-xs font-semibold text-primary block leading-tight" id="stepperText1">Informations générales</span> <span className="text-[10px] text-gray-400 block leading-tight">Identité &amp; profil</span> </div> </div>  <div className="hidden flex-1 mx-4 h-0.5 bg-gray-200 transition-all" id="stepperDivider"></div>  <div className="hidden items-center gap-2 transition-all" id="stepperStep2"> <div className="w-7 h-7 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold border border-gray-200" id="stepperBadge2">
+              2
+            </div> <div className="text-left"> <span className="text-xs font-medium text-gray-500 block leading-tight" id="stepperText2">Dossier &amp; Conformité</span> <span className="text-[10px] text-gray-400 block leading-tight">Permis, CIP &amp; Véhicule</span> </div> </div> </div> </div>  <form id="addUserForm" data-onsubmit="handleAddUserSubmit(event)">  <div className="p-6 space-y-4 text-xs" id="step1Container"> <div> <label className="block text-gray-700 font-semibold mb-1">Nom complet <span className="text-red-500">*</span></label> <input className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all placeholder:text-gray-400" id="newUserName" placeholder="Ex: Sègla Hounkpati" required={true} type="text" /> </div> <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5"> <div> <label className="block text-gray-700 font-semibold mb-1">Rôle plateforme <span className="text-red-500">*</span></label> <select className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all" id="newUserRole" data-onchange="handleRoleChange(this.value)" required={true}> <option value="Client">Client</option> <option value="Vendeur">Vendeur</option> <option value="Livreur">Livreur</option> <option value="Manager">Manager de Zone</option> </select> </div> <div> <label className="block text-gray-700 font-semibold mb-1">Zone géographique <span className="text-red-500">*</span></label> <select className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all" id="newUserZone" required={true}> <option value="Dantokpa">Marché Dantokpa</option> <option value="Akpakpa">Akpakpa</option> <option value="Cadjehoun">Cadjehoun</option> <option value="Fidjrossè">Fidjrossè</option> <option value="Porto-Novo">Porto-Novo</option> </select> </div> </div> <div> <label className="block text-gray-700 font-semibold mb-1">Adresse Email <span className="text-gray-400 font-normal">(Optionnel pour client/vendeur)</span></label> <input className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all placeholder:text-gray-400" id="newUserEmail" placeholder="utilisateur@tokpa.bj ou perso@gmail.com" type="email" /> </div> <div> <label className="block text-gray-700 font-semibold mb-1">Numéro de Téléphone / WhatsApp béninois <span className="text-red-500">*</span></label> <div className="flex shadow-xs rounded-[10px]"> <span className="inline-flex items-center px-3 rounded-l-[10px] border border-r-0 border-gray-200 bg-gray-50 text-gray-700 font-mono font-medium text-xs">
+                🇧🇯 +229
+              </span> <input className="w-full px-3.5 py-2.5 border border-gray-200 rounded-r-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 transition-all placeholder:text-gray-400" id="newUserPhone" placeholder="97 12 34 56" required={true} type="tel" /> </div> <p className="text-[11px] text-gray-400 mt-1">Un SMS OTP de confirmation et activation sera envoyé sur ce numéro.</p> </div>  <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3"> <button className="btn-press px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all" data-onclick="closeAddUserModal()" type="button">
+              Annuler
+            </button> <button className="btn-press px-4 py-2.5 bg-primary hover:bg-primary-hover text-white font-semibold rounded-[10px] shadow-sm transition-all flex items-center gap-1.5" id="step1SubmitBtn" data-onclick="onStep1SubmitAction()" type="button"> <span>Créer l'utilisateur</span> </button> </div> </div>  <div className="hidden p-6 space-y-4 text-xs" id="step2Container">  <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3"> <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-800 flex items-center justify-center shrink-0 text-base mt-0.5"> <i className="ti ti-shield-alert"></i> </div> <div> <h4 className="text-xs font-bold text-amber-900">Documents &amp; Conformité du Livreur</h4> <p className="text-[11px] text-amber-800/90 mt-0.5 leading-relaxed">Vérification obligatoire selon les normes ANIP &amp; ANATT Bénin pour l'autorisation de livraison marché.</p> </div> </div>  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5"> <div> <label className="block text-gray-700 font-semibold mb-1">Numéro CIP / NPI ANIP Bénin (10 chiffres) <span className="text-red-500">*</span></label> <input className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400" id="livreurCip" maxLength={10} placeholder="Ex: 1048291048" type="text" /> </div> <div> <label className="block text-gray-700 font-semibold mb-1">Numéro de Permis de conduire <span className="text-red-500">*</span></label> <input className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400" id="livreurPermis" placeholder="Ex: BJ-2023-A1-4921" type="text" /> </div> </div>  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5"> <div> <label className="block text-gray-700 font-semibold mb-1">Catégorie de véhicule <span className="text-red-500">*</span></label> <select className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900" id="livreurVehiculeType"> <option value="moto">Moto 2 roues (Zémidjan / Express)</option> <option value="tricycle">Tricycle fret Dantokpa</option> <option value="utilitaire">Utilitaire léger / Fourgonnette</option> </select> </div> <div> <label className="block text-gray-700 font-semibold mb-1">Plaque d'immatriculation béninoise <span className="text-red-500">*</span></label> <input className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400" id="livreurPlaque" placeholder="Ex: 2A 9402 RB" type="text" /> </div> </div>  <div> <label className="block text-gray-700 font-semibold mb-1.5">Pièces justificatives requises (CIP/CNI, Permis, Résidence)</label> <div className="border-2 border-dashed border-gray-200 hover:border-primary/50 rounded-xl p-4 bg-gray-50/60 hover:bg-orange-50/20 transition-all text-center cursor-pointer"> <input className="hidden" id="livreurDocsInput" multiple={true} data-onchange="updateUploadLabel(this)" type="file" /> <label className="cursor-pointer block" htmlFor="livreurDocsInput"> <div className="w-10 h-10 rounded-full bg-orange-100/70 text-primary mx-auto flex items-center justify-center text-lg mb-2"> <i className="ti ti-cloud-upload"></i> </div> <p className="text-xs font-semibold text-gray-700" id="uploadLabelText">Cliquez pour importer les documents ou glissez-les ici</p> <p className="text-[11px] text-gray-400 mt-0.5">Formats acceptés : PDF, PNG, JPG (Max 5 Mo / fichier)</p> <div className="flex items-center justify-center gap-3 mt-2 text-[11px] text-gray-500"> <span className="inline-flex items-center gap-1"><i className="ti ti-file-check text-emerald-600"></i> Carte CIP / NPI</span> <span className="inline-flex items-center gap-1"><i className="ti ti-id text-emerald-600"></i> Permis A1/B</span> <span className="inline-flex items-center gap-1"><i className="ti ti-home-check text-emerald-600"></i> Certificat résidence</span> </div> </label> </div> </div>  <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3"> <button className="btn-press px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all flex items-center gap-1.5" data-onclick="goToStep(1)" type="button"> <i className="ti ti-arrow-left text-xs"></i> <span>Retour aux informations</span> </button> <button className="btn-press px-4 py-2.5 bg-primary hover:bg-primary-hover text-white font-semibold rounded-[10px] shadow-sm transition-all flex items-center gap-1.5" type="submit"> <i className="ti ti-check text-sm"></i> <span>Valider &amp; Enregistrer le livreur</span> </button> </div> </div> </form> </div> </div>  
     </AdminLayout>
   );
 }
