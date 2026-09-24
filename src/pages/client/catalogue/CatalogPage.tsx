@@ -96,31 +96,34 @@ export default function CatalogPage() {
   const [page, setPage] = useState(1);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-  // Connection API Backend GET /api/products
+  // Connection API Backend GET /api/products — 100 premiers, nouveautés d'abord, recherche q (debounce)
   useEffect(() => {
-    catalogApi.getProducts({ q: search })
-      .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-          const fetched: CatalogProduct[] = res.data.map((p: ApiProduct) => ({
+    let alive = true;
+    const timer = window.setTimeout(() => {
+      catalogApi.getProducts({ q: search.trim() || undefined, per_page: 100, sort: 'created_at', dir: 'desc' })
+        .then((res) => {
+          if (!alive) return;
+          const list = Array.isArray(res?.data) ? res.data : [];
+          const fetched: CatalogProduct[] = list.map((p: ApiProduct) => ({
             id: String(p.id),
             nom: p.nom,
-            zoneId: 'dantokpa',
-            meta: p.categorie?.nom ? `${p.categorie.nom} · Marché Dantokpa` : 'Marché Dantokpa',
-            quantite: p.stock > 0 ? `Stock : ${p.stock}` : 'Rupture',
-            prix: p.prix,
-            prixLabel: `${p.prix.toLocaleString('fr-FR')} FCFA`,
-            prixAncienLabel: undefined,
-            promo: undefined,
-            stock: p.disponible === false ? 'none' : p.stock > 5 ? 'available' : p.stock > 0 ? 'low' : 'none',
-            icon: 'shopping_bag',
+            zoneId: '',
+            meta: p.description ?? '',
+            quantite: p.stock > 0 ? `${p.stock} en stock` : 'Rupture',
+            prix: Number(p.prix ?? 0),
+            prixLabel: `${p.prix} F`,
+            stock: p.disponible === false || Number(p.stock) <= 0 ? 'none' : Number(p.stock) <= 5 ? 'low' : 'available',
+            icon: mapApiCategory(p.categorie) === 'fish' ? 'set_meal' : mapApiCategory(p.categorie) === 'grain' ? 'nutrition' : mapApiCategory(p.categorie) === 'spice' ? 'restaurant' : mapApiCategory(p.categorie) === 'pack' ? 'package_2' : 'eco',
             cat: mapApiCategory(p.categorie),
           }));
           setProductsList(fetched);
-        }
-      })
-      .catch((err) => {
-        console.warn('API Catalog offline, using Stitch mock catalog:', err);
-      });
+        })
+        .catch((err) => {
+          if (!alive) return;
+          console.warn('API Catalog offline, using Stitch mock catalog:', err);
+        });
+    }, 350);
+    return () => { alive = false; window.clearTimeout(timer); };
   }, [search]);
 
   const touch = () => setTouched(true);
@@ -439,6 +442,23 @@ export default function CatalogPage() {
 
         {/* ---- Main Content Area ---- */}
         <section className="min-w-0 flex-grow">
+          {/* Barre de recherche des produits */}
+          <div className="mb-md">
+            <div className="relative">
+              <svg aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-ink-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" strokeLinecap="round" /></svg>
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => {
+                  touch();
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Rechercher un produit (nom ou description)…"
+                className="w-full rounded-[10px] border-0.5 border-line bg-card py-3 pl-10 pr-4 text-label placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+          </div>
           <div className="mb-md flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:mb-lg">
             <div>
               <h2 className="font-h1 text-h1 text-on-surface">{CAT_TITLES[cat]}</h2>

@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { IconLayoutGrid, IconListDetails } from '@tabler/icons-react';
+import { IconLayoutGrid, IconListDetails, IconSearch } from '@tabler/icons-react';
 
 export type SortKey = 'popular' | 'price-asc' | 'price-desc' | 'new';
 export type ViewMode = 'grid' | 'list';
@@ -17,12 +17,27 @@ interface CatalogToolbarProps {
   onSort: (sort: SortKey) => void;
   view: ViewMode;
   onView: (view: ViewMode) => void;
+  search?: string;
+  onSearch?: (value: string) => void;
 }
 
 /** En-tête catalogue : compteur, tri, bascule grille/liste (maquette catalogue). */
-export default function CatalogToolbar({ count, sort, onSort, view, onView }: CatalogToolbarProps) {
+export default function CatalogToolbar({ count, sort, onSort, view, onView, search, onSearch }: CatalogToolbarProps) {
   return (
-    <div className="mb-lg flex flex-wrap items-end justify-between gap-md">
+    <>
+      <div className="mb-md">
+        <div className="relative">
+          <IconSearch size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" />
+          <input
+            type="search"
+            value={search ?? ''}
+            onChange={(e) => onSearch?.(e.target.value)}
+            placeholder="Rechercher un produit (nom ou description)…"
+            className="w-full rounded-[10px] border-0.5 border-line bg-card py-3 pl-10 pr-4 text-label placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+      </div>
+      <div className="mb-lg flex flex-wrap items-end justify-between gap-md">
       <div>
         <h1 className="text-h1 text-ink">Légumes frais</h1>
         <p className="mt-xs text-[13px] text-ink-2">{count} produits trouvés</p>
@@ -68,5 +83,6 @@ export default function CatalogToolbar({ count, sort, onSort, view, onView }: Ca
         </div>
       </div>
     </div>
+    </>
   );
 }

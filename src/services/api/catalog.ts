@@ -16,7 +16,7 @@ export interface ApiProduct {
   prix: number;
   prix_minimum: number;
   devise: string;
-  image_url?: string;
+  img_url?: string;
   stock: number;
   disponible: boolean;
   categorie?: {

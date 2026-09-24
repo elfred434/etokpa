@@ -2,8 +2,10 @@ import { apiClient } from './client';
 
 export const adminApi = {
   // Produits
-  getProducts: async (page = 1) => {
-    const response = await apiClient.get('/admin/products', { params: { page } });
+  getProducts: async (params?: Record<string, unknown> | number) => {
+    const response = await apiClient.get('/admin/products', {
+      params: typeof params === 'number' ? { page: params } : (params ?? {}),
+    });
     return response.data;
   },
   createProduct: async (formData: FormData | Record<string, unknown>) => {

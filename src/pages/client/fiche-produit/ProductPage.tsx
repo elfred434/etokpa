@@ -41,7 +41,7 @@ function mapApiProduct(p: ApiProduct): Product {
     categorie: SLUG_TO_CATEGORY[slug] ?? 'vegetable',
     stock: p.disponible && p.stock > 0 ? 'available' : 'out',
     badges: [],
-    image: p.image_url || undefined,
+    image: p.img_url || undefined,
     description: p.description,
   };
 }

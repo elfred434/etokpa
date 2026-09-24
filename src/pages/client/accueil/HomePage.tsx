@@ -41,7 +41,7 @@ export default function HomePage() {
             lieu: 'Marché Dantokpa',
             prixLabel: `${p.prix.toLocaleString('fr-FR')} FCFA`,
             prix: p.prix,
-            image: p.image_url || '/images/design/tomates-1kg.png',
+            image: p.img_url || '/images/design/tomates-1kg.png',
             badge: p.stock > 5 ? 'Disponible' : 'Stock Limité',
           }));
           setSelection(fetched);
