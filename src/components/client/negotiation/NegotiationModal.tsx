@@ -46,8 +46,11 @@ export default function NegotiationModal({ isOpen, onClose }: NegotiationModalPr
     .reduce((sum, n) => sum + (n.originalPrice - n.proposedPrice), 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in">
-      <div className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in" onClick={onClose}>
+      <div
+        className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-line p-4 sm:p-md bg-warm">
           <div className="flex items-center gap-2">
