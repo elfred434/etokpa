@@ -30,6 +30,13 @@ import AdminSystemePage from '../pages/admin/AdminSystemePage';
 import AdminBddPage from '../pages/admin/AdminBddPage';
 import AdminClesApiPage from '../pages/admin/AdminClesApiPage';
 import AdminSecuritePage from '../pages/admin/AdminSecuritePage';
+import ManagerDashboardPage from '../pages/manager/ManagerDashboardPage';
+import ManagerOrdersPage from '../pages/manager/ManagerOrdersPage';
+import ManagerEquipePage from '../pages/manager/ManagerEquipePage';
+import ManagerStatsPage from '../pages/manager/ManagerStatsPage';
+import ManagerLitigesPage from '../pages/manager/ManagerLitigesPage';
+import ManagerParametresPage from '../pages/manager/ManagerParametresPage';
+import ManagerZonePrefsPage from '../pages/manager/ManagerZonePrefsPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import SystemBridge from '../components/system/SystemBridge';
 
@@ -109,6 +116,13 @@ const adminSystemePageRoute = createRoute({ getParentRoute: () => rootRoute, pat
 const adminBddPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/bdd-jobs', component: AdminBddPage });
 const adminClesApiPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/cles-api', component: AdminClesApiPage });
 const adminSecuritePageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/securite', component: AdminSecuritePage });
+const managerDashboardRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager', component: ManagerDashboardPage });
+const managerOrdersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager/commandes', component: ManagerOrdersPage });
+const managerEquipeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager/equipe', component: ManagerEquipePage });
+const managerStatsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager/statistiques', component: ManagerStatsPage });
+const managerLitigesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager/litiges', component: ManagerLitigesPage });
+const managerParametresRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager/parametres', component: ManagerParametresPage });
+const managerZonePrefsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager/parametres/zone', component: ManagerZonePrefsPage });
 // Route temporaire de review des composants (retirée à la fin du Sprint 1).
 const previewRoute = createRoute({ getParentRoute: () => rootRoute, path: '/preview', component: PreviewPage });
 
@@ -142,6 +156,13 @@ const routeTree = rootRoute.addChildren([
   adminBddPageRoute,
   adminClesApiPageRoute,
   adminSecuritePageRoute,
+  managerDashboardRoute,
+  managerOrdersRoute,
+  managerEquipeRoute,
+  managerStatsRoute,
+  managerLitigesRoute,
+  managerParametresRoute,
+  managerZonePrefsRoute,
   previewRoute,
 ]);
 

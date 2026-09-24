@@ -1,0 +1,92 @@
+import { Link } from '@tanstack/react-router';
+import MIcon from '../../shared/MIcon';
+
+type Item = { label: string; path: string; icon: string; badge?: string };
+
+const GROUP: { title: string; items: Item[] }[] = [
+  {
+    title: 'Zone Akpakpa',
+    items: [
+      { label: 'Tableau de bord', path: '/manager', icon: 'dashboard' },
+      { label: 'Commandes', path: '/manager/commandes', icon: 'shopping_cart', badge: '24' },
+      { label: 'Mon équipe', path: '/manager/equipe', icon: 'group' },
+      { label: 'Statistiques', path: '/manager/statistiques', icon: 'trending_up' },
+      { label: 'Litiges & Réclamations', path: '/manager/litiges', icon: 'gavel' },
+      { label: 'Paramètres', path: '/manager/parametres', icon: 'settings' },
+    ],
+  },
+];
+
+type Props = { currentPath: string };
+
+export default function ManagerSidebar({ currentPath }: Props) {
+  return (
+    <aside
+      className="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-white/10"
+      style={{ backgroundColor: 'rgb(31,19,11)' }}
+    >
+      <div className="flex items-center gap-2 p-lg pb-4">
+        <MIcon name="local_shipping" className="text-primary-tint text-[22px]" />
+        <p className="text-lg font-bold text-white">
+          TOKPa <span className="text-primary-tint">Manager</span>
+        </p>
+      </div>
+      <div className="px-lg pb-3">
+        <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2">
+          <MIcon name="location_on" className="text-primary-tint text-[18px]" />
+          <div className="flex-1">
+            <p className="text-label font-semibold text-white">Zone Akpakpa</p>
+            <p className="text-text-inverse-secondary">Littoral Cotonou</p>
+          </div>
+          <span className="rounded-full bg-success-container px-2 py-0.5 text-[11px] font-bold text-on-surface">
+            Active
+          </span>
+        </div>
+      </div>
+      <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-2">
+        {GROUP.map((group) => (
+          <div key={group.title}>
+            <p className="px-3 pb-2 text-overline uppercase text-text-inverse-secondary">
+              {group.title}
+            </p>
+            <div className="space-y-1">
+              {group.items.map((item) => {
+                const active = currentPath === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-body transition ${
+                      active
+                        ? 'bg-primary text-white'
+                        : 'text-text-inverse-secondary hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <MIcon name={item.icon} className="text-[18px]" />
+                    <span className="flex-1">{item.label}</span>
+                    {item.badge && (
+                      <span className="rounded-full bg-primary-container px-2 py-0.5 text-overline text-on-surface">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
+      <div className="border-t border-white/10 p-lg">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-label font-bold text-white">
+            SM
+          </div>
+          <div className="flex-1">
+            <p className="text-label font-semibold text-white">Serge Migan</p>
+            <p className="text-text-inverse-secondary">Manager de zone</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}

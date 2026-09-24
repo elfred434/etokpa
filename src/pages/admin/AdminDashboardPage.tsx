@@ -388,7 +388,7 @@ export default function AdminDashboardPage() {
           onClick={() => setSelected(null)}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl border border-border-default w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden"
+            className="bg-white rounded-xl shadow-2xl border border-border-default w-full max-w-[600px] max-h-[90vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* En-tête */}
