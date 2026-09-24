@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { useDesignScript } from '../../utils/designRuntime';
 import { adminApi } from '../../services/api';
 import { useLiveRows } from '../../services/api/useLiveRows';
@@ -15,20 +17,21 @@ const DESIGN_CSS = `
             vertical-align: middle;
         }
         .sidebar-dark { background-color: #111827; }
-        .map-container { background-color: #E8F4FD; position: relative; overflow: hidden; border-radius: 14px; }
-        .zone-poly { fill: #F97316; fill-opacity: 0.2; stroke: #F97316; stroke-width: 1; }
-        .zone-poly.active { fill-opacity: 0.4; stroke-width: 3; }
+        .map-container { background-color: #E8F4FD; position: relative; overflow: hidden; border-radius: 14px; isolation: isolate; z-index: 0; }
+        .map-container .leaflet-container { background: #E8F4FD; font: inherit; }
+        .map-container .leaflet-tile-pane { filter: grayscale(0.65) contrast(0.95); }
+        .map-container .leaflet-tooltip { border: 1px solid #E5E7EB; border-radius: 8px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); font-size: 12px; }
         .card-shadow { border: 0.5px solid #E5E7EB; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }
         .chip { border: 1px solid #e0c0b1; transition: all 0.2s ease; }
         .chip:hover { transform: translateY(-1px); }
     `;
 
-/** Projection GPS → canvas SVG (boîte Cotonou : lng 2.25–2.55 / lat 6.30–6.48). */
-const BBOX = { lngMin: 2.25, lngMax: 2.55, latMin: 6.3, latMax: 6.48 };
-const proj = (lat: number, lng: number) => ({
-  x: Math.max(0, Math.min(800, ((lng - BBOX.lngMin) / (BBOX.lngMax - BBOX.lngMin)) * 800)),
-  y: Math.max(0, Math.min(500, ((BBOX.latMax - lat) / (BBOX.latMax - BBOX.latMin)) * 500)),
-});
+/** Tuiles réelles (Calques = bascule de fond de carte). */
+const TILE_URLS = [
+  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+];
+const VUE_BENIN: L.LatLngExpression = [8.0, 2.3];
 
 /** Points d'un polygone_geo (tableau de [lat, lng], d'objets, ou GeoJSON). */
 const polyPoints = (pg: any): Array<{ lat: number; lng: number }> => {
@@ -47,7 +50,7 @@ const polyPoints = (pg: any): Array<{ lat: number; lng: number }> => {
       const a = Number(pt[0]);
       const b = Number(pt[1]);
       if (!Number.isFinite(a) || !Number.isFinite(b)) continue;
-      // heuristique Cotonou : lat (≈6.3x) > lng (≈2.4x) → [lat, lng] si a > b
+      // heuristique Bénin : lat (≈6-12) > lng (≈1-4) → [lat, lng] si a > b
       pts.push(a >= b ? { lat: a, lng: b } : { lat: b, lng: a });
     }
   }
@@ -56,9 +59,8 @@ const polyPoints = (pg: any): Array<{ lat: number; lng: number }> => {
 
 /**
  * AdminZonesPage — copie conforme du design Stitch (code.html) + données réelles.
- * Cartes de zones (GET /admin/zones), sélection → formulaire rempli, enregistrement
- * réel (POST/PUT/DELETE /admin/zones), points de repère réels (/admin/landmarks),
- * polygones/points réels sur la carte SVG quand les coordonnées existent.
+ * Visualisation Géo = VRAIE carte (Leaflet/OSM) qui se cadre sur la zone cliquée
+ * en fonction de ses points de repère GPS (+ polygone_geo) — chaque zone a son coin.
  */
 export default function AdminZonesPage() {
   useDesignScript(DESIGN_SCRIPT);
@@ -69,6 +71,7 @@ export default function AdminZonesPage() {
   const [selId, setSelId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [f, setF] = useState({ nom: '', km_prix: '', description: '', manager: '' });
+  const [tileIdx, setTileIdx] = useState(0);
 
   const sel: any = zones.find((z: any) => z.id === selId) ?? null;
   const lmSel: any[] = sel ? landmarks.filter((l: any) => String(l.zone_id) === String(sel.id)) : [];
@@ -139,8 +142,16 @@ export default function AdminZonesPage() {
     const nom = window.prompt('Nom du point de repère');
     if (!nom?.trim()) return;
     const description = window.prompt('Description (optionnelle)') ?? '';
+    const latStr = window.prompt('Latitude GPS (recommandé — ex : 6.3721)');
+    const lngStr = window.prompt('Longitude GPS (recommandé — ex : 2.3912)');
     try {
-      await adminApi.createLandmark({ zone_id: sel.id, nom: nom.trim(), description: description || null });
+      await adminApi.createLandmark({
+        zone_id: sel.id,
+        nom: nom.trim(),
+        description: description || null,
+        latitude: latStr?.trim() ? Number(latStr) : null,
+        longitude: lngStr?.trim() ? Number(lngStr) : null,
+      });
       reloadLm();
       reload();
     } catch (e) {
@@ -158,36 +169,95 @@ export default function AdminZonesPage() {
     }
   };
 
-  const polys = useMemo(
-    () =>
-      zones
-        .map((z: any) => {
-          const pts = polyPoints(z.polygone_geo);
-          if (pts.length < 3) return null;
-          const d =
-            pts
-              .map((p, i) => {
-                const { x, y } = proj(p.lat, p.lng);
-                return `${i === 0 ? 'M' : 'L'}${x.toFixed(0)},${y.toFixed(0)}`;
-              })
-              .join(' ') + ' Z';
-          return { id: z.id, d };
-        })
-        .filter(Boolean) as Array<{ id: any; d: string }>,
-    [zones],
-  );
-  const lmPts = useMemo(
-    () =>
-      landmarks
-        .map((lm: any) => {
-          const lat = Number(lm.latitude);
-          const lng = Number(lm.longitude);
-          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-          return { id: lm.id, nom: String(lm.nom ?? ''), ...proj(lat, lng) };
-        })
-        .filter(Boolean) as Array<{ id: any; nom: string; x: number; y: number }>,
-    [landmarks],
-  );
+  const selHasGeo = useMemo(() => {
+    if (!sel) return true;
+    const poly = polyPoints(sel.polygone_geo).length >= 3;
+    const lmGeo = landmarks.some(
+      (l: any) => String(l.zone_id) === String(sel.id) && Number.isFinite(Number(l.latitude)) && Number.isFinite(Number(l.longitude)),
+    );
+    return poly || lmGeo;
+  }, [sel, landmarks]);
+
+  /* ---------- Vraie carte Leaflet ---------- */
+  const mapElRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const tileRef = useRef<L.TileLayer | null>(null);
+  const vecRef = useRef<L.LayerGroup | null>(null);
+
+  useEffect(() => {
+    if (!mapElRef.current || mapRef.current) return;
+    const map = L.map(mapElRef.current, { zoomControl: false, attributionControl: false, minZoom: 5 });
+    map.setView(VUE_BENIN, 7);
+    L.control.attribution({ position: 'bottomleft', prefix: false }).addAttribution('© OpenStreetMap contributors').addTo(map);
+    tileRef.current = L.tileLayer(TILE_URLS[tileIdx], { maxZoom: 19 }).addTo(map);
+    vecRef.current = L.layerGroup().addTo(map);
+    mapRef.current = map;
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      tileRef.current = null;
+      vecRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const t = tileRef.current;
+    const map = mapRef.current;
+    if (!t || !map) return;
+    map.removeLayer(t);
+    tileRef.current = L.tileLayer(TILE_URLS[tileIdx], { maxZoom: 19 }).addTo(map);
+  }, [tileIdx]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const grp = vecRef.current;
+    if (!map || !grp) return;
+    grp.clearLayers();
+    const cadrage: L.LatLngExpression[] = [];
+    for (const z of zones) {
+      const isSel = !creating && z.id === selId;
+      const pts = polyPoints(z.polygone_geo).map((p) => [p.lat, p.lng] as L.LatLngExpression);
+      if (pts.length >= 3) {
+        L.polygon(pts, { color: '#F97316', weight: isSel ? 3 : 1, fillOpacity: isSel ? 0.35 : 0.12 })
+          .addTo(grp)
+          .bindTooltip(String(z.nom), { sticky: true });
+        if (isSel) cadrage.push(...pts);
+      }
+    }
+    for (const lm of landmarks) {
+      const lat = Number(lm.latitude);
+      const lng = Number(lm.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+      const isSel = !creating && String(lm.zone_id) === String(selId);
+      L.circleMarker([lat, lng], {
+        radius: isSel ? 7 : 4,
+        color: '#9d4300',
+        weight: 2,
+        fillColor: isSel ? '#9d4300' : '#ffffff',
+        fillOpacity: 1,
+      })
+        .addTo(grp)
+        .bindTooltip(String(lm.nom ?? ''), { permanent: isSel, direction: 'top', offset: [0, -6] });
+      if (isSel) cadrage.push([lat, lng]);
+    }
+    // Cadrage : la zone active est encadrée en fonction de ses repères entrés
+    if (selId != null && !creating) {
+      if (cadrage.length >= 2) map.fitBounds(L.latLngBounds(cadrage), { padding: [50, 50], maxZoom: 16, animate: true });
+      else if (cadrage.length === 1) map.setView(cadrage[0], 15, { animate: true });
+      else map.setView(VUE_BENIN, 7, { animate: true });
+    } else {
+      const all: L.LatLngExpression[] = [];
+      for (const z of zones) all.push(...polyPoints(z.polygone_geo).map((p) => [p.lat, p.lng] as L.LatLngExpression));
+      for (const lm of landmarks) {
+        const lat = Number(lm.latitude);
+        const lng = Number(lm.longitude);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) all.push([lat, lng]);
+      }
+      if (all.length >= 2) map.fitBounds(L.latLngBounds(all), { padding: [40, 40], maxZoom: 14, animate: true });
+      else map.setView(VUE_BENIN, 7, { animate: true });
+    }
+  }, [zones, landmarks, selId, creating]);
 
   return (
     <AdminLayout currentPath="/admin/zones">
@@ -212,23 +282,14 @@ export default function AdminZonesPage() {
                     <div key={z.id} onClick={() => selectZone(z)} className={isSel ? 'bg-primary-tint border-2 border-primary rounded-[14px] p-5 card-shadow cursor-pointer transition-all' : 'bg-bg-card border-[0.5px] border-border-default rounded-[14px] p-5 card-shadow hover:border-primary-light cursor-pointer group transition-all'}> <div className="flex justify-between items-start mb-4"> <div> <h3 className="font-h3 text-h3 text-text-main mb-1">{z.nom}</h3> <div className="flex items-center gap-2"> <span className={`w-2 h-2 rounded-full ${z.open_zone ? 'bg-success' : 'bg-error'}`}></span> <span className={`text-secondary font-medium ${z.open_zone ? 'text-success' : 'text-error'}`}>{z.open_zone ? 'Active' : 'Fermée'}</span> </div> </div> <div className={`flex gap-2 ${isSel ? '' : 'opacity-0 group-hover:opacity-100 transition-opacity'}`}> <button className={isSel ? 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-primary-light/20 text-primary transition-colors border border-primary-light/50' : 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default'} onClick={(e) => { e.stopPropagation(); selectZone(z); }}> <MIcon name="edit" className="text-[18px]" /> </button> <button className={isSel ? 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-primary-light/20 text-primary transition-colors border border-primary-light/50' : 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default'} onClick={(e) => { e.stopPropagation(); selectZone(z); }}> <MIcon name="visibility" className="text-[18px]" /> </button> </div> </div> <p className="text-secondary text-text-secondary mb-4">{countRole(managers, z.id)} managers · {countRole(livreurs, z.id)} livreurs · {lmCount} points de repère</p> <div className={`flex justify-between items-center pt-4 ${isSel ? 'border-t border-primary-light/30' : 'border-t border-border-default'}`}> <span className="text-secondary text-text-tertiary">Frais de livraison</span> <span className="font-price text-price text-primary">{fmtFcfa(Number(z.km_prix ?? z.tarif_km ?? 0))}</span> </div> </div>
                   );
                 })}
-                </div>  <div className="col-span-10 lg:col-span-6 space-y-lg">  <div className="map-container h-[420px] card-shadow flex flex-col relative"> <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-sm border border-border-default"> <p className="text-micro font-bold text-text-main uppercase">Visualisation Géo</p> <p className="text-secondary text-text-secondary">Cotonou, Bénin</p> </div>  <div className="w-full h-full relative" id="map-canvas"> <div className="absolute inset-0 bg-[url('https://www.google.com/maps/vt/pb=!1m4!1m3!1i13!2i4835!3i3853!2m3!1e0!2sm!3i600000000!3m8!2sfr!3sbj!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!5f2')] opacity-40 mix-blend-multiply grayscale"></div>  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 800 500">
-                {polys.map((p) => (
-                  <path key={String(p.id)} className={`zone-poly ${!creating && p.id === selId ? 'active' : ''}`} d={p.d}></path>
-                ))}
-                {lmPts.map((p) => (
-                  <g key={String(p.id)}>
-                    <circle cx={p.x} cy={p.y} fill="#9d4300" r="5" stroke="white" strokeWidth="2"></circle>
-                    <text className="font-bold fill-primary-deep text-[12px]" x={p.x + 10} y={p.y + 4}>{p.nom}</text>
-                  </g>
-                ))}
-              </svg>
-                {polys.length === 0 && lmPts.length === 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="bg-white/90 text-text-secondary text-label px-4 py-2 rounded-lg border border-border-default">Géométries non définies (polygone_geo / coordonnées vides)</span>
+                </div>  <div className="col-span-10 lg:col-span-6 space-y-lg">  <div className="map-container h-[420px] card-shadow flex flex-col relative"> <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-sm border border-border-default"> <p className="text-micro font-bold text-text-main uppercase">Visualisation Géo</p> <p className="text-secondary text-text-secondary">{creating ? 'Nouvelle zone' : sel ? sel.nom : 'Bénin'}</p> </div>
+                {sel && !creating && !selHasGeo && (
+                  <div className="absolute inset-0 z-[500] flex items-center justify-center pointer-events-none">
+                    <span className="bg-white/95 text-text-secondary text-label px-4 py-2 rounded-lg border border-border-default shadow-sm">Aucune coordonnée pour cette zone — ajoutez des points de repère GPS (lat/lng) pour la cadrer.</span>
                   </div>
                 )}
-                </div> <div className="absolute bottom-4 right-4 flex gap-2"> <button className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md border border-border-default hover:bg-app text-text-main"> <MIcon name="zoom_in" /> </button> <button className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md border border-border-default hover:bg-app text-text-main"> <MIcon name="zoom_out" /> </button> <button className="bg-white px-md h-10 rounded-full flex items-center gap-2 shadow-md border border-border-default hover:bg-app text-text-main font-label"> <MIcon name="layers" />
+                <div ref={mapElRef} className="w-full h-full relative" id="map-canvas"></div>
+                <div className="absolute bottom-4 right-4 z-10 flex gap-2"> <button className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md border border-border-default hover:bg-app text-text-main" onClick={() => mapRef.current?.zoomIn()}> <MIcon name="zoom_in" /> </button> <button className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md border border-border-default hover:bg-app text-text-main" onClick={() => mapRef.current?.zoomOut()}> <MIcon name="zoom_out" /> </button> <button className="bg-white px-md h-10 rounded-full flex items-center gap-2 shadow-md border border-border-default hover:bg-app text-text-main font-label" onClick={() => setTileIdx((i) => (i + 1) % TILE_URLS.length)}> <MIcon name="layers" />
                                 Calques
                             </button> </div> </div>  <div className="bg-bg-card p-lg rounded-[14px] card-shadow"> <div className="flex items-center justify-between mb-md"> <h2 className="font-h2 text-h2 text-text-main">Points de repère — Zone {sel ? sel.nom : '—'}</h2> <button className="text-primary hover:text-primary-hover font-label flex items-center gap-1 group" onClick={() => void addLm()}> <MIcon name="add_circle" className="text-[18px]" />
                                 Ajouter
