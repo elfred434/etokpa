@@ -185,7 +185,8 @@ export default function CatalogPage() {
     toast.success(`${p.nom} ajouté au panier`);
   };
 
-  const openProduct = () => navigate({ to: '/produit/$productId', params: { productId: 'p1' } });
+  const openProduct = (id: string | number) =>
+    navigate({ to: '/produit/$productId', params: { productId: String(id) } });
 
   const badges = (p: CatalogProduct) => (
     <div className="absolute left-2 top-2 flex flex-col gap-1">
@@ -525,7 +526,7 @@ export default function CatalogPage() {
               {visible.map((p) => (
                 <div
                   key={p.id}
-                  onClick={openProduct}
+                  onClick={() => openProduct(p.id)}
                   className="group cursor-pointer overflow-hidden rounded-xl border-[0.5px] border-line bg-white transition-all hover:shadow-md"
                 >
                   <div className="relative flex h-[110px] items-center justify-center bg-gradient-to-br from-primary-lighter to-primary-light">
@@ -563,7 +564,7 @@ export default function CatalogPage() {
               {visible.map((p) => (
                 <div
                   key={p.id}
-                  onClick={openProduct}
+                  onClick={() => openProduct(p.id)}
                   className="group flex flex-col sm:flex-row cursor-pointer items-start sm:items-center justify-between gap-3 sm:gap-md rounded-xl border-[0.5px] border-line bg-white p-3 sm:p-md transition-all hover:shadow-md"
                 >
                   <div className="flex items-center gap-3 w-full sm:w-auto">
