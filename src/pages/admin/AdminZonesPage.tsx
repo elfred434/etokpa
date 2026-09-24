@@ -39,6 +39,8 @@ const TILE_URLS = [
 ];
 const VUE_BENIN: L.LatLngExpression = [8.0, 2.3];
 
+type Pt = { nom: string; lat: number; lng: number };
+
 /** Points d'un polygone_geo (tableau de [lat, lng], d'objets, ou GeoJSON). */
 const polyPoints = (pg: any): Array<{ lat: number; lng: number }> => {
   if (!pg) return [];
@@ -63,21 +65,42 @@ const polyPoints = (pg: any): Array<{ lat: number; lng: number }> => {
   return pts;
 };
 
-/** Périmètre d'une zone = cercle d'environ 500 m autour du lieu choisi. */
-const circlePoly = (lat: number, lng: number, rayonDeg = 0.0045): Array<[number, number]> => {
-  const pts: Array<[number, number]> = [];
-  for (let i = 0; i < 12; i++) {
-    const a = (2 * Math.PI * i) / 12;
-    pts.push([
-      Number((lat + rayonDeg * Math.sin(a)).toFixed(6)),
-      Number((lng + (rayonDeg / Math.cos((lat * Math.PI) / 180)) * Math.cos(a)).toFixed(6)),
-    ]);
+/**
+ * Forme d'une zone = DÉLIMITATION de ses points de repère : l'enveloppe convexe
+ * (enveloppe = sommets à la limite ; les points à l'intérieur ne changent pas la
+ * forme). 3 points = triangle, 6 = hexagone…
+ */
+const hullPoly = (pts: Array<{ lat: number; lng: number }>): Array<[number, number]> | null => {
+  if (pts.length < 3) return null;
+  const sorted = pts.map((p) => ({ x: p.lng, y: p.lat })).sort((a, b) => a.x - b.x || a.y - b.y);
+  const cross = (o: any, a: any, b: any) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower: any[] = [];
+  for (const p of sorted) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+    lower.push(p);
   }
-  return pts;
+  const upper: any[] = [];
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    const p = sorted[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+    upper.push(p);
+  }
+  const hull = lower.slice(0, -1).concat(upper.slice(0, -1));
+  return hull.length >= 3 ? hull.map((p) => [Number(p.y.toFixed(6)), Number(p.x.toFixed(6))] as [number, number]) : null;
 };
 
+const shapeName = (n: number): string =>
+  n < 3 ? 'pas encore de forme'
+    : n === 3 ? 'triangle'
+      : n === 4 ? 'quadrilatère'
+        : n === 5 ? 'pentagone'
+          : n === 6 ? 'hexagone'
+            : n === 7 ? 'heptagone'
+              : n === 8 ? 'octogone'
+                : `polygone à ${n} côtés`;
+
 const LM_INIT = { zone_id: '', nom: '', description: '', latitude: '', longitude: '' };
-const ZONE_INIT = { nom: '', km_prix: '', description: '', manager: '', latitude: '', longitude: '' };
+const ZONE_INIT = { nom: '', km_prix: '', description: '', manager: '' };
 
 /** Recherche de lieu type Google Maps : on tape un nom, on clique une proposition. */
 function PlaceSearch({ onPick, placeholder }: { onPick: (p: GeoPlace) => void; placeholder: string }) {
@@ -134,7 +157,7 @@ function PlaceSearch({ onPick, placeholder }: { onPick: (p: GeoPlace) => void; p
               onClick={() => {
                 onPick(p);
                 setOpen(false);
-                setQ(p.nom);
+                setQ('');
               }}
             >
               <p className="font-label text-label text-on-surface">{p.nom}</p>
@@ -148,10 +171,10 @@ function PlaceSearch({ onPick, placeholder }: { onPick: (p: GeoPlace) => void; p
 }
 
 /**
- * AdminZonesPage — copie conforme du design Stitch (code.html) + données réelles.
- * Carte Leaflet/OSM : une zone à la fois, cadrée sur ses repères. « Nouvelle zone »
- * et « Ajouter » un repère = modales avec recherche de lieu (comme Google Maps) +
- * placement au clic sur la carte.
+ * AdminZonesPage — une ZONE = la délimitation de plusieurs points de repère :
+ * la forme (polygone_geo) = l'enveloppe de ses points à la limite (3 = triangle,
+ * 6 = hexagone) ; les points à l'intérieur ne changent pas la forme. Tout se
+ * recalcule dès qu'un repère est ajouté ou supprimé.
  */
 export default function AdminZonesPage() {
   useDesignScript(DESIGN_SCRIPT);
@@ -165,6 +188,7 @@ export default function AdminZonesPage() {
   const [modal, setModal] = useState<null | 'zone' | 'lm'>(null);
   const [lmForm, setLmForm] = useState(LM_INIT);
   const [zoneForm, setZoneForm] = useState(ZONE_INIT);
+  const [zonePts, setZonePts] = useState<Pt[]>([]);
 
   const sel: any = zones.find((z: any) => z.id === selId) ?? null;
   const lmSel: any[] = sel ? landmarks.filter((l: any) => String(l.zone_id) === String(sel.id)) : [];
@@ -209,7 +233,7 @@ export default function AdminZonesPage() {
   };
   const delZone = async () => {
     if (!sel) return;
-    if (!window.confirm(`Supprimer la zone « ${sel.nom} » ?`)) return;
+    if (!window.confirm(`Supprimer la zone « ${sel.nom} » et ses points de repère ?`)) return;
     try {
       await adminApi.deleteZone(sel.id);
       setSelId(null);
@@ -220,10 +244,30 @@ export default function AdminZonesPage() {
     }
   };
 
-  /* ---------- Modale « Nouvelle zone » ---------- */
+  /** Recalcule la forme de la zone depuis ses points (enveloppe) et l'enregistre. */
+  const saveZoneShape = async (zoneId: number, pts: Array<{ lat: number; lng: number }>) => {
+    const hull = hullPoly(pts);
+    try {
+      await adminApi.updateZone(zoneId, { polygone_geo: hull });
+    } catch (e) {
+      window.alert(formatApiError(e as any));
+    }
+  };
+  const geoPtsOf = (zoneId: number, list: any[] = landmarks) =>
+    list
+      .filter((l: any) => String(l.zone_id) === String(zoneId))
+      .map((l: any) => ({ lat: Number(l.latitude), lng: Number(l.longitude) }))
+      .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+
+  /* ---------- Modale « Nouvelle zone » (la zone = ses points à la limite) ---------- */
   const openZoneModal = () => {
     setZoneForm(ZONE_INIT);
+    setZonePts([]);
     setModal('zone');
+  };
+  const addZonePoint = (nom: string, lat: number, lng: number) => {
+    setZonePts((prev) => [...prev, { nom: nom || `Point ${prev.length + 1}`, lat, lng }]);
+    setZoneForm((prev) => ({ ...prev, nom: prev.nom || nom }));
   };
   const saveZoneModal = async () => {
     const z = zoneForm;
@@ -235,33 +279,52 @@ export default function AdminZonesPage() {
       window.alert('Les frais de livraison (nombre en FCFA) sont obligatoires.');
       return;
     }
-    const payload: Record<string, unknown> = {
-      nom: z.nom.trim(),
-      km_prix: Number(z.km_prix),
-      min_prix: 0,
-      open_zone: true,
-      description: z.description,
-      manager_id: z.manager ? Number(z.manager) : null,
-    };
-    if (z.latitude.trim() && z.longitude.trim()) {
-      payload.polygone_geo = circlePoly(Number(z.latitude), Number(z.longitude));
+    if (zonePts.length < 3) {
+      window.alert('Une zone = la délimitation de ses points de repère : ajoutez au moins 3 points à la limite (3 = triangle, 6 = hexagone).');
+      return;
+    }
+    const hull = hullPoly(zonePts);
+    if (!hull) {
+      window.alert('Les points sont alignés : impossible de former une surface.');
+      return;
     }
     try {
-      const res: any = await adminApi.createZone(payload);
+      const res: any = await adminApi.createZone({
+        nom: z.nom.trim(),
+        km_prix: Number(z.km_prix),
+        min_prix: 0,
+        open_zone: true,
+        description: z.description,
+        manager_id: z.manager ? Number(z.manager) : null,
+        polygone_geo: hull,
+      });
+      const zoneId = Number(res?.data?.id ?? res?.id);
+      for (const p of zonePts) {
+        await adminApi.createLandmark({ zone_id: zoneId, nom: p.nom, latitude: p.lat, longitude: p.lng });
+      }
       setModal(null);
       reload();
       reloadLm();
-      const id = res?.data?.id ?? res?.id;
-      if (id != null) setSelId(Number(id));
+      if (Number.isFinite(zoneId)) setSelId(zoneId);
     } catch (e) {
       window.alert(formatApiError(e as any));
     }
   };
 
-  /* ---------- Modale « Nouveau point de repère » ---------- */
+  const pickPlaceLm = (p: GeoPlace) => {
+    setLmForm((prev) => ({ ...prev, nom: prev.nom || p.nom, latitude: String(p.lat), longitude: String(p.lng) }));
+    const map = mapRef.current;
+    map?.flyTo([p.lat, p.lng], 15, { animate: true });
+    if (map) {
+      if (tempRef.current) map.removeLayer(tempRef.current);
+      tempRef.current = L.circleMarker([p.lat, p.lng], { radius: 8, color: '#9d4300', weight: 2, fillColor: '#f97316', fillOpacity: 0.5 }).addTo(map);
+    }
+  };
+
+  /* ---------- Modale « Nouveau point de repère » (intérieur ou à la limite) ---------- */
   const openLmModal = () => {
     if (!zones.length) {
-      window.alert("Créez d'abord une zone avant d'ajouter un repère.");
+      window.alert("Créez d'abord une zone (avec ses points à la limite).");
       return;
     }
     setLmForm({ ...LM_INIT, zone_id: String(sel?.id ?? zones[0].id) });
@@ -277,14 +340,19 @@ export default function AdminZonesPage() {
       window.alert('Le nom du repère est obligatoire.');
       return;
     }
+    const lat = Number(lmForm.latitude);
+    const lng = Number(lmForm.longitude);
+    const hasGeo = lmForm.latitude.trim() !== '' && lmForm.longitude.trim() !== '' && Number.isFinite(lat) && Number.isFinite(lng);
     try {
       await adminApi.createLandmark({
         zone_id: zoneId,
         nom: lmForm.nom.trim(),
         description: lmForm.description || null,
-        latitude: lmForm.latitude.trim() ? Number(lmForm.latitude) : null,
-        longitude: lmForm.longitude.trim() ? Number(lmForm.longitude) : null,
+        latitude: hasGeo ? lat : null,
+        longitude: hasGeo ? lng : null,
       });
+      // La forme suit ses points : si le nouveau point est à la limite, il élargit la zone
+      if (hasGeo) await saveZoneShape(zoneId, [...geoPtsOf(zoneId), { lat, lng }]);
       setModal(null);
       reloadLm();
       reload();
@@ -296,33 +364,13 @@ export default function AdminZonesPage() {
     if (!window.confirm(`Supprimer le point de repère « ${lm.nom} » ?`)) return;
     try {
       await adminApi.deleteLandmark(lm.id);
+      const rest = landmarks.filter((l: any) => l.id !== lm.id);
+      await saveZoneShape(Number(lm.zone_id), geoPtsOf(Number(lm.zone_id), rest));
       reloadLm();
       reload();
     } catch (e) {
       window.alert(formatApiError(e as any));
     }
-  };
-
-  /* ---------- Carte : positions choisies (recherche ou clic) ---------- */
-  const placeZonePoint = (lat: number, lng: number) => {
-    setZoneForm((prev) => ({ ...prev, latitude: String(lat), longitude: String(lng) }));
-    const map = mapRef.current;
-    if (map) showTemp(L.polygon(circlePoly(lat, lng), { color: '#9d4300', weight: 2, fillColor: '#f97316', fillOpacity: 0.15, dashArray: '6' }), map);
-  };
-  const placeLmPoint = (lat: number, lng: number) => {
-    setLmForm((prev) => ({ ...prev, latitude: String(lat), longitude: String(lng) }));
-    const map = mapRef.current;
-    if (map) showTemp(L.circleMarker([lat, lng], { radius: 8, color: '#9d4300', weight: 2, fillColor: '#f97316', fillOpacity: 0.5 }), map);
-  };
-  const pickPlaceZone = (p: GeoPlace) => {
-    setZoneForm((prev) => ({ ...prev, nom: prev.nom || p.nom, latitude: String(p.lat), longitude: String(p.lng) }));
-    mapRef.current?.flyTo([p.lat, p.lng], 14, { animate: true });
-    placeZonePoint(p.lat, p.lng);
-  };
-  const pickPlaceLm = (p: GeoPlace) => {
-    setLmForm((prev) => ({ ...prev, nom: prev.nom || p.nom, latitude: String(p.lat), longitude: String(p.lng) }));
-    mapRef.current?.flyTo([p.lat, p.lng], 15, { animate: true });
-    placeLmPoint(p.lat, p.lng);
   };
 
   const selHasGeo = useMemo(() => {
@@ -334,7 +382,9 @@ export default function AdminZonesPage() {
     return poly || lmGeo;
   }, [sel, landmarks]);
 
-  /* ---------- Vraie carte Leaflet ---------- */
+  const hullZonePts = useMemo(() => hullPoly(zonePts), [zonePts]);
+
+  /* ---------- Carte Leaflet ---------- */
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const tileRef = useRef<L.TileLayer | null>(null);
@@ -377,7 +427,7 @@ export default function AdminZonesPage() {
     tileRef.current = L.tileLayer(TILE_URLS[tileIdx], { maxZoom: 19 }).addTo(map);
   }, [tileIdx]);
 
-  // Échap ferme la modale ; clic sur la carte = placer le point (zone ou repère)
+  // Échap ferme la modale ; clic sur la carte = ajouter un point (limite zone) ou poser le repère
   useEffect(() => {
     if (!modal) return;
     const onKey = (e: KeyboardEvent) => {
@@ -388,8 +438,15 @@ export default function AdminZonesPage() {
     const onClick = (e: L.LeafletMouseEvent) => {
       const lat = Number(e.latlng.lat.toFixed(6));
       const lng = Number(e.latlng.lng.toFixed(6));
-      if (modal === 'zone') placeZonePoint(lat, lng);
-      else placeLmPoint(lat, lng);
+      if (modal === 'zone') {
+        setZonePts((prev) => [...prev, { nom: `Point ${prev.length + 1}`, lat, lng }]);
+      } else {
+        setLmForm((prev) => ({ ...prev, latitude: String(lat), longitude: String(lng) }));
+        if (map) {
+          if (tempRef.current) map.removeLayer(tempRef.current);
+          tempRef.current = L.circleMarker([lat, lng], { radius: 8, color: '#9d4300', weight: 2, fillColor: '#f97316', fillOpacity: 0.5 }).addTo(map);
+        }
+      }
     };
     map?.on('click', onClick);
     return () => {
@@ -399,6 +456,22 @@ export default function AdminZonesPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modal]);
+
+  // Aperçu vivant : la forme grandit avec les points (triangle → hexagone…)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || modal !== 'zone' || zonePts.length === 0) return;
+    const g = L.layerGroup();
+    for (const p of zonePts) {
+      L.circleMarker([p.lat, p.lng], { radius: 6, color: '#9d4300', weight: 2, fillColor: '#f97316', fillOpacity: 0.6 }).addTo(g);
+    }
+    if (hullZonePts) {
+      L.polygon(hullZonePts, { color: '#9d4300', weight: 2, fillColor: '#f97316', fillOpacity: 0.15, dashArray: '6' }).addTo(g);
+    }
+    showTemp(g, map);
+    if (zonePts.length === 1) map.setView([zonePts[0].lat, zonePts[0].lng], 14, { animate: true });
+    else if (hullZonePts) map.fitBounds(L.latLngBounds(hullZonePts), { padding: [60, 60], maxZoom: 16, animate: true });
+  }, [zonePts, modal, hullZonePts]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -453,24 +526,6 @@ export default function AdminZonesPage() {
     }
   }, [zones, landmarks, selId]);
 
-  const posBlock = (lat: string, lng: string, texte: string) => (
-    <div className="p-3 bg-primary-tint/50 rounded-xl space-y-2">
-      <p className="font-label text-label text-on-surface">Position sur la carte</p>
-      <p className="text-micro text-text-secondary">{texte}</p>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-xs">
-          <label className="font-label text-micro text-text-secondary">Latitude</label>
-          <input className="w-full h-11 px-md rounded-lg border-border-default bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" readOnly value={lat} placeholder="—" />
-        </div>
-        <div className="space-y-xs">
-          <label className="font-label text-micro text-text-secondary">Longitude</label>
-          <input className="w-full h-11 px-md rounded-lg border-border-default bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" readOnly value={lng} placeholder="—" />
-        </div>
-      </div>
-      <p className="text-micro text-text-tertiary">{lat && lng ? `Position choisie : ${lat}, ${lng}` : 'Aucune position choisie pour le moment.'}</p>
-    </div>
-  );
-
   return (
     <AdminLayout currentPath="/admin/zones">
       <style>{DESIGN_CSS}</style>
@@ -497,7 +552,7 @@ export default function AdminZonesPage() {
                 </div>  <div className="col-span-10 lg:col-span-6 space-y-lg">  <div className="map-container h-[420px] card-shadow flex flex-col relative"> <div className="absolute top-4 left-4 z-[1000] bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-sm border border-border-default"> <p className="text-micro font-bold text-text-main uppercase">Visualisation Géo</p> <p className="text-secondary text-text-secondary">{sel ? sel.nom : 'Bénin'}</p> </div>
                 {sel && !selHasGeo && (
                   <div className="absolute inset-0 z-[1000] flex items-center justify-center pointer-events-none">
-                    <span className="bg-white/95 text-text-secondary text-label px-4 py-2 rounded-lg border border-border-default shadow-sm">Aucune coordonnée pour cette zone — ajoutez des points de repère GPS (recherche de lieu ou clic sur la carte) pour la cadrer.</span>
+                    <span className="bg-white/95 text-text-secondary text-label px-4 py-2 rounded-lg border border-border-default shadow-sm">Pas encore 3 points de repère géolocalisés — la forme de la zone naît de ses points à la limite (3 = triangle, 6 = hexagone).</span>
                   </div>
                 )}
                 <div ref={mapElRef} className="w-full h-full relative" id="map-canvas"></div>
@@ -522,10 +577,10 @@ export default function AdminZonesPage() {
                 <button className="bg-primary text-on-primary px-lg py-2.5 rounded-lg hover:bg-primary-hover active:scale-97 transition-all font-label" type="button" onClick={() => void saveZone()}>Enregistrer les modifications</button>
               </div> </form> </div> </div> </div>
 
-      {/* Modale « Nouvelle zone » (scroll + ✕/Annuler/Échap + max-w-[Npx] ; clic carte = position) */}
+      {/* Modale « Nouvelle zone » : la zone = la délimitation de ses points */}
       {modal === 'zone' && (
         <div className="fixed inset-0 z-[1200] bg-black/40 flex items-center justify-center p-4 pointer-events-none">
-          <div className="bg-white rounded-[14px] shadow-xl w-full max-w-[520px] max-h-[90vh] overflow-y-auto design-modal-scroll p-lg pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-[14px] shadow-xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto design-modal-scroll p-lg pointer-events-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-lg">
               <h3 className="font-h2 text-h2 text-on-surface">Nouvelle zone</h3>
               <button className="p-2 text-text-tertiary hover:text-on-surface transition-colors" onClick={() => setModal(null)}>
@@ -533,10 +588,31 @@ export default function AdminZonesPage() {
               </button>
             </div>
             <form className="space-y-md" onSubmit={(e) => { e.preventDefault(); void saveZoneModal(); }}>
-              <div className="space-y-xs">
-                <label className="font-label text-label text-text-secondary">Rechercher le lieu de la zone (comme Google Maps)</label>
-                <PlaceSearch onPick={pickPlaceZone} placeholder="Ex : Akpakpa, Cotonou…" />
+              <div className="p-3 bg-primary-tint/50 rounded-xl">
+                <p className="font-label text-label text-on-surface">Une zone = la délimitation de plusieurs points de repère</p>
+                <p className="text-micro text-text-secondary">Ajoutez ses points à la limite (3 = triangle, 6 = hexagone…) par la recherche ou en cliquant sur la carte. Les points ajoutés à l'intérieur plus tard ne changent pas la forme.</p>
               </div>
+              <div className="space-y-xs">
+                <label className="font-label text-label text-text-secondary">Points à la limite (recherche de lieu ou clic sur la carte)</label>
+                <PlaceSearch onPick={(p) => { addZonePoint(p.nom, p.lat, p.lng); mapRef.current?.flyTo([p.lat, p.lng], 14, { animate: true }); }} placeholder="Ex : Akpakpa, Cotonou…" />
+              </div>
+              {zonePts.length > 0 && (
+                <ul className="space-y-1 max-h-[150px] overflow-y-auto design-modal-scroll">
+                  {zonePts.map((p, i) => (
+                    <li key={`${p.lat},${p.lng},${i}`} className="flex items-center justify-between gap-2 px-3 py-2 bg-bg-app rounded-lg">
+                      <span className="text-label text-on-surface truncate">{p.nom} <span className="text-micro text-text-tertiary">({p.lat}, {p.lng})</span></span>
+                      <button type="button" className="text-text-tertiary hover:text-error shrink-0" onClick={() => setZonePts((prev) => prev.filter((_, j) => j !== i))}>
+                        <MIcon name="close" className="text-[16px]" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="text-micro font-bold text-primary">
+                {hullZonePts
+                  ? `Forme : ${shapeName(hullZonePts.length)} — ${hullZonePts.length} sommets à la limite / ${zonePts.length} points`
+                  : `${zonePts.length} point(s) — encore ${Math.max(0, 3 - zonePts.length)} minimum pour former une surface`}
+              </p>
               <div className="space-y-xs">
                 <label className="font-label text-label text-text-secondary">Nom de la zone</label>
                 <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" value={zoneForm.nom} onChange={(e) => setZoneForm({ ...zoneForm, nom: e.target.value })} />
@@ -560,7 +636,6 @@ export default function AdminZonesPage() {
                 <label className="font-label text-label text-text-secondary">Description</label>
                 <textarea className="w-full px-md py-2 rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" rows={2} value={zoneForm.description} onChange={(e) => setZoneForm({ ...zoneForm, description: e.target.value })}></textarea>
               </div>
-              {posBlock(zoneForm.latitude, zoneForm.longitude, "Choisissez le lieu par la recherche ou en cliquant sur la carte — le périmètre de la zone sera un cercle d'environ 500 m autour de ce point.")}
               <div className="flex justify-end gap-3 pt-2">
                 <button className="px-md py-2.5 text-text-secondary font-label hover:bg-app rounded-lg transition-colors" type="button" onClick={() => setModal(null)}>Annuler</button>
                 <button className="bg-primary text-on-primary px-lg py-2.5 rounded-lg hover:bg-primary-hover active:scale-97 transition-all font-label" type="submit">Créer la zone</button>
@@ -570,7 +645,7 @@ export default function AdminZonesPage() {
         </div>
       )}
 
-      {/* Modale « Nouveau point de repère » */}
+      {/* Modale « Nouveau point de repère » (intérieur ou à la limite) */}
       {modal === 'lm' && (
         <div className="fixed inset-0 z-[1200] bg-black/40 flex items-center justify-center p-4 pointer-events-none">
           <div className="bg-white rounded-[14px] shadow-xl w-full max-w-[480px] max-h-[90vh] overflow-y-auto design-modal-scroll p-lg pointer-events-auto" onClick={(e) => e.stopPropagation()}>
@@ -601,7 +676,21 @@ export default function AdminZonesPage() {
                 <label className="font-label text-label text-text-secondary">Description</label>
                 <textarea className="w-full px-md py-2 rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" rows={2} placeholder="Repère, accès, indication utile…" value={lmForm.description} onChange={(e) => setLmForm({ ...lmForm, description: e.target.value })}></textarea>
               </div>
-              {posBlock(lmForm.latitude, lmForm.longitude, 'Choisissez le lieu par la recherche ou en cliquant sur la carte — les coordonnées se remplissent toutes seules.')}
+              <div className="p-3 bg-primary-tint/50 rounded-xl space-y-2">
+                <p className="font-label text-label text-on-surface">Position sur la carte</p>
+                <p className="text-micro text-text-secondary">Recherche ou clic sur la carte. Si le point est à la limite, il élargit la forme de la zone ; s'il est à l'intérieur, la forme ne change pas.</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-xs">
+                    <label className="font-label text-micro text-text-secondary">Latitude</label>
+                    <input className="w-full h-11 px-md rounded-lg border-border-default bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" readOnly value={lmForm.latitude} placeholder="—" />
+                  </div>
+                  <div className="space-y-xs">
+                    <label className="font-label text-micro text-text-secondary">Longitude</label>
+                    <input className="w-full h-11 px-md rounded-lg border-border-default bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" readOnly value={lmForm.longitude} placeholder="—" />
+                  </div>
+                </div>
+                <p className="text-micro text-text-tertiary">{lmForm.latitude && lmForm.longitude ? `Position choisie : ${lmForm.latitude}, ${lmForm.longitude}` : 'Aucune position choisie pour le moment.'}</p>
+              </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button className="px-md py-2.5 text-text-secondary font-label hover:bg-app rounded-lg transition-colors" type="button" onClick={() => setModal(null)}>Annuler</button>
                 <button className="bg-primary text-on-primary px-lg py-2.5 rounded-lg hover:bg-primary-hover active:scale-97 transition-all font-label" type="submit">Enregistrer le repère</button>
