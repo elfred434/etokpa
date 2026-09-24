@@ -28,11 +28,11 @@ export const adminApi = {
     const response = await apiClient.get('/admin/categories');
     return response.data;
   },
-  createCategory: async (data: { nom: string; description?: string; parent_id?: number }) => {
+  createCategory: async (data: { nom: string; description?: string; parent_id?: number; icone?: string; couleur?: string; en_accueil?: boolean }) => {
     const response = await apiClient.post('/admin/categories', data);
     return response.data;
   },
-  updateCategory: async (id: number, data: { nom?: string; description?: string; parent_id?: number }) => {
+  updateCategory: async (id: number, data: { nom?: string; description?: string; parent_id?: number; icone?: string; couleur?: string; en_accueil?: boolean }) => {
     const response = await apiClient.put(`/admin/categories/${id}`, data);
     return response.data;
   },
@@ -96,7 +96,7 @@ export const adminApi = {
   },
 
   // Users
-  getUsers: async (params?: { role?: string; page?: number }) => {
+  getUsers: async (params?: { role?: string; page?: number; per_page?: number }) => {
     const response = await apiClient.get('/admin/users', { params });
     return response.data;
   },
