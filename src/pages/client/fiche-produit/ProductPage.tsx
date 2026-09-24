@@ -11,6 +11,7 @@ import { add } from '../../../store/slices/cart/cartSlice';
 import { submitOffer, acceptCounterOffer, cancelNegotiation } from '../../../store/slices/negotiation/negotiationSlice';
 import type { CategoryId, Product } from '../../../types/models';
 import { catalogApi, negotiationApi, type ApiProduct } from '../../../services/api';
+import { absImageUrl } from '../../../utils/imageUrl';
 
 /* ---- Fiche produit 100 % API : GET /api/products/{id} (route /produit/$productId) ---- */
 
@@ -41,7 +42,7 @@ function mapApiProduct(p: ApiProduct): Product {
     categorie: SLUG_TO_CATEGORY[slug] ?? 'vegetable',
     stock: p.disponible && p.stock > 0 ? 'available' : 'out',
     badges: [],
-    image: p.img_url || undefined,
+    image: absImageUrl(p.image_url ?? p.img_url) ?? undefined,
     description: p.description,
   };
 }

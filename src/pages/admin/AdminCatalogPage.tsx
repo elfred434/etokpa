@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useDesignScript } from '../../utils/designRuntime';
 import { adminApi } from '../../services/api';
 import { useLiveRows } from '../../services/api/useLiveRows';
 import { unwrap, listOf, fmtFcfa } from '../../services/api/unwrap';
+import { absImageUrl } from '../../utils/imageUrl';
 import DESIGN_SCRIPT from './_scripts/AdminCatalogPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
@@ -30,6 +31,33 @@ export default function AdminCatalogPage() {
   const [dispoF, setDispoF] = useState('');
   const [edition, setEdition] = useState<any | null>(null);
   const [form, setForm] = useState({ nom: '', description: '', prix: '', prix_minimum: '', stock: '', categorie_id: '' });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const objectUrlRef = useRef<string | null>(null);
+  const revokeObjectUrl = () => {
+    if (objectUrlRef.current) { URL.revokeObjectURL(objectUrlRef.current); objectUrlRef.current = null; }
+  };
+  const pickImage = (f?: File | null) => {
+    if (!f) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type)) {
+      window.alert('Format non pris en charge : PNG, JPG ou WEBP uniquement.');
+      return;
+    }
+    if (f.size > 4 * 1024 * 1024) {
+      window.alert('Image trop lourde : maximum 4 Mo.');
+      return;
+    }
+    revokeObjectUrl();
+    objectUrlRef.current = URL.createObjectURL(f);
+    setImageFile(f);
+    setImagePreview(objectUrlRef.current);
+  };
+  const clearImage = () => {
+    revokeObjectUrl();
+    setImageFile(null);
+    setImagePreview(absImageUrl(edition?.image_url ?? edition?.img_url));
+  };
   const loadCats = () => adminApi.getCategories().then((r: any) => setCats(listOf(unwrap(r)))).catch(() => setCats([]));
   const loadPacks = () => adminApi.getBundles().then((r: any) => setPacks(listOf(unwrap(r)))).catch(() => setPacks([]));
   useState(() => {
@@ -38,15 +66,26 @@ export default function AdminCatalogPage() {
     return null;
   });
   const ouvrir = (pr: any) => {
+    revokeObjectUrl();
     setEdition(pr ?? {});
+    setImageFile(null);
+    setImagePreview(absImageUrl(pr?.image_url ?? pr?.img_url));
     setForm({ nom: pr?.nom ?? '', description: pr?.description ?? '', prix: String(pr?.prix ?? ''), prix_minimum: String(pr?.prix_minimum ?? ''), stock: String(pr?.stock ?? ''), categorie_id: String(pr?.categorie?.id ?? '') });
   };
+  const fermer = () => { revokeObjectUrl(); setImageFile(null); setEdition(null); };
   const enregistrer = async () => {
     try {
-      const payload = { nom: form.nom, description: form.description, prix: Number(form.prix), prix_minimum: Number(form.prix_minimum), stock: Number(form.stock), categorie_id: Number(form.categorie_id) };
-      if (edition?.id) await adminApi.updateProduct(edition.id, payload);
-      else await adminApi.createProduct(payload);
-      setEdition(null); reload();
+      const champs = { nom: form.nom, description: form.description, prix: Number(form.prix), prix_minimum: Number(form.prix_minimum), stock: Number(form.stock), categorie_id: Number(form.categorie_id) };
+      if (imageFile) {
+        // Multipart uniquement si fichier : champs en string (validations Laravel OK) + image.
+        const fd = new FormData();
+        Object.entries(champs).forEach(([k, v]) => fd.append(k, String(v)));
+        fd.append('image', imageFile);
+        if (edition?.id) await adminApi.updateProduct(edition.id, fd);
+        else await adminApi.createProduct(fd);
+      } else if (edition?.id) await adminApi.updateProduct(edition.id, champs);
+      else await adminApi.createProduct(champs);
+      fermer(); reload();
     } catch (e: any) { window.alert(String(e?.message ?? e)); }
   };
   const supprimer = async (id: number) => {
@@ -100,7 +139,11 @@ export default function AdminCatalogPage() {
                 {tab === 'produits' && produitsF.map((pr: any) => (
                   <tr key={pr.id} className="hover:bg-bg-secondary/50 transition-colors">
                     <td className="py-4 px-lg"><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /></td>
-                    <td className="py-4 px-md"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center text-primary"><MIcon name="inventory_2" className="text-[20px]" /></div> <span className="font-body font-semibold">{pr.nom}</span> </div> </td>
+                    <td className="py-4 px-md"> <div className="flex items-center gap-3"> {pr.image_url ? (
+                      <img src={absImageUrl(pr.image_url) ?? undefined} alt="" className="h-10 w-10 rounded-lg bg-bg-secondary object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center text-primary"><MIcon name="inventory_2" className="text-[20px]" /></div>
+                    )} <span className="font-body font-semibold">{pr.nom}</span> </div> </td>
                     <td className="py-4 px-md text-text-secondary">{pr.categorie?.nom ?? '—'}</td>
                     <td className="py-4 px-md font-price text-primary">{fmtFcfa(pr.prix)}</td>
                     <td className="py-4 px-md"> <span className={`px-2 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 w-fit ${pr.disponible !== false && Number(pr.stock) > 0 ? 'bg-success-light text-success-dark' : 'bg-bg-secondary text-text-secondary'}`}> <span className={`w-1.5 h-1.5 rounded-full ${pr.disponible !== false && Number(pr.stock) > 0 ? 'bg-success' : 'bg-text-tertiary'}`}></span> {pr.disponible !== false && Number(pr.stock) > 0 ? 'Disponible' : 'Rupture'} </span> </td>
@@ -138,11 +181,11 @@ export default function AdminCatalogPage() {
                     Exporter
                 </button> </div> <button className="ml-2 w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"> <MIcon name="close" className="text-[16px]" /> </button> </div>  <div className="fixed inset-0 bg-on-surface/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4 hidden" id="editModal"> <div className="bg-white w-full max-w-[560px] rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300"> <div className="p-lg border-b border-border-default flex justify-between items-center bg-bg-secondary/30"> <h3 className="font-h2 text-h2">Modifier le produit</h3> <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors" data-onclick="document.getElementById('editModal').classList.add('hidden')"> <MIcon name="close" /> </button> </div> <div className="p-lg custom-scrollbar max-h-[716px] overflow-y-auto space-y-lg"> <div className="grid grid-cols-2 gap-md"> <div className="col-span-2"> <label className="block text-label mb-2 text-text-secondary">Nom du produit</label> <input className="w-full px-md py-2.5 rounded-lg border border-border-default focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none" type="text" value="Tomates Fraîches" /> </div> <div> <label className="block text-label mb-2 text-text-secondary">Catégorie</label> <select className="w-full px-md py-2.5 rounded-lg border border-border-default focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none"> <option>Légumes</option> <option>Fruits</option> <option>Viandes</option> </select> </div> <div> <label className="block text-label mb-2 text-text-secondary">Prix (FCFA)</label> <div className="relative"> <input className="w-full px-md py-2.5 rounded-lg border border-border-default focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none" type="number" value="1500" /> <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary text-xs font-bold">FCFA</span> </div> </div> <div> <label className="block text-label mb-2 text-text-secondary">Stock actuel</label> <input className="w-full px-md py-2.5 rounded-lg border border-border-default focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none" type="number" value="85" /> </div> <div> <label className="block text-label mb-2 text-text-secondary">Unité</label> <input className="w-full px-md py-2.5 rounded-lg border border-border-default focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none" type="text" value="Kilogramme (kg)" /> </div> </div> <div> <label className="block text-label mb-2 text-text-secondary">Description</label> <textarea className="w-full px-md py-2.5 rounded-lg border border-border-default focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none resize-none" rows={3}>Tomates fraîches récoltées localement, idéales pour vos sauces et salades.</textarea> </div> <div> <label className="block text-label mb-2 text-text-secondary">Image du produit</label> <div className="border-2 border-dashed border-outline-variant/50 rounded-lg p-lg text-center bg-bg-secondary hover:bg-bg-secondary/80 transition-colors cursor-pointer group"> <MIcon name="cloud_upload" className="text-primary text-3xl mb-2 group-hover:scale-110 transition-transform" /> <p className="text-body font-medium">Cliquez pour remplacer l'image</p> <p className="text-xs text-text-tertiary mt-1">PNG, JPG ou WEBP (Max. 2Mo)</p> </div> </div> <div className="flex items-center justify-between py-2 px-md bg-primary-tint/50 rounded-lg border border-primary/10"> <div className="flex items-center gap-3"> <MIcon name="check_circle" className="text-primary" /> <div> <p className="text-body font-bold text-on-surface">Disponible à la vente</p> <p className="text-xs text-text-secondary">Afficher ce produit dans le catalogue public</p> </div> </div> <label className="relative inline-flex items-center cursor-pointer"> <input checked={true} className="sr-only peer" type="checkbox" /> <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div> </label> </div> </div> <div className="p-lg border-t border-border-default flex items-center justify-end gap-md bg-white"> <button className="px-md py-2.5 rounded-lg border border-border-default text-on-surface font-medium hover:bg-gray-50 transition-all" data-onclick="document.getElementById('editModal').classList.add('hidden')">Annuler</button> <button className="px-lg py-2.5 rounded-lg bg-primary-container hover:bg-primary-hover text-white font-bold transition-all transform active:scale-95 shadow-lg shadow-primary/20">Enregistrer les modifications</button> </div> </div> </div> 
       {edition && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setEdition(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={fermer}>
           <div className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl" onClick={(e: any) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border-default p-4">
               <h3 className="text-h3 font-h3 font-bold">{edition.id ? 'Modifier le produit' : 'Nouveau produit'}</h3>
-              <button type="button" onClick={() => setEdition(null)}>Fermer</button>
+              <button type="button" onClick={fermer}>Fermer</button>
             </div>
             <div className="flex-1 space-y-3 overflow-y-auto p-4 text-label">
               <div><p className="text-text-secondary">Nom</p><input value={form.nom} onChange={(e: any) => setForm({ ...form, nom: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
@@ -156,9 +199,39 @@ export default function AdminCatalogPage() {
                   {cats.map((c: any) => <option key={c.id} value={String(c.id)}>{c.nom}</option>)}
                 </select>
               </div>
+              <div>
+                <p className="text-text-secondary">Image du produit</p>
+                <div
+                  className="mt-1 group cursor-pointer rounded-lg border-2 border-dashed border-outline-variant/50 bg-bg-secondary p-4 text-center transition-colors hover:bg-bg-secondary/80"
+                  onClick={() => imageInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => { e.preventDefault(); pickImage(e.dataTransfer.files?.[0]); }}
+                >
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="" className="mx-auto max-h-36 rounded-lg object-contain" />
+                  ) : (
+                    <MIcon name="cloud_upload" className="mb-2 text-3xl text-primary transition-transform group-hover:scale-110" />
+                  )}
+                  <p className="font-medium">{imagePreview ? "Changer l'image" : 'Cliquez pour choisir une image'}</p>
+                  <p className="mt-1 text-xs text-text-tertiary">PNG, JPG ou WEBP (Max. 4 Mo)</p>
+                  {imageFile && <p className="mt-1 text-xs font-semibold text-primary">{imageFile.name}</p>}
+                </div>
+                {imagePreview && (
+                  <button type="button" className="mt-1 text-xs text-text-secondary underline" onClick={clearImage}>
+                    {imageFile ? "Retirer l'image choisie" : "Retirer l'image"}
+                  </button>
+                )}
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(e) => { pickImage(e.target.files?.[0]); e.target.value = ''; }}
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-2 border-t border-border-default p-4">
-              <button type="button" className="btn btn-ghost" onClick={() => setEdition(null)}>Annuler</button>
+              <button type="button" className="btn btn-ghost" onClick={fermer}>Annuler</button>
               <button type="button" className="btn btn-primary" onClick={enregistrer}>Enregistrer</button>
             </div>
           </div>

@@ -11,6 +11,7 @@ import { submitOffer } from '../../../store/slices/negotiation/negotiationSlice'
 import type { Product } from '../../../types/models';
 import { useLanguage } from '../../../context/LanguageContext';
 import { catalogApi, type ApiProduct } from '../../../services/api';
+import { absImageUrl } from '../../../utils/imageUrl';
 
 interface SelectionItem {
   id: string;
@@ -41,7 +42,7 @@ export default function HomePage() {
             lieu: 'Marché Dantokpa',
             prixLabel: `${p.prix.toLocaleString('fr-FR')} FCFA`,
             prix: p.prix,
-            image: p.img_url || '/images/design/tomates-1kg.png',
+            image: absImageUrl(p.image_url ?? p.img_url) || '/images/design/tomates-1kg.png',
             badge: p.stock > 5 ? 'Disponible' : 'Stock Limité',
           }));
           setSelection(fetched);

@@ -17,6 +17,8 @@ export interface ApiProduct {
   prix_minimum: number;
   devise: string;
   img_url?: string;
+  /** Champ réel de ProductResource (l'API renvoie image_url, pas img_url). */
+  image_url?: string | null;
   stock: number;
   disponible: boolean;
   categorie?: {

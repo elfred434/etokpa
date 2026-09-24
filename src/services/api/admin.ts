@@ -9,15 +9,34 @@ export const adminApi = {
     return response.data;
   },
   createProduct: async (formData: FormData | Record<string, unknown>) => {
-    const response = await apiClient.post('/admin/products', formData, {
-      headers: formData instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
-    });
+    if (formData instanceof FormData) {
+      // Adaptateur fetch : supprime le Content-Type sans boundary (sinon illisible pour Laravel),
+      // le navigateur régénère multipart/form-data; boundary=… ; timeout 60s (upload fichier ≤ 4 Mo).
+      const response = await apiClient.post('/admin/products', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        adapter: 'fetch',
+        timeout: 60000,
+      });
+      return response.data;
+    }
+    const response = await apiClient.post('/admin/products', formData);
     return response.data;
   },
   updateProduct: async (id: number | string, formData: FormData | Record<string, unknown>) => {
-    const response = await apiClient.put(`/admin/products/${id}`, formData, {
-      headers: formData instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
-    });
+    if (formData instanceof FormData) {
+      // PHP ne remplit $_FILES que pour un vrai POST → spoofing Laravel _method=PUT.
+      if (!formData.has('_method')) formData.append('_method', 'PUT');
+      const response = await apiClient.post(`/admin/products/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'X-HTTP-Method-Override': 'PUT',
+        },
+        adapter: 'fetch',
+        timeout: 60000,
+      });
+      return response.data;
+    }
+    const response = await apiClient.put(`/admin/products/${id}`, formData);
     return response.data;
   },
   deleteProduct: async (id: number | string) => {
