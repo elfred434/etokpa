@@ -1,6 +1,6 @@
 import { useDesignScript } from '../../utils/designRuntime';
 import DESIGN_SCRIPT from './_scripts/ManagerOrdersPage';
-import AdminLayout from '../../components/layout/admin/AdminLayout';
+import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 
 const DESIGN_CSS = `
     .badge-dot {
@@ -43,7 +43,7 @@ export default function ManagerOrdersPage() {
   useDesignScript(DESIGN_SCRIPT);
 
   return (
-    <AdminLayout currentPath="/manager/commandes">
+    <ManagerLayout currentPath="/manager/commandes">
       <style>{DESIGN_CSS}</style>
   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"> <div> <div className="flex items-center gap-2 mb-1"> <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-[#C2410C]">Supervision Opérationnelle</span> <span className="text-xs text-gray-400">•</span> <span className="text-xs text-gray-500 font-medium">Flux en direct - Marché Dantokpa &amp; Quartiers Akpakpa</span> </div> <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Supervision &amp; Gestion des Commandes</h1> <p className="text-sm text-gray-500 mt-0.5">Suivez le statut des paniers du marché, affectez les livreurs et contrôlez les livraisons en temps réel.</p> </div> <div className="flex items-center gap-3"> <button className="btn-action flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-[10px] text-sm font-medium transition-all shadow-xs"> <i className="ti ti-download text-base text-gray-500"></i> <span className="">Exporter le rapport</span> </button> <button data-onclick="openNewOrderModal()" className="btn-action flex items-center gap-2 px-4 py-2.5 bg-[#F97316] hover:bg-[#EA580C] text-white rounded-[10px] text-sm font-semibold transition-all shadow-sm shadow-orange-500/20"> <i className="ti ti-plus text-base"></i> <span className="">Créer une commande manuelle</span> </button> </div> </div>  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">  <div className="bg-white p-4 rounded-[14px] border border-gray-200/80 shadow-xs flex items-center justify-between"> <div> <span className="text-xs font-medium text-gray-500">Total Commandes (Aujourd'hui)</span> <div className="text-2xl font-bold text-gray-900 mt-1">42</div> <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 mt-1"> <i className="ti ti-trending-up text-xs"></i> +14% vs hier
             </span> </div> <div className="w-12 h-12 rounded-xl bg-orange-50 text-[#F97316] flex items-center justify-center"> <i className="ti ti-shopping-cart text-2xl"></i> </div> </div>  <div className="bg-white p-4 rounded-[14px] border border-gray-200/80 shadow-xs flex items-center justify-between"> <div> <span className="text-xs font-medium text-gray-500">En cours de livraison</span> <div className="text-2xl font-bold text-[#F97316] mt-1">8</div> <span className="text-xs text-gray-500 mt-1 block">5 motos, 3 tricycles</span> </div> <div className="w-12 h-12 rounded-xl bg-orange-100/60 text-[#C2410C] flex items-center justify-center"> <i className="ti ti-motorbike text-2xl"></i> </div> </div>  <div className="bg-white p-4 rounded-[14px] border border-gray-200/80 shadow-xs flex items-center justify-between"> <div> <span className="text-xs font-medium text-gray-500">En attente d'affectation</span> <div className="text-2xl font-bold text-amber-600 mt-1">3</div> <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 mt-1"> <i className="ti ti-clock text-xs"></i> Priorité manager
@@ -110,6 +110,6 @@ export default function ManagerOrdersPage() {
             Fermer
           </button> <button data-onclick="printReceipt()" className="btn-action px-4 py-2 rounded-[10px] bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5"> <i className="ti ti-printer text-sm"></i> Imprimer bordereau
           </button> </div> </div> </div> </div>  <div id="toastNotification" className="fixed bottom-6 right-6 bg-gray-900 text-white px-4 py-3 rounded-[12px] shadow-lg flex items-center gap-3 text-xs font-medium z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none"> <i className="ti ti-check-circle text-[#10B981] text-base"></i> <span id="toastMessage" className="">Action effectuée avec succès</span> </div> 
-    </AdminLayout>
+    </ManagerLayout>
   );
 }

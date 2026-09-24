@@ -1,6 +1,6 @@
 import { useDesignScript } from '../../utils/designRuntime';
 import DESIGN_SCRIPT from './_scripts/ManagerParametresPage';
-import AdminLayout from '../../components/layout/admin/AdminLayout';
+import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 
 const DESIGN_CSS = `
     .btn-press:active {
@@ -16,7 +16,7 @@ export default function ManagerParametresPage() {
   useDesignScript(DESIGN_SCRIPT);
 
   return (
-    <AdminLayout currentPath="/manager/parametres">
+    <ManagerLayout currentPath="/manager/parametres">
       <style>{DESIGN_CSS}</style>
   <header className="h-16 bg-white border-b border-[#E5E7EB] px-8 flex items-center justify-between sticky top-0 z-20"> <div className="flex items-center gap-3"> <div> <h1 className="text-lg font-semibold text-[#111827] flex items-center gap-2">
             Paramètres de la Zone &amp; Préférences
@@ -37,6 +37,6 @@ export default function ManagerParametresPage() {
               </p> </div> </div> </div> </section> </div>  <div className="fixed bottom-0 right-0 left-64 bg-white/95 backdrop-blur-md border-t border-[#E5E7EB] py-3.5 px-8 flex items-center justify-between z-20 shadow-lg"> <div className="flex items-center gap-2 text-xs text-[#6B7280]"> <i className="ti ti-info-circle text-[#F97316]"></i> <span className="">Toutes les modifications prennent effet immédiatement sur l'application livreurs et clients de la Zone Akpakpa.</span> </div> <div className="flex items-center gap-3"> <button className="px-4 py-2 border border-gray-300 rounded-[10px] text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors btn-press">
           Annuler
         </button> <button className="px-5 py-2.5 bg-[#F97316] hover:bg-[#EA580C] text-white rounded-[10px] text-xs font-semibold flex items-center gap-2 shadow-sm transition-all btn-press" data-onclick="alert('Paramètres de la Zone enregistrés avec succès !')"> <i className="ti ti-check text-sm"></i> <span className="">Enregistrer les modifications</span> </button> </div> </div>  
-    </AdminLayout>
+    </ManagerLayout>
   );
 }

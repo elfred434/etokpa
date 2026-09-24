@@ -1,6 +1,6 @@
 import { useDesignScript } from '../../utils/designRuntime';
 import DESIGN_SCRIPT from './_scripts/ManagerLitigesPage';
-import AdminLayout from '../../components/layout/admin/AdminLayout';
+import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
 
 const DESIGN_CSS = `@layer base { html, body { margin: 0; padding: 0; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }
@@ -19,7 +19,7 @@ export default function ManagerLitigesPage() {
   useDesignScript(DESIGN_SCRIPT);
 
   return (
-    <AdminLayout currentPath="/manager/litiges">
+    <ManagerLayout currentPath="/manager/litiges">
       <style>{DESIGN_CSS}</style>
 <div className="flex flex-col w-full">   <section className="flex flex-col lg:flex-row lg:items-center justify-between gap-md mb-lg bg-bg-card p-lg rounded-xl shadow-sm border-subtle"> <div className="flex flex-col gap-xs"> <div className="flex flex-wrap items-center gap-sm"> <span className="inline-flex items-center gap-xs px-sm py-xs rounded-full bg-primary-container text-on-primary font-micro text-micro font-bold uppercase tracking-wider"> <MIcon name="shield" className="text-[14px]" />
           TOKPa Manager
@@ -126,6 +126,6 @@ export default function ManagerLitigesPage() {
         </h3> <button className="text-text-secondary hover:text-text-main" data-onclick="document.getElementById('quick-protocol-modal').classList.add('hidden')"> <MIcon name="close" /> </button> </div> <div className="p-lg flex flex-col gap-sm text-text-main font-body text-secondary"> <div className="p-sm bg-primary-tint rounded-lg"> <strong className="font-semibold text-primary-dark">Règle #1 : Sécurité Escrow</strong> <p className="font-secondary text-micro text-text-secondary mt-xs">Les fonds restent consignés sur FedaPay jusqu'à validation de la décision par le Manager de zone.</p> </div> <div className="p-sm bg-bg-secondary rounded-lg"> <strong className="font-semibold text-text-main">Règle #2 : Produits Périssables</strong> <p className="font-secondary text-micro text-text-secondary mt-xs">Toute plainte sur les légumes, viandes ou poissons de Dantokpa doit comporter une preuve photo dans les 30 minutes suivant la livraison.</p> </div> <div className="p-sm bg-bg-secondary rounded-lg"> <strong className="font-semibold text-text-main">Règle #3 : Conditionnement vs Conduite</strong> <p className="font-secondary text-micro text-text-secondary mt-xs">Si le vendeur a mal emballé les denrées fragiles, la retenue s'applique au marchand. Si le livreur a empilé des charges lourdes sur des produits souples, sa commission supporte 50% du litige.</p> </div> </div> <div className="p-md bg-bg-secondary flex justify-end"> <button className="px-md py-sm rounded-lg bg-primary-container text-on-primary font-label text-label" data-onclick="document.getElementById('quick-protocol-modal').classList.add('hidden')">
           Compris
         </button> </div> </div> </div>  <div className="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none" id="arbitration-toast"> <div className="bg-success-dark text-on-primary p-md rounded-xl shadow-xl flex items-center gap-sm"> <MIcon name="check_circle" className="text-[24px]" /> <div className="flex flex-col"> <span className="font-label text-label font-bold" id="toast-title">Arbitrage Enregistré avec Succès</span> <span className="font-secondary text-micro text-success-light" id="toast-desc">Le remboursement client FedaPay a été ordonné.</span> </div> </div> </div>  </div> 
-    </AdminLayout>
+    </ManagerLayout>
   );
 }
