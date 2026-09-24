@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
+import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
@@ -67,6 +68,7 @@ const articlesCount = (o: ApiOrder) => (o.items ?? []).reduce((s, it) => s + Num
  *   - GET /api/orders?page={n}  → tableau paginé (OrderResource, paginate(15))
  *   - clic sur une ligne        → modale détails complète (items, totaux, livraison, livreur, paiement)
  *   - bouton « Suivre »         → /commandes/suivi?order={id}
+ *   - bouton « Annuler »        → DELETE /api/orders/{id} (modale, statut en_attente uniquement — F-13)
  */
 export default function OrdersListPage() {
   const { isFr } = useLanguage();
@@ -105,6 +107,25 @@ export default function OrdersListPage() {
 
   const handleSuivre = (id: number) => {
     navigate({ to: '/commandes/suivi', search: { order: String(id) } });
+  };
+
+  // Annulation client — DELETE /api/orders/{id}. Le backend n'accepte que le statut
+  // en_attente (sinon 422 « Seule une commande en attente peut être annulée. »).
+  const [cancelling, setCancelling] = useState(false);
+  const handleAnnuler = async (o: ApiOrder) => {
+    if (cancelling) return;
+    if (!confirm(isFr ? `Annuler la commande #TOK-${o.id} ?` : `Cancel order #TOK-${o.id}?`)) return;
+    setCancelling(true);
+    try {
+      await ordersApi.cancelOrder(o.id);
+      setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, statut: 'annule' } : x)));
+      setSelected((s) => (s && s.id === o.id ? { ...s, statut: 'annule' } : s));
+      toast.success(isFr ? 'Commande annulée' : 'Order cancelled');
+    } catch (err) {
+      toast.error(formatApiError(extractApiError(err)));
+    } finally {
+      setCancelling(false);
+    }
   };
 
   // Ouverture de la modale via ?detail={id} (profil → « Détails ») — garde-fou anti-IDOR
@@ -421,6 +442,17 @@ export default function OrdersListPage() {
                   <MIcon name="near_me" />
                   {isFr ? 'Suivre cette commande' : 'Track this order'}
                 </button>
+                {selected.statut === 'en_attente' && (
+                  <button
+                    type="button"
+                    onClick={() => handleAnnuler(selected)}
+                    disabled={cancelling}
+                    className="btn btn-danger disabled:opacity-60"
+                  >
+                    <MIcon name={cancelling ? 'sync' : 'cancel'} className={cancelling ? 'animate-spin' : undefined} />
+                    {isFr ? 'Annuler' : 'Cancel'}
+                  </button>
+                )}
                 <button type="button" onClick={() => setSelected(null)} className="btn btn-ghost">
                   {isFr ? 'Fermer' : 'Close'}
                 </button>
