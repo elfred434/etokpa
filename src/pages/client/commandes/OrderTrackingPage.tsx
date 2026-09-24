@@ -9,7 +9,7 @@ import { useRiderLocation } from '../../../hooks/useRiderLocation';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
-import { ordersApi } from '../../../services/api';
+import { catalogApi, ordersApi } from '../../../services/api';
 import { extractApiError, formatApiError } from '../../../utils/apiError';
 
 interface ApiRider {
@@ -96,6 +96,7 @@ export default function OrderTrackingPage() {
   const [order, setOrder] = useState<ApiOrder | null>(null);
   const [tracking, setTracking] = useState<TrackingInfo | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [destCoords, setDestCoords] = useState<[number, number] | null>(null);
 
   // Chargement de la liste (pour le sélecteur quand pas de ?order=)
   useEffect(() => {
@@ -131,6 +132,39 @@ export default function OrderTrackingPage() {
       });
   }, [isAuthenticated, selectedId]);
 
+  // Destination RÉELLE de la commande : landmark (point_reperes) → GPS via GET /zones.points_repere
+  useEffect(() => {
+    const lmId = order?.landmark?.id;
+    if (!lmId) {
+      setDestCoords(null);
+      return;
+    }
+    let alive = true;
+    catalogApi
+      .getZones()
+      .then((res) => {
+        const list = (res?.data ?? res ?? []) as Array<{
+          points_repere?: Array<{ id: number; latitude?: number | string; longitude?: number | string }>;
+        }>;
+        for (const z of Array.isArray(list) ? list : []) {
+          for (const p of z.points_repere ?? []) {
+            if (Number(p.id) === Number(lmId)) {
+              const lat = Number(p.latitude);
+              const lng = Number(p.longitude);
+              if (alive && Number.isFinite(lat) && Number.isFinite(lng)) setDestCoords([lat, lng]);
+              return;
+            }
+          }
+        }
+      })
+      .catch(() => {
+        /* zones indisponibles → pas de marqueur destination (honnête) */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [order?.landmark?.id]);
+
   // Rafraîchissement temps réel sur les événements de statut (notifications.{userId})
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -155,6 +189,7 @@ export default function OrderTrackingPage() {
     orderId: selectedId ? String(selectedId) : undefined,
     enabled: isAuthenticated && !!selectedId,
     realPosition,
+    destinationCoords: destCoords ?? undefined, // ETA vers la destination RÉELLE de la commande
     allowSimulation: search.simu === '1', // démo opt-in uniquement : sans ça, aucune position inventée
     simulatedSpeedMs: 2500,
   });
@@ -186,7 +221,12 @@ export default function OrderTrackingPage() {
       <main className="flex-grow pt-[52px] pb-[80px] md:pb-0 relative overflow-hidden flex flex-col">
         {/* GPS MAP SECTION */}
         <section className="relative h-[420px] sm:h-[520px] w-full overflow-hidden bg-[#E8F4FD]">
-          <RealBeninMap riderCoords={riderCoords} riderName={rider?.nom_complet} />
+          <RealBeninMap
+            riderCoords={riderCoords}
+            riderName={rider?.nom_complet}
+            destinationCoords={destCoords}
+            destinationLabel={[order?.landmark?.nom, order?.description_lieu].filter(Boolean).join(' — ')}
+          />
         </section>
 
         {/* STATUS PANEL (Floating Bottom Sheet) */}

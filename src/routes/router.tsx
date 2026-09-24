@@ -14,6 +14,7 @@ import ConfirmationPage from '../pages/client/confirmation-commande/Confirmation
 import ProfilePage from '../pages/client/profil/ProfilePage';
 import NegotiationsPage from '../pages/client/negociations/NegotiationsPage';
 import OrderTrackingPage from '../pages/client/commandes/OrderTrackingPage';
+import OrdersListPage from '../pages/client/commandes/OrdersListPage';
 import MessagingPage from '../pages/client/messagerie/MessagingPage';
 import AdminCatalogPage from '../pages/admin/catalogue/AdminCatalogPage';
 import AdminCategoriesPage from '../pages/admin/categories/AdminCategoriesPage';
@@ -80,6 +81,7 @@ const orderTrackingRoute = createRoute({
     order: typeof search.order === 'string' ? search.order : undefined,
   }),
 });
+const ordersListRoute = createRoute({ getParentRoute: () => rootRoute, path: '/commandes', component: OrdersListPage });
 const messagingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/messagerie', component: MessagingPage });
 const adminCatalogueRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/catalogue', component: AdminCatalogPage });
 const adminCategoriesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/categories', component: AdminCategoriesPage });
@@ -99,6 +101,7 @@ const routeTree = rootRoute.addChildren([
   confirmationRoute,
   profilRoute,
   negociationsRoute,
+  ordersListRoute,
   orderTrackingRoute,
   messagingRoute,
   adminCatalogueRoute,

@@ -74,7 +74,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
               )}
             </Link>
             <Link
-              to="/commandes/suivi"
+              to="/commandes"
               className={clsx(
                 'py-3 font-body text-body transition-colors',
                 onCommandes

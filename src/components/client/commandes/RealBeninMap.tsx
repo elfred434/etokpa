@@ -55,14 +55,26 @@ interface RealBeninMapProps {
   riderCoords?: [number, number] | null;
   /** Nom réel du livreur (GET /orders/{id} → livreur.nom_complet). */
   riderName?: string;
+  /** Destination RÉELLE de la commande (landmark du point_reperes) — null = aucun marqueur destination (plus de coordonnées de test). */
+  destinationCoords?: [number, number] | null;
+  /** Libellé réel de la destination (landmark.nom + description_lieu). */
+  destinationLabel?: string;
   onRecenterRider?: () => void;
 }
 
-export default function RealBeninMap({ riderCoords = null, riderName, onRecenterRider }: RealBeninMapProps) {
-  const mapCenter: [number, number] = riderCoords ?? CLIENT_COORDS;
-  const routePath: [number, number][] = riderCoords
-    ? [DANTOKPA_COORDS, riderCoords, CLIENT_COORDS]
-    : [DANTOKPA_COORDS, CLIENT_COORDS];
+export default function RealBeninMap({
+  riderCoords = null,
+  riderName,
+  destinationCoords = null,
+  destinationLabel,
+  onRecenterRider,
+}: RealBeninMapProps) {
+  const mapCenter: [number, number] = riderCoords ?? destinationCoords ?? DANTOKPA_COORDS;
+  const routePath: [number, number][] = [
+    DANTOKPA_COORDS,
+    ...(riderCoords ? [riderCoords] : []),
+    ...(destinationCoords ? [destinationCoords] : []),
+  ];
 
   return (
     <div className="relative w-full h-full min-h-[450px] z-10">
@@ -105,15 +117,17 @@ export default function RealBeninMap({ riderCoords = null, riderName, onRecenter
           </Marker>
         )}
 
-        {/* Marqueur Client / Cadjehoun */}
-        <Marker position={CLIENT_COORDS} icon={clientIcon}>
-          <Popup>
-            <div className="text-center font-sans p-1">
-              <strong className="block text-info-dark font-bold">Votre Adresse Client</strong>
-              <span className="text-xs text-gray-600">Cadjehoun, Cotonou, Bénin</span>
-            </div>
-          </Popup>
-        </Marker>
+        {/* Marqueur Destination RÉELLE de la commande (landmark) — aucune donnée de test */}
+        {destinationCoords && (
+          <Marker position={destinationCoords} icon={clientIcon}>
+            <Popup>
+              <div className="text-center font-sans p-1">
+                <strong className="block text-info-dark font-bold">{destinationLabel || 'Point de livraison'}</strong>
+                <span className="text-xs text-gray-600">Destination de la commande</span>
+              </div>
+            </Popup>
+          </Marker>
+        )}
       </MapContainer>
 
       {/* Floating Control Button */}
