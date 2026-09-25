@@ -115,7 +115,6 @@ export default function CatalogPage() {
   // tout article plus cher dès qu'une catégorie était choisie).
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [dispoOnly, setDispoOnly] = useState(true);
-  const [touched, setTouched] = useState(() => parseCat(catParam) !== 'all');
   const [sort, setSort] = useState('pop');
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [page, setPage] = useState(1);
@@ -254,11 +253,8 @@ export default function CatalogPage() {
     return () => { alive = false; window.clearTimeout(timer); };
   }, [search]);
 
-  const touch = () => setTouched(true);
-
   // Curseur prix (bureau + mobile) : ramené tout à droite = plus de limite.
   const onPriceChange = (v: number) => {
-    touch();
     setMaxPrice(v >= priceCeil ? null : v);
     setPage(1);
   };
@@ -267,24 +263,23 @@ export default function CatalogPage() {
     let items = [...(packMode && apiPacks ? apiPacks : productsList)];
     const needle = search.trim().toLowerCase();
     if (needle) items = items.filter((p) => p.nom.toLowerCase().includes(needle) || p.meta.toLowerCase().includes(needle));
-    if (touched) {
-      if (cat !== 'all') {
-        if (cat.startsWith('c')) {
-          const id = Number(cat.slice(1));
-          items = items.filter((p) => p.catRawId != null && (rootOf.get(p.catRawId) ?? p.catRawId) === id);
-        } else {
-          items = items.filter((p) => p.cat === cat);
-        }
+    if (cat !== 'all') {
+      if (cat.startsWith('c')) {
+        const id = Number(cat.slice(1));
+        items = items.filter((p) => p.catRawId != null && (rootOf.get(p.catRawId) ?? p.catRawId) === id);
+      } else {
+        items = items.filter((p) => p.cat === cat);
       }
-      if (zones.length > 0) items = items.filter((p) => zones.includes(p.zoneId));
-      if (maxPrice !== null) items = items.filter((p) => p.prix <= maxPrice);
-      if (dispoOnly) items = items.filter((p) => p.stock === 'available');
     }
+    if (zones.length > 0) items = items.filter((p) => zones.includes(p.zoneId));
+    if (maxPrice !== null) items = items.filter((p) => p.prix <= maxPrice);
+    // « Disponible uniquement » = commandable : stock > 0 et disponible (les stocks faibles 1–5 restent visibles).
+    if (dispoOnly) items = items.filter((p) => p.stock !== 'none');
     if (sort === 'asc') items.sort((a, b) => a.prix - b.prix);
     if (sort === 'desc') items.sort((a, b) => b.prix - a.prix);
     if (sort === 'new') items.reverse();
     return items;
-  }, [search, touched, cat, zones, maxPrice, dispoOnly, sort, productsList, rootOf, packMode, apiPacks]);
+  }, [search, cat, zones, maxPrice, dispoOnly, sort, productsList, rootOf, packMode, apiPacks]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const currentPage = Math.min(page, totalPages);
@@ -295,7 +290,6 @@ export default function CatalogPage() {
     setZones(['dantokpa']);
     setMaxPrice(null);
     setDispoOnly(true);
-    setTouched(false);
     setSearch('');
     setSort('pop');
     setPage(1);
@@ -303,12 +297,12 @@ export default function CatalogPage() {
   };
 
   const toggleZone = (zoneId: string) => {
-    touch();
     setZones((z) => (z.includes(zoneId) ? z.filter((id) => id !== zoneId) : [...z, zoneId]));
     setPage(1);
   };
 
   const addToCart = (p: CatalogProduct) => {
+    if (p.stock === 'none') return; // rupture : pas d'ajout au panier
     const product: Product = {
       id: p.id,
       nom: p.nom,
@@ -317,7 +311,7 @@ export default function CatalogPage() {
       prix: p.prix,
       prixMinimum: Math.round(p.prix * 0.8),
       categorie: p.cat,
-      stock: p.stock === 'none' ? 'out' : p.stock === 'low' ? 'low' : 'available',
+      stock: p.stock === 'low' ? 'low' : 'available', // rupture déjà écartée plus haut
       badges: p.promo ? ['promo'] : [],
       negotiated: p.prixAncienLabel ? { oldPrice: 1000 } : undefined,
       image: p.image ?? undefined,
@@ -342,6 +336,11 @@ export default function CatalogPage() {
           <span className="h-1.5 w-1.5 rounded-full bg-white" /> Stock faible
         </span>
       )}
+      {p.stock === 'none' && (
+        <span className="flex items-center gap-1 rounded-full bg-ink-3 px-2 py-0.5 text-[10px] font-bold text-white">
+          <span className="h-1.5 w-1.5 rounded-full bg-white" /> Rupture
+        </span>
+      )}
     </div>
   );
 
@@ -350,7 +349,6 @@ export default function CatalogPage() {
       <ClientNavbar
         search={search}
         onSearch={(v) => {
-          touch();
           setSearch(v);
           setPage(1);
         }}
@@ -367,16 +365,14 @@ export default function CatalogPage() {
                   key={c.id}
                   type="button"
                   onClick={() => {
-                    touch();
                     setCat(c.id);
                     setPage(1);
                   }}
                   className={clsx(
                     'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all',
-                    cat === c.id && touched
+                    cat === c.id
                       ? 'bg-primary-lighter font-semibold text-primary'
                       : 'text-on-surface-variant hover:bg-primary-lighter hover:text-primary',
-                    cat === c.id && !touched && 'bg-primary-lighter font-semibold text-primary',
                   )}
                 >
                   <MIcon name={c.icon} className="text-[20px]" />
@@ -430,7 +426,6 @@ export default function CatalogPage() {
                   role="switch"
                   aria-checked={dispoOnly}
                   onClick={() => {
-                    touch();
                     setDispoOnly((v) => !v);
                     setPage(1);
                   }}
@@ -483,7 +478,6 @@ export default function CatalogPage() {
                         key={c.id}
                         type="button"
                         onClick={() => {
-                          touch();
                           setCat(c.id);
                           setPage(1);
                         }}
@@ -537,7 +531,6 @@ export default function CatalogPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      touch();
                       setDispoOnly(!dispoOnly);
                       setPage(1);
                     }}
@@ -586,7 +579,6 @@ export default function CatalogPage() {
                 type="search"
                 value={search}
                 onChange={(e) => {
-                  touch();
                   setSearch(e.target.value);
                   setPage(1);
                 }}
@@ -618,7 +610,6 @@ export default function CatalogPage() {
                 <select
                   value={sort}
                   onChange={(e) => {
-                    touch();
                     setSort(e.target.value);
                   }}
                   className="cursor-pointer border-none bg-transparent p-0 text-xs font-semibold focus:ring-0"
@@ -689,11 +680,12 @@ export default function CatalogPage() {
                         <button
                           type="button"
                           aria-label={`Ajouter ${p.nom}`}
+                          disabled={p.stock === 'none'}
                           onClick={(e) => {
                             e.stopPropagation();
                             addToCart(p);
                           }}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white transition-all hover:bg-primary-hover active:scale-95"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white transition-all hover:bg-primary-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
                         >
                           <MIcon name="add" className="text-[20px]" />
                         </button>
@@ -744,6 +736,11 @@ export default function CatalogPage() {
                             <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Stock faible
                           </span>
                         )}
+                        {p.stock === 'none' && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-page px-2 py-0.5 text-[10px] font-bold text-ink-2">
+                            <span className="h-1.5 w-1.5 rounded-full bg-ink-3" /> Rupture
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -759,11 +756,12 @@ export default function CatalogPage() {
                       <button
                         type="button"
                         aria-label={`Ajouter ${p.nom}`}
+                        disabled={p.stock === 'none'}
                         onClick={(e) => {
                           e.stopPropagation();
                           addToCart(p);
                         }}
-                        className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-primary text-white transition-all hover:bg-primary-hover active:scale-95 shrink-0"
+                        className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-primary text-white transition-all hover:bg-primary-hover active:scale-95 shrink-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
                       >
                         <MIcon name="add" className="text-[18px] sm:text-[20px]" />
                       </button>

@@ -195,7 +195,8 @@ export default function ProductPage() {
   }
 
   const categoryNom = apiProduct?.categorie?.nom ?? 'Catalogue';
-  const unavailable = !apiProduct?.disponible;
+  // Commandable = disponible ET stock > 0 (même règle que « Disponible uniquement » du catalogue).
+  const unavailable = !apiProduct?.disponible || Number(apiProduct?.stock ?? 0) <= 0;
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#fcfaf8] font-body text-ink">
