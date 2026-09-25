@@ -6,12 +6,14 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
+import ApiErrorState from '../../../components/shared/ApiErrorState';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import { submitOffer, acceptCounterOffer, cancelNegotiation } from '../../../store/slices/negotiation/negotiationSlice';
 import type { CategoryId, Product } from '../../../types/models';
 import { catalogApi, negotiationApi, type ApiProduct } from '../../../services/api';
 import { absImageUrl } from '../../../utils/imageUrl';
+import { alertApiError, apiErrorStatus } from '../../../utils/apiError';
 
 /* ---- Fiche produit 100 % API : GET /api/products/{id} (route /produit/$productId) ---- */
 
@@ -35,8 +37,8 @@ function mapApiProduct(p: ApiProduct): Product {
   return {
     id: String(p.id),
     nom: p.nom,
-    origine: 'Marché Dantokpa',
-    quantite: 'unité',
+    origine: p.categorie?.nom ?? '', // pas de marché dans l'API : vraie catégorie
+    quantite: '',
     prix: Number(p.prix),
     prixMinimum: Number(p.prix_minimum),
     categorie: SLUG_TO_CATEGORY[slug] ?? 'vegetable',
@@ -58,6 +60,9 @@ export default function ProductPage() {
   const [apiProduct, setApiProduct] = useState<ApiProduct | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  // Échec autre que 404 (500, serveur arrêté…) : message de l'API + Réessayer (avant : « Produit introuvable »).
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [quantity, setQuantity] = useState(1);
   const [offerInput, setOfferInput] = useState('');
@@ -73,6 +78,7 @@ export default function ProductPage() {
   useEffect(() => {
     setIsLoading(true);
     setNotFound(false);
+    setLoadError(null);
     catalogApi
       .getProduct(productId)
       .then((res) => {
@@ -86,16 +92,12 @@ export default function ProductPage() {
         }
       })
       .catch((err) => {
-        const status = (err as { response?: { status?: number } })?.response?.status;
-        setNotFound(status === 404 ? true : isLoading);
-        if (status !== 404) {
-          // Backend injoignable : on affiche l'état d'erreur (pas de produit factice)
-          setNotFound(true);
-        }
+        // 404 = produit inexistant ; tout autre échec = message exact de l'API (pas de produit factice)
+        if (apiErrorStatus(err) === 404) setNotFound(true);
+        else setLoadError(alertApiError(err, 'product-load'));
       })
       .finally(() => setIsLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId]);
+  }, [productId, reloadKey]);
 
   const handleSendOffer = async () => {
     if (!product) return;
@@ -164,6 +166,24 @@ export default function ProductPage() {
     return (
       <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
         <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
+        <ClientNavbar />
+        <main className="flex justify-center pt-[80px] px-md">
+          <div className="w-full max-w-[560px] bg-white rounded-xl border border-border-default p-xl">
+            <ApiErrorState
+              title="Impossible de charger le produit"
+              message={loadError}
+              onRetry={() => setReloadKey((k) => k + 1)}
+            />
+          </div>
+        </main>
+        <ClientBottomNav />
       </div>
     );
   }
@@ -261,28 +281,9 @@ export default function ProductPage() {
                 <p className="mb-1 text-micro uppercase tracking-widest text-ink-3">{categoryNom}</p>
                 <h1 className="text-h1 text-ink">{product.nom}</h1>
                 <div className="mt-3 flex flex-wrap items-center gap-4">
-                  <div className="flex items-center gap-1 text-primary">
-                    <MIcon name="location_on" className="text-sm" />
-                    <span className="text-ink">Marché Dantokpa, Cotonou</span>
-                  </div>
                   {apiProduct && apiProduct.stock > 0 && (
                     <span className="text-micro text-ink-2">Stock : {apiProduct.stock} unité(s)</span>
                   )}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between rounded-xl bg-surface p-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-lighter font-bold text-primary-dark">
-                    DK
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-ink">Marché Dantokpa</p>
-                    <div className="flex items-center gap-1">
-                      <MIcon name="verified" className="text-[14px] text-success" />
-                      <span className="text-micro text-success">Provenance vérifiée</span>
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -530,8 +531,7 @@ export default function ProductPage() {
               <div className="flex flex-col gap-4 p-8">
                 <h3 className="text-h3 text-ink">Détails du produit</h3>
                 <p className="max-w-3xl text-body leading-relaxed text-ink-2">
-                  {product.description ||
-                    'Ce produit est disponible au Marché Dantokpa. Saisissez la quantité souhaitée, puis finalisez votre commande — livraison partout à Cotonou.'}
+                  {product.description || 'Aucune description pour ce produit.'}
                 </p>
                 <div className="mt-4 grid grid-cols-2 gap-6 md:grid-cols-4">
                   <div className="flex flex-col">
@@ -561,25 +561,12 @@ export default function ProductPage() {
             )}
 
             {tab === 'origine' && (
-              <div className="flex flex-col gap-4 p-8">
-                <h3 className="text-h3 text-ink">Origine & Traçabilité</h3>
-                <div className="flex items-center gap-3 rounded-xl bg-surface p-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-lighter font-bold text-primary-dark">
-                    DK
-                  </div>
-                  <div>
-                    <p className="font-semibold text-ink">Marché Dantokpa</p>
-                    <div className="flex items-center gap-1">
-                      <MIcon name="verified" className="text-[14px] text-success" />
-                      <span className="text-micro text-success">Produit certifié frais · Origine Cotonou</span>
-                    </div>
-                  </div>
-                </div>
-                <p className="max-w-3xl text-body leading-relaxed text-ink-2">
-                  Tous les lots sont contrôlés dès leur arrivée au stand de regroupement avant la livraison
-                  finale chez vous. La négociation de prix se fait en direct avec le marché via le module
-                  « Proposer votre budget ».
-                </p>
+              <div className="flex flex-col gap-4 p-4 md:p-8">
+                <EmptyState
+                  icon={<MIcon name="travel_explore" className="text-4xl text-primary" />}
+                  title="Origine non renseignée"
+                  description="L’origine et la traçabilité des produits ne sont pas encore fournies par la plateforme. Elles s’afficheront ici dès qu’elles seront disponibles."
+                />
               </div>
             )}
 

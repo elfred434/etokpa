@@ -332,7 +332,7 @@ export default function CartPage() {
                             )}
                           </div>
                           <p className="text-secondary text-text-secondary truncate">
-                            {item.product.origine || 'Marché Dantokpa'} · {item.product.quantite || '1kg'}
+                            {[item.product.origine, item.product.quantite].filter(Boolean).join(' · ')}
                           </p>
 
                           <div className="flex items-center gap-sm mt-xs">

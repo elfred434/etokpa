@@ -20,14 +20,21 @@ type LocalItem = { product: { id: string }; quantite: number };
  * (`GET /products/{id}` → `image_url`), résolue par `absImageUrl` comme dans l'admin.
  * Échec (produit supprimé, réseau) → pas d'image = dégradé du panier.
  */
-function fetchProductImage(productId: number): Promise<string | undefined> {
+function fetchProductImage(
+  productId: number,
+): Promise<{ image?: string; categorie?: string; prixMinimum?: number }> {
   return catalogApi
     .getProduct(productId)
     .then((res) => {
       const p = (res?.data ?? res) as ApiProduct | undefined;
-      return absImageUrl(p?.image_url ?? p?.img_url) ?? undefined;
+      // Même requête : image + vraie catégorie + vrai prix minimum (plus de « Marché TOKPa » ni de 0 inventés)
+      return {
+        image: absImageUrl(p?.image_url ?? p?.img_url) ?? undefined,
+        categorie: p?.categorie?.nom,
+        prixMinimum: p?.prix_minimum != null ? Number(p.prix_minimum) : undefined,
+      };
     })
-    .catch(() => undefined);
+    .catch(() => ({}));
 }
 
 /**
@@ -67,7 +74,7 @@ export function useCartSync(sessionKey: number): void {
 
         if (serverItems.length > 0) {
           // Images des articles (requêtes en parallèle) — le panier serveur n'en porte pas.
-          const images = await Promise.all(serverItems.map((it) => fetchProductImage(it.product_id)));
+          const details = await Promise.all(serverItems.map((it) => fetchProductImage(it.product_id)));
           if (cancelled) return;
           // Le serveur est la vérité : on aligne le Redux sur l'état serveur
           // (évite tout décalage local/serveur, ex. multi-appareils).
@@ -77,13 +84,13 @@ export function useCartSync(sessionKey: number): void {
               id: String(it.product_id),
               nom: it.nom,
               prix: Number(it.prix),
-              prixMinimum: 0,
-              quantite: 'unité',
-              origine: 'Marché TOKPa',
+              prixMinimum: details[i].prixMinimum ?? 0,
+              quantite: '',
+              origine: details[i].categorie ?? '',
               categorie: 'vegetable',
               stock: 'available',
               badges: [],
-              image: images[i],
+              image: details[i].image,
             };
             dispatch(add({ product, quantity: it.quantite }));
           });
