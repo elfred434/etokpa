@@ -25,7 +25,9 @@ export default function Verification2faPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const pendingEmail = localStorage.getItem('tokpa_pending_email') || 'client@tokpa.bj';
+  // Email de la connexion (ou de l'inscription) en cours. Aucun email de repli : avant, sans connexion
+  // en cours, la page utilisait « client@tokpa.bj », à qui « Renvoyer le code » envoyait un vrai code.
+  const pendingEmail = localStorage.getItem('tokpa_pending_email');
 
   const expired = secondsLeft <= 0;
   const blocked = attemptsLeft <= 0;
@@ -36,9 +38,16 @@ export default function Verification2faPage() {
     return () => window.clearInterval(timer);
   }, [expired]);
 
+  // Pas de connexion en cours (accès direct à /verification-2fa, email déjà utilisé) → retour à la connexion.
+  useEffect(() => {
+    if (pendingEmail) return;
+    toast.error('Aucune connexion en cours : saisissez d’abord votre email et votre mot de passe.', { id: '2fa-no-email' });
+    navigate({ to: '/connexion', replace: true });
+  }, [pendingEmail, navigate]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (code.length < 6 || expired || blocked) return;
+    if (!pendingEmail || code.length < 6 || expired || blocked) return;
 
     setLoading(true);
     setError(null);
@@ -46,6 +55,7 @@ export default function Verification2faPage() {
     try {
       // Tentative d'appel API Backend POST /api/auth/verify-2fa
       const res = await authApi.verify2fa({ email: pendingEmail, code });
+      localStorage.removeItem('tokpa_pending_email'); // connexion terminée : l'email en attente ne sert plus
       toast.success(res.message || 'Authentification réussie !');
       // Retour à la page demandée avant la connexion si ce rôle y a droit ; sinon l'espace du rôle
       // (admin → /admin, manager → /manager, client/livreur → accueil).
@@ -61,18 +71,22 @@ export default function Verification2faPage() {
   };
 
   const handleResend = async () => {
+    if (!pendingEmail) return;
     try {
       await authApi.resend2fa(pendingEmail);
       toast.success('Un nouveau code OTP a été envoyé par email.');
+      // Nouveau délai et nouvelles tentatives SEULEMENT si un code est vraiment parti
+      // (avant : remis à zéro même en cas d'échec — limite atteinte, serveur arrêté…).
+      setSecondsLeft(INITIAL_SECONDS);
+      setAttemptsLeft(MAX_ATTEMPTS);
+      setError(null);
+      setCode('');
     } catch (err) {
-      console.warn('Resend 2FA error:', err);
       toast.error(formatApiError(extractApiError(err)));
     }
-    setSecondsLeft(INITIAL_SECONDS);
-    setAttemptsLeft(MAX_ATTEMPTS);
-    setError(null);
-    setCode('');
   };
+
+  if (!pendingEmail) return null; // redirection vers /connexion en cours (effet ci-dessus)
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg-app p-4 font-body text-text-main">
