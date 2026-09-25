@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import { adminApi } from '../../services/api';
 import { useLiveRows } from '../../services/api/useLiveRows';
-import { unwrap, fmtFcfa } from '../../services/api/unwrap';
+import { unwrap, fmtFcfa, listOf } from '../../services/api/unwrap';
+import { extractApiError, formatApiError } from '../../utils/apiError';
 import MIcon from '../../components/shared/MIcon';
 
 /** Activité récente — données statiques du design Stitch (copie conforme). */
@@ -23,28 +25,24 @@ interface Activity {
   fee: string;
   deliveryFee: string;
   items: string;
-  vendor: string;
   audit: string;
   cta: string;
-  isDriver?: boolean;
 }
 
 
-/** Documents du dossier adhésion livreur (design — bloc « documents fournis »). */
-const DRIVER_DOCS = [
-  { icon: 'badge', title: 'CIP / NPI Béninois', sub: 'N° 10928372 • ANIP Bénin', status: 'Vérifié', ok: true },
-  { icon: 'two_wheeler', title: 'Permis Catégorie A/A1', sub: 'Délivré par ANATT Bénin', status: 'Vérifié', ok: true },
-  { icon: 'receipt', title: 'Fiche & Immatriculation', sub: 'Moto Bajaj Boxer 150cc', status: 'Vérifié', ok: true },
-  { icon: 'home_pin', title: 'Attestation de résidence', sub: 'Chef Quartier Cadjehoun', status: 'En examen', ok: false },
+/** Couleurs du thème pour l'anneau « Ventes par Zone » (3 premières zones + « Autres »). */
+const ZONE_COLORS = [
+  { cls: 'bg-primary-container', css: 'var(--color-primary-container)' },
+  { cls: 'bg-secondary-container', css: 'var(--color-secondary-container)' },
+  { cls: 'bg-tertiary-container', css: 'var(--color-tertiary-container)' },
+  { cls: 'bg-border-default', css: 'var(--color-border-default)' },
 ];
+/** Seuil « stock faible » (même règle que le catalogue client : 1 à 5, 0 = rupture). */
+const LOW_STOCK = 5;
+/** GET /admin/orders est paginé par 20 sans per_page : on parcourt au plus 25 pages (500 commandes). */
+const MAX_ORDER_PAGES = 25;
 
-const BAR_HEIGHTS = ['60%', '45%', '75%', '65%', '90%', '55%', '80%'];
-const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
-const ZONES = [
-  { name: 'Akpakpa', pct: '45%', color: 'bg-primary-container' },
-  { name: 'Cadjehoun', pct: '35%', color: 'bg-secondary-container' },
-  { name: 'Fidjrossè', pct: '20%', color: 'bg-tertiary-container' },
-];
+const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 
 /**
  * AdminDashboardPage — « Tableau de bord global » — copie conforme statique du
@@ -57,7 +55,17 @@ export default function AdminDashboardPage() {
     : (s || '').includes('annul') || (s || '').includes('litige') ? 'bg-error-container text-error'
     : (s || '').includes('term') || (s || '').includes('livr') ? 'bg-success-light text-success'
     : 'bg-info-light text-info';
-  const activities: Activity[] = commandes.slice(0, 6).map((o: any) => ({
+  // Zones (id → nom) : les commandes ne portent que landmark.zone_id.
+  const [zoneNames, setZoneNames] = useState<Map<number, string>>(new Map());
+  useEffect(() => {
+    adminApi
+      .getZones()
+      .then((r: any) => setZoneNames(new Map(listOf(unwrap(r)).map((z: any) => [Number(z.id), String(z.nom ?? '—')]))))
+      .catch(() => setZoneNames(new Map()));
+  }, []);
+  // OrderResource enveloppe chaque commande dans { success, message, data } : on déballe.
+  const orders = commandes.map((r: any) => r?.data ?? r);
+  const activities: Activity[] = orders.slice(0, 6).map((o: any) => ({
     id: `CMD-${o.id}`,
     action: 'Commande',
     detail: `Commande #${o.id} — ${o.statut ?? '—'}`,
@@ -65,20 +73,124 @@ export default function AdminDashboardPage() {
     statusColor: SC(o.statut),
     date: (o.created_at ?? '').slice(0, 10),
     time: (o.created_at ?? '').slice(11, 16),
-    userName: o.user?.nom_complet ?? '—',
-    userRole: o.user?.role ?? 'client',
-    userPhone: o.user?.telephone ?? '—',
-    userZone: o.zone_depart?.nom ?? o.zone_arrivee?.nom ?? '—',
+    userName: o.client?.nom_complet ?? '—', // OrderResource n'expose pas encore le client
+    userRole: 'client',
+    userPhone: o.client?.telephone ?? '—',
+    userZone: zoneNames.get(Number(o.landmark?.zone_id)) ?? o.landmark?.nom ?? '—',
     amount: fmtFcfa(o.montant_total),
-    payment: o.transaction?.methode_paiement ?? '—',
+    payment: o.payment?.methode ?? '—',
     fee: fmtFcfa(o.commission_plateforme ?? o.commission),
     deliveryFee: fmtFcfa(o.frais_livraison),
-    items: (o.items ?? o.produits ?? []).map((i: any) => i.nom_produit ?? i.nom ?? '').join(', ') || '—',
-    vendor: (o.items ?? [])[0]?.vendeur?.nom_complet ?? '—',
+    items: (o.items ?? []).map((i: any) => `${i.nom ?? ''}${i.quantite ? ` ×${i.quantite}` : ''}`).join(', ') || '—',
     audit: `Commande n°${o.id}`,
     cta: 'Voir la commande',
   }));
-  useState(() => { adminApi.getDashboard().then((r: any) => setDash(unwrap(r))).catch(() => setDash(null)); return null; });
+  useEffect(() => {
+    adminApi.getDashboard().then((r: any) => setDash(unwrap(r))).catch(() => setDash(null));
+  }, []);
+  // KPI réels (AdminDashboardController : ca, commandes, utilisateurs_actifs, par_statut)
+  const parStatut: Record<string, number> = dash?.par_statut ?? {};
+  const nbLivrees = Number(parStatut.livre ?? 0);
+  const nbNonAnnulees = Number(dash?.commandes ?? 0) - Number(parStatut.annule ?? 0);
+  const tauxLivraison = dash && nbNonAnnulees > 0 ? `${((nbLivrees / nbNonAnnulees) * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %` : '—';
+
+  // « Croissance des ventes » + « Ventes par Zone » : calculés depuis les vraies commandes de la période
+  const [range, setRange] = useState<7 | 30>(7);
+  const [periodOrders, setPeriodOrders] = useState<any[] | null>(null);
+  const [capped, setCapped] = useState(false);
+  const [chartErr, setChartErr] = useState<string | null>(null);
+  const since = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - (range - 1));
+    return d;
+  }, [range]);
+  useEffect(() => {
+    let alive = true;
+    setPeriodOrders(null);
+    setChartErr(null);
+    setCapped(false);
+    (async () => {
+      const acc: any[] = [];
+      for (let page = 1; page <= MAX_ORDER_PAGES; page++) {
+        const res: any = await adminApi.getOrders({ page });
+        const rows = listOf(res).map((r: any) => r?.data ?? r);
+        acc.push(...rows);
+        const oldest = rows[rows.length - 1]?.created_at;
+        if (page >= Number(res?.meta?.last_page ?? 1) || !oldest || new Date(oldest) < since) return acc;
+        if (page === MAX_ORDER_PAGES && alive) setCapped(true);
+      }
+      return acc;
+    })()
+      .then((acc) => alive && setPeriodOrders(acc.filter((o) => o?.created_at && new Date(o.created_at) >= since)))
+      .catch((e) => alive && setChartErr(formatApiError(extractApiError(e))));
+    return () => {
+      alive = false;
+    };
+  }, [since]);
+  const series = useMemo(() => {
+    if (!periodOrders) return null;
+    const totals = new Map<string, number>();
+    periodOrders
+      .filter((o) => o.statut !== 'annule')
+      .forEach((o) => {
+        const k = dayKey(new Date(o.created_at));
+        totals.set(k, (totals.get(k) ?? 0) + Number(o.montant_total ?? 0));
+      });
+    return Array.from({ length: range }, (_, i) => {
+      const d = new Date(since);
+      d.setDate(since.getDate() + i);
+      const total = totals.get(dayKey(d)) ?? 0;
+      const long = d.toLocaleDateString('fr-FR', { weekday: 'long' });
+      return {
+        key: dayKey(d),
+        label: range === 7 ? long.charAt(0).toUpperCase() + long.slice(1) : i % 5 === 0 || i === range - 1 ? String(d.getDate()) : '',
+        title: `${d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' })} : ${fmtFcfa(total)}`,
+        total,
+      };
+    });
+  }, [periodOrders, range, since]);
+  const maxDay = Math.max(0, ...(series ?? []).map((d) => d.total));
+  const zoneStats = useMemo(() => {
+    if (!periodOrders) return null;
+    const counts = new Map<string, number>();
+    periodOrders.forEach((o) => {
+      const nom = zoneNames.get(Number(o.landmark?.zone_id)) ?? (o.landmark?.zone_id ? `Zone #${o.landmark.zone_id}` : 'Sans zone');
+      counts.set(nom, (counts.get(nom) ?? 0) + 1);
+    });
+    const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    const top = sorted.slice(0, 3).map(([nom, n]) => ({ nom, n }));
+    const autres = sorted.slice(3).reduce((sum, [, n]) => sum + n, 0);
+    return autres > 0 ? [...top, { nom: 'Autres', n: autres }] : top;
+  }, [periodOrders, zoneNames]);
+  const totalPeriode = periodOrders?.length ?? 0;
+  const donut = (() => {
+    if (!zoneStats || totalPeriode === 0) return 'var(--color-border-default)';
+    let acc = 0;
+    const parts = zoneStats.map((z, i) => {
+      const from = (acc / totalPeriode) * 360;
+      acc += z.n;
+      return `${ZONE_COLORS[i].css} ${from}deg ${(acc / totalPeriode) * 360}deg`;
+    });
+    return `conic-gradient(${parts.join(', ')})`;
+  })();
+
+  // « Alertes Système » : vrais produits en stock faible (GET /admin/products) ; plus d'alertes inventées
+  const [lowStock, setLowStock] = useState<{ id: number; nom: string; stock: number }[] | null>(null);
+  const [lowStockErr, setLowStockErr] = useState<string | null>(null);
+  useEffect(() => {
+    adminApi
+      .getProducts({ per_page: 100 })
+      .then((r: any) =>
+        setLowStock(
+          listOf(unwrap(r))
+            .filter((p: any) => Number(p.stock) <= LOW_STOCK)
+            .sort((a: any, b: any) => Number(a.stock) - Number(b.stock))
+            .map((p: any) => ({ id: Number(p.id), nom: String(p.nom), stock: Number(p.stock) })),
+        ),
+      )
+      .catch((e) => setLowStockErr(formatApiError(extractApiError(e))));
+  }, []);
   const [selected, setSelected] = useState<Activity | null>(null);
 
   return (
@@ -100,10 +212,10 @@ export default function AdminDashboardPage() {
             <span className="p-2 bg-primary-light text-primary rounded-lg material-symbols-outlined">payments</span>
           </div>
           <div className="space-y-xs">
-            <h2 className="font-h1 text-h1 text-on-surface">{dash?.gmv != null ? fmtFcfa(dash.gmv) : '—'}</h2>
-            <div className="flex items-center gap-1 text-success">
-              <MIcon name="trending_up" className="text-sm" />
-              <span className="font-secondary text-label font-bold">+12% vs mois dernier</span>
+            <h2 className="font-h1 text-h1 text-on-surface">{dash?.ca != null ? fmtFcfa(dash.ca) : '—'}</h2>
+            <div className="flex items-center gap-1 text-text-secondary">
+              <MIcon name="payments" className="text-sm" />
+              <span className="font-secondary text-label font-bold">Paiements réussis</span>
             </div>
           </div>
         </div>
@@ -118,10 +230,10 @@ export default function AdminDashboardPage() {
             </span>
           </div>
           <div className="space-y-xs">
-            <h2 className="font-h1 text-h1 text-on-surface">{String(dash?.commandes ?? dash?.total_commandes ?? '—')}</h2>
-            <div className="flex items-center gap-1 text-success">
-              <MIcon name="trending_up" className="text-sm" />
-              <span className="font-secondary text-label font-bold">+5.4%</span>
+            <h2 className="font-h1 text-h1 text-on-surface">{String(dash?.commandes ?? '—')}</h2>
+            <div className="flex items-center gap-1 text-text-secondary">
+              <MIcon name="schedule" className="text-sm" />
+              <span className="font-secondary text-label font-bold">{dash ? `${Number(parStatut.en_attente ?? 0)} en attente` : '—'}</span>
             </div>
           </div>
         </div>
@@ -129,17 +241,17 @@ export default function AdminDashboardPage() {
         <div className="stat-card-gradient p-lg rounded-lg border border-border-default hover:shadow-lg transition-all duration-300">
           <div className="flex justify-between items-start mb-sm">
             <span className="font-secondary text-label text-text-secondary uppercase tracking-wider">
-              Nouveaux utilisateurs
+              Utilisateurs actifs
             </span>
             <span className="p-2 bg-tertiary-container/20 text-tertiary rounded-lg material-symbols-outlined">
               person_add
             </span>
           </div>
           <div className="space-y-xs">
-            <h2 className="font-h1 text-h1 text-on-surface">{String(dash?.nouveaux_utilisateurs ?? dash?.utilisateurs ?? '—')}</h2>
+            <h2 className="font-h1 text-h1 text-on-surface">{String(dash?.utilisateurs_actifs ?? '—')}</h2>
             <div className="flex items-center gap-1">
               <span className="px-2 py-0.5 bg-success-light text-success-dark rounded-full font-secondary text-micro font-bold">
-                +8% ce mois
+                Comptes au statut actif
               </span>
             </div>
           </div>
@@ -155,10 +267,10 @@ export default function AdminDashboardPage() {
             </span>
           </div>
           <div className="space-y-xs">
-            <h2 className="font-h1 text-h1 text-on-surface">{String(dash?.taux_livraison ?? dash?.taux_succes ?? '—')}</h2>
+            <h2 className="font-h1 text-h1 text-on-surface">{tauxLivraison}</h2>
             <div className="flex items-center gap-1 text-success">
               <MIcon name="check_circle" className="text-sm" />
-              <span className="font-secondary text-label font-bold">Excellent</span>
+              <span className="font-secondary text-label font-bold">{dash ? `${nbLivrees} livrées sur ${Math.max(0, nbNonAnnulees)}` : '—'}</span>
             </div>
           </div>
         </div>
@@ -171,30 +283,38 @@ export default function AdminDashboardPage() {
           <div className="flex justify-between items-center mb-xl">
             <div>
               <h3 className="font-h2 text-h2 text-on-surface">Croissance des ventes</h3>
-              <p className="font-secondary text-label text-text-secondary">Performances journalières du réseau</p>
+              <p className="font-secondary text-label text-text-secondary">
+                Performances journalières du réseau (commandes non annulées){capped ? ' — calculé sur les 500 dernières commandes' : ''}
+              </p>
             </div>
-            <select className="bg-bg-app border-none text-label rounded-lg px-md py-sm font-secondary">
-              <option>7 derniers jours</option>
-              <option>30 derniers jours</option>
+            <select
+              value={range}
+              onChange={(e) => setRange(Number(e.target.value) === 30 ? 30 : 7)}
+              className="bg-bg-app border-none text-label rounded-lg px-md py-sm font-secondary"
+            >
+              <option value={7}>7 derniers jours</option>
+              <option value={30}>30 derniers jours</option>
             </select>
           </div>
           <div className="h-[280px] w-full flex items-end justify-between gap-2 px-4 relative overflow-hidden">
-            <div className="absolute inset-x-0 bottom-0 top-0 pointer-events-none opacity-20">
-              <svg className="w-full h-full stroke-primary fill-transparent stroke-[0.5]" preserveAspectRatio="none" viewBox="0 0 100 100">
-                <path d="M0,80 Q10,75 20,60 T40,65 T60,40 T80,30 T100,10" vectorEffect="non-scaling-stroke" />
-              </svg>
-            </div>
-            {BAR_HEIGHTS.map((h, i) => (
-              <div
-                key={DAYS[i]}
-                className="w-full bg-primary-light h-full rounded-t-lg transition-all hover:bg-primary"
-                style={{ height: h }}
-              />
-            ))}
+            {chartErr ? (
+              <p className="m-auto max-w-[420px] text-center font-secondary text-label text-error">Ventes indisponibles : {chartErr}</p>
+            ) : !series ? (
+              <p className="m-auto font-secondary text-label text-text-secondary">Chargement des ventes…</p>
+            ) : (
+              series.map((d) => (
+                <div
+                  key={d.key}
+                  title={d.title}
+                  className="w-full bg-primary-light h-full rounded-t-lg transition-all hover:bg-primary"
+                  style={{ height: maxDay > 0 ? `${Math.max(2, (d.total / maxDay) * 100)}%` : '2%' }}
+                />
+              ))
+            )}
           </div>
           <div className="flex justify-between mt-sm px-4 font-secondary text-micro text-text-tertiary">
-            {DAYS.map((d) => (
-              <span key={d}>{d}</span>
+            {(series ?? []).map((d) => (
+              <span key={d.key}>{d.label}</span>
             ))}
           </div>
         </div>
@@ -203,23 +323,26 @@ export default function AdminDashboardPage() {
         <div className="bg-bg-card p-lg rounded-lg border border-border-default">
           <h3 className="font-h2 text-h2 text-on-surface mb-xl">Ventes par Zone</h3>
           <div className="relative h-[220px] flex items-center justify-center">
-            <div className="w-40 h-40 rounded-full border-[12px] border-primary-container relative flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-[12px] border-secondary-container border-l-transparent border-b-transparent -rotate-45" />
-              <div className="absolute inset-0 rounded-full border-[12px] border-tertiary-container border-t-transparent border-r-transparent border-b-transparent rotate-90" />
-              <div className="text-center">
+            <div className="w-40 h-40 rounded-full relative flex items-center justify-center" style={{ background: donut }}>
+              <div className="absolute inset-[12px] rounded-full bg-bg-card" />
+              <div className="relative text-center">
                 <span className="block font-h3 text-h3 text-on-surface">Total</span>
-                <span className="font-price text-price text-primary">450</span>
+                <span className="font-price text-price text-primary">{periodOrders ? totalPeriode : '—'}</span>
               </div>
             </div>
           </div>
           <div className="mt-lg space-y-sm">
-            {ZONES.map((z) => (
-              <div key={z.name} className="flex items-center justify-between">
+            {chartErr && <p className="font-secondary text-label text-error">Données indisponibles.</p>}
+            {zoneStats && zoneStats.length === 0 && (
+              <p className="font-secondary text-label text-text-secondary">Aucune commande sur la période.</p>
+            )}
+            {(zoneStats ?? []).map((z, i) => (
+              <div key={z.nom} className="flex items-center justify-between">
                 <div className="flex items-center gap-sm">
-                  <span className={`w-3 h-3 rounded-full ${z.color}`} />
-                  <span className="font-secondary text-label">{z.name}</span>
+                  <span className={`w-3 h-3 rounded-full ${ZONE_COLORS[i].cls}`} />
+                  <span className="font-secondary text-label">{z.nom}</span>
                 </div>
-                <span className="font-secondary text-label font-bold">{z.pct}</span>
+                <span className="font-secondary text-label font-bold">{Math.round((z.n / Math.max(1, totalPeriode)) * 100)} %</span>
               </div>
             ))}
           </div>
@@ -281,30 +404,30 @@ export default function AdminDashboardPage() {
               <h4 className="font-h3 text-h3 font-bold">Alertes Système</h4>
             </div>
             <ul className="space-y-md">
-              <li className="flex flex-col gap-1 border-b border-border-default pb-md last:border-0 last:pb-0">
-                <span className="font-secondary text-label font-bold text-on-surface">Zones Saturées</span>
-                <p className="font-secondary text-secondary text-micro">
-                  Fidjrossè Calvaire - Forte demande, peu de livreurs disponibles.
-                </p>
-                <span className="mt-1 text-error text-micro font-bold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-error animate-pulse" /> Urgent
-                </span>
-              </li>
-              <li className="flex flex-col gap-1 border-b border-border-default pb-md last:border-0 last:pb-0">
-                <span className="font-secondary text-label font-bold text-on-surface">Stocks Faibles</span>
-                <p className="font-secondary text-secondary text-micro">
-                  Gari Sohoui (Vendeur #042) - Plus que 3 sacs disponibles.
-                </p>
-                <button type="button" className="mt-2 text-primary font-bold text-micro text-left hover:underline cursor-pointer">
-                  Notifier le vendeur
-                </button>
-              </li>
-              <li className="flex flex-col gap-1 border-b border-border-default pb-md last:border-0 last:pb-0">
-                <span className="font-secondary text-label font-bold text-on-surface">Délai Livraison</span>
-                <p className="font-secondary text-secondary text-micro">
-                  Augmentation de 15% du temps moyen à Akpakpa (Travaux routiers).
-                </p>
-              </li>
+              {lowStockErr ? (
+                <li className="font-secondary text-micro text-error">Stocks indisponibles : {lowStockErr}</li>
+              ) : lowStock === null ? (
+                <li className="font-secondary text-micro text-text-secondary">Chargement…</li>
+              ) : lowStock.length === 0 ? (
+                <li className="font-secondary text-micro text-text-secondary">Aucune alerte pour le moment.</li>
+              ) : (
+                <li className="flex flex-col gap-1 border-b border-border-default pb-md last:border-0 last:pb-0">
+                  <span className="font-secondary text-label font-bold text-on-surface">
+                    Stocks Faibles ({lowStock.length})
+                  </span>
+                  {lowStock.slice(0, 4).map((p) => (
+                    <p key={p.id} className="font-secondary text-secondary text-micro">
+                      {p.nom} — {p.stock <= 0 ? 'en rupture' : `plus que ${p.stock} en stock`}
+                    </p>
+                  ))}
+                  {lowStock.length > 4 && (
+                    <p className="font-secondary text-secondary text-micro">+ {lowStock.length - 4} autre(s)</p>
+                  )}
+                  <Link to="/admin/catalogue" className="mt-2 text-primary font-bold text-micro text-left hover:underline">
+                    Gérer le catalogue
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
 
@@ -437,64 +560,8 @@ export default function AdminDashboardPage() {
                 </span>
                 <div className="bg-white p-3 rounded-lg border border-border-default">
                   <p className="text-label text-on-surface font-medium leading-relaxed">{selected.items}</p>
-                  <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-border-default text-micro text-text-secondary">
-                    <MIcon name="storefront" className="text-sm text-secondary" />
-                    <span className="font-bold text-on-surface">Vendeur Dantokpa :</span>
-                    <span>{selected.vendor}</span>
-                  </div>
                 </div>
               </div>
-
-              {/* Documents livreur (dossier d'adhésion) */}
-              {selected.isDriver && (
-                <div className="space-y-2 pt-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
-                      <MIcon name="folder_shared" className="text-sm" />
-                      Documents fournis par le livreur (Dossier d'adhésion)
-                    </span>
-                    <span className="text-micro font-bold text-success bg-success-light px-2 py-0.5 rounded border border-success/20 flex items-center gap-1">
-                      <MIcon name="verified" className="text-sm" />
-                      3/4 Validés
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-label">
-                    {DRIVER_DOCS.map((d) => (
-                      <div
-                        key={d.title}
-                        className="p-2.5 rounded-lg border border-border-default bg-bg-secondary flex items-center justify-between gap-2"
-                      >
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          <MIcon
-                            name={d.icon}
-                            className={`${d.ok ? 'text-primary bg-primary-light/30' : 'text-secondary bg-amber-light'} p-1.5 rounded`}
-                          />
-                          <div className="truncate">
-                            <p className="text-label font-bold text-on-surface truncate">{d.title}</p>
-                            <p className="text-micro text-text-secondary truncate">{d.sub}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <span
-                            className={`px-2 py-0.5 font-bold rounded-full text-micro ${
-                              d.ok ? 'bg-success-light text-success' : 'bg-amber-light text-amber-text'
-                            }`}
-                          >
-                            {d.status}
-                          </span>
-                          <button
-                            type="button"
-                            className="p-1 text-text-secondary hover:text-primary hover:bg-white rounded transition-colors cursor-pointer"
-                            title="Voir le document"
-                          >
-                            <MIcon name="visibility" className="text-base" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Journal d'audit */}
               <div className="space-y-1 pt-1">

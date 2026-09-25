@@ -71,7 +71,7 @@ export function homeForRole(role: string | null): '/admin' | '/manager' | '/' {
 
 /**
  * Rôles autorisés pour une page, calqués sur les droits du backend (routes/api.php + RoleGuard :
- * super_admin passe partout). null = toute personne connectée (ex. /preview, adresse inconnue → 404).
+ * super_admin passe partout). null = toute personne connectée (ex. adresse inconnue → page 404).
  */
 export function pageRoles(pathname: string): { roles: AppRole[]; label: string } | null {
   const p = normPath(pathname);
