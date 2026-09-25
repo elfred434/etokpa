@@ -22,8 +22,8 @@ export default function NegotiationModal({ isOpen, onClose }: NegotiationModalPr
     const product: Product = {
       id: neg.productId,
       nom: neg.productName,
-      origine: 'Marché Dantokpa',
-      quantite: 'unité',
+      origine: neg.vendorName ?? '',
+      quantite: '',
       prix: neg.proposedPrice,
       prixMinimum: neg.minPrice,
       categorie: 'vegetable',

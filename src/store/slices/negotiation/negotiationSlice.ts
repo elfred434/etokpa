@@ -53,25 +53,18 @@ const negotiationSlice = createSlice({
     ) {
       const { productId, productName, productImage, vendorName, originalPrice, proposedPrice, minPrice } = action.payload;
 
-      let status: NegotiationStatus = 'pending';
-      let counterPrice: number | undefined = undefined;
-
-      if (proposedPrice >= minPrice) {
-        status = 'accepted';
-      } else if (proposedPrice >= minPrice * 0.85) {
-        status = 'counter_offer';
-        counterPrice = Math.round((minPrice + originalPrice) / 2);
-      } else {
-        status = 'rejected';
-        counterPrice = minPrice;
-      }
+      // L'offre part à l'administrateur (POST /budget-proposals, CDC §4.1 : il accepte ou refuse) : elle
+      // reste « en attente » jusqu'à sa réponse réelle (GET /budget-proposals + temps réel
+      // budget.responded). Plus de réponse inventée côté front (acceptée / contre-offre / refusée).
+      const status: NegotiationStatus = 'pending';
+      const counterPrice: number | undefined = undefined;
 
       const item: NegotiationItem = {
         id: `neg_${Date.now()}`,
         productId,
         productName,
         productImage,
-        vendorName: vendorName || 'Marché Dantokpa',
+        vendorName: vendorName ?? '',
         originalPrice,
         proposedPrice,
         counterPrice,

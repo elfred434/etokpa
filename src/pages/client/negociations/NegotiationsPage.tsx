@@ -12,6 +12,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { negotiationApi } from '../../../services/api';
 import { absImageUrl } from '../../../utils/imageUrl';
+import { alertApiError } from '../../../utils/apiError';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import type { Product } from '../../../types/models';
 
@@ -40,10 +41,10 @@ export default function NegotiationsPage() {
         if (Array.isArray(proposalsList)) {
           const mapped: NegotiationItem[] = proposalsList.map((p: any) => ({
             id: String(p.id),
-            productId: String(p.product_id || p.product?.id || '1'),
-            productName: p.product?.nom || 'Produit du marché',
+            productId: String(p.product_id ?? p.product?.id ?? ''),
+            productName: p.product?.nom || `Produit #${p.product_id ?? p.product?.id ?? '?'}`,
             productImage: absImageUrl(p.product?.image_url) ?? undefined,
-            vendorName: 'Marché Dantokpa',
+            vendorName: '', // l'API ne rattache aucun produit à un marché : pas de provenance inventée
             originalPrice: Number(p.product?.prix) || Number(p.prix_propose) || 0,
             proposedPrice: Number(p.prix_propose),
             minPrice: Number(p.product?.prix_minimum) || Number(p.prix_propose),
@@ -60,7 +61,7 @@ export default function NegotiationsPage() {
         }
       })
       .catch((err) => {
-        console.warn('API Proposals load error:', err);
+        alertApiError(err, 'negotiations-load');
       })
       .finally(() => setIsApiLoading(false));
   }, [isAuthenticated, dispatch]);
@@ -106,8 +107,8 @@ export default function NegotiationsPage() {
     const product: Product = {
       id: neg.productId,
       nom: neg.productName,
-      origine: neg.vendorName || 'Marché Dantokpa',
-      quantite: 'unité',
+      origine: neg.vendorName ?? '',
+      quantite: '',
       prix: neg.proposedPrice,
       prixMinimum: neg.minPrice,
       categorie: 'vegetable',
@@ -327,10 +328,12 @@ export default function NegotiationsPage() {
                       <div className="flex justify-between items-start mb-xs">
                         <div>
                           <h3 className="font-h3 text-h3 text-on-surface truncate font-bold">{neg.productName}</h3>
-                          <p className="font-secondary text-secondary">
-                            {isFr ? 'Provenance :' : 'Source:'}{' '}
-                            <span className="font-medium text-on-surface">{neg.vendorName || 'Marché Dantokpa'}</span>
-                          </p>
+                          {neg.vendorName && (
+                            <p className="font-secondary text-secondary">
+                              {isFr ? 'Provenance :' : 'Source:'}{' '}
+                              <span className="font-medium text-on-surface">{neg.vendorName}</span>
+                            </p>
+                          )}
                         </div>
 
                         {/* Status Badges */}
