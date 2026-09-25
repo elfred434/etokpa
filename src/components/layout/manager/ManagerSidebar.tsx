@@ -1,11 +1,12 @@
 import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
+import { currentUserName, currentUserZone, initialsOf } from '../../../routes/authGuard';
 
 type Item = { label: string; path: string; icon: string; badge?: string };
 
 const ITEMS: Item[] = [
   { label: 'Tableau de bord', path: '/manager', icon: 'dashboard' },
-  { label: 'Commandes', path: '/manager/commandes', icon: 'shopping_cart', badge: '24' },
+  { label: 'Commandes', path: '/manager/commandes', icon: 'shopping_cart' },
   { label: 'Mon équipe', path: '/manager/equipe', icon: 'group' },
   { label: 'Statistiques', path: '/manager/statistiques', icon: 'trending_up' },
   { label: 'Litiges & Réclamations', path: '/manager/litiges', icon: 'gavel' },
@@ -30,12 +31,12 @@ export default function ManagerSidebar({ currentPath }: Props) {
         <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2">
           <MIcon name="location_on" className="text-primary-tint text-[18px]" />
           <div className="flex-1">
-            <p className="text-label font-semibold text-white">Zone Akpakpa</p>
-            <p className="text-label text-white/80">Littoral Cotonou</p>
+            {/* Vraie zone du manager connecté (UserResource.profil.zone) — plus de « Zone Akpakpa » inventée */}
+            <p className="text-label font-semibold text-white">
+              {currentUserZone() ? `Zone ${currentUserZone()}` : 'Zone non attribuée'}
+            </p>
+            <p className="text-label text-white/80">Votre zone de gestion</p>
           </div>
-          <span className="rounded-full bg-success-container px-2 py-0.5 text-[11px] font-bold text-on-surface">
-            Active
-          </span>
         </div>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
@@ -62,12 +63,21 @@ export default function ManagerSidebar({ currentPath }: Props) {
         })}
       </nav>
       <div className="border-t border-white/10 p-lg">
+        {/* Bascule vers l'espace client (le manager y a accès) */}
+        <Link
+          to="/"
+          className="mb-3 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-body text-white transition hover:bg-white/10"
+        >
+          <MIcon name="storefront" className="text-[18px]" />
+          <span className="flex-1">Espace client</span>
+        </Link>
+        {/* Utilisateur réellement connecté (plus de « Serge Migan » inventé) */}
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-label font-bold text-white">
-            SM
+            {initialsOf(currentUserName(), 'MG')}
           </div>
           <div className="flex-1">
-            <p className="text-label font-semibold text-white">Serge Migan</p>
+            <p className="text-label font-semibold text-white">{currentUserName() ?? 'Manager'}</p>
             <p className="text-label text-white/80">Manager de zone</p>
           </div>
         </div>

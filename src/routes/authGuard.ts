@@ -50,7 +50,13 @@ export function hasSession(): boolean {
   return !!localStorage.getItem('tokpa_token');
 }
 
-type StoredUser = { nom_complet?: string; prenom?: string; nom?: string; role?: string | { nom?: string } | null };
+type StoredUser = {
+  nom_complet?: string;
+  prenom?: string;
+  nom?: string;
+  role?: string | { nom?: string } | null;
+  profil?: { zone?: { nom?: string } | null } | null;
+};
 function storedUser(): StoredUser | null {
   try {
     const raw = localStorage.getItem('tokpa_user');
@@ -72,6 +78,24 @@ export function currentUserName(): string | null {
   const u = storedUser();
   const nom = u?.nom_complet || [u?.prenom, u?.nom].filter(Boolean).join(' ');
   return nom || null;
+}
+
+/** Zone du manager / livreur connecté (UserResource.profil.zone, chargée à la 2FA), sinon null. */
+export function currentUserZone(): string | null {
+  return storedUser()?.profil?.zone?.nom || null;
+}
+
+/** Initiales d'un nom (« Awa Dossou » → « AD »). */
+export function initialsOf(nom: string | null, fallback = '?'): string {
+  const parts = (nom ?? '').trim().split(/\s+/).filter(Boolean);
+  return parts.length ? parts.slice(0, 2).map((p) => p[0]!.toUpperCase()).join('') : fallback;
+}
+
+/** Espace de travail d'un rôle (lien « Mon espace … » de la barre client), null pour un client. */
+export function staffSpace(role: string | null): { to: '/admin' | '/manager'; icon: string; label: string } | null {
+  if (role === 'admin' || role === 'super_admin') return { to: '/admin', icon: 'admin_panel_settings', label: 'Mon espace admin' };
+  if (role === 'manager') return { to: '/manager', icon: 'supervisor_account', label: 'Mon espace manager' };
+  return null;
 }
 
 /** Espace de chaque rôle : arrivée après connexion (sans page demandée) et renvoi si accès refusé. */

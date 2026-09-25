@@ -5,6 +5,7 @@ import MIcon from '../../shared/MIcon';
 import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
 import { useLanguage } from '../../../context/LanguageContext';
+import { currentRole, staffSpace } from '../../../routes/authGuard';
 
 interface ClientNavbarProps {
   search?: string;
@@ -130,6 +131,15 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
             <MIcon name="shopping_cart" />
             {cartCount > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />}
           </Link>
+          {/* Bascule vers l'espace de travail (admin / manager) — invisible pour un client */}
+          {(() => {
+            const space = staffSpace(currentRole());
+            return space ? (
+              <Link to={space.to} className="scale-interaction" aria-label={space.label} title={space.label}>
+                <MIcon name={space.icon} />
+              </Link>
+            ) : null;
+          })()}
           <Link
             to="/profil"
             className="scale-interaction"
