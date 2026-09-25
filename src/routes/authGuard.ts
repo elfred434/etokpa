@@ -20,8 +20,9 @@ const ROLE_TOAST_ID = 'role-denied';
 /** Page demandée avant la connexion, conservée pour l'onglet pendant la 2FA (et un détour par l'inscription). */
 const REDIRECT_KEY = 'tokpa_redirect';
 
-/** Rôles du backend (App\Models\Role). super_admin passe toutes les gardes (Utilisateur::hasRole). */
+/** Rôles du backend (App\Models\Role). */
 export type AppRole = 'super_admin' | 'admin' | 'manager' | 'livreur' | 'client';
+const ALL_ROLES: AppRole[] = ['client', 'admin', 'super_admin', 'manager', 'livreur'];
 
 /** Pages de l'espace client (routes/router.tsx) — données servies par le groupe `role:client` du backend. */
 const CLIENT_PAGES = [
@@ -49,36 +50,53 @@ export function hasSession(): boolean {
   return !!localStorage.getItem('tokpa_token');
 }
 
-/** Rôle de l'utilisateur connecté (tokpa_user.role = chaîne ou objet { nom } selon la réponse 2FA). */
-export function currentRole(): string | null {
+type StoredUser = { nom_complet?: string; prenom?: string; nom?: string; role?: string | { nom?: string } | null };
+function storedUser(): StoredUser | null {
   try {
     const raw = localStorage.getItem('tokpa_user');
-    if (!raw) return null;
-    const u = JSON.parse(raw) as { role?: string | { nom?: string } | null };
-    const role = typeof u.role === 'string' ? u.role : u.role?.nom;
-    return role || null;
+    return raw ? (JSON.parse(raw) as StoredUser) : null;
   } catch {
     return null;
   }
+}
+
+/** Rôle de l'utilisateur connecté (tokpa_user.role = chaîne ou objet { nom } selon la réponse 2FA). */
+export function currentRole(): string | null {
+  const u = storedUser();
+  const role = typeof u?.role === 'string' ? u.role : u?.role?.nom;
+  return role || null;
+}
+
+/** Nom affichable de l'utilisateur connecté (barres admin / manager / livreur), sinon null. */
+export function currentUserName(): string | null {
+  const u = storedUser();
+  const nom = u?.nom_complet || [u?.prenom, u?.nom].filter(Boolean).join(' ');
+  return nom || null;
 }
 
 /** Espace de chaque rôle : arrivée après connexion (sans page demandée) et renvoi si accès refusé. */
 export function homeForRole(role: string | null): '/admin' | '/manager' | '/' {
   if (role === 'admin' || role === 'super_admin') return '/admin';
   if (role === 'manager') return '/manager';
-  return '/'; // client, livreur (pas encore d'interface livreur), rôle inconnu
+  return '/'; // client, livreur (espace livreur en cours de création), rôle inconnu
 }
 
 /**
- * Rôles autorisés pour une page, calqués sur les droits du backend (routes/api.php + RoleGuard :
- * super_admin passe partout). null = toute personne connectée (ex. adresse inconnue → page 404).
+ * Rôles autorisés pour une page — décision utilisateur du 25/09 :
+ *  - client → espace client uniquement ;
+ *  - admin et super_admin → espace client + espace admin ;
+ *  - manager → espace client + espace manager ;
+ *  - livreur → espace client + espace livreur.
+ * ⚠️ Backend : les données de l'espace client (produits, panier, commandes, négociations, paiement,
+ * messagerie) sont en `role:client` → 403 pour les autres rôles tant qu'il n'ouvre pas ces routes (B-24).
+ * null = toute personne connectée (ex. adresse inconnue → page 404).
  */
 export function pageRoles(pathname: string): { roles: AppRole[]; label: string } | null {
   const p = normPath(pathname);
   if (under(p, '/admin')) return { roles: ['admin', 'super_admin'], label: 'aux administrateurs' };
-  if (under(p, '/manager')) return { roles: ['manager', 'super_admin'], label: 'aux managers' };
-  if (under(p, '/livreur')) return { roles: ['livreur', 'super_admin'], label: 'aux livreurs' };
-  if (CLIENT_PAGES.some((b) => under(p, b))) return { roles: ['client', 'super_admin'], label: 'aux clients' };
+  if (under(p, '/manager')) return { roles: ['manager'], label: 'aux managers' };
+  if (under(p, '/livreur')) return { roles: ['livreur'], label: 'aux livreurs' };
+  if (CLIENT_PAGES.some((b) => under(p, b))) return { roles: ALL_ROLES, label: 'aux utilisateurs connectés' };
   return null;
 }
 
