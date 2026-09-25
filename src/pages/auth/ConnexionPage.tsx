@@ -18,7 +18,7 @@ export default function ConnexionPage() {
   useEffect(() => {
     rememberRedirect(redirectTo);
   }, [redirectTo]);
-  const [email, setEmail] = useState('user@example.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
