@@ -6,7 +6,6 @@ import InscriptionPage from '../pages/auth/InscriptionPage';
 import Verification2faPage from '../pages/auth/Verification2faPage';
 import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
 import NotificationsPage from '../pages/client/notifications/NotificationsPage';
-import PreviewPage from '../pages/preview/PreviewPage';
 import HomePage from '../pages/client/accueil/HomePage';
 import CatalogPage from '../pages/client/catalogue/CatalogPage';
 import ProductPage from '../pages/client/fiche-produit/ProductPage';
@@ -145,7 +144,6 @@ const managerLitigesRoute = createRoute({ getParentRoute: () => rootRoute, path:
 const managerParametresRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager/parametres', component: ManagerParametresPage });
 const managerZonePrefsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager/parametres/zone', component: ManagerZonePrefsPage });
 // Route temporaire de review des composants (retirée à la fin du Sprint 1).
-const previewRoute = createRoute({ getParentRoute: () => rootRoute, path: '/preview', component: PreviewPage });
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -184,7 +182,6 @@ const routeTree = rootRoute.addChildren([
   managerLitigesRoute,
   managerParametresRoute,
   managerZonePrefsRoute,
-  previewRoute,
 ]);
 
 export const router = createRouter({ routeTree });
