@@ -42,8 +42,10 @@ interface ConfirmationPayload {
   zoneNom: string;
   landmarkNom: string;
   nbItems: number;
-  /** id du paiement renvoyé par POST /payments/init → relu par la confirmation (GET /payments/{id}). */
+  /** Données du paiement renvoyées par POST /payments/init → relues par la confirmation. */
   paymentId?: number;
+  paymentRef?: string;
+  paymentCurrency?: string;
 }
 
 /**
@@ -180,10 +182,15 @@ export default function CartPage() {
 
       // 2) POST /api/payments/init — FedaPay (sandbox si SDK absent)
       let paymentId: number | undefined;
+      let paymentRef: string | undefined;
+      let paymentCurrency = 'XOF';
       try {
         const paymentRes = await paymentsApi.initPayment({ order_id: orderId });
-        paymentId = Number(paymentRes?.payment?.id) || undefined;
-        const redirectUrl: string | undefined = paymentRes?.redirect_url;
+        const payment = paymentRes?.payment;
+        paymentId = Number(payment?.id) || undefined;
+        paymentRef = payment?.fedapay_ref ?? undefined;
+        paymentCurrency = paymentRes?.currency || 'XOF';
+        const redirectUrl: string | undefined = paymentRes?.redirect_url ?? undefined;
         if (redirectUrl) {
           const isRealFedaPay = /fedapay\.com/i.test(redirectUrl);
           if (isRealFedaPay) {
@@ -208,6 +215,8 @@ export default function CartPage() {
         landmarkNom,
         nbItems: count,
         paymentId,
+        paymentRef,
+        paymentCurrency,
       };
       navigate({ to: '/confirmation', state: payload as unknown as Record<string, unknown> });
     } catch (err: unknown) {

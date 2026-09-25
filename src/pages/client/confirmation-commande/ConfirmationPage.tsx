@@ -19,6 +19,8 @@ interface ConfirmationState {
   nbItems?: number;
   /** id du paiement (POST /payments/init) → statut réel via GET /payments/{id}. */
   paymentId?: number;
+  paymentRef?: string;
+  paymentCurrency?: string;
 }
 
 /** Message selon `Payment::statut` — « reussi » = texte exact de la maquette Stitch. */
@@ -41,6 +43,8 @@ export default function ConfirmationPage() {
   const landmarkNom = state?.landmarkNom ?? '—';
   const orderNumber = state?.orderId ? `#TOK-${state.orderId}` : null;
   const paymentId = state?.paymentId;
+  const paymentRef = state?.paymentRef;
+  const paymentCurrency = state?.paymentCurrency ?? 'XOF';
 
   // Statut réel du paiement — GET /api/payments/{id}. Relu toutes les 5 s tant qu'il est
   // « en_attente » (3 min max) et au retour sur l'onglet (le client revient de FedaPay).
@@ -134,10 +138,24 @@ export default function ConfirmationPage() {
             <div className="flex justify-between items-center">
               <span className="font-body text-text-secondary">{totalLabel}</span>
               <span className="font-price text-price text-primary-container font-bold">
-                {total.toLocaleString('fr-FR')} FCFA
+                {total.toLocaleString('fr-FR')} {paymentCurrency}
               </span>
             </div>
             <div className="h-[1px] bg-border-default w-full" />
+            {paymentRef && (
+              <div className="flex justify-between gap-md">
+                <span className="font-body text-text-secondary">Référence FedaPay</span>
+                <span className="font-body font-medium text-text-main text-right break-all">{paymentRef}</span>
+              </div>
+            )}
+            {payStatut && (
+              <div className="flex justify-between">
+                <span className="font-body text-text-secondary">Statut du paiement</span>
+                <span className={`font-body font-bold ${payStatut === 'reussi' ? 'text-success' : payStatut === 'echoue' ? 'text-error' : 'text-amber-text'}`}>
+                  {payStatut}
+                </span>
+              </div>
+            )}
             <div className="space-y-sm">
               <div className="flex justify-between">
                 <span className="font-body text-text-secondary">Zone de livraison</span>
