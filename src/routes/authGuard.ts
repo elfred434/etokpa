@@ -157,7 +157,9 @@ export function rememberRedirect(target: unknown): void {
 export function postLoginTarget(role: string | null): string {
   const saved = safeRedirect(sessionStorage.getItem(REDIRECT_KEY));
   sessionStorage.removeItem(REDIRECT_KEY);
-  if (saved && canAccess(saved.split(/[?#]/)[0], role)) return saved;
+  // Une ouverture directe de /connexion ne constitue pas une destination de retour.
+  // Après la 2FA, on doit toujours rejoindre l’espace du rôle, jamais rester sur /connexion.
+  if (saved && normPath(saved.split(/[?#]/)[0]) !== '/connexion' && canAccess(saved.split(/[?#]/)[0], role)) return saved;
   return homeForRole(role);
 }
 
@@ -177,7 +179,9 @@ export function guardRoute({
   if (isPublicPath(location.pathname)) return;
   if (!hasSession()) {
     if (!preload) toast.error('Veuillez vous connecter pour accéder à cette page.', { id: AUTH_TOAST_ID });
-    throw redirect({ to: '/connexion', search: { redirect: location.href }, replace: true });
+    const requestedLocation = new URL(location.href, window.location.origin);
+    const requestedUrl = `${requestedLocation.pathname}${requestedLocation.search}${requestedLocation.hash}`;
+    throw redirect({ to: '/connexion', search: { redirect: requestedUrl }, replace: true });
   }
   const role = currentRole();
   const rule = pageRoles(location.pathname);
@@ -196,7 +200,9 @@ export function redirectOnSessionExpired(router: AnyRouter): () => void {
     if (isPublicPath(router.state.location.pathname)) return;
     toast.error('Session expirée : veuillez vous reconnecter.', { id: AUTH_TOAST_ID });
     // retour à la même page après la reconnexion
-    void router.navigate({ to: '/connexion', search: { redirect: router.state.location.href }, replace: true });
+    const current = router.state.location;
+    const requestedUrl = `${current.pathname}${current.searchStr ?? ''}${current.hash ?? ''}`;
+    void router.navigate({ to: '/connexion', search: { redirect: requestedUrl }, replace: true });
   };
   window.addEventListener('tokpa:session-expired', onExpired);
   return () => window.removeEventListener('tokpa:session-expired', onExpired);
