@@ -92,17 +92,19 @@ export function initialsOf(nom: string | null, fallback = '?'): string {
 }
 
 /** Espace de travail d'un rôle (lien « Mon espace … » de la barre client), null pour un client. */
-export function staffSpace(role: string | null): { to: '/admin' | '/manager'; icon: string; label: string } | null {
+export function staffSpace(role: string | null): { to: '/admin' | '/manager' | '/livreur'; icon: string; label: string } | null {
   if (role === 'admin' || role === 'super_admin') return { to: '/admin', icon: 'admin_panel_settings', label: 'Mon espace admin' };
   if (role === 'manager') return { to: '/manager', icon: 'supervisor_account', label: 'Mon espace manager' };
+  if (role === 'livreur') return { to: '/livreur', icon: 'two_wheeler', label: 'Mon espace livreur' };
   return null;
 }
 
 /** Espace de chaque rôle : arrivée après connexion (sans page demandée) et renvoi si accès refusé. */
-export function homeForRole(role: string | null): '/admin' | '/manager' | '/' {
+export function homeForRole(role: string | null): '/admin' | '/manager' | '/livreur' | '/' {
   if (role === 'admin' || role === 'super_admin') return '/admin';
   if (role === 'manager') return '/manager';
-  return '/'; // client, livreur (espace livreur en cours de création), rôle inconnu
+  if (role === 'livreur') return '/livreur';
+  return '/'; // client, rôle inconnu
 }
 
 /**

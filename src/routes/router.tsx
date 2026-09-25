@@ -37,6 +37,11 @@ import ManagerStatsPage from '../pages/manager/ManagerStatsPage';
 import ManagerLitigesPage from '../pages/manager/ManagerLitigesPage';
 import ManagerParametresPage from '../pages/manager/ManagerParametresPage';
 import ManagerZonePrefsPage from '../pages/manager/ManagerZonePrefsPage';
+import LivreurDashboardPage from '../pages/livreur/dashboard/LivreurDashboardPage';
+import LivreurCoursePage from '../pages/livreur/course-active/LivreurCoursePage';
+import LivreurRecapPage from '../pages/livreur/recap-fin-course/LivreurRecapPage';
+import LivreurHistoryPage from '../pages/livreur/historique-livraisons/LivreurHistoryPage';
+import LivreurSettingsPage from '../pages/livreur/parametres/LivreurSettingsPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import SystemBridge from '../components/system/SystemBridge';
 
@@ -143,6 +148,17 @@ const managerStatsRoute = createRoute({ getParentRoute: () => rootRoute, path: '
 const managerLitigesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager/litiges', component: ManagerLitigesPage });
 const managerParametresRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager/parametres', component: ManagerParametresPage });
 const managerZonePrefsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager/parametres/zone', component: ManagerZonePrefsPage });
+
+// Espace livreur (rôle livreur uniquement — authGuard.ts). ?commande=<id> : course ciblée.
+const commandeSearch = (search: Record<string, unknown>): { commande?: number } => {
+  const n = Number(search.commande);
+  return { commande: Number.isInteger(n) && n > 0 ? n : undefined };
+};
+const livreurRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur', component: LivreurDashboardPage });
+const livreurCourseRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/course', component: LivreurCoursePage, validateSearch: commandeSearch });
+const livreurRecapRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/recapitulatif', component: LivreurRecapPage, validateSearch: commandeSearch });
+const livreurHistoriqueRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/historique', component: LivreurHistoryPage });
+const livreurParametresRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/parametres', component: LivreurSettingsPage });
 // Route temporaire de review des composants (retirée à la fin du Sprint 1).
 
 const routeTree = rootRoute.addChildren([
@@ -182,6 +198,11 @@ const routeTree = rootRoute.addChildren([
   managerLitigesRoute,
   managerParametresRoute,
   managerZonePrefsRoute,
+  livreurRoute,
+  livreurCourseRoute,
+  livreurRecapRoute,
+  livreurHistoriqueRoute,
+  livreurParametresRoute,
 ]);
 
 export const router = createRouter({ routeTree });
