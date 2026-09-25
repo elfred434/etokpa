@@ -8,7 +8,7 @@ import EmptyState from '../../../components/shared/EmptyState';
 import Pagination from '../../../components/shared/Pagination';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
-import { ordersApi } from '../../../services/api';
+import { ordersApi, paymentsApi } from '../../../services/api';
 import { isOwnOrder } from '../../../utils/ownOrder';
 import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
 
@@ -79,7 +79,9 @@ export default function OrdersListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('');
   const [lastPage, setLastPage] = useState(1);
+  const [paying, setPaying] = useState(false);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<ApiOrder | null>(null);
 
@@ -88,11 +90,11 @@ export default function OrdersListPage() {
     setLoading(true);
     setError(null);
     ordersApi
-      .getOrders(page)
+      .getOrders(page, statusFilter)
       .then((res) => {
         const raw = (res?.data ?? res ?? []) as Array<Record<string, unknown> & { data?: ApiOrder }>;
         const list: ApiOrder[] = (Array.isArray(raw) ? raw : []).map((o) => (o.data ?? o) as ApiOrder);
-        setOrders(list);
+        setOrders(statusFilter ? list.filter((o) => o.statut === statusFilter) : list);
         setLastPage(Number(res?.meta?.last_page ?? res?.last_page ?? 1));
         setTotal(Number(res?.meta?.total ?? res?.total ?? list.length));
       })
@@ -100,7 +102,20 @@ export default function OrdersListPage() {
         setError(alertApiError(err, 'orders-list'));
       })
       .finally(() => setLoading(false));
-  }, [isAuthenticated, page]);
+  }, [isAuthenticated, page, statusFilter]);
+
+  const handlePayer = async (order: ApiOrder) => {
+    if (paying) return;
+    setPaying(true);
+    try {
+      const result = await paymentsApi.initPayment({ order_id: order.id });
+      const payment = result?.data ?? result;
+      if (payment?.redirect_url) window.location.assign(payment.redirect_url);
+      else toast.success(isFr ? 'Paiement initialisé.' : 'Payment initialized.');
+    } catch (err) {
+      toast.error(formatApiError(extractApiError(err)));
+    } finally { setPaying(false); }
+  };
 
   const search = useSearch({ from: '/commandes' }) as unknown as { detail?: string };
 
@@ -177,6 +192,14 @@ export default function OrdersListPage() {
             <span className="text-micro text-text-secondary bg-white border border-border-default rounded-lg px-3 py-1.5">
               {total} {isFr ? 'commande(s)' : 'order(s)'}
             </span>
+          </div>
+
+          <div className="mb-lg flex flex-wrap items-center gap-2">
+            <label htmlFor="order-status" className="text-micro font-bold text-text-secondary">{isFr ? 'Filtrer par statut' : 'Filter by status'}</label>
+            <select id="order-status" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="rounded-lg border border-border-default bg-white px-3 py-2 text-label">
+              <option value="">{isFr ? 'Tous les statuts' : 'All statuses'}</option>
+              {Object.entries(STATUT_LABELS).map(([value, label]) => <option key={value} value={value}>{isFr ? label.fr : label.en}</option>)}
+            </select>
           </div>
 
           {error && (
@@ -437,6 +460,12 @@ export default function OrdersListPage() {
 
               {/* Actions modale */}
               <div className="flex gap-sm">
+                {!selected.payment && selected.statut !== 'annule' && (
+                  <button type="button" onClick={() => handlePayer(selected)} disabled={paying} className="btn btn-primary flex-1 disabled:opacity-60">
+                    <MIcon name={paying ? 'sync' : 'payments'} className={paying ? 'animate-spin' : undefined} />
+                    {isFr ? 'Payer' : 'Pay'}
+                  </button>
+                )}
                 <button type="button" onClick={() => handleSuivre(selected.id)} className="btn btn-primary flex-1">
                   <MIcon name="near_me" />
                   {isFr ? 'Suivre cette commande' : 'Track this order'}

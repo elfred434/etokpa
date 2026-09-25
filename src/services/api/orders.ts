@@ -12,8 +12,8 @@ export interface CreateOrderPayload {
 
 export const ordersApi = {
   // GET /api/orders -> liste des commandes du client
-  getOrders: async (page = 1) => {
-    const response = await apiClient.get('/orders', { params: { page } });
+  getOrders: async (page = 1, statut?: string) => {
+    const response = await apiClient.get('/orders', { params: { page, ...(statut ? { statut } : {}) } });
     return response.data;
   },
 
