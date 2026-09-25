@@ -1,6 +1,11 @@
-import { useDesignScript } from '../../utils/designRuntime';
-import DESIGN_SCRIPT from './_scripts/AdminLogsPage';
+import { useEffect, useState } from 'react';
+import { adminApi } from '../../services/api';
+import { listOf } from '../../services/api/unwrap';
+import { initials } from '../../services/api/useLiveRows';
+import { alertApiError } from '../../utils/apiError';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 const DESIGN_CSS = `
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
@@ -8,23 +13,343 @@ const DESIGN_CSS = `
         .scrollbar-hide::-webkit-scrollbar { display: none; }
     `;
 
+/** Couleurs des catégories — reprises des badges de la maquette. */
+const COULEUR: Record<string, string> = {
+  CATALOGUE: '#F97316',
+  CONFIG: '#F97316',
+  COMMANDE: '#10B981',
+  VALIDATION: '#10B981',
+  AUTH: '#3B82F6',
+  PAYMENT: '#3B82F6',
+  UTILISATEUR: '#EF4444',
+  SYSTEM: '#EF4444',
+};
+const TYPES: [string, string][] = [
+  ['', 'Tous les types'],
+  ['CATALOGUE', 'Catalogue'],
+  ['UTILISATEUR', 'Utilisateurs'],
+  ['SYSTEM', 'Système'],
+  ['PAYMENT', 'Paiements'],
+  ['COMMANDE', 'Commandes'],
+  ['VALIDATION', 'Propositions de budget'],
+  ['CONFIG', 'Zones & configuration'],
+  ['AUTH', 'Authentification'],
+];
+const NOMS: Record<string, string> = {
+  products: 'produit', categories: 'catégorie', bundles: 'pack', zones: 'zone', landmarks: 'point de repère', users: 'utilisateur',
+  orders: 'commande', 'budget-proposals': 'proposition de budget', cart: 'panier', profile: 'profil', notifications: 'notification',
+  conversations: 'conversation', payments: 'paiement', deliveries: 'livraison',
+};
+const EVENEMENTS: Record<string, string> = { OrderStatusChanged: 'Statut de commande modifié', DeliveryAssigned: 'Livraison assignée' };
+
+/** Catégorie d'une entrée (middleware d'audit : « VERBE api/chemin » ; événement : nom de classe). */
+function categorie(log: any): string {
+  const a = String(log?.action ?? '');
+  if (!a.includes(' ')) return a === 'OrderStatusChanged' || a === 'DeliveryAssigned' ? 'COMMANDE' : 'SYSTEM';
+  if (/admin\/(products|categories|bundles)/.test(a)) return 'CATALOGUE';
+  if (/admin\/users/.test(a)) return 'UTILISATEUR';
+  if (/budget-proposals/.test(a)) return 'VALIDATION';
+  if (/payments|webhooks/.test(a)) return 'PAYMENT';
+  if (/admin\/(zones|landmarks)/.test(a)) return 'CONFIG';
+  if (/auth\/|logout|profile/.test(a)) return 'AUTH';
+  if (/orders|deliveries|cart|livreur/.test(a)) return 'COMMANDE';
+  return 'SYSTEM';
+}
+
+/** Titre lisible : « Modification · utilisateur #3 », « Connexion », « Statut de commande modifié »… */
+function titre(log: any): string {
+  const a = String(log?.action ?? '');
+  if (!a.includes(' ')) return EVENEMENTS[a] ?? a;
+  const [verbe, chemin] = a.split(' ');
+  const seg = chemin.replace(/^api\//, '').split('/');
+  const ids = seg.filter((x) => /^\d+$/.test(x));
+  const dernier = seg[seg.length - 1];
+  if (/auth\/login/.test(chemin)) return 'Connexion (étape mot de passe)';
+  if (/verify-2fa/.test(chemin)) return 'Vérification 2FA';
+  if (/logout/.test(chemin)) return 'Déconnexion';
+  if (dernier === 'accept') return `Course acceptée · commande #${ids[0]}`;
+  if (dernier === 'refuse') return `Course refusée · commande #${ids[0]}`;
+  if (dernier === 'status') return `Statut modifié · commande #${ids[0]}`;
+  if (dernier === 'position') return 'Position GPS du livreur';
+  if (dernier === 'read') return 'Notification lue';
+  if (/budget-proposals\/\d+/.test(chemin) && verbe === 'PATCH') return `Réponse à la proposition #${ids[0]}`;
+  const ressource = [...seg].reverse().find((x) => NOMS[x]);
+  const nom = ressource ? NOMS[ressource] : chemin;
+  const action = verbe === 'POST' ? 'Création' : verbe === 'DELETE' ? 'Suppression' : 'Modification';
+  return `${action} · ${nom}${ids.length ? ` #${ids[ids.length - 1]}` : ''}`;
+}
+
+/** Détail : statut HTTP + données envoyées (le backend retire déjà mots de passe, codes et jetons). */
+function detail(log: any): string {
+  const d = log?.details ?? {};
+  if (d.event) return `Événement : ${String(d.event).split('\\').pop()}`;
+  const payload = d.payload && typeof d.payload === 'object' ? Object.entries(d.payload) : [];
+  const champs = payload
+    .filter(([, v]) => v !== null && v !== '' && typeof v !== 'object')
+    .slice(0, 4)
+    .map(([k, v]) => `${k} : ${String(v).slice(0, 40)}`);
+  return [d.status ? `HTTP ${d.status}` : null, ...champs].filter(Boolean).join(' · ') || '—';
+}
+
+function quand(iso?: string | null): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const hm = `${String(d.getHours()).padStart(2, '0')}h${String(d.getMinutes()).padStart(2, '0')}`;
+  const auj = new Date();
+  const hier = new Date();
+  hier.setDate(auj.getDate() - 1);
+  if (d.toDateString() === auj.toDateString()) return `Aujourd'hui à ${hm}`;
+  if (d.toDateString() === hier.toDateString()) return `Hier à ${hm}`;
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+const acteur = (log: any) => {
+  const u = log?.user;
+  if (!u && !log?.user_id) return { nom: 'Système TOKPa', sous: 'Automatique' };
+  const nom = u?.nom_complet || [u?.prenom, u?.nom].filter(Boolean).join(' ') || `Utilisateur #${log.user_id}`;
+  return { nom, sous: (typeof u?.role === 'object' ? u.role?.nom : u?.role) || u?.email || '—' };
+};
+
 /**
- * AdminLogsPage — copie conforme statique du design Stitch (code.html).
- * Interactions : script du design exécuté via useDesignScript (comportement copié).
+ * AdminLogsPage — design Stitch (code.html) conservé, données RÉELLES : GET /admin/audit-logs
+ * (30 par page, filtres serveur `action` et `from`). Catégorie, titre et détail sont déduits de
+ * chaque entrée (middleware d'audit et événements critiques). Laissés tels quels (décision
+ * utilisateur P3, aucune API) : filtre « Rôle », choix 10 / 25 / 50 par page, « Exporter PDF ».
  */
 export default function AdminLogsPage() {
-  useDesignScript(DESIGN_SCRIPT);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [meta, setMeta] = useState({ page: 1, last: 1, total: 0 });
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [from, setFrom] = useState('');
+  const [applied, setApplied] = useState<{ action?: string; from?: string }>({});
+  const [type, setType] = useState('');
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setErr(null);
+    adminApi
+      .getAuditLogs({ page, ...applied })
+      .then((res: any) => {
+        if (!alive) return;
+        setLogs(listOf(res));
+        setMeta({ page: Number(res?.current_page ?? page), last: Number(res?.last_page ?? 1), total: Number(res?.total ?? 0) });
+      })
+      .catch((e) => alive && setErr(alertApiError(e, 'admin-logs')))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [page, applied]);
+
+  const appliquer = () => {
+    setApplied({ ...(search.trim() ? { action: search.trim() } : {}), ...(from ? { from } : {}) });
+    setPage(1);
+  };
+  const visibles = type ? logs.filter((l) => categorie(l) === type) : logs;
+
+  const exporterCsv = async () => {
+    try {
+      const acc: any[] = [];
+      for (let p = 1; p <= 20; p++) {
+        const res: any = await adminApi.getAuditLogs({ page: p, ...applied });
+        acc.push(...listOf(res));
+        if (p >= Number(res?.last_page ?? 1)) break;
+      }
+      const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+      const lignes = [
+        ['Date', 'Catégorie', 'Titre', 'Action brute', 'Utilisateur', 'IP', 'Détail'].map(cell).join(';'),
+        ...acc
+          .filter((l) => !type || categorie(l) === type)
+          .map((l) => [l.created_at, categorie(l), titre(l), l.action, acteur(l).nom, l.ip_address, detail(l)].map(cell).join(';')),
+      ];
+      const blob = new Blob([`\uFEFF${lignes.join('\n')}`], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `journal-audit-tokpa-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      alertApiError(e, 'admin-logs-export');
+    }
+  };
+
+  const numeros = Array.from({ length: meta.last }, (_, i) => i + 1).filter((n) => n === 1 || n === meta.last || Math.abs(n - meta.page) <= 1);
 
   return (
     <AdminLayout currentPath="/admin/logs">
       <style>{DESIGN_CSS}</style>
-  <header className="flex justify-between items-end mb-xl"> <div> <div className="flex items-center gap-3 mb-2"> <i className="ti ti-clipboard-list text-primary text-3xl"></i> <h1 className="font-h1 text-h1 text-text-main">Logs &amp; Audit</h1> </div> <p className="font-body text-body text-text-secondary">2 847 événements enregistrés</p> </div> <div className="flex items-center gap-3"><button className="flex items-center gap-2 bg-white border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97"><i className="ti ti-download"></i> Exporter PDF</button><button className="flex items-center gap-2 bg-white border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97"><i className="ti ti-download"></i> Exporter CSV</button></div> </header>  <section className="bg-white border border-border-default rounded-[14px] p-lg mb-xl shadow-sm"> <div className="grid grid-cols-1 md:grid-cols-3 gap-md mb-md"> <div className="relative"> <label className="block text-secondary font-secondary text-text-secondary mb-1">Recherche</label> <div className="relative"> <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"></i> <input className="w-full pl-10 pr-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none transition-all" placeholder="Action / Utilisateur" type="text" /> </div> </div> <div> <label className="block text-secondary font-secondary text-text-secondary mb-1">Type d'action</label> <select className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none appearance-none bg-white"> <option>Tous les types</option> <option>Catalogue</option> <option>Utilisateurs</option> <option>Système</option> <option>Paiements</option> </select> </div> <div> <label className="block text-secondary font-secondary text-text-secondary mb-1">Rôle</label> <select className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none appearance-none bg-white"> <option>Tous les rôles</option> <option>Administrateur</option> <option>Vendeur</option> <option>Client</option> <option>Livreur</option> </select> </div> </div> <div className="flex items-center gap-md"> <div className="flex-1"> <label className="block text-secondary font-secondary text-text-secondary mb-1">Période</label> <div className="flex items-center gap-2 px-4 py-2 border-border-default border-[1.5px] rounded-[10px] bg-white"> <i className="ti ti-calendar text-text-secondary"></i> <span className="text-body text-text-main">12 juin 2025 → Aujourd'hui</span> </div> </div> <button className="self-end px-xl py-2 bg-primary-container text-white font-bold rounded-[10px] hover:bg-primary-hover transition-all active:scale-95">
-                    Appliquer
-                </button> </div> </section>  <section className="relative pl-md"> <div className="absolute timeline-line"></div> <div className="space-y-md relative">  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#F97316] ring-4 ring-[#F97316]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#F97316]/10 text-[#F97316] text-micro px-2 py-0.5 rounded-full font-bold">CATALOGUE</span> <h3 className="font-h3 text-h3 text-text-main">Produit 'Tomates fraîches' modifié</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">Aujourd'hui à 14h32</span> </div> <div className="bg-surface-container-low p-sm rounded-lg mb-md text-secondary border-l-4 border-[#F97316]"> <p className="font-medium text-text-secondary">Price: <span className="line-through">400</span> → <span className="text-primary font-bold">450 FCFA</span></p> </div> <div className="flex justify-between items-center"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-primary-fixed text-primary-deep rounded-full flex items-center justify-center text-micro font-bold">MG</div> <div className="text-secondary"> <span className="font-bold text-text-main">Marc G.</span> • <span className="text-text-secondary">Administrateur</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">192.168.1.12</code> </div> </div> </div>  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#10B981] ring-4 ring-[#10B981]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#10B981]/10 text-[#10B981] text-micro px-2 py-0.5 rounded-full font-bold">COMMANDE</span> <h3 className="font-h3 text-h3 text-text-main">Commande #TK-942 livrée avec succès</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">Aujourd'hui à 13h15</span> </div> <p className="text-body text-text-secondary mb-md">Confirmation de réception par le client à Abomey-Calavi.</p> <div className="flex justify-between items-center"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-micro font-bold">SK</div> <div className="text-secondary"> <span className="font-bold text-text-main">Samuel K.</span> • <span className="text-text-secondary">Livreur</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">102.44.18.xx</code> </div> </div> </div>  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#EF4444] ring-4 ring-[#EF4444]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#EF4444]/10 text-[#EF4444] text-micro px-2 py-0.5 rounded-full font-bold">SYSTEM</span> <h3 className="font-h3 text-h3 text-text-main">Échec de connexion répété</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">Aujourd'hui à 12h40</span> </div> <p className="text-body text-text-secondary mb-md">3 tentatives échouées pour l'utilisateur <span className="font-medium text-error-dark">'Vendeur Kofi'</span>. Compte temporairement suspendu.</p> <div className="flex justify-between items-center"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-red-100 text-red-700 rounded-full flex items-center justify-center text-micro font-bold">BK</div> <div className="text-secondary"> <span className="font-bold text-text-main">Basile K.</span> • <span className="text-text-secondary">Vendeur</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">41.85.162.24</code> </div> </div> </div>  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#3B82F6] ring-4 ring-[#3B82F6]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#3B82F6]/10 text-[#3B82F6] text-micro px-2 py-0.5 rounded-full font-bold">AUTH</span> <h3 className="font-h3 text-h3 text-text-main">Connexion Administrateur réussie</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">Aujourd'hui à 08h05</span> </div> <div className="flex justify-between items-center mt-2"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-micro font-bold">MG</div> <div className="text-secondary"> <span className="font-bold text-text-main">Marc G.</span> • <span className="text-text-secondary">Administrateur</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">192.168.1.12</code> </div> </div> </div>  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#3B82F6] ring-4 ring-[#3B82F6]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#3B82F6]/10 text-[#3B82F6] text-micro px-2 py-0.5 rounded-full font-bold">PAYMENT</span> <h3 className="font-h3 text-h3 text-text-main">Reversement effectué au vendeur</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">Hier à 17h50</span> </div> <p className="text-body text-text-secondary mb-md">Montant: <span className="font-bold text-text-main">15 400 FCFA</span> via Mobile Money (MTN).</p> <div className="flex justify-between items-center"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-primary-light text-primary-dark rounded-full flex items-center justify-center text-micro font-bold">SY</div> <div className="text-secondary"> <span className="font-bold text-text-main">Système TOKPa</span> • <span className="text-text-secondary">Automatique</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">Internal</code> </div> </div> </div>  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#F97316] ring-4 ring-[#F97316]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#F97316]/10 text-[#F97316] text-micro px-2 py-0.5 rounded-full font-bold">CONFIG</span> <h3 className="font-h3 text-h3 text-text-main">Mise à jour des frais de livraison</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">Hier à 11h22</span> </div> <p className="text-body text-text-secondary mb-md">Zone Cotonou : +50 FCFA par km supplémentaire.</p> <div className="flex justify-between items-center"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-primary-fixed text-primary-deep rounded-full flex items-center justify-center text-micro font-bold">AS</div> <div className="text-secondary"> <span className="font-bold text-text-main">Alice S.</span> • <span className="text-text-secondary">Super-Admin</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">192.168.1.15</code> </div> </div> </div>  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#EF4444] ring-4 ring-[#EF4444]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#EF4444]/10 text-[#EF4444] text-micro px-2 py-0.5 rounded-full font-bold">UTILISATEUR</span> <h3 className="font-h3 text-h3 text-text-main">Compte banni pour non-respect</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">14 Juin 2025</span> </div> <p className="text-body text-text-secondary mb-md">L'utilisateur 'Client_992' a été banni suite à 3 signalements confirmés.</p> <div className="flex justify-between items-center"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-primary-fixed text-primary-deep rounded-full flex items-center justify-center text-micro font-bold">MG</div> <div className="text-secondary"> <span className="font-bold text-text-main">Marc G.</span> • <span className="text-text-secondary">Administrateur</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">192.168.1.12</code> </div> </div> </div>  <div className="flex gap-lg items-start group"> <div className="mt-4 w-2.5 h-2.5 rounded-full bg-[#10B981] ring-4 ring-[#10B981]/20 relative z-10 shrink-0"></div> <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow"> <div className="flex justify-between items-start mb-2"> <div className="flex items-center gap-2"> <span className="bg-[#10B981]/10 text-[#10B981] text-micro px-2 py-0.5 rounded-full font-bold">VALIDATION</span> <h3 className="font-h3 text-h3 text-text-main">Nouveau vendeur validé</h3> </div> <span className="text-[12px] font-secondary text-text-tertiary">14 Juin 2025</span> </div> <p className="text-body text-text-secondary mb-md">Documents vérifiés pour 'Épicerie de Fidjrossè'.</p> <div className="flex justify-between items-center"> <div className="flex items-center gap-2"> <div className="w-7 h-7 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-micro font-bold">AS</div> <div className="text-secondary"> <span className="font-bold text-text-main">Alice S.</span> • <span className="text-text-secondary">Super-Admin</span> </div> </div> <code className="font-mono text-[11px] text-text-tertiary">192.168.1.15</code> </div> </div> </div> </div> </section>  <footer className="mt-xl pt-lg border-t border-border-default flex flex-col md:flex-row justify-between items-center gap-md"> <p className="text-secondary text-text-secondary">Page 1 sur 285 · Afficher 
-                <button className="font-bold text-primary hover:underline">10</button> / 
-                <button className="hover:text-primary">25</button> / 
-                <button className="hover:text-primary">50</button> par page
-            </p> <div className="flex gap-2"> <button className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-secondary cursor-not-allowed opacity-50"> <i className="ti ti-chevron-left"></i> </button> <button className="w-10 h-10 flex items-center justify-center border border-primary-container rounded-lg bg-primary-container text-white font-bold">1</button> <button className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-main hover:bg-surface-container-low transition-colors">2</button> <button className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-main hover:bg-surface-container-low transition-colors">3</button> <span className="px-2 self-center">...</span> <button className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-main hover:bg-surface-container-low transition-colors">285</button> <button className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-main hover:bg-surface-container-low transition-colors"> <i className="ti ti-chevron-right"></i> </button> </div> </footer>  
+      <header className="flex justify-between items-end mb-xl">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <i className="ti ti-clipboard-list text-primary text-3xl"></i>
+            <h1 className="font-h1 text-h1 text-text-main">Logs &amp; Audit</h1>
+          </div>
+          <p className="font-body text-body text-text-secondary">
+            {loading ? 'Chargement…' : `${meta.total.toLocaleString('fr-FR')} événement${meta.total > 1 ? 's' : ''} enregistré${meta.total > 1 ? 's' : ''}`}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="flex items-center gap-2 bg-white border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97">
+            <i className="ti ti-download"></i> Exporter PDF
+          </button>
+          <button
+            type="button"
+            onClick={exporterCsv}
+            className="flex items-center gap-2 bg-white border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97"
+          >
+            <i className="ti ti-download"></i> Exporter CSV
+          </button>
+        </div>
+      </header>
+      {err && (
+        <div className="mb-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
+          <p className="font-bold">Erreur API</p>
+          <p>{err}</p>
+        </div>
+      )}
+      <section className="bg-white border border-border-default rounded-[14px] p-lg mb-xl shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-md mb-md">
+          <div className="relative">
+            <label className="block text-secondary font-secondary text-text-secondary mb-1">Recherche</label>
+            <div className="relative">
+              <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"></i>
+              <input
+                className="w-full pl-10 pr-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none transition-all"
+                placeholder="Action (ex : users, DELETE, OrderStatusChanged)"
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && appliquer()}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-secondary font-secondary text-text-secondary mb-1">Type d'action</label>
+            <select
+              className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none appearance-none bg-white"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+            >
+              {TYPES.map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-secondary font-secondary text-text-secondary mb-1">Rôle</label>
+            <select className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none appearance-none bg-white">
+              <option>Tous les rôles</option>
+              <option>Administrateur</option>
+              <option>Vendeur</option>
+              <option>Client</option>
+              <option>Livreur</option>
+            </select>
+          </div>
+        </div>
+        <div className="flex items-center gap-md">
+          <div className="flex-1">
+            <label className="block text-secondary font-secondary text-text-secondary mb-1">Période (à partir du)</label>
+            <div className="flex items-center gap-2 px-4 py-2 border-border-default border-[1.5px] rounded-[10px] bg-white">
+              <i className="ti ti-calendar text-text-secondary"></i>
+              <input type="date" className="flex-1 text-body text-text-main outline-none bg-transparent" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="Date de début" />
+              <span className="text-body text-text-secondary">→ Aujourd'hui</span>
+            </div>
+          </div>
+          <button type="button" onClick={appliquer} className="self-end px-xl py-2 bg-primary-container text-white font-bold rounded-[10px] hover:bg-primary-hover transition-all active:scale-95">
+            Appliquer
+          </button>
+        </div>
+      </section>
+      <section className="relative pl-md">
+        <div className="absolute timeline-line"></div>
+        <div className="space-y-md relative">
+          {!loading && visibles.length === 0 && (
+            <div className="bg-white border-[0.5px] border-border-default rounded-[10px] p-md text-center text-text-secondary">
+              {type ? 'Aucun événement de ce type sur cette page.' : 'Aucun événement enregistré.'}
+            </div>
+          )}
+          {visibles.map((log) => {
+            const cat = categorie(log);
+            const c = COULEUR[cat] ?? '#EF4444';
+            const qui = acteur(log);
+            return (
+              <div key={log.id} className="flex gap-lg items-start group">
+                <div className="mt-4 w-2.5 h-2.5 rounded-full relative z-10 shrink-0" style={{ backgroundColor: c, boxShadow: `0 0 0 4px ${c}33` }}></div>
+                <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-micro px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: `${c}1A`, color: c }}>
+                        {cat}
+                      </span>
+                      <h3 className="font-h3 text-h3 text-text-main">{titre(log)}</h3>
+                    </div>
+                    <span className="text-[12px] font-secondary text-text-tertiary">{quand(log.created_at)}</span>
+                  </div>
+                  <div className="bg-surface-container-low p-sm rounded-lg mb-md text-secondary border-l-4" style={{ borderColor: c }}>
+                    <p className="font-medium text-text-secondary">{detail(log)}</p>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 bg-primary-fixed text-primary-deep rounded-full flex items-center justify-center text-micro font-bold">{initials(qui.nom)}</div>
+                      <div className="text-secondary">
+                        <span className="font-bold text-text-main">{qui.nom}</span> • <span className="text-text-secondary">{qui.sous}</span>
+                      </div>
+                    </div>
+                    <code className="font-mono text-[11px] text-text-tertiary">{log.ip_address ?? '—'}</code>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+      <footer className="mt-xl pt-lg border-t border-border-default flex flex-col md:flex-row justify-between items-center gap-md">
+        <p className="text-secondary text-text-secondary">
+          Page {meta.page} sur {meta.last}
+          {type ? ' (type filtré sur la page affichée)' : ''} · Afficher <button className="font-bold text-primary hover:underline">10</button> /{' '}
+          <button className="hover:text-primary">25</button> / <button className="hover:text-primary">50</button> par page
+        </p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={meta.page <= 1}
+            onClick={() => setPage(meta.page - 1)}
+            className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-secondary disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <i className="ti ti-chevron-left"></i>
+          </button>
+          {numeros.map((n, i) => (
+            <span key={n} className="flex gap-2">
+              {i > 0 && n - numeros[i - 1] > 1 && <span className="px-2 self-center">...</span>}
+              <button
+                type="button"
+                onClick={() => setPage(n)}
+                className={
+                  n === meta.page
+                    ? 'w-10 h-10 flex items-center justify-center border border-primary-container rounded-lg bg-primary-container text-white font-bold'
+                    : 'w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-main hover:bg-surface-container-low transition-colors'
+                }
+              >
+                {n}
+              </button>
+            </span>
+          ))}
+          <button
+            type="button"
+            disabled={meta.page >= meta.last}
+            onClick={() => setPage(meta.page + 1)}
+            className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-main hover:bg-surface-container-low transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <i className="ti ti-chevron-right"></i>
+          </button>
+        </div>
+      </footer>
     </AdminLayout>
   );
 }
