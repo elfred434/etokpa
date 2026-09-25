@@ -1,6 +1,6 @@
 import { createRootRoute, createRoute, createRouter, Outlet } from '@tanstack/react-router';
 import { Toaster } from 'react-hot-toast';
-import { redirectOnSessionExpired, requireSession } from './authGuard';
+import { guardRoute, redirectOnSessionExpired } from './authGuard';
 import ConnexionPage from '../pages/auth/ConnexionPage';
 import InscriptionPage from '../pages/auth/InscriptionPage';
 import Verification2faPage from '../pages/auth/Verification2faPage';
@@ -42,9 +42,9 @@ import NotFoundPage from '../pages/NotFoundPage';
 import SystemBridge from '../components/system/SystemBridge';
 
 const rootRoute = createRootRoute({
-  // Garde globale : visiteur non connecté → /connexion sur toute page hors accueil et écrans d'auth
-  // (liste PUBLIC_PATHS et logique dans authGuard.ts).
-  beforeLoad: requireSession,
+  // Garde globale (authGuard.ts) : non connecté → /connexion sur toute page hors accueil et écrans
+  // d'auth ; mauvais rôle → espace de son rôle. Droits calqués sur ceux du backend.
+  beforeLoad: guardRoute,
   component: () => (
     <>
       <SystemBridge />
