@@ -6,6 +6,7 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientFooter from '../../../components/layout/client/ClientFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
+import { alertApiError } from '../../../utils/apiError';
 
 /**
  * Données passées par CartPage après POST /api/orders (vraies valeurs backend).
@@ -60,7 +61,7 @@ export default function ConfirmationPage() {
         finalRef.current = st !== null && st !== 'en_attente';
         if (st === 'en_attente' && ++tries < 36) timer = setTimeout(load, 5000);
       } catch (err) {
-        console.warn('Payment status error:', err);
+        alertApiError(err, 'payment-status');
       }
     };
     void load();

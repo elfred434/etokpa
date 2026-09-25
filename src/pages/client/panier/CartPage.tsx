@@ -5,6 +5,7 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientFooter from '../../../components/layout/client/ClientFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
+import { alertApiError } from '../../../utils/apiError';
 import EmptyState from '../../../components/shared/EmptyState';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { clear, remove, setQuantity, selectCount, selectSubtotal, selectSavings } from '../../../store/slices/cart/cartSlice';
@@ -87,8 +88,7 @@ export default function CartPage() {
         if (list.length > 0) setZoneId((prev) => prev ?? list[0].id);
       })
       .catch((err) => {
-        console.warn('Zones API unavailable:', err);
-        toast.error('Zones de livraison indisponibles (backend hors ligne ?)');
+        alertApiError(err, 'cart-zones');
       })
       .finally(() => setZonesLoading(false));
   }, []);
@@ -194,7 +194,8 @@ export default function CartPage() {
           }
         }
       } catch (payErr) {
-        console.warn('FedaPay init error (commande déjà enregistrée) :', payErr);
+        // Commande déjà enregistrée : on prévient que le paiement n'a pas pu démarrer (message de l'API)
+        alertApiError(payErr, 'cart-payment');
       }
 
       // 3) Nettoyage local + confirmation avec les données réelles
@@ -210,13 +211,8 @@ export default function CartPage() {
       };
       navigate({ to: '/confirmation', state: payload as unknown as Record<string, unknown> });
     } catch (err: unknown) {
-      console.warn('Order create error:', err);
-      const detail = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })
-        ?.response?.data;
-      const firstError = detail?.errors
-        ? Object.values(detail.errors).flat()[0]
-        : undefined;
-      toast.error(detail?.message || firstError || 'Impossible de créer la commande.');
+      // Statut + message exact de l'API (erreurs de validation comprises)
+      alertApiError(err, 'cart-order');
     } finally {
       setLoading(false);
     }

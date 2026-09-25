@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
+import { alertApiError } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { authApi, ordersApi, type UserProfile } from '../../../services/api';
@@ -102,7 +103,7 @@ export default function ProfilePage() {
         setLandmarks(parseLandmarks(p.profil));
       }
     } catch (err) {
-      console.warn('Profile API error:', err);
+      alertApiError(err, 'profile-load');
     }
   };
 
@@ -139,7 +140,7 @@ export default function ProfilePage() {
           .filter((o) => o.id > 0);
         setRecentOrders(mapped);
       })
-      .catch((err) => console.warn('Orders API error:', err));
+      .catch((err) => alertApiError(err, 'profile-orders'));
 
     const p3 = authApi
       .getDashboard()
@@ -147,7 +148,7 @@ export default function ProfilePage() {
         const n = Number(d?.commandes);
         setDashCount(Number.isFinite(n) ? n : null);
       })
-      .catch((err) => console.warn('Dashboard API error:', err));
+      .catch((err) => alertApiError(err, 'profile-dashboard'));
 
     Promise.allSettled([p1, p2, p3]).then(() => setIsDataLoading(false));
   }, [isAuthenticated]);
@@ -180,8 +181,7 @@ export default function ProfilePage() {
       toast.success(isFr ? 'Points de repère enregistrés' : 'Landmarks saved');
       return true;
     } catch (err) {
-      console.warn('Landmarks save error:', err);
-      toast.error(isFr ? 'Erreur lors de l’enregistrement' : 'Save error');
+      alertApiError(err, 'profile-landmarks');
       return false;
     } finally {
       setSaving(false);

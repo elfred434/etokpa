@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
+import { alertApiError } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
@@ -123,7 +124,7 @@ export default function MessagingPage() {
             setActiveConvId(null);
           }
         })
-        .catch((err) => console.warn('Backend conversations error:', err));
+        .catch((err) => alertApiError(err, 'chat-conversations'));
     };
 
     load();
@@ -163,7 +164,7 @@ export default function MessagingPage() {
           ),
         );
       })
-      .catch((err) => console.warn('Backend order context error:', err));
+      .catch((err) => alertApiError(err, 'chat-order'));
   }, [isAuthenticated, activeConvId, conversations]);
 
   // 3) Messages — GET /api/conversations/{id}/messages
@@ -188,7 +189,7 @@ export default function MessagingPage() {
           );
         }
       })
-      .catch((err) => console.warn('Backend messages error:', err));
+      .catch((err) => alertApiError(err, 'chat-messages'));
   }, [isAuthenticated, activeConvId, currentUserId]);
 
   // 4) Temps réel — canal privé `chat.{conversationId}`, événement `message.sent`
@@ -242,7 +243,7 @@ export default function MessagingPage() {
       try {
         await chatApi.sendMessage(activeConvId, currentText);
       } catch (err) {
-        console.warn('Failed to send message to API:', err);
+        alertApiError(err, 'chat-send'); // message non envoyé : le client doit le savoir
       }
     }
   };

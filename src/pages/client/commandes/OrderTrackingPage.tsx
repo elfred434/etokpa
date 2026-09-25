@@ -11,7 +11,7 @@ import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import { catalogApi, ordersApi } from '../../../services/api';
 import { isOwnOrder } from '../../../utils/ownOrder';
-import { extractApiError, formatApiError } from '../../../utils/apiError';
+import { alertApiError } from '../../../utils/apiError';
 
 interface ApiRider {
   id: number;
@@ -110,8 +110,7 @@ export default function OrderTrackingPage() {
         }
       })
       .catch((err) => {
-        console.warn('Orders list error:', err);
-        setFetchError(formatApiError(extractApiError(err)));
+        setFetchError(alertApiError(err, 'tracking-orders'));
       })
       .finally(() => setOrdersLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -145,8 +144,7 @@ export default function OrderTrackingPage() {
         const t = await ordersApi.getTracking(selectedId);
         if (alive) setTracking(t as TrackingInfo);
       } catch (err) {
-        console.warn('Order/tracking error:', err);
-        if (alive) setFetchError(formatApiError(extractApiError(err)));
+        if (alive) setFetchError(alertApiError(err, 'tracking-detail'));
       }
     })();
     return () => {

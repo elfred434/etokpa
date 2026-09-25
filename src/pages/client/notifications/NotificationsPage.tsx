@@ -7,6 +7,8 @@ import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import Pagination from '../../../components/shared/Pagination';
 import EmptyState from '../../../components/shared/EmptyState';
+import ApiErrorState from '../../../components/shared/ApiErrorState';
+import { alertApiError } from '../../../utils/apiError';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
@@ -139,6 +141,8 @@ export default function NotificationsPage() {
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
   const [hasLoaded, setHasLoaded] = useState(false);
+  // Échec du chargement : message de l'API + Réessayer (avant : « Aucune notification », trompeur).
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadPage = useCallback(
     (p: number) => {
@@ -161,10 +165,11 @@ export default function NotificationsPage() {
           });
           setNotifications(mapped);
           if (res?.last_page) setPageCount(res.last_page);
+          setLoadError(null);
           setHasLoaded(true);
         })
         .catch((err) => {
-          console.warn('Notifications API error:', err);
+          setLoadError(alertApiError(err, 'notifications-load'));
           setHasLoaded(true);
         });
     },
@@ -305,7 +310,15 @@ export default function NotificationsPage() {
             </div>
 
             {/* Notification List */}
-            {filtered.length === 0 && hasLoaded ? (
+            {loadError ? (
+              <div className="bg-white border border-border-default rounded-xl">
+                <ApiErrorState
+                  title="Impossible de charger les notifications"
+                  message={loadError}
+                  onRetry={() => loadPage(page)}
+                />
+              </div>
+            ) : filtered.length === 0 && hasLoaded ? (
               <div className="bg-white border border-border-default rounded-xl">
                 <EmptyState
                   icon={<MIcon name="notifications" className="text-4xl text-primary" />}

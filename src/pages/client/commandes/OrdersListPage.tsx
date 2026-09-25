@@ -10,7 +10,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { ordersApi } from '../../../services/api';
 import { isOwnOrder } from '../../../utils/ownOrder';
-import { extractApiError, formatApiError } from '../../../utils/apiError';
+import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
 
 interface ApiOrderItem {
   id: number;
@@ -97,8 +97,7 @@ export default function OrdersListPage() {
         setTotal(Number(res?.meta?.total ?? res?.total ?? list.length));
       })
       .catch((err) => {
-        console.warn('Orders list error:', err);
-        setError(formatApiError(extractApiError(err)));
+        setError(alertApiError(err, 'orders-list'));
       })
       .finally(() => setLoading(false));
   }, [isAuthenticated, page]);
@@ -145,7 +144,7 @@ export default function OrdersListPage() {
         const res = await ordersApi.getOrder(id);
         if (alive) setSelected((res?.data ?? res) as ApiOrder);
       } catch (err) {
-        console.warn('Detail order error:', err);
+        if (alive) alertApiError(err, 'order-detail');
       }
     })();
     return () => {
