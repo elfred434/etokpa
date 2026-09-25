@@ -9,7 +9,7 @@ import { extractApiError, formatApiError } from '../../utils/apiError';
 
 const PERIODES = [
   { label: 'Aujourd’hui', param: 'jour' as const },
-  { label: '7 derniers jours', param: 'semaine' as const },
+  { label: 'Cette semaine', param: 'semaine' as const },
   { label: 'Ce Mois', param: 'mois' as const },
 ];
 
@@ -34,10 +34,10 @@ export default function ManagerStatsPage() {
   }, [periode]);
 
   const kpis = [
-    { icon: 'trending_up', label: "Volume d'Affaires", value: stats?.volume_affaires ?? stats?.ca ?? stats?.chiffre_affaires ?? '—' },
-    { icon: 'shopping_basket', label: 'Commandes Total', value: stats?.commandes_total ?? stats?.total_commandes ?? '—' },
-    { icon: 'task_alt', label: 'Taux de Livraison', value: stats?.taux_livraison ?? stats?.taux_succes ?? '—' },
-    { icon: 'delivery_dining', label: 'Livreurs Actifs', value: stats?.livreurs_actifs ?? '—' },
+    { icon: 'trending_up', label: "Volume d'Affaires", value: stats?.ca ?? '—' },
+    { icon: 'shopping_basket', label: 'Commandes Total', value: stats?.commandes ?? '—' },
+    { icon: 'task_alt', label: 'Taux de Livraison', value: stats && Number(stats.commandes) > 0 ? `${((Number(stats.livrees ?? 0) / Number(stats.commandes)) * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %` : '—' },
+    { icon: 'delivery_dining', label: 'Commandes livrées', value: stats?.livrees ?? '—' },
   ];
 
   return (

@@ -49,6 +49,7 @@ export default function NegotiationsPage() {
             proposedPrice: Number(p.prix_propose),
             minPrice: Number(p.product?.prix_minimum) || Number(p.prix_propose),
             quantite: Number(p.quantite) || 1,
+            orderId: p.commande?.id ?? p.order_id,
             adminResponse: p.admin_response || undefined,
             status:
               p.statut === 'accepte' ? 'accepted'
@@ -104,6 +105,10 @@ export default function NegotiationsPage() {
   });
 
   const handleAddToCart = (neg: NegotiationItem) => {
+    if (neg.status === 'accepted' && (neg as any).orderId) {
+      navigate({ to: '/commandes', search: { detail: String((neg as any).orderId) } });
+      return;
+    }
     const product: Product = {
       id: neg.productId,
       nom: neg.productName,

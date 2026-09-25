@@ -19,6 +19,7 @@ import MessagingPage from '../pages/client/messagerie/MessagingPage';
 import AdminCatalogPage from '../pages/admin/AdminCatalogPage';
 import AdminCategoriesPage from '../pages/admin/AdminCategoriesPage';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
+import AdminOrdersPage from '../pages/admin/AdminOrdersPage';
 import AdminZonesPage from '../pages/admin/AdminZonesPage';
 import AdminUsersPage from '../pages/admin/AdminUsersPage';
 import AdminUserDetailPage from '../pages/admin/AdminUserDetailPage';
@@ -122,6 +123,7 @@ const ordersListRoute = createRoute({ getParentRoute: () => rootRoute, path: '/c
 const messagingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/messagerie', component: MessagingPage });
 const adminCatalogueRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/catalogue', component: AdminCatalogPage });
 const adminDashboardRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin', component: AdminDashboardPage });
+const adminOrdersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/commandes', component: AdminOrdersPage });
 const adminCategoriesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/categories', component: AdminCategoriesPage });
 const adminZonesPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/zones', component: AdminZonesPage });
 const adminUsersPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/utilisateurs', component: AdminUsersPage });
@@ -178,6 +180,7 @@ const routeTree = rootRoute.addChildren([
   orderTrackingRoute,
   messagingRoute,
   adminDashboardRoute,
+  adminOrdersRoute,
   adminCatalogueRoute,
   adminCategoriesRoute,
   adminZonesPageRoute,

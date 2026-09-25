@@ -5,6 +5,7 @@ import MIcon from '../../components/shared/MIcon';
 import { managerApi } from '../../services/api';
 import { unwrap, listOf, fmtFcfa, heureCourte } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
+import { currentUserZone } from '../../routes/authGuard';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -50,13 +51,13 @@ export default function ManagerDashboardPage() {
     {
       icon: 'shopping_cart',
       label: "Commandes aujourd'hui",
-      value: stats?.commandes_aujourdhui ?? stats?.commandes_jour ?? stats?.total_commandes ?? '—',
+      value: stats?.commandes ?? '—',
       sub: stats?.variation_commandes ?? '',
     },
     {
       icon: 'payments',
       label: "Chiffre d'affaires",
-      value: stats?.ca_jour ?? stats?.volume_affaires ?? stats?.chiffre_affaires ?? '—',
+      value: stats?.ca ?? '—',
       unit: 'FCFA',
       sub: '',
     },
@@ -69,7 +70,7 @@ export default function ManagerDashboardPage() {
     {
       icon: 'task_alt',
       label: 'Taux de succès livraison',
-      value: stats?.taux_succes ?? stats?.taux_livraison ?? '—',
+      value: stats && Number(stats.commandes) > 0 ? `${((Number(stats.livrees ?? 0) / Number(stats.commandes)) * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %` : '—',
       sub: '',
     },
   ];
@@ -79,7 +80,7 @@ export default function ManagerDashboardPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-h2 font-h2 font-bold">Tableau de bord — Zone Akpakpa</h1>
+            <h1 className="text-h2 font-h2 font-bold">Tableau de bord — Zone {currentUserZone() ?? '—'}</h1>
             <p className="text-text-secondary">Données réelles — GET /manager/stats + /manager/orders</p>
           </div>
         </div>
