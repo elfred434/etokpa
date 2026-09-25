@@ -17,6 +17,8 @@ export const PUBLIC_PATHS: readonly string[] = [
 
 const AUTH_TOAST_ID = 'auth-required';
 const ROLE_TOAST_ID = 'role-denied';
+/** Page demandée avant la connexion, conservée pour l'onglet pendant la 2FA (et un détour par l'inscription). */
+const REDIRECT_KEY = 'tokpa_redirect';
 
 /** Rôles du backend (App\Models\Role). super_admin passe toutes les gardes (Utilisateur::hasRole). */
 export type AppRole = 'super_admin' | 'admin' | 'manager' | 'livreur' | 'client';
@@ -88,16 +90,50 @@ export function canAccess(pathname: string, role: string | null): boolean {
 }
 
 /**
+ * Adresse de retour sûre : chemin interne uniquement (pas de « //site », « https:… », « /\… » qui
+ * mèneraient hors de TOKPa), et jamais un écran d'authentification (boucle). Sinon null.
+ */
+export function safeRedirect(target: unknown): string | null {
+  if (typeof target !== 'string' || !target.startsWith('/') || target.startsWith('//') || target.startsWith('/\\')) {
+    return null;
+  }
+  const pathname = target.split(/[?#]/)[0];
+  if (isPublicPath(pathname) && normPath(pathname) !== '/') return null;
+  return target;
+}
+
+/** Mémorise (ou oublie) la page demandée ; appelé à l'arrivée sur /connexion avec son ?redirect=. */
+export function rememberRedirect(target: unknown): void {
+  const safe = safeRedirect(target);
+  if (safe) sessionStorage.setItem(REDIRECT_KEY, safe);
+  else sessionStorage.removeItem(REDIRECT_KEY);
+}
+
+/** Destination après la 2FA : la page demandée si ce rôle y a droit, sinon l'espace de son rôle. */
+export function postLoginTarget(role: string | null): string {
+  const saved = safeRedirect(sessionStorage.getItem(REDIRECT_KEY));
+  sessionStorage.removeItem(REDIRECT_KEY);
+  if (saved && canAccess(saved.split(/[?#]/)[0], role)) return saved;
+  return homeForRole(role);
+}
+
+/**
  * beforeLoad de la route racine : exécuté avant tout rendu, donc la page refusée n'est jamais
  * affichée et ses appels API ne partent pas. Toute nouvelle route est protégée par défaut.
- *  1. pas de session → /connexion ;
+ *  1. pas de session → /connexion?redirect=<page demandée> (retour automatique après la 2FA) ;
  *  2. mauvais rôle → espace de son rôle (« Accès refusé »).
  */
-export function guardRoute({ location, preload }: { location: { pathname: string }; preload: boolean }): void {
+export function guardRoute({
+  location,
+  preload,
+}: {
+  location: { pathname: string; href: string };
+  preload: boolean;
+}): void {
   if (isPublicPath(location.pathname)) return;
   if (!hasSession()) {
     if (!preload) toast.error('Veuillez vous connecter pour accéder à cette page.', { id: AUTH_TOAST_ID });
-    throw redirect({ to: '/connexion', replace: true });
+    throw redirect({ to: '/connexion', search: { redirect: location.href }, replace: true });
   }
   const role = currentRole();
   const rule = pageRoles(location.pathname);
@@ -115,7 +151,8 @@ export function redirectOnSessionExpired(router: AnyRouter): () => void {
   const onExpired = () => {
     if (isPublicPath(router.state.location.pathname)) return;
     toast.error('Session expirée : veuillez vous reconnecter.', { id: AUTH_TOAST_ID });
-    void router.navigate({ to: '/connexion', replace: true });
+    // retour à la même page après la reconnexion
+    void router.navigate({ to: '/connexion', search: { redirect: router.state.location.href }, replace: true });
   };
   window.addEventListener('tokpa:session-expired', onExpired);
   return () => window.removeEventListener('tokpa:session-expired', onExpired);

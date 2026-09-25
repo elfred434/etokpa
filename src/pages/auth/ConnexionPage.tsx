@@ -1,16 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import MIcon from '../../components/shared/MIcon';
 import { authApi } from '../../services/api';
 import { extractApiError, formatApiError } from '../../utils/apiError';
+import { rememberRedirect } from '../../routes/authGuard';
 
 /**
  * Page Connexion — Intégration API Backend Laravel + UI Stitch 100% fidèle
  */
 export default function ConnexionPage() {
   const navigate = useNavigate();
+  // Page demandée avant la connexion (?redirect=) : mémorisée pour y revenir après la 2FA ;
+  // arrivée sans ?redirect= → on oublie toute ancienne demande.
+  const { redirect: redirectTo } = useSearch({ from: '/connexion' });
+  useEffect(() => {
+    rememberRedirect(redirectTo);
+  }, [redirectTo]);
   const [email, setEmail] = useState('user@example.com');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);

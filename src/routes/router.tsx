@@ -69,7 +69,15 @@ const rootRoute = createRootRoute({
 });
 
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: HomePage });
-const connexionRoute = createRoute({ getParentRoute: () => rootRoute, path: '/connexion', component: ConnexionPage });
+const connexionRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/connexion',
+  component: ConnexionPage,
+  // ?redirect= : page demandée avant la connexion (garde authGuard.ts), rejouée après la 2FA.
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
+    redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
+  }),
+});
 const inscriptionRoute = createRoute({ getParentRoute: () => rootRoute, path: '/inscription', component: InscriptionPage });
 const verificationRoute = createRoute({ getParentRoute: () => rootRoute, path: '/verification-2fa', component: Verification2faPage });
 // Lien envoyé par POST /api/auth/forgot-password : /reset-password?token=...&email=...

@@ -6,7 +6,7 @@ import OtpInput from '../../components/auth/OtpInput';
 import MIcon from '../../components/shared/MIcon';
 import { authApi } from '../../services/api';
 import { extractApiError, formatApiError } from '../../utils/apiError';
-import { currentRole, homeForRole } from '../../routes/authGuard';
+import { currentRole, postLoginTarget } from '../../routes/authGuard';
 
 const INITIAL_SECONDS = 10 * 60; // TTL réel du backend (TwoFAService::TTL_MINUTES = 10)
 const MAX_ATTEMPTS = 3;
@@ -47,8 +47,9 @@ export default function Verification2faPage() {
       // Tentative d'appel API Backend POST /api/auth/verify-2fa
       const res = await authApi.verify2fa({ email: pendingEmail, code });
       toast.success(res.message || 'Authentification réussie !');
-      // Chaque rôle arrive dans son espace (admin → /admin, manager → /manager, client/livreur → accueil)
-      navigate({ to: homeForRole(currentRole()) });
+      // Retour à la page demandée avant la connexion si ce rôle y a droit ; sinon l'espace du rôle
+      // (admin → /admin, manager → /manager, client/livreur → accueil).
+      navigate({ href: postLoginTarget(currentRole()) });
     } catch (err: unknown) {
       console.warn('API 2FA verification error:', err);
       // Pas de fallback factice : sans token réel du backend, on ne « connecte » personne.
