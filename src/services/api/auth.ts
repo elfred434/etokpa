@@ -59,7 +59,12 @@ export const authApi = {
     const response = await apiClient.post('/auth/verify-2fa', payload);
     if (response.data?.token) {
       localStorage.setItem('tokpa_token', response.data.token);
-      localStorage.setItem('tokpa_user', JSON.stringify(response.data.user));
+      // Laravel peut renvoyer une JsonResource directement ou sous une enveloppe `data`.
+      // On stocke toujours l'objet utilisateur lui-même afin que currentRole() puisse
+      // calculer correctement l'espace de destination après la 2FA.
+      const rawUser = response.data.user;
+      const user = rawUser?.data ?? rawUser;
+      localStorage.setItem('tokpa_user', JSON.stringify(user));
       // Connexion réussie → on branche le temps réel Reverb (canaux privés)
       // et on notifie le SystemBridge (panier serveur + notifications).
       initEcho();
