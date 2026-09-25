@@ -1,5 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
+import { currentRole, currentUserName, initialsOf } from '../../../routes/authGuard';
 
 interface AdminSidebarProps {
   currentPath?: string;
@@ -93,13 +94,21 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
         className="mt-auto pt-md border-t border-white/10 px-2"
         style={{ borderColor: 'rgba(249, 115, 22, 0.15)' }}
       >
+        {/* Bascule vers l'espace client (l'admin y a accès) */}
+        <Link to="/" className={IDLE_CLASS}>
+          <MIcon name="storefront" />
+          <span className="font-secondary text-body">Espace client</span>
+        </Link>
+        {/* Utilisateur réellement connecté (plus de profil générique) */}
         <div className="flex items-center gap-3 py-4">
           <div className="w-10 h-10 rounded-full border border-white/20 bg-white/10 flex items-center justify-center text-white font-bold text-label">
-            AT
+            {initialsOf(currentUserName(), 'AD')}
           </div>
           <div className="flex flex-col">
-            <span className="text-white font-bold text-label">Admin TOKPa</span>
-            <span className="text-surface-variant text-micro opacity-70">Administrateur</span>
+            <span className="text-white font-bold text-label">{currentUserName() ?? 'Administrateur'}</span>
+            <span className="text-surface-variant text-micro opacity-70">
+              {currentRole() === 'super_admin' ? 'Super administrateur' : 'Administrateur'}
+            </span>
           </div>
         </div>
       </div>
