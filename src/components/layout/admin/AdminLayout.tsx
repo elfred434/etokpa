@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import AdminSidebar from './AdminSidebar';
 import MIcon from '../../shared/MIcon';
+import AdminNotificationBell from './AdminNotificationBell';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -33,12 +34,12 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
           </div>
         </div>
         <div className="flex items-center gap-md">
-          <button
-            type="button"
+          {/* Vraies notifications (GET /notifications) : compteur, liste, marquer comme lue */}
+          <AdminNotificationBell
             className="p-2 text-text-secondary hover:bg-bg-app rounded-full transition-all active:scale-[0.97] cursor-pointer"
-          >
-            <MIcon name="notifications" />
-          </button>
+            icon={<MIcon name="notifications" />}
+            dotClassName="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"
+          />
           <button
             type="button"
             className="p-2 text-text-secondary hover:bg-bg-app rounded-full transition-all active:scale-[0.97] cursor-pointer"
