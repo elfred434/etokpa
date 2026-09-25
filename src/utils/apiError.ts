@@ -1,3 +1,5 @@
+import toast from 'react-hot-toast';
+
 /**
  * Extraction & mise en forme des erreurs API Laravel pour l'UX.
  *
@@ -57,5 +59,24 @@ export function formatApiError(info: ApiErrorInfo): string {
   if (fields.length > 0) {
     text += ` — ${fields.join(' • ')}`;
   }
+  return text;
+}
+
+/** Statut HTTP d'une erreur axios (null si la requête n'a jamais atteint le serveur). */
+export function apiErrorStatus(err: unknown): number | null {
+  return extractApiError(err).status;
+}
+
+/**
+ * Échec d'un chargement (règle : jamais de données factices) → alerte avec le statut + le message
+ * EXACT de l'API, et renvoie ce même texte pour l'afficher aussi dans la page (ApiErrorState).
+ * 401 : pas d'alerte ici — la session expirée est gérée globalement (services/api/client.ts →
+ * /connexion), et le visiteur non connecté de l'accueil a son propre affichage.
+ * `toastId` évite d'empiler la même alerte (relectures, plusieurs appels en échec).
+ */
+export function alertApiError(err: unknown, toastId?: string): string {
+  const info = extractApiError(err);
+  const text = formatApiError(info);
+  if (info.status !== 401) toast.error(text, toastId ? { id: toastId } : undefined);
   return text;
 }
