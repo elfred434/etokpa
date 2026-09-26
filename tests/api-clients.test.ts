@@ -96,12 +96,12 @@ describe('livreur, payment and notification adapters', () => {
     expect(apiClient.post).toHaveBeenCalledWith('/livreur/position', { latitude: 6.37, longitude: 2.43, order_id: 4 });
   });
 
-  it('rechecks a payment and marks a notification read', async () => {
+  it('loads a payment and marks a notification read', async () => {
     vi.mocked(apiClient.get).mockResolvedValue({ data: { statut: 'reussi' } });
     vi.mocked(apiClient.patch).mockResolvedValue({ data: {} });
-    await paymentsApi.checkPayment(9);
+    await paymentsApi.getPayment(9);
     await notificationsApi.markRead(9);
-    expect(apiClient.get).toHaveBeenCalledWith('/payments/9/check');
+    expect(apiClient.get).toHaveBeenCalledWith('/payments/9');
     expect(apiClient.patch).toHaveBeenCalledWith('/notifications/9/read');
   });
 
