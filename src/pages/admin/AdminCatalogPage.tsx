@@ -50,7 +50,7 @@ export default function AdminCatalogPage() {
   const [edition, setEdition] = useState<any | null>(null);
   const [form, setForm] = useState({ nom: '', description: '', prix: '', prix_minimum: '', stock: '', categorie_id: '' });
   // Mode « pack » de la MÊME modale (POST/PUT /admin/bundles) : champs du modèle Pack + produits inclus.
-  const [mode, setMode] = useState<tx("produit") | 'pack'>('produit');
+  const [mode, setMode] = useState<'produit' | 'pack'>('produit');
   const [packForm, setPackForm] = useState<{
     nom: string;
     description: string;
@@ -255,7 +255,7 @@ export default function AdminCatalogPage() {
           <div className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl" onClick={(e: any) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border-default p-4">
               <h3 className="text-h3 font-h3 font-bold">
-                {mode === 'pack' ? (edition.id ? tx("Modifier le pack") : 'Nouveau pack') : edition.id ? tx("Modifier le produit") : tx("Nouveau produit")}
+                {mode === 'pack' ? (edition.id ? tx("Modifier le pack") : tx("Nouveau pack")) : edition.id ? tx("Modifier le produit") : tx("Nouveau produit")}
               </h3>
               <button type="button" onClick={fermer}>{tx("Fermer")}</button>
             </div>
