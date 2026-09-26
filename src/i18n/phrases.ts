@@ -3009,6 +3009,8 @@ export const EN: Record<string, string> = {
   "Connectez-vous pour commander": "Sign in to place an order",
   "Connectez-vous pour négocier": "Sign in to bargain",
   "Connectez-vous pour voir vos commandes": "Sign in to see your orders",
+  "Connectez-vous pour voir votre profil": "Log in to see your profile",
+  "Vos commandes et vos points de repère s’affichent ici.": "Your orders and landmarks appear here.",
   "Créer un compte gratuit": "Create a free account",
   "Déjà inscrit ?": "Already registered?",
   "Pas encore de compte ?": "No account yet?",

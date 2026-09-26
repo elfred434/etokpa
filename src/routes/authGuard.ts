@@ -14,6 +14,7 @@ export const PUBLIC_PATHS: readonly string[] = [
   '/inscription',
   '/verification-2fa',
   '/reset-password',
+  '/profil',
 ];
 
 const AUTH_TOAST_ID = 'auth-required';
@@ -23,20 +24,6 @@ const REDIRECT_KEY = 'tokpa_redirect';
 
 /** Rôles du backend (App\Models\Role). */
 export type AppRole = 'super_admin' | 'admin' | 'manager' | 'livreur' | 'client';
-const ALL_ROLES: AppRole[] = ['client', 'admin', 'super_admin', 'manager', 'livreur'];
-
-/** Pages de l'espace client (routes/router.tsx) — données servies par le groupe `role:client` du backend. */
-const CLIENT_PAGES = [
-  '/catalogue',
-  '/produit',
-  '/panier',
-  '/confirmation',
-  '/profil',
-  '/negociations',
-  '/commandes',
-  '/messagerie',
-  '/notifications',
-];
 
 const normPath = (pathname: string) => pathname.replace(/\/+$/, '') || '/';
 const under = (path: string, base: string) => path === base || path.startsWith(`${base}/`);
@@ -109,21 +96,17 @@ export function homeForRole(role: string | null): '/admin' | '/manager' | '/livr
 }
 
 /**
- * Rôles autorisés pour une page — décision utilisateur du 25/09 :
- *  - client → espace client uniquement ;
- *  - admin et super_admin → espace client + espace admin ;
- *  - manager → espace client + espace manager ;
- *  - livreur → espace client + espace livreur.
- * ⚠️ Backend : les données de l'espace client (produits, panier, commandes, négociations, paiement,
- * messagerie) sont en `role:client` → 403 pour les autres rôles tant qu'il n'ouvre pas ces routes (B-24).
- * null = toute personne connectée (ex. adresse inconnue → page 404).
+ * Rôles autorisés pour une page — décision du 26/09 :
+ *  - admin, manager et livreur vérifient le rôle uniquement dans leur espace ;
+ *  - l'espace clientèle ne vérifie pas le rôle : chacun y voit ses propres achats ;
+ *  - /profil est public : sans session, une icône de connexion s'y affiche.
+ * null = pas de contrôle de rôle (clientèle, ou page inconnue).
  */
 export function pageRoles(pathname: string): { roles: AppRole[]; label: string } | null {
   const p = normPath(pathname);
   if (under(p, '/admin')) return { roles: ['admin', 'super_admin'], label: 'aux administrateurs' };
   if (under(p, '/manager')) return { roles: ['manager'], label: 'aux managers' };
   if (under(p, '/livreur')) return { roles: ['livreur'], label: 'aux livreurs' };
-  if (CLIENT_PAGES.some((b) => under(p, b))) return { roles: ALL_ROLES, label: 'aux utilisateurs connectés' };
   return null;
 }
 

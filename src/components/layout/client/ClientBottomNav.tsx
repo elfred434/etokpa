@@ -3,6 +3,7 @@ import MIcon from '../../shared/MIcon';
 import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
 import { useLanguage } from '../../../context/LanguageContext';
+import { hasSession } from '../../../routes/authGuard';
 
 /**
  * ClientBottomNav — Composant commun de navigation mobile pour toutes les pages client.
@@ -84,8 +85,8 @@ export default function ClientBottomNav() {
           isProfil ? 'bg-primary-lighter text-primary-shade font-semibold' : 'text-on-surface-variant hover:text-on-surface'
         }`}
       >
-        <MIcon name="person" className="text-[20px]" />
-        <span className="font-micro text-micro">{t('nav.profile')}</span>
+        <MIcon name={hasSession() ? "person" : "login"} className="text-[20px]" />
+        <span className="font-micro text-micro">{hasSession() ? t('nav.profile') : t('auth.loginBtn')}</span>
       </Link>
     </nav>
   );

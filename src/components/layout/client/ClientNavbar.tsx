@@ -5,7 +5,7 @@ import MIcon from '../../shared/MIcon';
 import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
 import { useLanguage } from '../../../context/LanguageContext';
-import { currentRole, staffSpace } from '../../../routes/authGuard';
+import { currentRole, hasSession, staffSpace } from '../../../routes/authGuard';
 import { tx } from '../../../i18n/tx';
 
 
@@ -146,9 +146,10 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
           <Link
             to="/profil"
             className="scale-interaction"
-            aria-label={tx("Profil")}
+            aria-label={hasSession() ? tx("Profil") : tx("Se connecter")}
+            title={hasSession() ? tx("Profil") : tx("Se connecter")}
           >
-            <MIcon name="account_circle" />
+            <MIcon name={hasSession() ? "account_circle" : "login"} />
           </Link>
         </div>
       </div>

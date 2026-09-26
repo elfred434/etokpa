@@ -8,7 +8,7 @@ import MIcon from '../../../components/shared/MIcon';
 import { alertApiError } from '../../../utils/apiError';
 import { parseLandmarks } from '../../../utils/landmarks';
 import { useLanguage } from '../../../context/LanguageContext';
-import { useAuthGuard } from '../../../hooks/useAuthGuard';
+import { currentRole, hasSession } from '../../../routes/authGuard';
 import { authApi, ordersApi, type UserProfile } from '../../../services/api';
 import { tx } from '../../../i18n/tx';
 
@@ -51,7 +51,7 @@ const STATUT_LABELS: Record<string, { fr: string; en: string; active: boolean }>
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { language, toggleLanguage, isFr } = useLanguage();
-  const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
+  const isAuthenticated = hasSession();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [landmarks, setLandmarks] = useState<Landmark[]>([]);
@@ -137,13 +137,28 @@ export default function ProfilePage() {
     Promise.allSettled([p1, p2, p3]).then(() => setIsDataLoading(false));
   }, [isAuthenticated]);
 
-  if (isLoading || !isAuthenticated) {
+  if (!isAuthenticated) {
     return (
-      <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
-        <div className="flex flex-col items-center gap-3">
-          <MIcon name="sync" className="text-primary text-4xl animate-spin" />
-          <p className="text-sm font-semibold text-text-secondary">{tx("Redirection vers la connexion...")}</p>
-        </div>
+      <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
+        <ClientNavbar />
+        <main className="mx-auto mt-[76px] flex max-w-[720px] flex-col items-center px-md text-center">
+          <Link
+            to="/connexion"
+            search={{ redirect: '/profil' }}
+            className="mt-10 flex flex-col items-center gap-md rounded-[14px] border border-border-default bg-bg-card px-lg py-xl shadow-xs"
+            aria-label={tx("Se connecter")}
+          >
+            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-tint text-primary-shade">
+              <MIcon name="login" className="text-[48px]" />
+            </span>
+            <h1 className="font-h2 text-h2 font-bold">{tx("Connectez-vous pour voir votre profil")}</h1>
+            <p className="max-w-sm text-sm text-text-secondary">
+              {tx("Vos commandes et vos points de repère s’affichent ici.")}
+            </p>
+            <span className="rounded-lg bg-primary-container px-lg py-3 font-bold text-white">{tx("Se connecter")}</span>
+          </Link>
+        </main>
+        <ClientBottomNav />
       </div>
     );
   }
@@ -151,7 +166,8 @@ export default function ProfilePage() {
   const userFullName =
     profile?.nom_complet || (profile?.prenom ? `${profile.prenom} ${profile.nom}` : 'Utilisateur TOKPa');
   const userRole = typeof profile?.role === 'object' ? profile.role.nom : profile?.role || 'Client';
-  const orderCount = dashCount ?? recentOrders.length;
+  const role = currentRole();
+  const orderCount = !role || role === 'client' ? (dashCount ?? recentOrders.length) : recentOrders.length;
   const landmarkCount = landmarks.length;
 
   // ---- Points de repère (via PUT /profile, car GET /landmarks est cassé côté backend) ----
