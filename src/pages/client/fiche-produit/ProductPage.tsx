@@ -10,44 +10,12 @@ import ApiErrorState from '../../../components/shared/ApiErrorState';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import { submitOffer, acceptCounterOffer, cancelNegotiation } from '../../../store/slices/negotiation/negotiationSlice';
-import type { CategoryId, Product } from '../../../types/models';
+import type { Product } from '../../../types/models';
 import { catalogApi, negotiationApi, type ApiProduct } from '../../../services/api';
-import { absImageUrl } from '../../../utils/imageUrl';
+import { mapApiProduct } from '../../../utils/productMap';
 import { alertApiError, apiErrorStatus } from '../../../utils/apiError';
 
 /* ---- Fiche produit 100 % API : GET /api/products/{id} (route /produit/$productId) ---- */
-
-const SLUG_TO_CATEGORY: Record<string, CategoryId> = {
-  legume: 'vegetable',
-  legumes: 'vegetable',
-  fruit: 'vegetable',
-  fruits: 'vegetable',
-  poisson: 'fish',
-  poissons: 'fish',
-  cereale: 'grain',
-  cereales: 'grain',
-  grain: 'grain',
-  epice: 'spice',
-  epices: 'spice',
-  pack: 'pack',
-};
-
-function mapApiProduct(p: ApiProduct): Product {
-  const slug = p.categorie?.slug ?? '';
-  return {
-    id: String(p.id),
-    nom: p.nom,
-    origine: p.categorie?.nom ?? '', // pas de marché dans l'API : vraie catégorie
-    quantite: '',
-    prix: Number(p.prix),
-    prixMinimum: Number(p.prix_minimum),
-    categorie: SLUG_TO_CATEGORY[slug] ?? 'vegetable',
-    stock: p.disponible && p.stock > 0 ? 'available' : 'out',
-    badges: [],
-    image: absImageUrl(p.image_url ?? p.img_url) ?? undefined,
-    description: p.description,
-  };
-}
 
 type TabId = 'description' | 'origine' | 'avis';
 

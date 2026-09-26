@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import MIcon from '../../components/shared/MIcon';
 import { authApi } from '../../services/api';
 import { extractApiError, formatApiError } from '../../utils/apiError';
+import { passwordScore } from '../../utils/passwordScore';
 
 const profilSchema = z.object({
   prenom: z.string().min(2, 'Prénom requis'),
@@ -30,15 +31,6 @@ const securitySchema = z.object({
 });
 
 const VILLES = ['Cotonou', 'Abomey-Calavi', 'Porto-Novo', 'Parakou', 'Bohicon', 'Natitingou'];
-
-function passwordScore(pw: string): number {
-  let score = 0;
-  if (pw.length >= 8) score += 1;
-  if (/\d/.test(pw)) score += 1;
-  if (/[A-Z]/.test(pw)) score += 1;
-  if (/[^A-Za-z0-9]/.test(pw) || pw.length >= 12) score += 1;
-  return score;
-}
 
 const STRENGTH = [
   { label: 'À définir', color: 'bg-border-default', text: 'text-text-tertiary' },

@@ -1,4 +1,8 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
+
+vi.mock('react-hot-toast', () => ({ default: { error: vi.fn(), success: vi.fn() } }));
+vi.mock('@tanstack/react-router', () => ({ redirect: (args: unknown) => args }));
+
 import { canAccess, currentUserZone, homeForRole, postLoginTarget, staffSpace } from '../src/routes/authGuard';
 
 describe('role and session helpers', () => {

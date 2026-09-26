@@ -4,6 +4,7 @@ import { adminApi } from '../../services/api';
 import { listOf, unwrap } from '../../services/api/unwrap';
 import { zoneNom, initials } from '../../services/api/useLiveRows';
 import { alertApiError } from '../../utils/apiError';
+import { statutLivreur } from '../../utils/riderStatus';
 import { absImageUrl } from '../../utils/imageUrl';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
@@ -19,17 +20,6 @@ const DESIGN_CSS = `
 
 const PER_PAGE = 10;
 const MAX_PAGES = 25;
-
-/** Statut affiché d'un livreur : compte (suspendu / inactif), course en cours, puis vraie disponibilité. */
-function statutLivreur(l: any, enCourse: boolean) {
-  const compte = String(l?.statut ?? '').toLowerCase();
-  if (compte === 'suspendu') return { label: 'Suspendu', badge: 'bg-error-light text-error-dark text-micro font-bold', dot: 'bg-error' };
-  if (compte === 'inactif') return { label: 'Inactif', badge: 'bg-surface-container text-text-tertiary text-micro font-bold', dot: 'bg-text-tertiary' };
-  if (enCourse) return { label: 'En course', badge: 'bg-amber-light text-amber-text text-micro font-bold', dot: 'bg-amber-text' };
-  return l?.profil?.disponibilite
-    ? { label: 'En ligne', badge: 'bg-success-light text-success-dark text-micro font-bold', dot: 'bg-success' }
-    : { label: 'Hors ligne', badge: 'bg-error-light text-error-dark text-micro font-bold', dot: 'bg-error' };
-}
 
 const ilYa = (iso?: string | null) => {
   if (!iso) return '—';

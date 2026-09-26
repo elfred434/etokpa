@@ -14,6 +14,7 @@ import { catalogApi, type ApiBundle, type ApiCategory, type ApiProduct } from '.
 import { absImageUrl } from '../../../utils/imageUrl';
 import { categoryKind, type CategoryKind } from '../../../utils/categoryKind';
 import { alertApiError } from '../../../utils/apiError';
+import { mapApiCategory } from '../../../utils/catalogMap';
 
 /* ---- Catalogue : données UNIQUEMENT issues de l'API (plus aucun produit, catégorie ni marché de la maquette) ---- */
 
@@ -66,16 +67,6 @@ interface CatalogProduct {
 
 
 const PER_PAGE = 9;
-
-/** Catégorie réelle (ProductResource.categorie) -> CatFilter Stitch. */
-function mapApiCategory(categorie?: ApiProduct['categorie']): CategoryId {
-  const s = `${categorie?.slug ?? ''} ${categorie?.nom ?? ''}`.toLowerCase();
-  if (/poisson|viande|chair|boeuf|porc|poulet/.test(s)) return 'fish';
-  if (/c.r.al|graine|riz|ma.s|bl.|haricot/.test(s)) return 'grain';
-  if (/.pice|condiment|aromate|ail|piment/.test(s)) return 'spice';
-  if (/pack|bundle|lot/.test(s)) return 'pack';
-  return 'vegetable';
-}
 
 /** Catalogue — Copie conforme Stitch + Intégration API Backend Laravel */
 export default function CatalogPage() {

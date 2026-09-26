@@ -6,6 +6,7 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import { alertApiError } from '../../../utils/apiError';
+import { parseLandmarks } from '../../../utils/landmarks';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { authApi, ordersApi, type UserProfile } from '../../../services/api';
@@ -35,25 +36,6 @@ const STATUT_LABELS: Record<string, { fr: string; en: string; active: boolean }>
   livre: { fr: 'Livrée', en: 'Delivered', active: false },
   annule: { fr: 'Annulée', en: 'Cancelled', active: false },
 };
-
-function parseLandmarks(profil: Record<string, unknown> | undefined): Landmark[] {
-  const raw = profil?.point_repere;
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((item, i) => {
-      if (typeof item === 'string') return { key: `lm-${i}`, nom: item, description: '' };
-      if (item && typeof item === 'object') {
-        const o = item as Record<string, unknown>;
-        return {
-          key: `lm-${i}-${o.nom ?? o.landmark ?? ''}`,
-          nom: String(o.nom ?? 'Point de repère'),
-          description: String(o.landmark ?? o.description ?? ''),
-        };
-      }
-      return null;
-    })
-    .filter((l): l is Landmark => l !== null);
-}
 
 /**
  * ProfilePage — données 100 % backend :
