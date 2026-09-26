@@ -1,0 +1,6 @@
+node_modules
+dist
+.git
+*.log
+stitch_tokpa_design_system (2).zip
+tests

@@ -23,3 +23,6 @@ pnpm-debug.log*
 !.vscode/extensions.json
 .idea/
 .DS_Store
+arena-bridge.py
+Tester-Pont.ps1
+Demarrer-Pont.ps1
