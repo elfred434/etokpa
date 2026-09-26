@@ -5,28 +5,32 @@ import { z } from 'zod';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import MIcon from '../../components/shared/MIcon';
+import LangToggle from '../../components/shared/LangToggle';
 import { authApi } from '../../services/api';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { passwordScore } from '../../utils/passwordScore';
+import { useLanguage } from '../../context/LanguageContext';
+import { tx } from '../../i18n/tx';
 
-const profilSchema = z.object({
-  prenom: z.string().min(2, 'Prénom requis'),
-  nom: z.string().min(2, 'Nom requis'),
-  email: z.string().email('Email invalide'),
-  telephone: z.string().regex(/^\d{8,10}$/, '8 à 10 chiffres attendus'),
-  ville: z.string().min(1, 'Sélectionnez votre ville'),
+
+const profilSchema = () => z.object({
+  prenom: z.string().min(2, tx('Prénom requis')),
+  nom: z.string().min(2, tx('Nom requis')),
+  email: z.string().email(tx('Email invalide')),
+  telephone: z.string().regex(/^\d{8,10}$/, tx('8 à 10 chiffres attendus')),
+  ville: z.string().min(1, tx('Sélectionnez votre ville')),
 });
 
-const securitySchema = z.object({
+const securitySchema = () => z.object({
   password: z
     .string()
-    .min(8, 'Au moins 8 caractères')
-    .regex(/\d/, 'Au moins 1 chiffre')
-    .regex(/[A-Z]/, 'Au moins 1 lettre majuscule'),
+    .min(8, tx('Au moins 8 caractères'))
+    .regex(/\d/, tx('Au moins 1 chiffre'))
+    .regex(/[A-Z]/, tx('Au moins 1 lettre majuscule')),
   confirm: z.string(),
-  cgu: z.boolean().refine((v) => v, 'Vous devez accepter les CGU'),
+  cgu: z.boolean().refine((v) => v, tx('Vous devez accepter les CGU')),
 }).refine((d) => d.password === d.confirm, {
-  message: 'Les mots de passe ne correspondent pas',
+  message: tx('Les mots de passe ne correspondent pas'),
   path: ['confirm'],
 });
 
@@ -47,6 +51,7 @@ type SecurityErrors = Partial<Record<'password' | 'confirm' | 'cgu', string>>;
  * Page Inscription (Profil + Sécurité) — Intégration API Backend Laravel + UI Stitch
  */
 export default function InscriptionPage() {
+  useLanguage();
   const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2>(1);
 
@@ -75,7 +80,7 @@ export default function InscriptionPage() {
 
   const handleProfilSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const result = profilSchema.safeParse(profil);
+    const result = profilSchema().safeParse(profil);
     if (!result.success) {
       const next: ProfilErrors = {};
       for (const issue of result.error.issues) {
@@ -93,7 +98,7 @@ export default function InscriptionPage() {
   const handleSecuritySubmit = async (e: FormEvent) => {
     e.preventDefault();
     setApiError(null);
-    const result = securitySchema.safeParse(security);
+    const result = securitySchema().safeParse(security);
     if (!result.success) {
       const next: SecurityErrors = {};
       for (const issue of result.error.issues) {
@@ -118,7 +123,7 @@ export default function InscriptionPage() {
         quartier: profil.ville,
       });
 
-      toast.success(res.message || 'Compte créé ! Code 2FA envoyé.');
+      toast.success(res.message || tx("Compte créé ! Code 2FA envoyé."));
       localStorage.setItem('tokpa_pending_email', profil.email);
       navigate({ to: '/verification-2fa' });
     } catch (err: unknown) {
@@ -151,6 +156,7 @@ export default function InscriptionPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-bg-app p-4 md:p-6 font-body text-text-main">
+      <div className="fixed right-4 top-4 z-50"><LangToggle /></div>
       <div className="w-full max-w-[700px] overflow-hidden rounded-2xl bg-white shadow-sm border border-border-default">
         {/* Header Banner */}
         <header className="relative h-28 overflow-hidden bg-primary-tint border-b border-primary-light flex items-center justify-center">
@@ -159,13 +165,13 @@ export default function InscriptionPage() {
               TOKPa
             </Link>
             <span className="mt-1 text-xs font-semibold tracking-widest text-primary-dark uppercase">
-              Ton marché, ta façon
+              {tx("Ton marché, ta façon")}
             </span>
           </div>
           {step === 2 && (
             <span className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-text-secondary border border-border-default shadow-xs">
               <span className="h-2 w-2 rounded-full bg-success" />
-              Bénin (+229)
+              {tx("Bénin (+229)")}
             </span>
           )}
         </header>
@@ -173,8 +179,8 @@ export default function InscriptionPage() {
         {/* Body */}
         <div className="p-6 md:p-8">
           <div className="mb-6 text-center">
-            <h1 className="text-h2 font-bold text-text-main">Créer votre compte</h1>
-            <p className="mt-1 text-sm text-text-secondary">Rejoignez le marché digital béninois</p>
+            <h1 className="text-h2 font-bold text-text-main">{tx("Créer votre compte")}</h1>
+            <p className="mt-1 text-sm text-text-secondary">{tx("Rejoignez le marché digital béninois")}</p>
           </div>
 
           {/* Stepper */}
@@ -189,7 +195,7 @@ export default function InscriptionPage() {
                 {step === 1 ? '1' : <MIcon name="check" className="text-sm" />}
               </div>
               <span className={clsx('text-xs font-bold', step === 1 ? 'text-primary-container' : 'text-success')}>
-                Profil
+                {tx("Profil")}
               </span>
             </div>
 
@@ -205,7 +211,7 @@ export default function InscriptionPage() {
                 2
               </div>
               <span className={clsx('text-xs font-bold', step === 2 ? 'text-primary-container' : 'text-text-tertiary')}>
-                Sécurité
+                {tx("Sécurité")}
               </span>
             </div>
           </div>
@@ -215,7 +221,7 @@ export default function InscriptionPage() {
             <form className="space-y-4" onSubmit={handleProfilSubmit}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-text-secondary mb-1">Prénom</label>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Prénom")}</label>
                   <div className="relative">
                     <MIcon name="person" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                     <input
@@ -232,7 +238,7 @@ export default function InscriptionPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-text-secondary mb-1">Nom de famille</label>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Nom de famille")}</label>
                   <div className="relative">
                     <MIcon name="person" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                     <input
@@ -250,7 +256,7 @@ export default function InscriptionPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">Adresse email</label>
+                <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Adresse email")}</label>
                 <div className="relative">
                   <MIcon name="mail" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                   <input
@@ -267,7 +273,7 @@ export default function InscriptionPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">Numéro de téléphone (+229)</label>
+                <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Numéro de téléphone (+229)")}</label>
                 <div className="relative">
                   <MIcon name="call" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                   <input
@@ -284,7 +290,7 @@ export default function InscriptionPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">Ville / Zone</label>
+                <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Ville / Zone")}</label>
                 <div className="relative">
                   <MIcon name="location_on" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                   <select
@@ -309,14 +315,14 @@ export default function InscriptionPage() {
                 type="submit"
                 className="w-full bg-primary-container hover:bg-primary-hover text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer mt-6"
               >
-                <span>Continuer</span>
+                <span>{tx("Continuer")}</span>
                 <MIcon name="arrow_forward" />
               </button>
 
               <p className="text-center text-xs text-text-secondary mt-4">
                 Déjà un compte ?{' '}
                 <Link to="/connexion" className="font-bold text-primary-container hover:underline">
-                  Se connecter
+                  {tx("Se connecter")}
                 </Link>
               </p>
             </form>
@@ -326,7 +332,7 @@ export default function InscriptionPage() {
           {step === 2 && (
             <form className="space-y-4" onSubmit={handleSecuritySubmit}>
               <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">Mot de passe</label>
+                <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Mot de passe")}</label>
                 <div className="relative">
                   <MIcon name="lock" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                   <input
@@ -349,7 +355,7 @@ export default function InscriptionPage() {
 
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-xs text-text-secondary">Force :</span>
-                  <span className={clsx('text-xs font-bold', strength.text)}>{strength.label}</span>
+                  <span className={clsx('text-xs font-bold', strength.text)}>{tx(strength.label)}</span>
                 </div>
                 <div className="mt-1 flex gap-1">
                   {[1, 2, 3, 4].map((i) => (
@@ -360,12 +366,12 @@ export default function InscriptionPage() {
                   ))}
                 </div>
                 <p className="mt-1 text-micro text-text-tertiary">
-                  Au moins 8 caractères, dont 1 chiffre & 1 lettre majuscule.
+                  {tx("Au moins 8 caractères, dont 1 chiffre & 1 lettre majuscule.")}
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">Confirmer le mot de passe</label>
+                <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Confirmer le mot de passe")}</label>
                 <div className="relative">
                   <MIcon name="lock" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                   <input
@@ -396,15 +402,15 @@ export default function InscriptionPage() {
                       onClick={() => toast('CGU TOKPa v2')}
                       className="font-bold text-primary-container underline"
                     >
-                      Conditions Générales d'Utilisation
+                      {tx("Conditions Générales d'Utilisation")}
                     </button>{' '}
                     et la{' '}
                     <button
                       type="button"
-                      onClick={() => toast('Politique de confidentialité TOKPa')}
+                      onClick={() => toast(tx("Politique de confidentialité TOKPa"))}
                       className="font-bold text-primary-container underline"
                     >
-                      Politique de confidentialité
+                      {tx("Politique de confidentialité")}
                     </button>{' '}
                     de TOKPa.
                   </span>
@@ -419,7 +425,7 @@ export default function InscriptionPage() {
                     className="mt-0.5 rounded text-primary-container focus:ring-primary-container border-border-default"
                   />
                   <span className="text-xs text-text-secondary leading-normal">
-                    Recevoir les alertes d'accès sécurisé et codes OTP par SMS (+229).
+                    {tx("Recevoir les alertes d'accès sécurisé et codes OTP par SMS (+229).")}
                   </span>
                 </label>
               </div>
@@ -435,7 +441,7 @@ export default function InscriptionPage() {
                 disabled={loading}
                 className="w-full bg-primary-container hover:bg-primary-hover text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer mt-6 disabled:opacity-50"
               >
-                <span>{loading ? 'Création...' : 'Créer mon compte'}</span>
+                <span>{loading ? tx("Création...") : 'Créer mon compte'}</span>
                 <MIcon name="arrow_forward" />
               </button>
 
@@ -445,7 +451,7 @@ export default function InscriptionPage() {
                 className="mx-auto flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-main transition-colors mt-3 cursor-pointer"
               >
                 <MIcon name="arrow_back" className="text-sm" />
-                Retour à l'étape 1 (Profil)
+                {tx("Retour à l'étape 1 (Profil)")}
               </button>
             </form>
           )}
@@ -456,10 +462,10 @@ export default function InscriptionPage() {
       {step === 2 && (
         <p className="mt-4 flex items-center gap-2 text-xs text-text-tertiary">
           <MIcon name="verified_user" className="text-success text-sm" />
-          Données chiffrées SSL
+          {tx("Données chiffrées SSL")}
           <span>•</span>
           <MIcon name="lock" className="text-primary-container text-sm" />
-          Conforme APDP Bénin
+          {tx("Conforme APDP Bénin")}
         </p>
       )}
     </div>

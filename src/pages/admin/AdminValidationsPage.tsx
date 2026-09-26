@@ -6,6 +6,9 @@ import { alertApiError } from '../../utils/apiError';
 import { absImageUrl } from '../../utils/imageUrl';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import { useLanguage } from '../../context/LanguageContext';
+import { tx } from '../../i18n/tx';
+
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -57,6 +60,7 @@ const ecart = (pr: any) => {
  * « Contre-proposer » laissé tel quel (décision utilisateur P3 : aucune contre-offre côté backend).
  */
 export default function AdminValidationsPage() {
+  useLanguage();
   const [proposals, setProposals] = useState<any[]>([]);
   const [cats, setCats] = useState<Map<number, string>>(new Map());
   const [err, setErr] = useState<string | null>(null);
@@ -102,7 +106,7 @@ export default function AdminValidationsPage() {
 
   const [filtre, setFiltre] = useState<Filtre>('all');
   const [page, setPage] = useState(1);
-  const enAttente = proposals.filter((p) => p.statut === 'en_attente');
+  const enAttente = proposals.filter((p) => p.statut === "en_attente");
   const filtered = filtre === 'all' ? proposals : proposals.filter((p) => p.statut === filtre);
   const pages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const current = Math.min(page, pages);
@@ -124,7 +128,7 @@ export default function AdminValidationsPage() {
     setBusy(true);
     try {
       await adminApi.respondProposal(pr.id, { decision, ...(admin_response ? { admin_response } : {}) });
-      toast.success(decision === 'accepte' ? 'Proposition acceptée.' : 'Proposition refusée.');
+      toast.success(decision === 'accepte' ? tx("Proposition acceptée.") : tx("Proposition refusée."));
       reload();
     } catch (e) {
       alertApiError(e, 'admin-validations-respond');
@@ -133,12 +137,12 @@ export default function AdminValidationsPage() {
     }
   };
   const refuserEtNotifier = (pr: any) => {
-    const message = window.prompt('Message envoyé au client (motif du refus) :', 'Votre proposition est trop éloignée du prix minimum.');
+    const message = window.prompt(tx("Message envoyé au client (motif du refus) :"), tx("Votre proposition est trop éloignée du prix minimum."));
     if (message === null) return;
     void decider(pr, 'refuse', message.trim() || undefined);
   };
 
-  const selEnAttente = selected?.statut === 'en_attente';
+  const selEnAttente = selected?.statut === "en_attente";
   const selImage = absImageUrl(selected?.product?.image_url);
   const selCat = cats.get(Number(selected?.product?.categorie_id));
 
@@ -146,15 +150,15 @@ export default function AdminValidationsPage() {
     <AdminLayout currentPath="/admin/validations">
       {err && (
         <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
-          <p className="font-bold">Erreur API</p>
+          <p className="font-bold">{tx("Erreur API")}</p>
           <p>{err}</p>
         </div>
       )}
-      {loading && <p className="m-lg text-label text-text-secondary">Chargement des données réelles…</p>}
+      {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
       <style>{DESIGN_CSS}</style>
       <header className="px-8 pt-8 pb-4 flex flex-col gap-4 bg-bg-app">
         <div>
-          <h1 className="text-2xl font-bold text-text-main">Validation des budgets</h1>
+          <h1 className="text-2xl font-bold text-text-main">{tx("Validation des budgets")}</h1>
           <p className="text-text-secondary text-sm">
             {enAttente.length} proposition{enAttente.length > 1 ? 's' : ''} en attente de décision sur le marché TOKPa
           </p>
@@ -163,9 +167,9 @@ export default function AdminValidationsPage() {
           {(
             [
               ['all', 'Toutes'],
-              ['en_attente', 'En attente'],
-              ['accepte', 'Acceptées'],
-              ['refuse', 'Refusées'],
+              ["en_attente", 'En attente'],
+              ['accepte', tx("Acceptées")],
+              ['refuse', tx("Refusées")],
             ] as [Filtre, string][]
           ).map(([id, label]) => (
             <button
@@ -177,7 +181,7 @@ export default function AdminValidationsPage() {
                 setPage(1);
               }}
             >
-              {label}
+              {tx(label)}
             </button>
           ))}
         </div>
@@ -188,11 +192,11 @@ export default function AdminValidationsPage() {
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 bg-gray-50 z-10 border-b border-gray-200">
                 <tr>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Client</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Produit</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{tx("Client")}</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{tx("Produit")}</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Prix vendeur</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Prix proposé</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Écart</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{tx("Prix proposé")}</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{tx("Écart")}</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                 </tr>
@@ -201,7 +205,7 @@ export default function AdminValidationsPage() {
                 {!loading && visible.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-lg py-6 text-center text-label text-text-secondary">
-                      Aucune proposition dans cette catégorie.
+                      {tx("Aucune proposition dans cette catégorie.")}
                     </td>
                   </tr>
                 )}
@@ -223,17 +227,17 @@ export default function AdminValidationsPage() {
                       <td className={`px-lg py-3 ${e != null && e < 0 ? 'text-error' : ''}`}>{e != null ? `${e > 0 ? '+' : ''}${e} %` : '—'}</td>
                       <td className="px-lg py-3">{dateCourte(pr.created_at)}</td>
                       <td className="px-lg py-3" onClick={(ev) => ev.stopPropagation()}>
-                        {pr.statut === 'en_attente' ? (
+                        {pr.statut === "en_attente" ? (
                           <div className="flex gap-2">
                             <button type="button" disabled={busy} className="font-semibold text-success hover:underline disabled:opacity-50" onClick={() => decider(pr, 'accepte')}>
-                              Accepter
+                              {tx("Accepter")}
                             </button>
                             <button type="button" disabled={busy} className="font-semibold text-error hover:underline disabled:opacity-50" onClick={() => decider(pr, 'refuse')}>
-                              Refuser
+                              {tx("Refuser")}
                             </button>
                           </div>
                         ) : (
-                          <span className={`font-semibold ${STATUT[pr.statut]?.cls ?? ''}`}>{STATUT[pr.statut]?.label ?? pr.statut}</span>
+                          <span className={`font-semibold ${STATUT[pr.statut]?.cls ?? ''}`}>{tx(STATUT[pr.statut]?.label ?? pr.statut)}</span>
                         )}
                       </td>
                     </tr>
@@ -245,7 +249,7 @@ export default function AdminValidationsPage() {
           <div className="p-4 border-t border-gray-100 flex justify-between items-center bg-gray-50">
             <span className="text-xs text-text-secondary">
               {filtered.length === 0
-                ? 'Aucune proposition'
+                ? tx("Aucune proposition")
                 : `Affichage de ${(current - 1) * PER_PAGE + 1} à ${Math.min(current * PER_PAGE, filtered.length)} sur ${filtered.length} propositions`}
             </span>
             <div className="flex gap-2">
@@ -271,7 +275,7 @@ export default function AdminValidationsPage() {
         {selected && (
           <aside className="w-[320px] shrink-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 flex flex-col gap-4">
-              <h2 className="text-lg font-bold text-text-main">Détail de la proposition</h2>
+              <h2 className="text-lg font-bold text-text-main">{tx("Détail de la proposition")}</h2>
               <div className="rounded-xl overflow-hidden aspect-[4/3] bg-gray-100 flex items-center justify-center">
                 {selImage ? <img className="h-full w-full object-cover" src={selImage} alt={selected.product?.nom ?? 'Produit'} /> : <MIcon name="image" className="text-4xl text-gray-300" />}
               </div>
@@ -281,7 +285,7 @@ export default function AdminValidationsPage() {
               </div>
               <div className="h-px bg-gray-100 w-full"></div>
               <div>
-                <h4 className="text-xs font-bold text-text-secondary uppercase mb-3 tracking-widest">Négociation</h4>
+                <h4 className="text-xs font-bold text-text-secondary uppercase mb-3 tracking-widest">{tx("Négociation")}</h4>
                 <div className="space-y-4">
                   <div className="flex gap-3 relative">
                     <div className="absolute left-1.5 top-5 bottom-0 w-0.5 bg-gray-100"></div>
@@ -298,18 +302,18 @@ export default function AdminValidationsPage() {
                     <div className="absolute left-1.5 top-5 bottom-0 w-0.5 bg-gray-100"></div>
                     <div className="h-3 w-3 rounded-full bg-gray-300 z-10 mt-1"></div>
                     <div className="flex flex-col">
-                      <span className="text-xs font-medium">Prix vendeur : {fmtFcfa(selected.product?.prix)}</span>
-                      <span className="text-[10px] text-text-secondary">Prix minimum : {fmtFcfa(selected.product?.prix_minimum)}</span>
+                      <span className="text-xs font-medium">{tx("Prix vendeur :")} {fmtFcfa(selected.product?.prix)}</span>
+                      <span className="text-[10px] text-text-secondary">{tx("Prix minimum :")} {fmtFcfa(selected.product?.prix_minimum)}</span>
                     </div>
                   </div>
                   <div className="flex gap-3">
                     <div className="h-3 w-3 rounded-full bg-primary ring-4 ring-primary-tint z-10 mt-1"></div>
                     <div className="flex flex-col">
                       <span className={`text-xs font-bold ${selEnAttente ? 'text-primary' : (STATUT[selected.statut]?.cls ?? '')}`}>
-                        {selEnAttente ? 'En attente de validation admin' : (STATUT[selected.statut]?.label ?? selected.statut)}
+                        {selEnAttente ? tx("En attente de validation admin") : tx(STATUT[selected.statut]?.label ?? selected.statut)}
                       </span>
                       <span className="text-[10px] text-text-secondary">
-                        {selEnAttente ? 'maintenant' : [selected.admin_response, selected.responded_at ? heure(selected.responded_at) : null].filter(Boolean).join(' · ') || '—'}
+                        {selEnAttente ? tx("maintenant") : [selected.admin_response, selected.responded_at ? heure(selected.responded_at) : null].filter(Boolean).join(' · ') || '—'}
                       </span>
                     </div>
                   </div>
@@ -318,7 +322,7 @@ export default function AdminValidationsPage() {
             </div>
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 flex flex-col gap-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-text-secondary uppercase tracking-widest">Historique client</h4>
+                <h4 className="text-xs font-bold text-text-secondary uppercase tracking-widest">{tx("Historique client")}</h4>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col">

@@ -14,6 +14,9 @@ import type { Product } from '../../../types/models';
 import { catalogApi, negotiationApi, type ApiProduct } from '../../../services/api';
 import { mapApiProduct } from '../../../utils/productMap';
 import { alertApiError, apiErrorStatus } from '../../../utils/apiError';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tr, tx } from '../../../i18n/tx';
+
 
 /* ---- Fiche produit 100 % API : GET /api/products/{id} (route /produit/$productId) ---- */
 
@@ -21,6 +24,7 @@ type TabId = 'description' | 'origine' | 'avis';
 
 /** Fiche produit avec module de négociation F-10 — données réelles Backend API Laravel. */
 export default function ProductPage() {
+  useLanguage();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { productId } = useParams({ from: '/produit/$productId' });
@@ -71,11 +75,11 @@ export default function ProductPage() {
     if (!product) return;
     const numPrice = parseInt(offerInput.replace(/[^0-9]/g, ''), 10);
     if (isNaN(numPrice) || numPrice <= 0) {
-      toast.error('Veuillez entrer un montant valide en FCFA');
+      toast.error(tx('Veuillez entrer un montant valide en FCFA'));
       return;
     }
     if (numPrice < product.prixMinimum) {
-      toast.error(`Le prix minimum négociable est de ${product.prixMinimum.toLocaleString('fr-FR')} FCFA`);
+      toast.error(tr(`Le prix minimum négociable est de ${product.prixMinimum.toLocaleString('fr-FR')} FCFA`, `The minimum negotiable price is ${product.prixMinimum.toLocaleString('fr-FR')} FCFA`));
       return;
     }
 
@@ -97,10 +101,10 @@ export default function ProductPage() {
           minPrice: product.prixMinimum,
         }),
       );
-      toast.success('Offre envoyée au marché ! Vous serez notifié de sa réponse.');
+      toast.success(tx("Offre envoyée au marché ! Vous serez notifié de sa réponse."));
     } catch (e: unknown) {
       const detail = (e as { response?: { data?: { message?: string } } })?.response?.data;
-      toast.error(detail?.message || 'Impossible d’envoyer l’offre (serveur inaccessible ?)');
+      toast.error(detail?.message || tx('Impossible d’envoyer l’offre (serveur inaccessible ?)'));
     } finally {
       setIsSubmitting(false);
     }
@@ -114,13 +118,13 @@ export default function ProductPage() {
       negotiated: { oldPrice: product.prix },
     };
     dispatch(add({ product: negotiatedProduct, quantity }));
-    toast.success(`Ajouté au panier au prix négocié de ${price.toLocaleString('fr-FR')} FCFA !`);
+    toast.success(tr(`Ajouté au panier au prix négocié de ${price.toLocaleString('fr-FR')} FCFA !`, `Added to cart at the negotiated price of ${price.toLocaleString('fr-FR')} FCFA!`));
   };
 
   const addToCart = () => {
     if (!product) return;
     dispatch(add({ product, quantity }));
-    toast.success('Ajouté au panier');
+    toast.success(tx("Ajouté au panier"));
   };
 
   const buyNow = () => {
@@ -145,7 +149,7 @@ export default function ProductPage() {
         <main className="flex justify-center pt-[80px] px-md">
           <div className="w-full max-w-[560px] bg-white rounded-xl border border-border-default p-xl">
             <ApiErrorState
-              title="Impossible de charger le produit"
+              title={tx("Impossible de charger le produit")}
               message={loadError}
               onRetry={() => setReloadKey((k) => k + 1)}
             />
@@ -165,7 +169,7 @@ export default function ProductPage() {
             <EmptyState
               icon={<MIcon name="search_off" className="text-4xl text-primary" />}
               title="Produit introuvable"
-              description="Ce produit n’existe pas ou n’est plus disponible au marché."
+              description={tx("Ce produit n’existe pas ou n’est plus disponible au marché.")}
               action={
                 <Link
                   to="/catalogue"
@@ -182,7 +186,7 @@ export default function ProductPage() {
     );
   }
 
-  const categoryNom = apiProduct?.categorie?.nom ?? 'Catalogue';
+  const categoryNom = apiProduct?.categorie?.nom ?? tx("Catalogue");
   // Commandable = disponible ET stock > 0 (même règle que « Disponible uniquement » du catalogue).
   const unavailable = !apiProduct?.disponible || Number(apiProduct?.stock ?? 0) <= 0;
 
@@ -194,7 +198,7 @@ export default function ProductPage() {
           {/* ---- Breadcrumbs (catégorie réelle de l'API) ---- */}
           <div className="flex flex-wrap gap-2 py-3 md:px-10">
             <Link to="/" className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">
-              Accueil
+              {tx("Accueil")}
             </Link>
             <span className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">/</span>
             <Link to="/catalogue" className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">
@@ -218,7 +222,7 @@ export default function ProductPage() {
                 >
                   <span className={`h-2 w-2 rounded-full ${unavailable ? 'bg-error' : 'bg-success'}`} />
                   <span className={`text-xs font-semibold ${unavailable ? 'text-error-dark' : 'text-success-dark'}`}>
-                    {unavailable ? 'Rupture de stock' : 'Disponible'}
+                    {unavailable ? 'Rupture de stock' : tx("Disponible")}
                   </span>
                 </div>
                 {product.image ? (
@@ -230,7 +234,7 @@ export default function ProductPage() {
                 ) : (
                   <div className="flex flex-col items-center gap-4 text-primary-hover">
                     <MIcon name="flag_2" style={{ fontSize: 64 }} />
-                    <span className="text-xs font-medium opacity-70">Photo bientôt disponible</span>
+                    <span className="text-xs font-medium opacity-70">{tx("Photo bientôt disponible")}</span>
                   </div>
                 )}
               </div>
@@ -265,7 +269,7 @@ export default function ProductPage() {
 
               {/* Quantity Selector */}
               <div className="flex items-center gap-4">
-                <span className="text-label text-ink">Quantité</span>
+                <span className="text-label text-ink">{tx("Quantité")}</span>
                 <div className="flex items-center rounded-lg border border-line">
                   <button
                     type="button"
@@ -293,11 +297,11 @@ export default function ProductPage() {
                   <div className="flex items-center gap-2">
                     <MIcon name="payments" className="text-[#F59E0B]" />
                     <h3 className="text-sm font-semibold uppercase tracking-tight text-[#92400E]">
-                      Proposer votre budget
+                      {tx("Proposer votre budget")}
                     </h3>
                   </div>
                   <span className="inline-block rounded-full bg-amber-light px-2.5 py-0.5 text-micro font-bold text-amber-text">
-                    Négociation F-10
+                    {tx("Négociation F-10")}
                   </span>
                 </div>
 
@@ -306,14 +310,14 @@ export default function ProductPage() {
                   <>
                     <div className="flex items-center gap-3">
                       <div className="flex-1 rounded-lg bg-page p-3 text-center">
-                        <p className="mb-1 text-[10px] uppercase text-ink-2">Prix référence</p>
+                        <p className="mb-1 text-[10px] uppercase text-ink-2">{tx("Prix référence")}</p>
                         <p className="font-bold text-ink">
                           {product.prix.toLocaleString('fr-FR')} FCFA
                         </p>
                       </div>
                       <MIcon name="sync" className="rotate-90 text-[#F59E0B]" />
                       <div className="flex-1 rounded-lg border border-dashed border-[#F59E0B] bg-amber-light p-3 text-center">
-                        <p className="mb-1 text-[10px] uppercase text-amber-text">Votre offre</p>
+                        <p className="mb-1 text-[10px] uppercase text-amber-text">{tx("Votre offre")}</p>
                         <div className="flex items-center justify-center gap-1 font-bold text-ink">
                           <input
                             type="number"
@@ -346,7 +350,7 @@ export default function ProductPage() {
                   <div className="space-y-3 rounded-lg border border-amber-text/40 bg-amber-light p-3">
                     <div className="flex items-center gap-2 text-amber-text">
                       <MIcon name="hourglass_top" className="text-amber-text" />
-                      <span className="text-xs font-bold uppercase tracking-wider">Offre en attente</span>
+                      <span className="text-xs font-bold uppercase tracking-wider">{tx("Offre en attente")}</span>
                     </div>
                     <p className="text-xs text-ink">
                       Votre proposition de{' '}
@@ -363,7 +367,7 @@ export default function ProductPage() {
                   <div className="space-y-3 rounded-lg border border-success/40 bg-success-light/50 p-3">
                     <div className="flex items-center gap-2 text-success-dark">
                       <MIcon name="verified" className="text-success" />
-                      <span className="text-xs font-bold uppercase tracking-wider">Offre acceptée !</span>
+                      <span className="text-xs font-bold uppercase tracking-wider">{tx("Offre acceptée !")}</span>
                     </div>
                     <p className="text-xs text-ink">
                       Votre proposition de{' '}
@@ -385,7 +389,7 @@ export default function ProductPage() {
                         onClick={() => dispatch(cancelNegotiation({ productId: product.id }))}
                         className="rounded-lg border border-line bg-white px-3 py-2 text-xs font-bold text-ink-2 cursor-pointer"
                       >
-                        Annuler
+                        {tx("Annuler")}
                       </button>
                     </div>
                   </div>
@@ -396,7 +400,7 @@ export default function ProductPage() {
                   <div className="space-y-3 rounded-lg border border-amber-text/40 bg-amber-light p-3">
                     <div className="flex items-center gap-2 text-amber-text">
                       <MIcon name="sync" className="text-amber-text" />
-                      <span className="text-xs font-bold uppercase tracking-wider">Contre-offre du marché</span>
+                      <span className="text-xs font-bold uppercase tracking-wider">{tx("Contre-offre du marché")}</span>
                     </div>
                     <p className="text-xs text-ink">
                       Votre offre ({activeNeg.proposedPrice} FCFA) est légèrement basse. Le marché vous propose :{' '}
@@ -410,7 +414,7 @@ export default function ProductPage() {
                         type="button"
                         onClick={() => {
                           dispatch(acceptCounterOffer({ productId: product.id }));
-                          toast.success('Contre-offre acceptée !');
+                          toast.success(tx("Contre-offre acceptée !"));
                         }}
                         className="w-full rounded-lg bg-amber-text py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-text/90 cursor-pointer"
                       >
@@ -421,7 +425,7 @@ export default function ProductPage() {
                         onClick={() => dispatch(cancelNegotiation({ productId: product.id }))}
                         className="rounded-lg border border-line bg-white px-3 py-2 text-xs font-bold text-ink-2 cursor-pointer"
                       >
-                        Refuser
+                        {tx("Refuser")}
                       </button>
                     </div>
                   </div>
@@ -442,7 +446,7 @@ export default function ProductPage() {
                       onClick={() => dispatch(cancelNegotiation({ productId: product.id }))}
                       className="w-full rounded-lg bg-white border border-line py-2 text-xs font-bold text-ink hover:bg-surface cursor-pointer"
                     >
-                      Faire une nouvelle offre
+                      {tx("Faire une nouvelle offre")}
                     </button>
                   </div>
                 )}
@@ -465,7 +469,7 @@ export default function ProductPage() {
                   disabled={unavailable}
                   className="w-full rounded-[10px] border border-primary bg-white py-3.5 font-bold text-primary transition-all hover:bg-primary-lighter cursor-pointer disabled:opacity-50"
                 >
-                  Acheter maintenant
+                  {tx("Acheter maintenant")}
                 </button>
               </div>
             </div>
@@ -477,8 +481,8 @@ export default function ProductPage() {
               {(
                 [
                   ['description', 'Description'],
-                  ['origine', 'Origine & Qualité'],
-                  ['avis', 'Avis'],
+                  ['origine', tx("Origine & Qualité")],
+                  ['avis', tx("Avis")],
                 ] as [TabId, string][]
               ).map(([id, label]) => (
                 <button
@@ -497,13 +501,13 @@ export default function ProductPage() {
 
             {tab === 'description' && (
               <div className="flex flex-col gap-4 p-8">
-                <h3 className="text-h3 text-ink">Détails du produit</h3>
+                <h3 className="text-h3 text-ink">{tx("Détails du produit")}</h3>
                 <p className="max-w-3xl text-body leading-relaxed text-ink-2">
-                  {product.description || 'Aucune description pour ce produit.'}
+                  {product.description || tx("Aucune description pour ce produit.")}
                 </p>
                 <div className="mt-4 grid grid-cols-2 gap-6 md:grid-cols-4">
                   <div className="flex flex-col">
-                    <span className="text-micro uppercase text-ink-3">Catégorie</span>
+                    <span className="text-micro uppercase text-ink-3">{tx("Catégorie")}</span>
                     <span className="text-sm font-medium text-ink">{categoryNom}</span>
                   </div>
                   <div className="flex flex-col">
@@ -513,13 +517,13 @@ export default function ProductPage() {
                     </span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-micro uppercase text-ink-3">Prix min. négociable</span>
+                    <span className="text-micro uppercase text-ink-3">{tx("Prix min. négociable")}</span>
                     <span className="text-sm font-medium text-ink">
                       {product.prixMinimum.toLocaleString('fr-FR')} FCFA
                     </span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-micro uppercase text-ink-3">Disponibilité</span>
+                    <span className="text-micro uppercase text-ink-3">{tx("Disponibilité")}</span>
                     <span className="text-sm font-medium text-ink">
                       {unavailable ? 'Rupture de stock' : 'En stock'}
                     </span>
@@ -532,8 +536,8 @@ export default function ProductPage() {
               <div className="flex flex-col gap-4 p-4 md:p-8">
                 <EmptyState
                   icon={<MIcon name="travel_explore" className="text-4xl text-primary" />}
-                  title="Origine non renseignée"
-                  description="L’origine et la traçabilité des produits ne sont pas encore fournies par la plateforme. Elles s’afficheront ici dès qu’elles seront disponibles."
+                  title={tx("Origine non renseignée")}
+                  description={tx("L’origine et la traçabilité des produits ne sont pas encore fournies par la plateforme. Elles s’afficheront ici dès qu’elles seront disponibles.")}
                 />
               </div>
             )}
@@ -542,8 +546,8 @@ export default function ProductPage() {
               <div className="flex flex-col gap-4 p-4 md:p-8">
                 <EmptyState
                   icon={<MIcon name="mode_comment" className="text-4xl text-primary" />}
-                  title="Aucun avis pour le moment"
-                  description="Le système d’avis clients arrive prochainement. Vos retours après livraison nous aident à faire progresser le marché."
+                  title={tx("Aucun avis pour le moment")}
+                  description={tx("Le système d’avis clients arrive prochainement. Vos retours après livraison nous aident à faire progresser le marché.")}
                 />
               </div>
             )}

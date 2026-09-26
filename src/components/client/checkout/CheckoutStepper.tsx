@@ -1,5 +1,7 @@
 import clsx from 'clsx';
 import { IconCheck } from '@tabler/icons-react';
+import { useLanguage } from '../../context/LanguageContext';
+import { tx } from '../../i18n/tx';
 
 const STEPS = ['Panier', 'Livraison', 'Paiement', 'Confirmation'];
 
@@ -10,6 +12,7 @@ interface CheckoutStepperProps {
 
 /** Stepper de commande 4 étapes (maquette panier) : fait = coche, actif = orange, à venir = gris. */
 export default function CheckoutStepper({ current }: CheckoutStepperProps) {
+  useLanguage();
   const fill = `${((current - 1) / (STEPS.length - 1)) * 100}%`;
 
   return (
@@ -42,7 +45,7 @@ export default function CheckoutStepper({ current }: CheckoutStepperProps) {
                   state === 'active' ? 'font-bold text-primary' : state === 'done' ? 'text-primary' : 'text-ink-3',
                 )}
               >
-                {label}
+{tx(label)}
               </span>
             </div>
           );

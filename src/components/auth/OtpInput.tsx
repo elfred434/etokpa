@@ -1,6 +1,9 @@
 import { useRef } from 'react';
 import type { ClipboardEvent, KeyboardEvent } from 'react';
 import clsx from 'clsx';
+import { useLanguage } from '../../context/LanguageContext';
+import { tx } from '../../i18n/tx';
+
 
 interface OtpInputProps {
   value: string;
@@ -17,6 +20,7 @@ interface OtpInputProps {
  * focus bleu (info), état erreur rouge, auto-avance + retour arrière + collage.
  */
 export default function OtpInput({ value, onChange, length = 6, error, disabled }: OtpInputProps) {
+  useLanguage();
   const refs = useRef<(HTMLInputElement | null)[]>([]);
   const digits = Array.from({ length }, (_, i) => value[i] ?? '');
 
@@ -49,7 +53,7 @@ export default function OtpInput({ value, onChange, length = 6, error, disabled 
   };
 
   return (
-    <div className="flex justify-between gap-xs sm:gap-sm" role="group" aria-label="Code de vérification">
+    <div className="flex justify-between gap-xs sm:gap-sm" role="group" aria-label={tx("Code de vérification")}>
       {digits.map((digit, i) => (
         <input
           key={i}

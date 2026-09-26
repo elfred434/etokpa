@@ -5,6 +5,9 @@ import { initials } from '../../services/api/useLiveRows';
 import { acteur, categorie, detail, quand, titre } from '../../utils/auditLog';
 import { alertApiError } from '../../utils/apiError';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
+import { useLanguage } from '../../context/LanguageContext';
+import { tr, tx } from '../../i18n/tx';
+
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -43,6 +46,7 @@ const TYPES: [string, string][] = [
  * utilisateur P3, aucune API) : filtre « Rôle », choix 10 / 25 / 50 par page, « Exporter PDF ».
  */
 export default function AdminLogsPage() {
+  useLanguage();
   const [logs, setLogs] = useState<any[]>([]);
   const [meta, setMeta] = useState({ page: 1, last: 1, total: 0 });
   const [err, setErr] = useState<string | null>(null);
@@ -87,7 +91,7 @@ export default function AdminLogsPage() {
       }
       const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
       const lignes = [
-        ['Date', 'Catégorie', 'Titre', 'Action brute', 'Utilisateur', 'IP', 'Détail'].map(cell).join(';'),
+        ['Date', tx("Catégorie"), 'Titre', 'Action brute', 'Utilisateur', 'IP', tx("Détail")].map(cell).join(';'),
         ...acc
           .filter((l) => !type || categorie(l) === type)
           .map((l) => [l.created_at, categorie(l), titre(l), l.action, acteur(l).nom, l.ip_address, detail(l)].map(cell).join(';')),
@@ -112,35 +116,35 @@ export default function AdminLogsPage() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <i className="ti ti-clipboard-list text-primary text-3xl"></i>
-            <h1 className="font-h1 text-h1 text-text-main">Logs &amp; Audit</h1>
+            <h1 className="font-h1 text-h1 text-text-main">{tx("Logs &amp; Audit")}</h1>
           </div>
           <p className="font-body text-body text-text-secondary">
-            {loading ? 'Chargement…' : `${meta.total.toLocaleString('fr-FR')} événement${meta.total > 1 ? 's' : ''} enregistré${meta.total > 1 ? 's' : ''}`}
+            {loading ? tx("Chargement…") : tr(`${meta.total.toLocaleString('fr-FR')} événement${meta.total > 1 ? 's' : ''} enregistré${meta.total > 1 ? 's' : ''}`, `${meta.total.toLocaleString('en-GB')} event${meta.total > 1 ? 's' : ''} recorded`)}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button className="flex items-center gap-2 bg-white border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97">
-            <i className="ti ti-download"></i> Exporter PDF
+            <i className="ti ti-download"></i> {tx("Exporter PDF")}
           </button>
           <button
             type="button"
             onClick={exporterCsv}
             className="flex items-center gap-2 bg-white border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97"
           >
-            <i className="ti ti-download"></i> Exporter CSV
+            <i className="ti ti-download"></i> {tx("Exporter CSV")}
           </button>
         </div>
       </header>
       {err && (
         <div className="mb-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
-          <p className="font-bold">Erreur API</p>
+          <p className="font-bold">{tx("Erreur API")}</p>
           <p>{err}</p>
         </div>
       )}
       <section className="bg-white border border-border-default rounded-[14px] p-lg mb-xl shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-md mb-md">
           <div className="relative">
-            <label className="block text-secondary font-secondary text-text-secondary mb-1">Recherche</label>
+            <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Recherche")}</label>
             <div className="relative">
               <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"></i>
               <input
@@ -154,7 +158,7 @@ export default function AdminLogsPage() {
             </div>
           </div>
           <div>
-            <label className="block text-secondary font-secondary text-text-secondary mb-1">Type d'action</label>
+            <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Type d'action")}</label>
             <select
               className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none appearance-none bg-white"
               value={type}
@@ -162,33 +166,33 @@ export default function AdminLogsPage() {
             >
               {TYPES.map(([v, l]) => (
                 <option key={v} value={v}>
-                  {l}
+                  {tx(l)}
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-secondary font-secondary text-text-secondary mb-1">Rôle</label>
+            <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Rôle")}</label>
             <select className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none appearance-none bg-white">
-              <option>Tous les rôles</option>
-              <option>Administrateur</option>
-              <option>Vendeur</option>
-              <option>Client</option>
-              <option>Livreur</option>
+              <option>{tx("Tous les rôles")}</option>
+              <option>{tx("Administrateur")}</option>
+              <option>{tx("Vendeur")}</option>
+              <option>{tx("Client")}</option>
+              <option>{tx("Livreur")}</option>
             </select>
           </div>
         </div>
         <div className="flex items-center gap-md">
           <div className="flex-1">
-            <label className="block text-secondary font-secondary text-text-secondary mb-1">Période (à partir du)</label>
+            <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Période (à partir du)")}</label>
             <div className="flex items-center gap-2 px-4 py-2 border-border-default border-[1.5px] rounded-[10px] bg-white">
               <i className="ti ti-calendar text-text-secondary"></i>
-              <input type="date" className="flex-1 text-body text-text-main outline-none bg-transparent" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="Date de début" />
+              <input type="date" className="flex-1 text-body text-text-main outline-none bg-transparent" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={tx("Date de début")} />
               <span className="text-body text-text-secondary">→ Aujourd'hui</span>
             </div>
           </div>
           <button type="button" onClick={appliquer} className="self-end px-xl py-2 bg-primary-container text-white font-bold rounded-[10px] hover:bg-primary-hover transition-all active:scale-95">
-            Appliquer
+            {tx("Appliquer")}
           </button>
         </div>
       </section>
@@ -197,7 +201,7 @@ export default function AdminLogsPage() {
         <div className="space-y-md relative">
           {!loading && visibles.length === 0 && (
             <div className="bg-white border-[0.5px] border-border-default rounded-[10px] p-md text-center text-text-secondary">
-              {type ? 'Aucun événement de ce type sur cette page.' : 'Aucun événement enregistré.'}
+              {type ? tx("Aucun événement de ce type sur cette page.") : tx("Aucun événement enregistré.")}
             </div>
           )}
           {visibles.map((log) => {
@@ -237,9 +241,9 @@ export default function AdminLogsPage() {
       </section>
       <footer className="mt-xl pt-lg border-t border-border-default flex flex-col md:flex-row justify-between items-center gap-md">
         <p className="text-secondary text-text-secondary">
-          Page {meta.page} sur {meta.last}
-          {type ? ' (type filtré sur la page affichée)' : ''} · Afficher <button className="font-bold text-primary hover:underline">10</button> /{' '}
-          <button className="hover:text-primary">25</button> / <button className="hover:text-primary">50</button> par page
+          {tr(`Page ${meta.page} sur ${meta.last}`, `Page ${meta.page} of ${meta.last}`)}
+          {type ? tx(" (type filtré sur la page affichée)") : ''} · {tx("Afficher")} <button className="font-bold text-primary hover:underline">10</button> /{' '}
+          <button className="hover:text-primary">25</button> / <button className="hover:text-primary">50</button> {tx("par page")}
         </p>
         <div className="flex gap-2">
           <button

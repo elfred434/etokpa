@@ -7,6 +7,9 @@ import { zoneNom, initials } from '../../services/api/useLiveRows';
 import { alertApiError, extractApiError, formatApiError } from '../../utils/apiError';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import AdminNotificationBell from '../../components/layout/admin/AdminNotificationBell';
+import { useLanguage } from '../../context/LanguageContext';
+import { tr, tx } from '../../i18n/tx';
+
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -70,6 +73,7 @@ const randomPassword = () => {
 };
 
 export default function AdminUsersPage() {
+  useLanguage();
   /* ---------- données réelles ---------- */
   const [users, setUsers] = useState<any[]>([]);
   const [err, setErr] = useState<string | null>(null);
@@ -163,7 +167,7 @@ export default function AdminUsersPage() {
   const exportCsv = () => {
     const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const lines = [
-      ['Nom', 'Email', 'Téléphone', 'Rôle', 'Zone', 'Statut'].map(cell).join(';'),
+      ['Nom', 'Email', tx("Téléphone"), 'Rôle', 'Zone', 'Statut'].map(cell).join(';'),
       ...filtered.map((u) =>
         [nomOf(u), u?.email, u?.telephone, ROLE_UI[roleOf(u)]?.label ?? roleOf(u), zoneNom(u?.profil?.zone), STATUT_UI[statutOf(u)]?.label ?? u?.statut]
           .map(cell)
@@ -201,7 +205,7 @@ export default function AdminUsersPage() {
     setSaving(true);
     try {
       await adminApi.updateUser(Number(selected.id), data);
-      toast.success('Modifications enregistrées.');
+      toast.success(tx("Modifications enregistrées."));
       setSelected(null);
       setReloadKey((k) => k + 1);
     } catch (e) {
@@ -213,10 +217,10 @@ export default function AdminUsersPage() {
 
   const toggleStatus = async (u: any) => {
     const suspendu = statutOf(u) === 'suspendu';
-    if (!confirm(`${suspendu ? 'Réactiver' : 'Suspendre'} le compte de ${nomOf(u)} ?`)) return;
+    if (!confirm(`${suspendu ? tx("Réactiver") : 'Suspendre'} le compte de ${nomOf(u)} ?`)) return;
     try {
       await adminApi.updateUser(Number(u.id), { statut: suspendu ? 'actif' : 'suspendu' });
-      toast.success(suspendu ? 'Compte réactivé.' : 'Compte suspendu.');
+      toast.success(suspendu ? tx("Compte réactivé.") : 'Compte suspendu.');
       if (selected?.id === u.id) setSelected(null);
       setReloadKey((k) => k + 1);
     } catch (e) {
@@ -226,12 +230,12 @@ export default function AdminUsersPage() {
 
   const resetPassword = async (u: any) => {
     if (!u?.email) {
-      toast.error("Ce compte n'a pas d'adresse email.");
+      toast.error(tx("Ce compte n'a pas d'adresse email."));
       return;
     }
     try {
       const r = await authApi.forgotPassword(u.email);
-      toast.success(r?.message ?? `Lien de réinitialisation envoyé à ${u.email}.`);
+      toast.success(r?.message ?? tr(`Lien de réinitialisation envoyé à ${u.email}.`, `Reset link sent to ${u.email}.`));
     } catch (e) {
       alertApiError(e, 'admin-users-reset');
     }
@@ -261,10 +265,10 @@ export default function AdminUsersPage() {
 
   const validateStep1 = (): string | null => {
     const parts = newName.trim().split(/\s+/).filter(Boolean);
-    if (parts.length < 2) return 'Indiquez le prénom et le nom (ex : Sègla Hounkpati).';
-    if (!/^\S+@\S+\.\S+$/.test(newEmail.trim())) return "L'adresse email est obligatoire (connexion et définition du mot de passe).";
-    if (!/^\d{8,10}$/.test(newPhone.replace(/\D/g, ''))) return 'Le téléphone doit comporter 8 à 10 chiffres.';
-    if (needsZone && !newZone) return 'Choisissez la zone du livreur ou du manager.';
+    if (parts.length < 2) return tx("Indiquez le prénom et le nom (ex : Sègla Hounkpati).");
+    if (!/^\S+@\S+\.\S+$/.test(newEmail.trim())) return tx("L'adresse email est obligatoire (connexion et définition du mot de passe).");
+    if (!/^\d{8,10}$/.test(newPhone.replace(/\D/g, ''))) return tx('Le téléphone doit comporter 8 à 10 chiffres.');
+    if (needsZone && !newZone) return tx('Choisissez la zone du livreur ou du manager.');
     return null;
   };
 
@@ -292,11 +296,16 @@ export default function AdminUsersPage() {
       let lien = '';
       try {
         await authApi.forgotPassword(email);
-        lien = ` Un lien pour définir le mot de passe a été envoyé à ${email}.`;
+        lien = tr(
+        ` Un lien pour définir le mot de passe a été envoyé à ${email}.`,
+        ` A link to set the password was sent to ${email}.`,
+      );
       } catch (err2) {
-        lien = ` Envoi du lien impossible : ${formatApiError(extractApiError(err2))}`;
+        const detail = formatApiError(extractApiError(err2));
+        lien = tr(` Envoi du lien impossible : ${detail}`, ` Could not send the link: ${detail}`);
       }
-      toast.success(`Compte ${ROLE_UI[newRole].label.toLowerCase()} créé.${lien}`, { duration: 7000 });
+      const roleLabel = ROLE_UI[newRole].label;
+      toast.success(tr(`Compte ${roleLabel.toLowerCase()} créé.${lien}`, `${tx(roleLabel)} account created.${lien}`), { duration: 7000 });
       setAddOpen(false);
       setReloadKey((k) => k + 1);
     } catch (e2) {
@@ -324,17 +333,17 @@ export default function AdminUsersPage() {
     <AdminLayout currentPath="/admin/utilisateurs">
       {err && (
         <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
-          <p className="font-bold">Erreur API</p>
+          <p className="font-bold">{tx("Erreur API")}</p>
           <p>{err}</p>
         </div>
       )}
-      {loading && <p className="m-lg text-label text-text-secondary">Chargement des données réelles…</p>}
+      {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
       <style>{DESIGN_CSS}</style>
       <header className="h-14 bg-white border-b border-gray-200 px-6 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500 font-medium">Administration Centrale</span>
+          <span className="text-xs text-gray-500 font-medium">{tx("Administration Centrale")}</span>
           <span className="text-gray-300">/</span>
-          <span className="text-xs text-primary font-semibold">Gestion des Utilisateurs</span>
+          <span className="text-xs text-primary font-semibold">{tx("Gestion des Utilisateurs")}</span>
         </div>
         <div className="flex items-center gap-4">
           <div className="relative w-64">
@@ -342,7 +351,7 @@ export default function AdminUsersPage() {
             <input
               className="w-full pl-9 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
               id="searchInput"
-              placeholder="Rechercher nom, email, tél..."
+              placeholder={tx("Rechercher nom, email, tél...")}
               type="text"
               value={search}
               onChange={(e) => choose(() => setSearch(e.target.value))}
@@ -359,7 +368,7 @@ export default function AdminUsersPage() {
             onClick={openAdd}
           >
             <i className="ti ti-user-plus text-sm"></i>
-            <span>Ajouter un utilisateur</span>
+            <span>{tx("Ajouter un utilisateur")}</span>
           </button>
         </div>
       </header>
@@ -367,17 +376,17 @@ export default function AdminUsersPage() {
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Gestion des Utilisateurs</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Supervisez, modifiez les rôles et gérez les comptes des clients, coursiers, managers et administrateurs.</p>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{tx("Gestion des Utilisateurs")}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{tx("Supervisez, modifiez les rôles et gérez les comptes des clients, coursiers, managers et administrateurs.")}</p>
           </div>
           <div className="flex items-center gap-2.5">
             <button className="btn-press px-3 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-[10px] flex items-center gap-1.5 transition-all" type="button" onClick={exportCsv}>
               <i className="ti ti-download text-sm"></i>
-              <span>Exporter CSV</span>
+              <span>{tx("Exporter CSV")}</span>
             </button>
             <button className="btn-press px-3 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-[10px] flex items-center gap-1.5 transition-all" type="button" onClick={resetAndReload}>
               <i className="ti ti-refresh text-sm"></i>
-              <span>Actualiser</span>
+              <span>{tx("Actualiser")}</span>
             </button>
           </div>
         </div>
@@ -389,7 +398,7 @@ export default function AdminUsersPage() {
               <i className="ti ti-users"></i>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500">Total Utilisateurs</p>
+              <p className="text-xs font-medium text-gray-500">{tx("Total Utilisateurs")}</p>
               <h3 className="text-xl font-bold text-gray-900 mt-0.5">{fmt(stats.total)}</h3>
               <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-0.5">
                 <i className="ti ti-circle-check"></i> {fmt(stats.actifs)} comptes actifs
@@ -401,7 +410,7 @@ export default function AdminUsersPage() {
               <i className="ti ti-shopping-cart"></i>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500">Clients</p>
+              <p className="text-xs font-medium text-gray-500">{tx("Clients")}</p>
               <h3 className="text-xl font-bold text-gray-900 mt-0.5">{fmt(stats.client)}</h3>
               <p className="text-[11px] text-gray-500 mt-0.5">
                 {stats.total ? `${Math.round((stats.client / stats.total) * 100)}% des comptes` : '—'}
@@ -413,7 +422,7 @@ export default function AdminUsersPage() {
               <i className="ti ti-motorbike"></i>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500">Livreurs</p>
+              <p className="text-xs font-medium text-gray-500">{tx("Livreurs")}</p>
               <h3 className="text-xl font-bold text-gray-900 mt-0.5">{fmt(stats.livreur)}</h3>
               <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-0.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> {fmt(stats.livreursDispo)} disponibles
@@ -425,7 +434,7 @@ export default function AdminUsersPage() {
               <i className="ti ti-shield-check"></i>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500">Managers &amp; Admins</p>
+              <p className="text-xs font-medium text-gray-500">{tx("Managers &amp; Admins")}</p>
               <h3 className="text-xl font-bold text-gray-900 mt-0.5">{fmt(stats.manager + stats.admin)}</h3>
               <p className="text-[11px] text-gray-500 mt-0.5">
                 {fmt(stats.manager)} managers · {fmt(stats.admin)} admins
@@ -453,28 +462,28 @@ export default function AdminUsersPage() {
             </div>
             <div className="flex items-center gap-2.5">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 font-medium">Statut :</span>
+                <span className="text-xs text-gray-400 font-medium">{tx("Statut :")}</span>
                 <select
                   className="text-xs bg-white border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary"
                   id="statusFilter"
                   value={statusF}
                   onChange={(e) => choose(() => setStatusF(e.target.value))}
                 >
-                  <option value="all">Tous les statuts</option>
-                  <option value="actif">Actifs</option>
+                  <option value="all">{tx("Tous les statuts")}</option>
+                  <option value="actif">{tx("Actifs")}</option>
                   <option value="inactif">Inactifs</option>
                   <option value="suspendu">Suspendus</option>
                 </select>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 font-medium">Zone :</span>
+                <span className="text-xs text-gray-400 font-medium">{tx("Zone :")}</span>
                 <select
                   className="text-xs bg-white border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary"
                   id="zoneFilter"
                   value={zoneF}
                   onChange={(e) => choose(() => setZoneF(e.target.value))}
                 >
-                  <option value="all">Toutes les zones</option>
+                  <option value="all">{tx("Toutes les zones")}</option>
                   {zones.map((z) => (
                     <option key={z.id} value={String(z.id)}>
                       {z.nom}
@@ -488,12 +497,12 @@ export default function AdminUsersPage() {
             <table className="w-full text-left border-collapse" id="usersTable">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
-                  <th className="py-3 px-4">Utilisateur</th>
-                  <th className="py-3 px-4">Rôle</th>
-                  <th className="py-3 px-4">Téléphone &amp; WhatsApp</th>
-                  <th className="py-3 px-4">Zone Principale</th>
-                  <th className="py-3 px-4">Statut</th>
-                  <th className="py-3 px-4">Activité</th>
+                  <th className="py-3 px-4">{tx("Utilisateur")}</th>
+                  <th className="py-3 px-4">{tx("Rôle")}</th>
+                  <th className="py-3 px-4">{tx("Téléphone &amp; WhatsApp")}</th>
+                  <th className="py-3 px-4">{tx("Zone Principale")}</th>
+                  <th className="py-3 px-4">{tx("Statut")}</th>
+                  <th className="py-3 px-4">{tx("Activité")}</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -501,7 +510,7 @@ export default function AdminUsersPage() {
                 {!loading && visible.length === 0 && (
                   <tr>
                     <td colSpan={7} className="py-6 px-4 text-center text-gray-500">
-                      Aucun utilisateur ne correspond à ces filtres.
+                      {tx("Aucun utilisateur ne correspond à ces filtres.")}
                     </td>
                   </tr>
                 )}
@@ -527,27 +536,27 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium ${rui.badge}`}>
-                          <i className={rui.icon}></i> {rui.label}
+                          <i className={rui.icon}></i> {tx(rui.label)}
                         </span>
                       </td>
                       <td className="py-3 px-4 font-mono text-gray-700">{u.telephone ?? '—'}</td>
                       <td className="py-3 px-4 text-gray-700">{zoneNom(u.profil?.zone ?? u.zone)}</td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium ${sui.badge}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${sui.dot}`}></span> {sui.label}
+                          <span className={`w-1.5 h-1.5 rounded-full ${sui.dot}`}></span> {tx(sui.label)}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-gray-500">{cmds != null ? `${fmt(cmds)} commande${cmds > 1 ? 's' : ''}` : '—'}</td>
                       <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
-                          <button type="button" className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-orange-50 transition-colors" onClick={() => openUser(u)} title="Modifier">
+                          <button type="button" className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-orange-50 transition-colors" onClick={() => openUser(u)} title={tx("Modifier")}>
                             <i className="ti ti-edit text-sm"></i>
                           </button>
                           <button
                             type="button"
                             className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                             onClick={() => toggleStatus(u)}
-                            title={suspendu ? 'Réactiver' : 'Suspendre'}
+                            title={suspendu ? tx("Réactiver") : 'Suspendre'}
                           >
                             <i className={suspendu ? 'ti ti-lock-open text-sm' : 'ti ti-lock text-sm'}></i>
                           </button>
@@ -562,10 +571,10 @@ export default function AdminUsersPage() {
           <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500 bg-gray-50/50">
             <p>
               {filtered.length === 0 ? (
-                'Aucun utilisateur'
+                tx("Aucun utilisateur")
               ) : (
                 <>
-                  Affichage de <span className="font-semibold text-gray-800">{fmt((current - 1) * PER_PAGE + 1)}</span> à{' '}
+                  {tx("Affichage de")} <span className="font-semibold text-gray-800">{fmt((current - 1) * PER_PAGE + 1)}</span> à{' '}
                   <span className="font-semibold text-gray-800">{fmt(Math.min(current * PER_PAGE, filtered.length))}</span> sur{' '}
                   <span className="font-semibold text-gray-800">{fmt(filtered.length)}</span> utilisateurs
                   {capped ? ' (500 premiers comptes)' : ''}
@@ -624,7 +633,7 @@ export default function AdminUsersPage() {
                     {nomOf(selected)}
                   </h3>
                   <p className="text-xs font-medium text-amber-700" id="modalRoleBadge">
-                    {selUi.label} · Plateforme TOKPa
+                    {tx(selUi.label)} · {tx("Plateforme TOKPa")}
                   </p>
                 </div>
               </div>
@@ -635,13 +644,13 @@ export default function AdminUsersPage() {
             <div className="p-6 space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <span className="text-gray-400 block font-medium">Adresse Email</span>
+                  <span className="text-gray-400 block font-medium">{tx("Adresse Email")}</span>
                   <span className="font-semibold text-gray-800 text-sm mt-0.5 block truncate" id="modalEmail">
                     {selected.email ?? '—'}
                   </span>
                 </div>
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <span className="text-gray-400 block font-medium">Numéro de téléphone</span>
+                  <span className="text-gray-400 block font-medium">{tx("Numéro de téléphone")}</span>
                   <span className="font-semibold text-gray-800 text-sm mt-0.5 block font-mono" id="modalPhone">
                     {selected.telephone ?? '—'}
                   </span>
@@ -649,14 +658,14 @@ export default function AdminUsersPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <span className="text-gray-400 block font-medium">Zone d'assignation</span>
+                  <span className="text-gray-400 block font-medium">{tx("Zone d'assignation")}</span>
                   {hasZone ? (
                     <select
                       className="mt-1 w-full text-xs bg-white border border-gray-200 text-gray-800 font-semibold rounded-lg px-2 py-1 focus:outline-none focus:border-primary"
                       value={editZone}
                       onChange={(e) => setEditZone(e.target.value)}
                     >
-                      <option value="">— Aucune —</option>
+                      <option value="">{tx("— Aucune —")}</option>
                       {zones.map((z) => (
                         <option key={z.id} value={String(z.id)}>
                           {z.nom}
@@ -670,20 +679,20 @@ export default function AdminUsersPage() {
                   )}
                 </div>
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <span className="text-gray-400 block font-medium">Statut du compte</span>
+                  <span className="text-gray-400 block font-medium">{tx("Statut du compte")}</span>
                   <div className="mt-1 flex items-center gap-2">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${selStatut.badge}`} id="modalStatus">
-                      <span className={`w-1.5 h-1.5 rounded-full ${selStatut.dot}`}></span> {selStatut.label}
+                      <span className={`w-1.5 h-1.5 rounded-full ${selStatut.dot}`}></span> {tx(selStatut.label)}
                     </span>
                     <select
                       className="flex-1 text-xs bg-white border border-gray-200 text-gray-800 rounded-lg px-2 py-1 focus:outline-none focus:border-primary"
                       value={editStatut}
                       onChange={(e) => setEditStatut(e.target.value)}
-                      aria-label="Nouveau statut"
+                      aria-label={tx("Nouveau statut")}
                     >
-                      <option value="actif">Actif</option>
-                      <option value="inactif">Inactif</option>
-                      <option value="suspendu">Suspendu</option>
+                      <option value="actif">{tx("Actif")}</option>
+                      <option value="inactif">{tx("Inactif")}</option>
+                      <option value="suspendu">{tx("Suspendu")}</option>
                     </select>
                   </div>
                 </div>
@@ -697,7 +706,7 @@ export default function AdminUsersPage() {
                 </div>
                 {selRole === 'livreur' && (
                   <label className="flex items-center justify-between text-[11px] text-gray-600 pt-1">
-                    <span>Disponible pour les livraisons</span>
+                    <span>{tx("Disponible pour les livraisons")}</span>
                     <input type="checkbox" checked={editDispo} onChange={(e) => setEditDispo(e.target.checked)} className="accent-primary" />
                   </label>
                 )}
@@ -711,7 +720,7 @@ export default function AdminUsersPage() {
                     onClick={() => resetPassword(selected)}
                   >
                     <i className="ti ti-key text-sm"></i>
-                    <span>Réinitialiser mot de passe</span>
+                    <span>{tx("Réinitialiser mot de passe")}</span>
                   </button>
                   <button
                     type="button"
@@ -719,14 +728,14 @@ export default function AdminUsersPage() {
                     onClick={() => toggleStatus(selected)}
                   >
                     <i className={statutOf(selected) === 'suspendu' ? 'ti ti-lock-open text-sm' : 'ti ti-lock text-sm'}></i>
-                    <span>{statutOf(selected) === 'suspendu' ? "Réactiver l'accès" : "Suspendre l'accès"}</span>
+                    <span>{statutOf(selected) === 'suspendu' ? tx("Réactiver l'accès") : "Suspendre l'accès"}</span>
                   </button>
                 </div>
               </div>
             </div>
             <div className="p-4 border-t border-gray-200 bg-gray-50 flex items-center justify-end gap-2.5">
               <button type="button" className="btn-press px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all" onClick={() => setSelected(null)}>
-                Fermer
+                {tx("Fermer")}
               </button>
               <button
                 type="button"
@@ -734,7 +743,7 @@ export default function AdminUsersPage() {
                 className="btn-press px-4 py-2 bg-primary hover:bg-primary-hover text-white font-medium rounded-[10px] shadow-sm transition-all disabled:opacity-60"
                 onClick={saveUser}
               >
-                {saving ? 'Enregistrement…' : 'Enregistrer les modifications'}
+                {saving ? 'Enregistrement…' : tx("Enregistrer les modifications")}
               </button>
             </div>
           </div>
@@ -754,8 +763,8 @@ export default function AdminUsersPage() {
                 <i className="ti ti-user-plus"></i>
               </div>
               <div>
-                <h3 className="text-base font-bold text-gray-900">Ajouter un nouvel utilisateur</h3>
-                <p className="text-xs text-gray-500">Créez un compte pour un client, un manager ou un livreur</p>
+                <h3 className="text-base font-bold text-gray-900">{tx("Ajouter un nouvel utilisateur")}</h3>
+                <p className="text-xs text-gray-500">{tx("Créez un compte pour un client, un manager ou un livreur")}</p>
               </div>
             </div>
             <button type="button" className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-200 transition-colors" onClick={() => setAddOpen(false)}>
@@ -777,9 +786,9 @@ export default function AdminUsersPage() {
                 </div>
                 <div className="text-left">
                   <span className={step === 2 ? 'text-xs font-semibold text-emerald-700 block leading-tight' : 'text-xs font-semibold text-primary block leading-tight'} id="stepperText1">
-                    Informations générales
+                    {tx("Informations générales")}
                   </span>
-                  <span className="text-[10px] text-gray-400 block leading-tight">Identité &amp; profil</span>
+                  <span className="text-[10px] text-gray-400 block leading-tight">{tx("Identité &amp; profil")}</span>
                 </div>
               </div>
               <div className={`${newRole === 'livreur' ? '' : 'hidden'} flex-1 mx-4 h-0.5 bg-gray-200 transition-all`} id="stepperDivider"></div>
@@ -796,9 +805,9 @@ export default function AdminUsersPage() {
                 </div>
                 <div className="text-left">
                   <span className={step === 2 ? 'text-xs font-semibold text-primary block leading-tight' : 'text-xs font-medium text-gray-500 block leading-tight'} id="stepperText2">
-                    Dossier &amp; Conformité
+                    {tx("Dossier &amp; Conformité")}
                   </span>
-                  <span className="text-[10px] text-gray-400 block leading-tight">Permis, CIP &amp; Véhicule</span>
+                  <span className="text-[10px] text-gray-400 block leading-tight">{tx("Permis, CIP &amp; Véhicule")}</span>
                 </div>
               </div>
             </div>
@@ -807,12 +816,12 @@ export default function AdminUsersPage() {
             <div className={`${step === 1 ? '' : 'hidden'} p-6 space-y-4 text-xs`} id="step1Container">
               <div>
                 <label className="block text-gray-700 font-semibold mb-1">
-                  Nom complet <span className="text-red-500">*</span>
+                  {tx("Nom complet")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all placeholder:text-gray-400"
                   id="newUserName"
-                  placeholder="Ex: Sègla Hounkpati"
+                  placeholder={tx("Ex: Sègla Hounkpati")}
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
@@ -821,7 +830,7 @@ export default function AdminUsersPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-gray-700 font-semibold mb-1">
-                    Rôle plateforme <span className="text-red-500">*</span>
+                    {tx("Rôle plateforme")} <span className="text-red-500">*</span>
                   </label>
                   <select
                     className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all"
@@ -832,14 +841,14 @@ export default function AdminUsersPage() {
                       setStep(1);
                     }}
                   >
-                    <option value="client">Client</option>
-                    <option value="livreur">Livreur</option>
-                    <option value="manager">Manager de Zone</option>
+                    <option value="client">{tx("Client")}</option>
+                    <option value="livreur">{tx("Livreur")}</option>
+                    <option value="manager">{tx("Manager de Zone")}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-gray-700 font-semibold mb-1">
-                    Zone géographique {needsZone && <span className="text-red-500">*</span>}
+                    {tx("Zone géographique")} {needsZone && <span className="text-red-500">*</span>}
                   </label>
                   <select
                     className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all"
@@ -847,7 +856,7 @@ export default function AdminUsersPage() {
                     value={newZone}
                     onChange={(e) => setNewZone(e.target.value)}
                   >
-                    <option value="">{needsZone ? '— Choisir une zone —' : '— Aucune —'}</option>
+                    <option value="">{needsZone ? tx("— Choisir une zone —") : tx("— Aucune —")}</option>
                     {zones.map((z) => (
                       <option key={z.id} value={String(z.id)}>
                         {z.nom}
@@ -858,7 +867,7 @@ export default function AdminUsersPage() {
               </div>
               <div>
                 <label className="block text-gray-700 font-semibold mb-1">
-                  Adresse Email <span className="text-red-500">*</span>
+                  {tx("Adresse Email")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all placeholder:text-gray-400"
@@ -871,7 +880,7 @@ export default function AdminUsersPage() {
               </div>
               <div>
                 <label className="block text-gray-700 font-semibold mb-1">
-                  Numéro de Téléphone / WhatsApp béninois <span className="text-red-500">*</span>
+                  {tx("Numéro de Téléphone / WhatsApp béninois")} <span className="text-red-500">*</span>
                 </label>
                 <div className="flex shadow-xs rounded-[10px]">
                   <span className="inline-flex items-center px-3 rounded-l-[10px] border border-r-0 border-gray-200 bg-gray-50 text-gray-700 font-mono font-medium text-xs">🇧🇯 +229</span>
@@ -884,11 +893,11 @@ export default function AdminUsersPage() {
                     onChange={(e) => setNewPhone(e.target.value)}
                   />
                 </div>
-                <p className="text-[11px] text-gray-400 mt-1">Un lien pour définir son mot de passe sera envoyé à l'adresse email.</p>
+                <p className="text-[11px] text-gray-400 mt-1">{tx("Un lien pour définir son mot de passe sera envoyé à l'adresse email.")}</p>
               </div>
               <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3">
                 <button type="button" className="btn-press px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all" onClick={() => setAddOpen(false)}>
-                  Annuler
+                  {tx("Annuler")}
                 </button>
                 <button
                   type="button"
@@ -897,7 +906,7 @@ export default function AdminUsersPage() {
                   id="step1SubmitBtn"
                   onClick={onStep1Submit}
                 >
-                  <span>{newRole === 'livreur' ? 'Continuer vers Documents (Étape 2) →' : creating ? 'Création…' : "Créer l'utilisateur"}</span>
+                  <span>{newRole === 'livreur' ? tx("Continuer vers Documents (Étape 2) →") : creating ? 'Création…' : "Créer l'utilisateur"}</span>
                 </button>
               </div>
             </div>
@@ -909,14 +918,14 @@ export default function AdminUsersPage() {
                   <i className="ti ti-shield-alert"></i>
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-amber-900">Documents &amp; Conformité du Livreur</h4>
-                  <p className="text-[11px] text-amber-800/90 mt-0.5 leading-relaxed">Vérification obligatoire selon les normes ANIP &amp; ANATT Bénin pour l'autorisation de livraison marché.</p>
+                  <h4 className="text-xs font-bold text-amber-900">{tx("Documents &amp; Conformité du Livreur")}</h4>
+                  <p className="text-[11px] text-amber-800/90 mt-0.5 leading-relaxed">{tx("Vérification obligatoire selon les normes ANIP &amp; ANATT Bénin pour l'autorisation de livraison marché.")}</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-gray-700 font-semibold mb-1">
-                    Numéro CIP / NPI ANIP Bénin (10 chiffres) <span className="text-red-500">*</span>
+                    {tx("Numéro CIP / NPI ANIP Bénin (10 chiffres)")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400"
@@ -928,7 +937,7 @@ export default function AdminUsersPage() {
                 </div>
                 <div>
                   <label className="block text-gray-700 font-semibold mb-1">
-                    Numéro de Permis de conduire <span className="text-red-500">*</span>
+                    {tx("Numéro de Permis de conduire")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400"
@@ -941,17 +950,17 @@ export default function AdminUsersPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-gray-700 font-semibold mb-1">
-                    Catégorie de véhicule <span className="text-red-500">*</span>
+                    {tx("Catégorie de véhicule")} <span className="text-red-500">*</span>
                   </label>
                   <select className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900" id="livreurVehiculeType">
-                    <option value="moto">Moto 2 roues (Zémidjan / Express)</option>
+                    <option value="moto">{tx("Moto 2 roues (Zémidjan / Express)")}</option>
                     <option value="tricycle">Tricycle fret Dantokpa</option>
-                    <option value="utilitaire">Utilitaire léger / Fourgonnette</option>
+                    <option value="utilitaire">{tx("Utilitaire léger / Fourgonnette")}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-gray-700 font-semibold mb-1">
-                    Plaque d'immatriculation béninoise <span className="text-red-500">*</span>
+                    {tx("Plaque d'immatriculation béninoise")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400"
@@ -962,7 +971,7 @@ export default function AdminUsersPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-gray-700 font-semibold mb-1.5">Pièces justificatives requises (CIP/CNI, Permis, Résidence)</label>
+                <label className="block text-gray-700 font-semibold mb-1.5">{tx("Pièces justificatives requises (CIP/CNI, Permis, Résidence)")}</label>
                 <div className="border-2 border-dashed border-gray-200 hover:border-primary/50 rounded-xl p-4 bg-gray-50/60 hover:bg-orange-50/20 transition-all text-center cursor-pointer">
                   <input
                     className="hidden"
@@ -972,8 +981,8 @@ export default function AdminUsersPage() {
                     onChange={(e) =>
                       setUploadLabel(
                         e.target.files && e.target.files.length > 0
-                          ? `${e.target.files.length} document(s) sélectionné(s)`
-                          : 'Cliquez pour importer les documents ou glissez-les ici',
+                          ? tr(`${e.target.files.length} document(s) sélectionné(s)`, `${e.target.files.length} document(s) selected`)
+                          : tx('Cliquez pour importer les documents ou glissez-les ici'),
                       )
                     }
                   />
@@ -984,7 +993,7 @@ export default function AdminUsersPage() {
                     <p className="text-xs font-semibold text-gray-700" id="uploadLabelText">
                       {uploadLabel}
                     </p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">Formats acceptés : PDF, PNG, JPG (Max 5 Mo / fichier)</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{tx("Formats acceptés : PDF, PNG, JPG (Max 5 Mo / fichier)")}</p>
                     <div className="flex items-center justify-center gap-3 mt-2 text-[11px] text-gray-500">
                       <span className="inline-flex items-center gap-1">
                         <i className="ti ti-file-check text-emerald-600"></i> Carte CIP / NPI
@@ -993,7 +1002,7 @@ export default function AdminUsersPage() {
                         <i className="ti ti-id text-emerald-600"></i> Permis A1/B
                       </span>
                       <span className="inline-flex items-center gap-1">
-                        <i className="ti ti-home-check text-emerald-600"></i> Certificat résidence
+                        <i className="ti ti-home-check text-emerald-600"></i> {tx("Certificat résidence")}
                       </span>
                     </div>
                   </label>
@@ -1002,7 +1011,7 @@ export default function AdminUsersPage() {
               <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3">
                 <button type="button" className="btn-press px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all flex items-center gap-1.5" onClick={() => setStep(1)}>
                   <i className="ti ti-arrow-left text-xs"></i>
-                  <span>Retour aux informations</span>
+                  <span>{tx("Retour aux informations")}</span>
                 </button>
                 <button
                   type="submit"
@@ -1010,7 +1019,7 @@ export default function AdminUsersPage() {
                   className="btn-press px-4 py-2.5 bg-primary hover:bg-primary-hover text-white font-semibold rounded-[10px] shadow-sm transition-all flex items-center gap-1.5 disabled:opacity-60"
                 >
                   <i className="ti ti-check text-sm"></i>
-                  <span>{creating ? 'Création…' : 'Valider & Enregistrer le livreur'}</span>
+                  <span>{creating ? tx("Création…") : 'Valider & Enregistrer le livreur'}</span>
                 </button>
               </div>
             </div>

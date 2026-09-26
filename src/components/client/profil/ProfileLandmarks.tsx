@@ -2,6 +2,8 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 export interface LandmarkItem {
   id: string;
@@ -51,7 +53,7 @@ export default function ProfileLandmarks() {
   const [form, setForm] = useState({
     nom: '',
     description: '',
-    zone: 'Zone Cadjehoun',
+    zone: tx("Zone Cadjehoun"),
     icon: 'location_on',
     isDefault: false,
   });
@@ -68,14 +70,14 @@ export default function ProfileLandmarks() {
               : item,
         ),
       );
-      toast.success(isFr ? 'Point de repère modifié' : 'Landmark updated');
+      toast.success(isFr ? tx("Point de repère modifié") : 'Landmark updated');
     } else {
       const newItem: LandmarkItem = {
         id: `l_${Date.now()}`,
         ...form,
       };
       setLandmarks((list) => (form.isDefault ? list.map((l) => ({ ...l, isDefault: false })) : list).concat(newItem));
-      toast.success(isFr ? 'Nouveau point de repère ajouté' : 'New landmark added');
+      toast.success(isFr ? tx("Nouveau point de repère ajouté") : 'New landmark added');
     }
     setEditOpen(false);
     setEditItem(null);
@@ -83,11 +85,11 @@ export default function ProfileLandmarks() {
 
   const handleDelete = (id: string) => {
     setLandmarks((list) => list.filter((item) => item.id !== id));
-    toast.success(isFr ? 'Point de repère supprimé' : 'Landmark deleted');
+    toast.success(isFr ? tx("Point de repère supprimé") : 'Landmark deleted');
   };
 
   const openAdd = () => {
-    setForm({ nom: '', description: '', zone: 'Zone Cadjehoun', icon: 'location_on', isDefault: false });
+    setForm({ nom: '', description: '', zone: tx("Zone Cadjehoun"), icon: 'location_on', isDefault: false });
     setEditItem(null);
     setEditOpen(true);
   };
@@ -133,7 +135,7 @@ export default function ProfileLandmarks() {
                   <span className="text-body font-semibold text-ink">{l.nom}</span>
                   {l.isDefault && (
                     <span className="rounded-full bg-success-light px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter text-success-dark">
-                      {isFr ? 'Par défaut' : 'Default'}
+                      {isFr ? tx("Par défaut") : 'Default'}
                     </span>
                   )}
                 </div>
@@ -147,7 +149,7 @@ export default function ProfileLandmarks() {
             <div className="flex items-center gap-1 self-end sm:self-auto">
               <button
                 type="button"
-                aria-label="Modifier le repère"
+                aria-label={tx("Modifier le repère")}
                 onClick={() => openEdit(l)}
                 className="scale-interaction rounded-lg p-2 text-primary hover:bg-primary-lighter"
               >
@@ -155,7 +157,7 @@ export default function ProfileLandmarks() {
               </button>
               <button
                 type="button"
-                aria-label="Supprimer le repère"
+                aria-label={tx("Supprimer le repère")}
                 onClick={() => handleDelete(l.id)}
                 className="scale-interaction rounded-lg p-2 text-error hover:bg-error-light"
               >
@@ -172,7 +174,7 @@ export default function ProfileLandmarks() {
           <div className="w-full max-w-[480px] rounded-2xl bg-white p-lg shadow-xl">
             <div className="mb-md flex items-center justify-between border-b border-line pb-sm">
               <h3 className="font-h2 text-h2 text-ink">
-                {editItem ? (isFr ? 'Modifier le repère' : 'Edit Landmark') : (isFr ? 'Ajouter un point de repère' : 'Add Landmark')}
+                {editItem ? (isFr ? tx("Modifier le repère") : 'Edit Landmark') : (isFr ? tx("Ajouter un point de repère") : 'Add Landmark')}
               </h3>
               <button
                 type="button"
@@ -185,7 +187,7 @@ export default function ProfileLandmarks() {
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="label">{isFr ? 'Nom du lieu' : 'Location Name'}</label>
+                <label className="label">{isFr ? tx("Nom du lieu") : 'Location Name'}</label>
                 <input
                   type="text"
                   placeholder={isFr ? 'Ex: Maison, Bureau, Carrefour Cadjehoun' : 'Ex: Home, Office, Cadjehoun Junction'}
@@ -197,10 +199,10 @@ export default function ProfileLandmarks() {
               </div>
 
               <div>
-                <label className="label">{isFr ? 'Description / Précisions' : 'Description / Details'}</label>
+                <label className="label">{isFr ? tx("Description / Précisions") : 'Description / Details'}</label>
                 <textarea
                   rows={2}
-                  placeholder={isFr ? 'Ex: Portail bleu face à la pharmacie...' : 'Ex: Blue gate opposite pharmacy...'}
+                  placeholder={isFr ? tx("Ex: Portail bleu face à la pharmacie...") : 'Ex: Blue gate opposite pharmacy...'}
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   className="input"
@@ -209,30 +211,30 @@ export default function ProfileLandmarks() {
               </div>
 
               <div>
-                <label className="label">{isFr ? 'Zone de livraison' : 'Delivery Zone'}</label>
+                <label className="label">{isFr ? tx("Zone de livraison") : 'Delivery Zone'}</label>
                 <select
                   value={form.zone}
                   onChange={(e) => setForm({ ...form, zone: e.target.value })}
                   className="input"
                 >
-                  <option value="Zone Cadjehoun">Zone Cadjehoun</option>
-                  <option value="Zone Haie Vive">Zone Haie Vive</option>
-                  <option value="Zone Akpakpa">Zone Akpakpa</option>
-                  <option value="Zone Ganhi">Zone Ganhi</option>
-                  <option value="Zone Calavi">Zone Abomey-Calavi</option>
+                  <option value="Zone Cadjehoun">{tx("Zone Cadjehoun")}</option>
+                  <option value="Zone Haie Vive">{tx("Zone Haie Vive")}</option>
+                  <option value="Zone Akpakpa">{tx("Zone Akpakpa")}</option>
+                  <option value="Zone Ganhi">{tx("Zone Ganhi")}</option>
+                  <option value="Zone Calavi">{tx("Zone Abomey-Calavi")}</option>
                 </select>
               </div>
 
               <div>
-                <label className="label">{isFr ? 'Icône' : 'Icon'}</label>
+                <label className="label">{isFr ? tx("Icône") : 'Icon'}</label>
                 <select
                   value={form.icon}
                   onChange={(e) => setForm({ ...form, icon: e.target.value })}
                   className="input"
                 >
-                  <option value="location_on">{isFr ? 'Repère général' : 'General landmark'}</option>
-                  <option value="home">{isFr ? 'Domicile' : 'Home'}</option>
-                  <option value="work">{isFr ? 'Bureau' : 'Office'}</option>
+                  <option value="location_on">{isFr ? tx("Repère général") : 'General landmark'}</option>
+                  <option value="home">{isFr ? tx("Domicile") : 'Home'}</option>
+                  <option value="work">{isFr ? tx("Bureau") : 'Office'}</option>
                   <option value="storefront">{isFr ? 'Magasin' : 'Store'}</option>
                 </select>
               </div>
@@ -244,7 +246,7 @@ export default function ProfileLandmarks() {
                   onChange={(e) => setForm({ ...form, isDefault: e.target.checked })}
                   className="h-4 w-4 rounded border-line accent-primary"
                 />
-                <span className="text-xs font-medium text-ink">{isFr ? 'Définir comme point de repère par défaut' : 'Set as default landmark'}</span>
+                <span className="text-xs font-medium text-ink">{isFr ? tx("Définir comme point de repère par défaut") : 'Set as default landmark'}</span>
               </label>
 
               <div className="mt-lg flex gap-3 pt-2">
@@ -259,7 +261,7 @@ export default function ProfileLandmarks() {
                   type="submit"
                   className="w-1/2 rounded-lg bg-primary py-2.5 text-xs font-bold text-white shadow-sm"
                 >
-                  {editItem ? (isFr ? 'Mettre à jour' : 'Update') : (isFr ? 'Ajouter' : 'Add')}
+                  {editItem ? (isFr ? tx("Mettre à jour") : 'Update') : (isFr ? tx("Ajouter") : 'Add')}
                 </button>
               </div>
             </form>

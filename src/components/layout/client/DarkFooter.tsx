@@ -2,8 +2,10 @@ import { Link } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
+import { tr, tx } from '../../../i18n/tx';
 
-const soon = (label: string) => () => toast(`${label} — bientôt disponible`);
+
+const soon = (label: string) => () => toast(tr(`${label} — bientôt disponible`, `${tx(label)} — coming soon`));
 
 /** Footer sombre de l'accueil — copie conforme du code.html Stitch. */
 export default function DarkFooter() {
@@ -16,7 +18,7 @@ export default function DarkFooter() {
           <h2 className="mb-md font-h2 text-h2 text-primary-light">TOKPa</h2>
           <p className="text-body text-surface-variant">
             {isFr
-              ? 'Le meilleur du marché béninois dans votre poche. Fraîcheur garantie et prix négociables.'
+              ? tx("Le meilleur du marché béninois dans votre poche. Fraîcheur garantie et prix négociables.")
               : 'The best of the Benin market in your pocket. Guaranteed freshness and negotiable prices.'}
           </p>
         </div>
@@ -26,12 +28,12 @@ export default function DarkFooter() {
           <ul className="flex flex-col gap-sm text-body text-surface-variant">
             <li>
               <Link to="/catalogue" className="hover:text-white">
-                {isFr ? 'Explorer le marché' : 'Explore market'}
+                {isFr ? tx("Explorer le marché") : 'Explore market'}
               </Link>
             </li>
             <li>
               <Link to="/negociations" className="hover:text-white">
-                {isFr ? 'Mes Négociations' : 'My Negotiations'}
+                {isFr ? tx("Mes Négociations") : 'My Negotiations'}
               </Link>
             </li>
             <li>
@@ -43,7 +45,7 @@ export default function DarkFooter() {
         </div>
 
         <div>
-          <h4 className="mb-md font-bold">{isFr ? 'Aide & Suivi' : 'Help & Tracking'}</h4>
+          <h4 className="mb-md font-bold">{isFr ? tx("Aide & Suivi") : 'Help & Tracking'}</h4>
           <ul className="flex flex-col gap-sm text-body text-surface-variant">
             <li>
               <Link to="/messagerie" className="hover:text-white">
@@ -52,12 +54,12 @@ export default function DarkFooter() {
             </li>
             <li>
               <Link to="/commandes/suivi" className="hover:text-white">
-                {isFr ? 'Suivi en Temps Réel' : 'Live Order Tracking'}
+                {isFr ? tx("Suivi en Temps Réel") : 'Live Order Tracking'}
               </Link>
             </li>
             <li>
               <Link to="/profil" className="hover:text-white">
-                {isFr ? 'Mon Compte' : 'My Account'}
+                {isFr ? tx("Mon Compte") : 'My Account'}
               </Link>
             </li>
           </ul>
@@ -76,9 +78,9 @@ export default function DarkFooter() {
             </button>
             <button
               type="button"
-              onClick={soon('Partager')}
+              onClick={soon(tx("Partager"))}
               className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface-variant transition-colors hover:bg-primary-shade cursor-pointer"
-              aria-label="Partager"
+              aria-label={tx("Partager")}
             >
               <MIcon name="share" />
             </button>
@@ -87,7 +89,7 @@ export default function DarkFooter() {
       </div>
 
       <div className="mx-auto mt-xl max-w-[1200px] border-t border-on-surface-variant px-4 pt-lg text-center text-label text-surface-variant">
-        © 2026 TOKPa. {isFr ? 'Tous droits réservés.' : 'All rights reserved.'} Cotonou, Bénin.
+        © 2026 TOKPa. {isFr ? tx("Tous droits réservés.") : 'All rights reserved.'} Cotonou, Bénin.
       </div>
     </footer>
   );

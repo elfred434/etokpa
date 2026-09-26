@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
 import { IconTruckDelivery, IconTags, IconMapPin } from '@tabler/icons-react';
+import { useLanguage } from '../../context/LanguageContext';
+import { tx } from '../../i18n/tx';
+
 
 const BULLETS = [
   { icon: IconTruckDelivery, label: 'Livraison rapide' },
@@ -17,6 +20,7 @@ interface AuthSplitLayoutProps {
  * masqué sous 768px ; panneau droit blanc centré, contenu max 440px.
  */
 export default function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
+  useLanguage();
   return (
     <div className="flex min-h-screen flex-col bg-white md:flex-row">
       {/* Panneau brand orange */}
@@ -31,20 +35,20 @@ export default function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
         <div className="relative z-10 flex flex-col items-center">
           <img
             src="/images/brand/illustration-marche.png"
-            alt="Illustration du marché béninois"
+            alt={tx("Illustration du marché béninois")}
             className="h-auto w-4/5 max-w-[320px] drop-shadow-2xl transition-transform duration-500 hover:scale-105"
           />
           <ul className="mt-md w-full max-w-[280px] space-y-md">
             {BULLETS.map(({ icon: Icon, label }) => (
               <li key={label} className="flex items-center gap-sm text-white">
                 <Icon size={20} />
-                <span className="text-body">{label}</span>
+                <span className="text-body">{tx(label)}</span>
               </li>
             ))}
           </ul>
         </div>
         <div className="relative z-10">
-          <p className="text-[18px] font-medium text-white opacity-90">Ton marché, ta façon</p>
+          <p className="text-[18px] font-medium text-white opacity-90">{tx("Ton marché, ta façon")}</p>
         </div>
       </aside>
 

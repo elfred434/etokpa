@@ -3,9 +3,13 @@ import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
+import LangToggle from '../../shared/LangToggle';
 import { authApi } from '../../../services/api';
 import { currentUserName, initialsOf } from '../../../routes/authGuard';
 import { fetchLivreurProfile } from '../../../pages/livreur/livreurData';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 const NAV: { to: '/livreur' | '/livreur/course' | '/livreur/historique' | '/livreur/parametres'; icon: string; label: string; short: string; exact: boolean }[] = [
   { to: '/livreur', icon: 'dashboard', label: 'Tableau de bord', short: 'Accueil', exact: true },
@@ -20,6 +24,7 @@ const NAV: { to: '/livreur' | '/livreur/course' | '/livreur/historique' | '/livr
  * pas repris : aucune route ne permet au livreur de changer sa disponibilité (B-26) — elle est affichée.
  */
 export default function LivreurLayout({ children }: { children: ReactNode }) {
+  useLanguage();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const nom = currentUserName();
@@ -40,7 +45,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await authApi.logout();
-    toast.success('Déconnexion effectuée');
+    toast.success(tx("Déconnexion effectuée"));
     navigate({ to: '/connexion' });
   };
 
@@ -51,7 +56,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
         <div className="p-6">
           <div className="mb-8">
             <h1 className="text-2xl font-black tracking-tight text-white">TOKPa</h1>
-            <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-white/80">Portail Chauffeur</p>
+            <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-white/80">{tx("Portail Chauffeur")}</p>
           </div>
           <nav className="space-y-1.5">
             {NAV.map((item) => (
@@ -66,7 +71,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
                 }
               >
                 <MIcon name={item.icon} className="text-[20px]" />
-                <span className="text-[14px]">{item.label}</span>
+                <span className="text-[14px]">{tx(item.label)}</span>
               </Link>
             ))}
           </nav>
@@ -75,7 +80,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
           {/* Bascule vers l'espace client (le livreur y a accès) */}
           <Link to="/" className="flex items-center gap-3 rounded-lg px-3 py-2 text-white/80 transition-colors hover:text-white">
             <MIcon name="storefront" className="text-[20px]" />
-            <span className="text-[14px] font-medium">Espace client</span>
+            <span className="text-[14px] font-medium">{tx("Espace client")}</span>
           </Link>
           <button
             type="button"
@@ -83,7 +88,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-white/80 transition-colors hover:text-white"
           >
             <MIcon name="logout" className="text-[20px]" />
-            <span className="text-[14px] font-medium">Déconnexion</span>
+            <span className="text-[14px] font-medium">{tx("Déconnexion")}</span>
           </button>
         </div>
       </aside>
@@ -93,15 +98,16 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-40 flex h-[52px] w-full items-center justify-between border-b border-border-default bg-bg-card px-lg">
           <span className="font-h1 text-h1 font-bold text-primary">TOKPa</span>
           <div className="flex items-center gap-lg">
+            <LangToggle />
             <Link to="/notifications" aria-label="Notifications" className="text-text-secondary transition-colors hover:text-primary">
               <MIcon name="notifications" />
             </Link>
             <div className="flex items-center gap-sm border-l border-border-default pl-lg">
               <div className="text-right">
-                <p className="font-label text-label leading-none text-text-main">{nom ?? 'Livreur'}</p>
+                <p className="font-label text-label leading-none text-text-main">{nom ?? tx("Livreur")}</p>
                 {disponible !== null && (
                   <p className={clsx('text-xs font-medium', disponible ? 'text-success' : 'text-text-secondary')}>
-                    {disponible ? 'Disponible' : 'Indisponible'}
+                    {disponible ? tx("Disponible") : tx("Indisponible")}
                   </p>
                 )}
               </div>
@@ -126,7 +132,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
             )}
           >
             <MIcon name={item.icon} className="text-[22px]" />
-            {item.short}
+            {tx(item.short)}
           </Link>
         ))}
       </nav>

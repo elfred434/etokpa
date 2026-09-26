@@ -15,6 +15,9 @@ import { absImageUrl } from '../../../utils/imageUrl';
 import { categoryKind, type CategoryKind } from '../../../utils/categoryKind';
 import { alertApiError } from '../../../utils/apiError';
 import { mapApiCategory } from '../../../utils/catalogMap';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tr, tx } from '../../../i18n/tx';
+
 
 /* ---- Catalogue : données UNIQUEMENT issues de l'API (plus aucun produit, catégorie ni marché de la maquette) ---- */
 
@@ -70,6 +73,7 @@ const PER_PAGE = 9;
 
 /** Catalogue — Copie conforme Stitch + Intégration API Backend Laravel */
 export default function CatalogPage() {
+  useLanguage();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const q = useRouterState({ select: (s) => (s.location.search as { q?: string }).q ?? '' });
@@ -192,7 +196,7 @@ export default function CatalogPage() {
     [apiCats],
   );
 
-  const catTitle = cat === 'all' ? CAT_ALL.nom : cat === 'pack' ? CAT_PACK.nom : (categories.find((c) => c.id === cat)?.nom ?? 'Catalogue');
+  const catTitle = tx(cat === 'all' ? CAT_ALL.nom : cat === 'pack' ? CAT_PACK.nom : (categories.find((c) => c.id === cat)?.nom ?? 'Catalogue'));
 
   // Connection API Backend GET /api/products — 100 premiers, nouveautés d'abord, recherche q (debounce)
   useEffect(() => {
@@ -207,7 +211,7 @@ export default function CatalogPage() {
             id: String(p.id),
             nom: p.nom,
             meta: p.description ?? '',
-            quantite: p.stock > 0 ? `${p.stock} en stock` : 'Rupture',
+            quantite: p.stock > 0 ? `${p.stock} en stock` : tx("Rupture"),
             prix: Number(p.prix ?? 0),
             prixLabel: `${p.prix} F`,
             prixMinimum: Number(p.prix_minimum ?? 0),
@@ -287,11 +291,11 @@ export default function CatalogPage() {
       prixMinimum: p.prixMinimum,
       categorie: p.cat,
       stock: p.stock === 'low' ? 'low' : 'available', // rupture déjà écartée plus haut
-      badges: p.promo ? ['promo'] : [],
+      badges: p.promo ? ["promo"] : [],
       image: p.image ?? undefined,
     };
     dispatch(add({ product }));
-    toast.success(`${p.nom} ajouté au panier`);
+    toast.success(tr(`${p.nom} ajouté au panier`, `${p.nom} added to cart`));
   };
 
   const openProduct = (id: string | number) =>
@@ -301,18 +305,18 @@ export default function CatalogPage() {
     <div className="absolute left-2 top-2 flex flex-col gap-1">
       {p.stock === 'available' && (
         <span className="flex items-center gap-1 rounded-full bg-success px-2 py-0.5 text-[10px] font-bold text-white">
-          <span className="h-1.5 w-1.5 rounded-full bg-white" /> Disponible
+          <span className="h-1.5 w-1.5 rounded-full bg-white" /> {tx("Disponible")}
         </span>
       )}
       {p.promo && <span className="rounded-full bg-amber px-2 py-0.5 text-[10px] font-bold text-white">{p.promo}</span>}
       {p.stock === 'low' && (
         <span className="flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">
-          <span className="h-1.5 w-1.5 rounded-full bg-white" /> Stock faible
+          <span className="h-1.5 w-1.5 rounded-full bg-white" /> {tx("Stock faible")}
         </span>
       )}
       {p.stock === 'none' && (
         <span className="flex items-center gap-1 rounded-full bg-ink-3 px-2 py-0.5 text-[10px] font-bold text-white">
-          <span className="h-1.5 w-1.5 rounded-full bg-white" /> Rupture
+          <span className="h-1.5 w-1.5 rounded-full bg-white" /> {tx("Rupture")}
         </span>
       )}
     </div>
@@ -332,7 +336,7 @@ export default function CatalogPage() {
         {/* ---- Sidebar Filters ---- */}
         <aside className="hidden w-[260px] flex-shrink-0 space-y-md md:block">
           <div className="rounded-xl border-[0.5px] border-line bg-white p-md shadow-sm">
-            <h3 className="mb-md font-h3 text-h3">Catégories</h3>
+            <h3 className="mb-md font-h3 text-h3">{tx("Catégories")}</h3>
             <nav className="space-y-1">
               {categories.map((c) => (
                 <button
@@ -350,14 +354,14 @@ export default function CatalogPage() {
                   )}
                 >
                   <MIcon name={c.icon} className="text-[20px]" />
-                  <span className="text-label">{c.nom}</span>
+                  <span className="text-label">{tx(c.nom)}</span>
                 </button>
               ))}
             </nav>
 
             <div className="mt-8 border-t border-line pt-6">
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-h3 text-h3">Prix (FCFA)</h3>
+                <h3 className="font-h3 text-h3">{tx("Prix (FCFA)")}</h3>
                 <span className="text-micro font-bold text-primary">{(maxPrice ?? priceCeil).toLocaleString('fr-FR')} max</span>
               </div>
               <input
@@ -377,7 +381,7 @@ export default function CatalogPage() {
 
             <div className="mt-8 border-t border-line pt-6">
               <div className="flex items-center justify-between">
-                <span className="text-label font-semibold">Disponible uniquement</span>
+                <span className="text-label font-semibold">{tx("Disponible uniquement")}</span>
                 <button
                   type="button"
                   role="switch"
@@ -406,7 +410,7 @@ export default function CatalogPage() {
               onClick={resetFilters}
               className="mt-8 w-full rounded-lg py-2 text-label font-semibold text-primary transition-colors hover:bg-primary-lighter active:scale-95"
             >
-              Réinitialiser les filtres
+              {tx("Réinitialiser les filtres")}
             </button>
           </div>
         </aside>
@@ -416,7 +420,7 @@ export default function CatalogPage() {
           <div className="fixed inset-0 z-50 flex flex-col bg-black/50 md:hidden">
             <div className="mt-auto max-h-[85vh] w-full overflow-y-auto rounded-t-2xl bg-white p-lg shadow-xl">
               <div className="mb-md flex items-center justify-between border-b border-line pb-sm">
-                <h3 className="font-h2 text-h2 text-on-surface">Filtres du catalogue</h3>
+                <h3 className="font-h2 text-h2 text-on-surface">{tx("Filtres du catalogue")}</h3>
                 <button
                   type="button"
                   onClick={() => setMobileFilterOpen(false)}
@@ -428,7 +432,7 @@ export default function CatalogPage() {
 
               <div className="space-y-6">
                 <div>
-                  <h4 className="mb-sm font-h3 text-h3 text-on-surface">Catégories</h4>
+                  <h4 className="mb-sm font-h3 text-h3 text-on-surface">{tx("Catégories")}</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {categories.map((c) => (
                       <button
@@ -444,7 +448,7 @@ export default function CatalogPage() {
                         )}
                       >
                         <MIcon name={c.icon} className="text-[18px]" />
-                        <span className="truncate">{c.nom}</span>
+                        <span className="truncate">{tx(c.nom)}</span>
                       </button>
                     ))}
                   </div>
@@ -452,7 +456,7 @@ export default function CatalogPage() {
 
                 <div className="border-t border-line pt-4">
                   <div className="mb-2 flex items-center justify-between">
-                    <h4 className="font-h3 text-h3 text-on-surface">Prix max</h4>
+                    <h4 className="font-h3 text-h3 text-on-surface">{tx("Prix max")}</h4>
                     <span className="text-xs font-bold text-primary">{(maxPrice ?? priceCeil).toLocaleString('fr-FR')} FCFA</span>
                   </div>
                   <input
@@ -467,7 +471,7 @@ export default function CatalogPage() {
                 </div>
 
                 <div className="border-t border-line pt-4 flex items-center justify-between">
-                  <span className="text-sm font-medium text-on-surface">Disponible uniquement</span>
+                  <span className="text-sm font-medium text-on-surface">{tx("Disponible uniquement")}</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -494,7 +498,7 @@ export default function CatalogPage() {
                     onClick={resetFilters}
                     className="w-1/2 rounded-lg border border-line py-3 text-xs font-bold text-ink-2"
                   >
-                    Réinitialiser
+                    {tx("Réinitialiser")}
                   </button>
                   <button
                     type="button"
@@ -522,7 +526,7 @@ export default function CatalogPage() {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                placeholder="Rechercher un produit (nom ou description)…"
+                placeholder={tx("Rechercher un produit (nom ou description)…")}
                 className="w-full rounded-[10px] border-0.5 border-line bg-card py-3 pl-10 pr-4 text-label placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
@@ -531,7 +535,7 @@ export default function CatalogPage() {
             <div>
               <h2 className="font-h1 text-h1 text-on-surface">{catTitle}</h2>
               <p className="mt-1 text-ink-2">
-                {listLoading ? 'Chargement…' : listError ? '' : `${filtered.length} ${packMode ? 'packs trouvés' : 'produits trouvés'}`}
+                {listLoading ? tx("Chargement…") : listError ? '' : `${filtered.length} ${packMode ? tx("packs trouvés") : 'produits trouvés'}`}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4">
@@ -542,11 +546,11 @@ export default function CatalogPage() {
                 className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-1.5 text-xs font-semibold text-primary shadow-sm md:hidden"
               >
                 <MIcon name="tune" className="text-[18px]" />
-                Filtres
+                {tx("Filtres")}
               </button>
 
               <div className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-1.5">
-                <span className="hidden text-xs text-ink-2 sm:inline">Trier :</span>
+                <span className="hidden text-xs text-ink-2 sm:inline">{tx("Trier :")}</span>
                 <select
                   value={sort}
                   onChange={(e) => {
@@ -554,16 +558,16 @@ export default function CatalogPage() {
                   }}
                   className="cursor-pointer border-none bg-transparent p-0 text-xs font-semibold focus:ring-0"
                 >
-                  <option value="pop">Popularité</option>
-                  <option value="asc">Prix croissant</option>
-                  <option value="desc">Prix décroissant</option>
-                  <option value="new">Nouveautés</option>
+                  <option value="pop">{tx("Popularité")}</option>
+                  <option value="asc">{tx("Prix croissant")}</option>
+                  <option value="desc">{tx("Prix décroissant")}</option>
+                  <option value="new">{tx("Nouveautés")}</option>
                 </select>
               </div>
               <div className="flex overflow-hidden rounded-lg border border-line bg-white">
                 <button
                   type="button"
-                  aria-label="Vue grille"
+                  aria-label={tx("Vue grille")}
                   onClick={() => setView('grid')}
                   className={clsx('p-2', view === 'grid' ? 'border-r border-line bg-warm text-primary' : 'text-ink-3 hover:bg-surface')}
                 >
@@ -571,7 +575,7 @@ export default function CatalogPage() {
                 </button>
                 <button
                   type="button"
-                  aria-label="Vue liste"
+                  aria-label={tx("Vue liste")}
                   onClick={() => setView('list')}
                   className={clsx('p-2', view === 'list' ? 'bg-warm text-primary' : 'text-ink-3 hover:bg-surface')}
                 >
@@ -583,19 +587,19 @@ export default function CatalogPage() {
 
           {listLoading ? (
             <LoadingState
-              label={packMode ? 'Chargement des packs…' : 'Chargement des produits…'}
+              label={packMode ? tx("Chargement des packs…") : 'Chargement des produits…'}
               className="rounded-xl border-[0.5px] border-line bg-white"
             />
           ) : listError ? (
             <ApiErrorState
-              title={packMode ? 'Impossible de charger les packs' : 'Impossible de charger les produits'}
+              title={packMode ? tx("Impossible de charger les packs") : tx("Impossible de charger les produits")}
               message={listError}
               onRetry={retry}
               className="rounded-xl border-[0.5px] border-line bg-white px-md"
             />
           ) : visible.length === 0 ? (
             <div className="rounded-xl border-[0.5px] border-line bg-white p-xl text-center text-ink-2">
-              {packMode ? 'Aucun pack ne correspond à ces filtres.' : 'Aucun produit ne correspond à ces filtres.'}
+              {packMode ? tx("Aucun pack ne correspond à ces filtres.") : tx("Aucun produit ne correspond à ces filtres.")}
             </div>
           ) : view === 'grid' ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -675,7 +679,7 @@ export default function CatalogPage() {
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
                         {p.stock === 'available' && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-success-light px-2 py-0.5 text-[10px] font-bold text-success-dark">
-                            <span className="h-1.5 w-1.5 rounded-full bg-success" /> Disponible
+                            <span className="h-1.5 w-1.5 rounded-full bg-success" /> {tx("Disponible")}
                           </span>
                         )}
                         {p.promo && (
@@ -685,12 +689,12 @@ export default function CatalogPage() {
                         )}
                         {p.stock === 'low' && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-primary-lighter px-2 py-0.5 text-[10px] font-bold text-primary-dark">
-                            <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Stock faible
+                            <span className="h-1.5 w-1.5 rounded-full bg-primary" /> {tx("Stock faible")}
                           </span>
                         )}
                         {p.stock === 'none' && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-page px-2 py-0.5 text-[10px] font-bold text-ink-2">
-                            <span className="h-1.5 w-1.5 rounded-full bg-ink-3" /> Rupture
+                            <span className="h-1.5 w-1.5 rounded-full bg-ink-3" /> {tx("Rupture")}
                           </span>
                         )}
                       </div>
@@ -728,7 +732,7 @@ export default function CatalogPage() {
           <div className="mt-xl flex items-center justify-center gap-2">
             <button
               type="button"
-              aria-label="Page précédente"
+              aria-label={tx("Page précédente")}
               disabled={currentPage === 1}
               onClick={() => setPage(currentPage - 1)}
               className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-on-surface-variant transition-all hover:border-line hover:bg-white disabled:opacity-40"
@@ -752,7 +756,7 @@ export default function CatalogPage() {
             ))}
             <button
               type="button"
-              aria-label="Page suivante"
+              aria-label={tx("Page suivante")}
               disabled={currentPage === totalPages}
               onClick={() => setPage(currentPage + 1)}
               className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-on-surface-variant transition-all hover:border-line hover:bg-white disabled:opacity-40"
@@ -768,17 +772,17 @@ export default function CatalogPage() {
         <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 text-ink-2">
           <div className="flex items-center gap-2">
             <span className="font-h3 text-primary">TOKPa</span>
-            <span className="text-micro">© 2026 - Le Marché Béninois en ligne</span>
+            <span className="text-micro">{tx("© 2026 - Le Marché Béninois en ligne")}</span>
           </div>
           <div className="hidden gap-lg sm:flex">
             <Link to="/profil" className="text-label transition-colors hover:text-primary">
-              Aide & Support
+              {tx("Aide & Support")}
             </Link>
             <Link to="/negociations" className="text-label transition-colors hover:text-primary">
-              Négocier sur TOKPa
+              {tx("Négocier sur TOKPa")}
             </Link>
             <Link to="/commandes/suivi" className="text-label transition-colors hover:text-primary">
-              Suivi Livraison
+              {tx("Suivi Livraison")}
             </Link>
           </div>
         </div>

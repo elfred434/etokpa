@@ -12,6 +12,8 @@ import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotification
 import { catalogApi, ordersApi } from '../../../services/api';
 import { isOwnOrder } from '../../../utils/ownOrder';
 import { alertApiError } from '../../../utils/apiError';
+import { tx } from '../../../i18n/tx';
+
 
 interface ApiRider {
   id: number;
@@ -105,7 +107,7 @@ export default function OrderTrackingPage() {
           // sans ?order= : la commande active la plus récente (sinon la plus récente).
           // Le choix d'une commande se fait via /commandes → « Suivre » — le sélecteur de
           // statuts/commandes est réservé au livreur assigné (design Stitch), pas au client.
-          const active = list.find((o) => ['en_attente', 'en_preparation', 'en_livraison'].includes(o.statut));
+          const active = list.find((o) => ["en_attente", 'en_preparation', 'en_livraison'].includes(o.statut));
           setSelectedId((active ?? list[0]).id);
         }
       })
@@ -267,15 +269,15 @@ export default function OrderTrackingPage() {
             <div className="py-xl">
               <EmptyState
                 icon={<MIcon name="local_shipping" className="text-4xl text-primary" />}
-                title={isFr ? 'Aucune commande à suivre' : 'No orders to track'}
-                description={isFr ? 'Vos commandes en cours apparaîtront ici.' : 'Your ongoing orders will appear here.'}
+                title={isFr ? tx("Aucune commande à suivre") : 'No orders to track'}
+                description={isFr ? tx("Vos commandes en cours apparaîtront ici.") : 'Your ongoing orders will appear here.'}
                 action={
                   <button
                     type="button"
                     className="px-lg py-3 bg-primary-container text-white rounded-lg font-bold cursor-pointer"
                     onClick={() => navigate({ to: '/catalogue' })}
                   >
-                    {isFr ? 'Explorer le marché' : 'Browse the market'}
+                    {isFr ? tx("Explorer le marché") : 'Browse the market'}
                   </button>
                 }
               />
@@ -284,7 +286,7 @@ export default function OrderTrackingPage() {
             <div className="py-xl">
               <EmptyState
                 icon={<MIcon name="lock" className="text-4xl text-error-dark" />}
-                title={isFr ? 'Commande introuvable' : 'Order not found'}
+                title={isFr ? tx("Commande introuvable") : 'Order not found'}
                 description={
                   isFr
                     ? 'Cette commande n’existe pas sur votre compte : elle ne peut pas être suivue ici.'
@@ -296,7 +298,7 @@ export default function OrderTrackingPage() {
                     className="px-lg py-3 bg-primary-container text-white rounded-lg font-bold cursor-pointer"
                     onClick={() => navigate({ to: '/commandes' })}
                   >
-                    {isFr ? 'Mes commandes' : 'My orders'}
+                    {isFr ? tx("Mes commandes") : 'My orders'}
                   </button>
                 }
               />
@@ -306,10 +308,10 @@ export default function OrderTrackingPage() {
               {/* Commande suivie — EN LECTURE SEULE (aucune sélection de statut : réservée au livreur assigné) */}
               <div className="flex justify-between items-center mb-md">
                 <span className="font-label text-label text-text-secondary">
-                  {isFr ? 'Commande' : 'Order'} #{selectedId}
+                  {isFr ? tx("Commande") : 'Order'} #{selectedId}
                 </span>
                 <Link to="/commandes" className="text-label text-primary-container font-bold hover:underline">
-                  {isFr ? 'Toutes mes commandes' : 'All my orders'}
+                  {isFr ? tx("Toutes mes commandes") : 'All my orders'}
                 </Link>
               </div>
 
@@ -329,9 +331,9 @@ export default function OrderTrackingPage() {
                     {(isDelivered || isCancelled) && <MIcon name={isCancelled ? 'cancel' : 'check'} className="text-[14px]" />}
                     <span className="text-label font-bold">
                       {isDelivered
-                        ? isFr ? 'Commande livrée' : 'Order delivered'
+                        ? isFr ? tx("Commande livrée") : 'Order delivered'
                         : isCancelled
-                          ? isFr ? 'Commande annulée' : 'Order cancelled'
+                          ? isFr ? tx("Commande annulée") : 'Order cancelled'
                           : isFr ? 'Suivi en direct' : 'Live tracking'}
                     </span>
                   </div>
@@ -341,7 +343,7 @@ export default function OrderTrackingPage() {
                       <span className="font-h3 font-bold">
                         {estimatedMinutes === null
                           ? isFr
-                            ? 'Arrivée estimée : dès la première position GPS'
+                            ? tx("Arrivée estimée : dès la première position GPS")
                             : 'Estimated arrival: awaiting first GPS fix'
                           : isFr
                             ? `Arrivée estimée : ~${estimatedMinutes} min${
@@ -382,10 +384,10 @@ export default function OrderTrackingPage() {
                 />
 
                 {[
-                  { labelFr: 'Marché Dantokpa', labelEn: 'Dantokpa Market', icon: 'store' },
-                  { labelFr: 'Préparation', labelEn: 'Preparing', icon: 'inventory_2' },
+                  { labelFr: tx("Marché Dantokpa"), labelEn: 'Dantokpa Market', icon: 'store' },
+                  { labelFr: tx("Préparation"), labelEn: 'Preparing', icon: 'inventory_2' },
                   { labelFr: 'En cours de route', labelEn: 'In transit', icon: 'local_shipping' },
-                  { labelFr: 'Livrée', labelEn: 'Delivered', icon: 'check_circle' },
+                  { labelFr: tx("Livrée"), labelEn: 'Delivered', icon: 'check_circle' },
                 ].map((step, i) => {
                   const done = i < stepIndex || isDelivered;
                   const active = i === stepIndex && !isDelivered;
@@ -455,7 +457,7 @@ export default function OrderTrackingPage() {
                   <Link
                     to="/messagerie"
                     className="w-10 h-10 bg-white border border-border-default rounded-lg flex items-center justify-center text-primary-container active:scale-95 transition-transform"
-                    title={isFr ? 'Discuter' : 'Chat'}
+                    title={isFr ? tx("Discuter") : 'Chat'}
                   >
                     <MIcon name="chat" />
                   </Link>
@@ -467,13 +469,13 @@ export default function OrderTrackingPage() {
                 <div className="border border-border-default rounded-lg p-md">
                   <div className="flex justify-between items-center mb-xs">
                     <span className="text-label font-bold text-text-main">
-                      {isFr ? 'Commande' : 'Order'} #{order.id}
+                      {isFr ? tx("Commande") : 'Order'} #{order.id}
                     </span>
                     <Link
                       to="/messagerie"
                       className="text-label text-primary-container font-bold hover:underline"
                     >
-                      {isFr ? 'Contacter le support' : 'Contact support'}
+                      {isFr ? tx("Contacter le support") : 'Contact support'}
                     </Link>
                   </div>
                   <div className="flex justify-between text-body">
@@ -487,7 +489,7 @@ export default function OrderTrackingPage() {
                   </div>
                   {(order.landmark?.nom || order.description_lieu) && (
                     <p className="mt-sm text-micro text-text-tertiary">
-                      {isFr ? 'Livraison' : 'Delivery'} : {order.landmark?.nom ?? '—'}
+                      {isFr ? tx("Livraison") : 'Delivery'} : {order.landmark?.nom ?? '—'}
                       {order.description_lieu ? ` — ${order.description_lieu}` : ''}
                     </p>
                   )}

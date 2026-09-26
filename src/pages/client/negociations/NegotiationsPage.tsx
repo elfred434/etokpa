@@ -15,6 +15,8 @@ import { absImageUrl } from '../../../utils/imageUrl';
 import { alertApiError } from '../../../utils/apiError';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import type { Product } from '../../../types/models';
+import { tx } from '../../../i18n/tx';
+
 
 type FilterTab = 'all' | 'pending' | 'accepted' | 'rejected' | 'expired';
 
@@ -56,7 +58,7 @@ export default function NegotiationsPage() {
               : p.statut === 'refuse' ? 'rejected'
               : p.statut === 'expire' ? 'expired'
               : 'pending',
-            createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR') : 'Récemment',
+            createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR') : tx("Récemment"),
           }));
           dispatch(setProposals(mapped));
         }
@@ -148,7 +150,7 @@ export default function NegotiationsPage() {
     }
     toast(
       isFr
-        ? 'La discussion avec le marché se débloque à l’acceptation de votre offre (Messagerie).'
+        ? tx("La discussion avec le marché se débloque à l’acceptation de votre offre (Messagerie).")
         : 'Chat with the market unlocks once your offer is accepted (Messaging).',
       { icon: '💬' },
     );
@@ -183,12 +185,12 @@ export default function NegotiationsPage() {
         prix_propose: price,
         quantite: editModal.quantite,
       });
-      toast.success(isFr ? 'Offre mise à jour et retransmise au marché.' : 'Offer updated and resubmitted.');
+      toast.success(isFr ? tx("Offre mise à jour et retransmise au marché.") : 'Offer updated and resubmitted.');
       setEditModal(null);
       loadProposals();
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { message?: string } } })?.response?.data;
-      setEditError(detail?.message || (isFr ? 'Impossible de modifier l’offre.' : 'Could not update the offer.'));
+      setEditError(detail?.message || (isFr ? tx("Impossible de modifier l’offre.") : 'Could not update the offer.'));
     } finally {
       setEditSaving(false);
     }
@@ -204,11 +206,11 @@ export default function NegotiationsPage() {
         {/* Header Section */}
         <div className="mb-lg">
           <h1 className="font-h1 text-h1 text-on-surface mb-xs">
-            {isFr ? 'Mes Négociations' : 'My Negotiations'}
+            {isFr ? tx("Mes Négociations") : 'My Negotiations'}
           </h1>
           <p className="font-body text-body text-text-secondary">
             {isFr
-              ? 'Suivez vos offres en cours, gérez vos contre-propositions et concluez vos meilleures affaires ici.'
+              ? tx("Suivez vos offres en cours, gérez vos contre-propositions et concluez vos meilleures affaires ici.")
               : 'Track your active offers, manage counter-proposals and close your best deals here.'}
           </p>
         </div>
@@ -274,17 +276,17 @@ export default function NegotiationsPage() {
             {isApiLoading ? (
               <div className="bg-bg-card rounded-card p-lg text-center border border-border-default shadow-sm">
                 <MIcon name="sync" className="mx-auto text-[32px] text-primary animate-spin mb-2" />
-                <p className="font-h3 text-h3 text-on-surface font-medium">Chargement des négociations...</p>
+                <p className="font-h3 text-h3 text-on-surface font-medium">{tx("Chargement des négociations...")}</p>
               </div>
             ) : filteredHistory.length === 0 ? (
               <div className="bg-bg-card rounded-card p-lg text-center border border-border-default shadow-sm">
                 <MIcon name="handshake" className="mx-auto text-[48px] text-text-tertiary mb-2" />
                 <p className="font-h3 text-h3 text-on-surface font-medium">
-                  {isFr ? 'Aucune négociation enregistrée' : 'No negotiations found'}
+                  {isFr ? tx("Aucune négociation enregistrée") : 'No negotiations found'}
                 </p>
                 <p className="font-secondary text-secondary mt-1">
                   {isFr
-                    ? 'Proposez une offre de prix sur un produit du catalogue pour débuter !'
+                    ? tx("Proposez une offre de prix sur un produit du catalogue pour débuter !")
                     : 'Make an offer on a catalog product to get started!'}
                 </p>
               </div>
@@ -345,30 +347,30 @@ export default function NegotiationsPage() {
                         {isPending && (
                           <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-amber-light text-amber-text text-micro font-micro uppercase tracking-wider">
                             <span className="bubble-dot bg-amber-text" />
-                            {isFr ? 'En attente de réponse' : 'Pending response'}
+                            {isFr ? tx("En attente de réponse") : 'Pending response'}
                           </span>
                         )}
                         {isCounter && (
                           <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-primary-light text-primary-deep text-micro font-micro uppercase tracking-wider">
                             <span className="bubble-dot bg-primary-deep" />
-                            {isFr ? 'Contre-proposition' : 'Counter proposal'}
+                            {isFr ? tx("Contre-proposition") : 'Counter proposal'}
                           </span>
                         )}
                         {isAccepted && (
                           <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-success-light text-success-dark text-micro font-micro uppercase tracking-wider">
                             <span className="bubble-dot bg-success" />
-                            {isFr ? 'Offre acceptée' : 'Offer accepted'}
+                            {isFr ? tx("Offre acceptée") : 'Offer accepted'}
                           </span>
                         )}
                         {isRejected && (
                           <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-error-light text-error-dark text-micro font-micro uppercase tracking-wider">
                             <span className="bubble-dot bg-error" />
-                            {isFr ? 'Offre refusée' : 'Offer rejected'}
+                            {isFr ? tx("Offre refusée") : 'Offer rejected'}
                           </span>
                         )}
                         {isExpired && (
                           <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-bg-secondary text-text-secondary text-micro font-micro uppercase tracking-wider">
-                            {isFr ? 'Offre expirée' : 'Offer expired'}
+                            {isFr ? tx("Offre expirée") : 'Offer expired'}
                           </span>
                         )}
                       </div>
@@ -384,7 +386,7 @@ export default function NegotiationsPage() {
                               </span>
                             </div>
                             <div className="flex flex-col bg-amber-light border border-[#F59E0B] px-sm py-xs rounded-lg">
-                              <span className="font-secondary text-amber-text">{isFr ? 'Votre offre' : 'Your offer'}</span>
+                              <span className="font-secondary text-amber-text">{isFr ? tx("Votre offre") : 'Your offer'}</span>
                               <span className="font-price text-price text-amber-text">
                                 {neg.proposedPrice.toLocaleString('fr-FR')} FCFA
                               </span>
@@ -414,7 +416,7 @@ export default function NegotiationsPage() {
                               </span>
                             </div>
                             <div className="flex flex-col bg-amber-light border border-[#F59E0B] px-sm py-xs rounded-lg">
-                              <span className="font-secondary text-amber-text">{isFr ? 'Votre offre' : 'Your offer'}</span>
+                              <span className="font-secondary text-amber-text">{isFr ? tx("Votre offre") : 'Your offer'}</span>
                               <span className="font-price text-price text-amber-text">
                                 {neg.proposedPrice.toLocaleString('fr-FR')} FCFA
                               </span>
@@ -427,7 +429,7 @@ export default function NegotiationsPage() {
                       {(isRejected || isExpired) && neg.adminResponse && (
                         <div className="mt-md p-sm bg-error-light/60 border border-error/20 rounded-lg">
                           <p className="text-micro font-bold text-error-dark uppercase tracking-wider mb-xs">
-                            {isFr ? 'Réponse du marché' : 'Market response'}
+                            {isFr ? tx("Réponse du marché") : 'Market response'}
                           </p>
                           <p className="text-secondary text-text-main">{neg.adminResponse}</p>
                         </div>
@@ -450,7 +452,7 @@ export default function NegotiationsPage() {
                               onClick={() => handleDiscussionClick(neg)}
                               className="px-md py-2 border border-border-default text-on-surface-variant font-medium text-label rounded-button hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
                             >
-                              {isFr ? 'Voir discussion' : 'View chat'}
+                              {isFr ? tx("Voir discussion") : 'View chat'}
                             </button>
                           </>
                         )}
@@ -462,14 +464,14 @@ export default function NegotiationsPage() {
                               onClick={() => handleDiscussionClick(neg)}
                               className="px-md py-2 border border-primary text-primary font-medium text-label rounded-button hover:bg-primary-tint active:scale-95 transition-all cursor-pointer"
                             >
-                              {isFr ? 'Voir la discussion' : 'View discussion'}
+                              {isFr ? tx("Voir la discussion") : 'View discussion'}
                             </button>
                             <button
                               type="button"
                               onClick={() => handleAcceptCounter(neg.productId, neg.counterPrice || neg.minPrice)}
                               className="px-md py-2 bg-primary-container text-white font-medium text-label rounded-button hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
                             >
-                              {isFr ? 'Répondre' : 'Reply'}
+                              {isFr ? tx("Répondre") : 'Reply'}
                             </button>
                           </>
                         )}
@@ -481,14 +483,14 @@ export default function NegotiationsPage() {
                               onClick={() => handleDiscussionClick(neg)}
                               className="px-md py-2 border border-primary text-primary font-medium text-label rounded-button hover:bg-primary-tint active:scale-95 transition-all cursor-pointer"
                             >
-                              {isFr ? 'Voir la discussion' : 'View discussion'}
+                              {isFr ? tx("Voir la discussion") : 'View discussion'}
                             </button>
                             <button
                               type="button"
                               onClick={() => openEditOffer(neg)}
                               className="px-md py-2 bg-white border border-border-default text-on-surface font-medium text-label rounded-button hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
                             >
-                              {isFr ? 'Modifier mon offre' : 'Edit my offer'}
+                              {isFr ? tx("Modifier mon offre") : 'Edit my offer'}
                             </button>
                           </>
                         )}
@@ -500,7 +502,7 @@ export default function NegotiationsPage() {
                               onClick={() => handleDiscussionClick(neg)}
                               className="px-md py-2 border border-border-default text-on-surface-variant font-medium text-label rounded-button hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
                             >
-                              {isFr ? 'Voir discussion' : 'View chat'}
+                              {isFr ? tx("Voir discussion") : 'View chat'}
                             </button>
                             <button
                               type="button"
@@ -524,21 +526,21 @@ export default function NegotiationsPage() {
             <div className="bg-white rounded-card p-lg border border-border-default shadow-sm sticky top-[80px]">
               <div className="flex items-center gap-sm mb-md text-primary">
                 <MIcon name="tips_and_updates" />
-                <h2 className="font-h2 text-h2">{isFr ? 'Guide de Négociation' : 'Negotiation Guide'}</h2>
+                <h2 className="font-h2 text-h2">{isFr ? tx("Guide de Négociation") : 'Negotiation Guide'}</h2>
               </div>
               <p className="font-secondary text-secondary mb-md">
                 {isFr
-                  ? 'Sur TOKPa, la négociation est un art. Voici comment obtenir le meilleur prix :'
+                  ? tx("Sur TOKPa, la négociation est un art. Voici comment obtenir le meilleur prix :")
                   : 'On TOKPa, negotiation is an art. Here is how to get the best price:'}
               </p>
               <ul className="space-y-md">
                 <li className="flex gap-sm">
                   <span className="text-primary font-bold">1.</span>
                   <div className="font-body text-body text-on-surface">
-                    <p className="font-bold">{isFr ? 'Restez réaliste' : 'Stay realistic'}</p>
+                    <p className="font-bold">{isFr ? tx("Restez réaliste") : 'Stay realistic'}</p>
                     <p className="text-secondary">
                       {isFr
-                        ? 'Une offre trop basse est souvent rejetée immédiatement. Proposez -10% à -15%.'
+                        ? tx("Une offre trop basse est souvent rejetée immédiatement. Proposez -10% à -15%.")
                         : 'An offer that is too low is often rejected immediately. Aim for -10% to -15%.'}
                     </p>
                   </div>
@@ -546,10 +548,10 @@ export default function NegotiationsPage() {
                 <li className="flex gap-sm">
                   <span className="text-primary font-bold">2.</span>
                   <div className="font-body text-body text-on-surface">
-                    <p className="font-bold">{isFr ? 'Soyez réactif' : 'Be responsive'}</p>
+                    <p className="font-bold">{isFr ? tx("Soyez réactif") : 'Be responsive'}</p>
                     <p className="text-secondary">
                       {isFr
-                        ? 'Répondez vite aux contre-propositions.'
+                        ? tx("Répondez vite aux contre-propositions.")
                         : 'Respond quickly to counter-proposals.'}
                     </p>
                   </div>
@@ -557,7 +559,7 @@ export default function NegotiationsPage() {
                 <li className="flex gap-sm">
                   <span className="text-primary font-bold">3.</span>
                   <div className="font-body text-body text-on-surface">
-                    <p className="font-bold">{isFr ? 'Achat groupé' : 'Bulk purchase'}</p>
+                    <p className="font-bold">{isFr ? tx("Achat groupé") : 'Bulk purchase'}</p>
                     <p className="text-secondary">
                       {isFr
                         ? 'Achetez plusieurs articles pour plus de poids.'
@@ -583,7 +585,7 @@ export default function NegotiationsPage() {
         <div className="fixed inset-0 bg-on-surface/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4 animate-fade-in">
           <div className="bg-white w-full max-w-[480px] rounded-xl shadow-2xl overflow-hidden p-lg">
             <div className="flex justify-between items-center mb-md border-b border-border-default pb-3">
-              <h3 className="font-h2 text-h2 font-bold">{isFr ? 'Modifier mon offre' : 'Edit my offer'}</h3>
+              <h3 className="font-h2 text-h2 font-bold">{isFr ? tx("Modifier mon offre") : 'Edit my offer'}</h3>
               <button
                 type="button"
                 onClick={() => setEditModal(null)}
@@ -599,18 +601,18 @@ export default function NegotiationsPage() {
                 <p className="text-secondary text-text-secondary text-micro">
                   {isFr ? 'Prix actuel' : 'Current price'} :{' '}
                   {editModal.originalPrice.toLocaleString('fr-FR')} FCFA ·{' '}
-                  {isFr ? 'Votre offre' : 'Your offer'} :{' '}
+                  {isFr ? tx("Votre offre") : 'Your offer'} :{' '}
                   {editModal.proposedPrice.toLocaleString('fr-FR')} FCFA
                 </p>
                 <p className="text-micro text-text-tertiary mt-xs">
-                  {isFr ? 'Prix minimum accepté par le marché' : 'Market minimum price'} :{' '}
+                  {isFr ? tx("Prix minimum accepté par le marché") : 'Market minimum price'} :{' '}
                   <span className="font-bold text-primary-container">{editModal.minPrice.toLocaleString('fr-FR')} FCFA</span>
                 </p>
               </div>
 
               <div>
                 <label className="block text-label mb-1 text-text-secondary font-medium">
-                  {isFr ? 'Nouveau prix proposé (FCFA)' : 'New proposed price (FCFA)'}
+                  {isFr ? tx("Nouveau prix proposé (FCFA)") : 'New proposed price (FCFA)'}
                 </label>
                 <input
                   type="number"
@@ -634,7 +636,7 @@ export default function NegotiationsPage() {
                   onClick={() => setEditModal(null)}
                   className="px-md py-2 rounded-lg border border-border-default font-medium hover:bg-gray-50 transition-all cursor-pointer"
                 >
-                  {isFr ? 'Annuler' : 'Cancel'}
+                  {isFr ? tx("Annuler") : 'Cancel'}
                 </button>
                 <button
                   type="submit"
@@ -642,7 +644,7 @@ export default function NegotiationsPage() {
                   className="px-lg py-2 rounded-lg bg-primary-container hover:bg-primary-hover text-white font-bold transition-all shadow-md cursor-pointer disabled:opacity-50"
                 >
                   {editSaving
-                    ? (isFr ? 'Envoi…' : 'Sending…')
+                    ? (isFr ? tx("Envoi…") : 'Sending…')
                     : isFr
                       ? 'Reproposer'
                       : 'Submit new price'}

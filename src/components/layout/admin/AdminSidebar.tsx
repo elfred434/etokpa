@@ -1,6 +1,9 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 import { currentRole, currentUserName, initialsOf } from '../../../routes/authGuard';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 interface AdminSidebarProps {
   currentPath?: string;
@@ -43,6 +46,7 @@ const IDLE_CLASS =
  * + groupe DevOps & Core Engine (super-admin) + bloc profil.
  */
 export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
+  useLanguage();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const activePath = currentPath || pathname;
 
@@ -59,7 +63,7 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
         className={active ? ACTIVE_CLASS : IDLE_CLASS}
       >
         <MIcon name={item.icon} />
-        <span className="font-secondary text-body">{item.label}</span>
+        <span className="font-secondary text-body">{tx(item.label)}</span>
       </Link>
     );
   };
@@ -84,9 +88,9 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-2 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {groupLabel('Gestion Métier (Admin)')}
+        {groupLabel(tx("Gestion Métier (Admin)"))}
         {METIER_ITEMS.map(renderItem)}
-        {groupLabel('DevOps & Core Engine')}
+        {groupLabel(tx("DevOps & Core Engine"))}
         {DEVOPS_ITEMS.map(renderItem)}
       </nav>
 
@@ -97,7 +101,7 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
         {/* Bascule vers l'espace client (l'admin y a accès) */}
         <Link to="/" className={IDLE_CLASS}>
           <MIcon name="storefront" />
-          <span className="font-secondary text-body">Espace client</span>
+          <span className="font-secondary text-body">{tx("Espace client")}</span>
         </Link>
         {/* Utilisateur réellement connecté (plus de profil générique) */}
         <div className="flex items-center gap-3 py-4">
@@ -105,9 +109,9 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
             {initialsOf(currentUserName(), 'AD')}
           </div>
           <div className="flex flex-col">
-            <span className="text-white font-bold text-label">{currentUserName() ?? 'Administrateur'}</span>
+            <span className="text-white font-bold text-label">{currentUserName() ?? tx("Administrateur")}</span>
             <span className="text-surface-variant text-micro opacity-70">
-              {currentRole() === 'super_admin' ? 'Super administrateur' : 'Administrateur'}
+              {currentRole() === 'super_admin' ? tx("Super administrateur") : tx("Administrateur")}
             </span>
           </div>
         </div>

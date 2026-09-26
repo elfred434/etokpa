@@ -9,6 +9,9 @@ import { fmtFcfa, listOf } from '../../../services/api/unwrap';
 import { alertApiError } from '../../../utils/apiError';
 import { currentUserName } from '../../../routes/authGuard';
 import { articlesCount, destination, tokRef, unwrapOrder, type LivreurOrder } from '../livreurData';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tr, tx } from '../../../i18n/tx';
+
 
 /**
  * Récapitulatif de fin de course — design Stitch « r_capitulatif_de_fin_de_course_tokpa », données
@@ -16,6 +19,7 @@ import { articlesCount, destination, tokRef, unwrapOrder, type LivreurOrder } fr
  * Retirés (aucune donnée dans l'API) : pourboire, distance, temps, note client, vendeurs des articles.
  */
 export default function LivreurRecapPage() {
+  useLanguage();
   const { commande } = useSearch({ from: '/livreur/recapitulatif' });
   const navState = useRouterState({ select: (s) => s.location.state as { order?: LivreurOrder; deliveredAt?: string | null } | undefined });
   const [order, setOrder] = useState<LivreurOrder | null>(navState?.order && navState.order.id === commande ? navState.order : null);
@@ -35,7 +39,7 @@ export default function LivreurRecapPage() {
         if (!alive) return;
         const found = listOf(res).map(unwrapOrder).find((o) => o.id === commande);
         if (found) setOrder(found);
-        else setErr(`La commande ${tokRef(commande)} ne figure pas parmi vos dernières livraisons.`);
+        else setErr(tr(`La commande ${tokRef(commande)} ne figure pas parmi vos dernières livraisons.`, `Order ${tokRef(commande)} is not in your recent deliveries.`));
       })
       .catch((e) => alive && setErr(alertApiError(e, 'livreur-load')));
     return () => {
@@ -54,13 +58,13 @@ export default function LivreurRecapPage() {
           {!order ? (
             err || !commande ? (
               <ApiErrorState
-                title="Récapitulatif indisponible"
-                message={err ?? 'Aucune commande indiquée.'}
+                title={tx("Récapitulatif indisponible")}
+                message={err ?? tx("Aucune commande indiquée.")}
                 onRetry={commande ? () => setReloadKey((k) => k + 1) : undefined}
                 className="rounded-[14px] border-[0.5px] border-[#E5E7EB] bg-white px-md"
               />
             ) : (
-              <LoadingState label="Chargement du récapitulatif…" className="rounded-[14px] border-[0.5px] border-[#E5E7EB] bg-white" />
+              <LoadingState label={tx("Chargement du récapitulatif…")} className="rounded-[14px] border-[0.5px] border-[#E5E7EB] bg-white" />
             )
           ) : (
             <>
@@ -69,7 +73,7 @@ export default function LivreurRecapPage() {
                 <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#10B981]/30 bg-[#ECFDF5] shadow-sm">
                   <MIcon name="check_circle" className="text-[38px] text-[#10B981]" />
                 </div>
-                <h1 className="text-[28px] font-bold leading-tight text-[#111827]">Course terminée avec succès !</h1>
+                <h1 className="text-[28px] font-bold leading-tight text-[#111827]">{tx("Course terminée avec succès !")}</h1>
                 <p className="mt-1.5 text-[15px] text-[#6B7280]">
                   Félicitations pour cette livraison{prenom ? `, ${prenom}` : ''}.
                 </p>
@@ -79,19 +83,19 @@ export default function LivreurRecapPage() {
               <section className="mb-6 overflow-hidden rounded-[14px] border-[0.5px] border-[#E5E7EB] bg-white shadow-sm">
                 {/* Section 1: Montants réels */}
                 <div className="border-b border-[#E5E7EB] bg-white p-6 text-center">
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-[#6B7280]">Frais de livraison</p>
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-[#6B7280]">{tx("Frais de livraison")}</p>
                   <h2 className="flex flex-wrap items-center justify-center gap-2 text-[32px] font-bold text-[#111827]">
                     <span>Course :</span>
                     <span className="font-bold text-[#F97316]">{fmtFcfa(order.frais_livraison)}</span>
                   </h2>
                   <div className="mt-5 flex items-center justify-center gap-10 border-t border-[#F3F4F6] pt-4">
                     <div className="text-center">
-                      <p className="text-xs font-medium text-[#6B7280]">Montant de la commande</p>
+                      <p className="text-xs font-medium text-[#6B7280]">{tx("Montant de la commande")}</p>
                       <p className="mt-0.5 text-base font-semibold text-[#111827]">{fmtFcfa(order.montant_total)}</p>
                     </div>
                     <div className="h-8 w-px bg-[#E5E7EB]" />
                     <div className="text-center">
-                      <p className="text-xs font-medium text-[#6B7280]">Articles</p>
+                      <p className="text-xs font-medium text-[#6B7280]">{tx("Articles")}</p>
                       <p className="mt-0.5 text-base font-semibold text-[#111827]">{articlesCount(order)}</p>
                     </div>
                   </div>
@@ -99,11 +103,11 @@ export default function LivreurRecapPage() {
                 {/* Section 2: Course Details */}
                 <div className="grid grid-cols-1 gap-4 border-b border-[#E5E7EB] bg-[#F9FAFB] p-5 sm:grid-cols-3">
                   <div className="flex flex-col">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[#6B7280]">Commande</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[#6B7280]">{tx("Commande")}</span>
                     <span className="mt-0.5 text-sm font-bold text-[#111827]">{tokRef(order.id)}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[#6B7280]">Heure de livraison</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[#6B7280]">{tx("Heure de livraison")}</span>
                     <span className="mt-0.5 text-sm font-medium text-[#111827]">{heure}</span>
                   </div>
                   <div className="flex flex-col">
@@ -117,7 +121,7 @@ export default function LivreurRecapPage() {
               <section className="mb-8 rounded-[14px] border-[0.5px] border-[#E5E7EB] bg-white p-6 shadow-sm">
                 <h3 className="mb-4 flex items-center gap-2 text-base font-bold text-[#111827]">
                   <MIcon name="shopping_basket" className="text-[20px] text-[#6B7280]" />
-                  <span>Détails de la commande</span>
+                  <span>{tx("Détails de la commande")}</span>
                 </h3>
                 <ul className="divide-y divide-[#F3F4F6]">
                   {(order.items ?? []).map((it) => (
@@ -131,7 +135,7 @@ export default function LivreurRecapPage() {
                       <span className="rounded-full bg-[#F3F4F6] px-2.5 py-1 text-xs font-medium text-[#6B7280]">{fmtFcfa(it.prix_unitaire)}</span>
                     </li>
                   ))}
-                  {(order.items ?? []).length === 0 && <li className="py-3 text-sm text-[#6B7280]">Aucun article transmis.</li>}
+                  {(order.items ?? []).length === 0 && <li className="py-3 text-sm text-[#6B7280]">{tx("Aucun article transmis.")}</li>}
                 </ul>
               </section>
             </>
@@ -144,14 +148,14 @@ export default function LivreurRecapPage() {
               className="flex min-w-[220px] items-center justify-center gap-2.5 rounded-[10px] bg-[#F97316] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-[#EA580C] active:scale-95"
             >
               <MIcon name="dashboard" className="text-[20px]" />
-              <span>Retour au tableau de bord</span>
+              <span>{tx("Retour au tableau de bord")}</span>
             </Link>
             <Link
               to="/livreur/historique"
               className="flex min-w-[220px] items-center justify-center gap-2.5 rounded-[10px] border-[1.5px] border-[#FED7AA] bg-[#FFF7ED] px-6 py-3.5 text-sm font-semibold text-[#C2410C] transition-all duration-150 hover:bg-[#FED7AA] active:scale-95"
             >
               <MIcon name="receipt_long" className="text-[20px]" />
-              <span>Voir l'historique complet</span>
+              <span>{tx("Voir l'historique complet")}</span>
             </Link>
           </div>
         </div>

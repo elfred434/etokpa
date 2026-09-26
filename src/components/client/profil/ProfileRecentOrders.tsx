@@ -1,6 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 const RECENT_ORDERS = [
   { id: 'TOK-2847', date: 'Aujourd’hui', totalLabel: '3 980 FCFA', statusFr: 'En livraison', statusEn: 'Out for delivery', active: true },
@@ -54,7 +56,7 @@ export default function ProfileRecentOrders() {
                   to={o.active ? '/commandes/suivi' : '/confirmation'}
                   className="flex items-center gap-0.5 text-xs font-bold text-primary hover:underline"
                 >
-                  {o.active ? (isFr ? 'Suivre' : 'Track') : (isFr ? 'Détails' : 'Details')}
+                  {o.active ? (isFr ? tx("Suivre") : 'Track') : (isFr ? tx("Détails") : 'Details')}
                   <MIcon name="chevron_right" className="text-sm" />
                 </Link>
               </div>

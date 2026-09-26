@@ -2,6 +2,8 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 interface ProfileData {
   prenom: string;
@@ -33,7 +35,7 @@ export default function ProfileHeader() {
     e.preventDefault();
     setUser(form);
     setEditOpen(false);
-    toast.success(isFr ? 'Profil mis à jour avec succès' : 'Profile updated successfully');
+    toast.success(isFr ? tx("Profil mis à jour avec succès") : 'Profile updated successfully');
   };
 
   const initials = `${user.prenom[0] ?? ''}${user.nom[0] ?? ''}`.toUpperCase();
@@ -95,7 +97,7 @@ export default function ProfileHeader() {
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">{isFr ? 'Prénom' : 'First Name'}</label>
+                  <label className="label">{isFr ? tx("Prénom") : 'First Name'}</label>
                   <input
                     type="text"
                     value={form.prenom}
@@ -128,7 +130,7 @@ export default function ProfileHeader() {
               </div>
 
               <div>
-                <label className="label">{isFr ? 'Téléphone' : 'Phone'}</label>
+                <label className="label">{isFr ? tx("Téléphone") : 'Phone'}</label>
                 <input
                   type="tel"
                   value={form.telephone}
@@ -140,7 +142,7 @@ export default function ProfileHeader() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">{isFr ? 'Ville' : 'City'}</label>
+                  <label className="label">{isFr ? tx("Ville") : 'City'}</label>
                   <input
                     type="text"
                     value={form.ville}
@@ -150,7 +152,7 @@ export default function ProfileHeader() {
                   />
                 </div>
                 <div>
-                  <label className="label">{isFr ? 'Quartier' : 'Neighborhood'}</label>
+                  <label className="label">{isFr ? tx("Quartier") : 'Neighborhood'}</label>
                   <input
                     type="text"
                     value={form.quartier}

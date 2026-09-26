@@ -11,6 +11,8 @@ import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { ordersApi, paymentsApi } from '../../../services/api';
 import { isOwnOrder } from '../../../utils/ownOrder';
 import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
+import { tx } from '../../../i18n/tx';
+
 
 interface ApiOrderItem {
   id: number;
@@ -111,7 +113,7 @@ export default function OrdersListPage() {
       const result = await paymentsApi.initPayment({ order_id: order.id });
       const payment = result?.data ?? result;
       if (payment?.redirect_url) window.location.assign(payment.redirect_url);
-      else toast.success(isFr ? 'Paiement initialisé.' : 'Payment initialized.');
+      else toast.success(isFr ? tx("Paiement initialisé.") : 'Payment initialized.');
     } catch (err) {
       toast.error(formatApiError(extractApiError(err)));
     } finally { setPaying(false); }
@@ -134,7 +136,7 @@ export default function OrdersListPage() {
       await ordersApi.cancelOrder(o.id);
       setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, statut: 'annule' } : x)));
       setSelected((s) => (s && s.id === o.id ? { ...s, statut: 'annule' } : s));
-      toast.success(isFr ? 'Commande annulée' : 'Order cancelled');
+      toast.success(isFr ? tx("Commande annulée") : 'Order cancelled');
     } catch (err) {
       toast.error(formatApiError(extractApiError(err)));
     } finally {
@@ -188,16 +190,16 @@ export default function OrdersListPage() {
         <div className="max-w-[1000px] mx-auto">
           {/* En-tête */}
           <div className="flex flex-wrap items-center justify-between gap-2 mb-lg">
-            <h1 className="font-h1 text-h1 text-on-surface">{isFr ? 'Mes commandes' : 'My orders'}</h1>
+            <h1 className="font-h1 text-h1 text-on-surface">{isFr ? tx("Mes commandes") : 'My orders'}</h1>
             <span className="text-micro text-text-secondary bg-white border border-border-default rounded-lg px-3 py-1.5">
-              {total} {isFr ? 'commande(s)' : 'order(s)'}
+              {total} {isFr ? tx("commande(s)") : 'order(s)'}
             </span>
           </div>
 
           <div className="mb-lg flex flex-wrap items-center gap-2">
-            <label htmlFor="order-status" className="text-micro font-bold text-text-secondary">{isFr ? 'Filtrer par statut' : 'Filter by status'}</label>
+            <label htmlFor="order-status" className="text-micro font-bold text-text-secondary">{isFr ? tx("Filtrer par statut") : 'Filter by status'}</label>
             <select id="order-status" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="rounded-lg border border-border-default bg-white px-3 py-2 text-label">
-              <option value="">{isFr ? 'Tous les statuts' : 'All statuses'}</option>
+              <option value="">{isFr ? tx("Tous les statuts") : 'All statuses'}</option>
               {Object.entries(STATUT_LABELS).map(([value, label]) => <option key={value} value={value}>{isFr ? label.fr : label.en}</option>)}
             </select>
           </div>
@@ -216,15 +218,15 @@ export default function OrdersListPage() {
             <div className="py-xl bg-white rounded-lg border border-border-default">
               <EmptyState
                 icon={<MIcon name="receipt_long" className="text-4xl text-primary" />}
-                title={isFr ? 'Aucune commande' : 'No orders yet'}
-                description={isFr ? 'Vos commandes apparaîtront ici.' : 'Your orders will appear here.'}
+                title={isFr ? tx("Aucune commande") : 'No orders yet'}
+                description={isFr ? tx("Vos commandes apparaîtront ici.") : 'Your orders will appear here.'}
                 action={
                   <button
                     type="button"
                     className="px-lg py-3 bg-primary-container text-white rounded-lg font-bold cursor-pointer"
                     onClick={() => navigate({ to: '/catalogue' })}
                   >
-                    {isFr ? 'Explorer le marché' : 'Browse the market'}
+                    {isFr ? tx("Explorer le marché") : 'Browse the market'}
                   </button>
                 }
               />
@@ -236,12 +238,12 @@ export default function OrdersListPage() {
                 <table className="w-full text-left text-body">
                   <thead>
                     <tr className="border-b border-border-default bg-bg-secondary text-micro font-bold text-text-secondary uppercase">
-                      <th className="px-md py-sm">Réf</th>
+                      <th className="px-md py-sm">{tx("Réf")}</th>
                       <th className="hidden lg:table-cell px-md py-sm">{isFr ? 'Date' : 'Date'}</th>
-                      <th className="hidden sm:table-cell px-md py-sm">{isFr ? 'Articles' : 'Items'}</th>
+                      <th className="hidden sm:table-cell px-md py-sm">{isFr ? tx("Articles") : 'Items'}</th>
                       <th className="px-md py-sm">{isFr ? 'Total' : 'Total'}</th>
                       <th className="px-md py-sm">{isFr ? 'Statut' : 'Status'}</th>
-                      <th className="hidden lg:table-cell px-md py-sm">{isFr ? 'Livreur' : 'Rider'}</th>
+                      <th className="hidden lg:table-cell px-md py-sm">{isFr ? tx("Livreur") : 'Rider'}</th>
                       <th className="px-md py-sm text-right">{isFr ? 'Actions' : 'Actions'}</th>
                     </tr>
                   </thead>
@@ -294,7 +296,7 @@ export default function OrdersListPage() {
                               className="inline-flex items-center gap-xs px-md py-xs rounded-lg bg-primary-tint border border-primary-light text-primary-container text-micro font-bold hover:bg-primary-lighter active:scale-95 transition-all cursor-pointer whitespace-nowrap"
                             >
                               <MIcon name="near_me" className="text-[14px]" />
-                              {isFr ? 'Suivre' : 'Track'}
+                              {isFr ? tx("Suivre") : 'Track'}
                             </button>
                           </td>
                         </tr>
@@ -325,7 +327,7 @@ export default function OrdersListPage() {
             <div className="flex items-start justify-between gap-md p-lg border-b border-line bg-warm">
               <div>
                 <h2 className="font-h2 text-h2 text-on-surface">
-                  {isFr ? 'Commande' : 'Order'} #{selected.id}
+                  {isFr ? tx("Commande") : 'Order'} #{selected.id}
                 </h2>
                 <p className="text-micro text-text-secondary mt-xs">{fmtDateTime(selected.created_at)}</p>
               </div>
@@ -338,7 +340,7 @@ export default function OrdersListPage() {
                 <button
                   type="button"
                   onClick={() => setSelected(null)}
-                  aria-label={isFr ? 'Fermer' : 'Close'}
+                  aria-label={isFr ? tx("Fermer") : 'Close'}
                   className="w-8 h-8 rounded-button border border-line flex items-center justify-center hover:bg-white transition-colors cursor-pointer"
                 >
                   <MIcon name="close" className="text-[18px]" />
@@ -354,7 +356,7 @@ export default function OrdersListPage() {
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary-lighter text-primary-dark">
                     <MIcon name="shopping_bag" className="text-[16px]" />
                   </span>
-                  {isFr ? 'Articles' : 'Items'}
+                  {isFr ? tx("Articles") : 'Items'}
                 </h3>
                 <table className="w-full text-body">
                   <tbody>
@@ -379,7 +381,7 @@ export default function OrdersListPage() {
                 </table>
                 <div className="mt-sm space-y-xs text-body border-t border-line pt-sm">
                   <div className="flex justify-between text-text-secondary">
-                    <span>{isFr ? 'Sous-total produits' : 'Items subtotal'}</span>
+                    <span>{isFr ? tx("Sous-total produits") : 'Items subtotal'}</span>
                     <span>
                       {(selected.items ?? [])
                         .reduce((s, it) => s + Number(it.prix_unitaire) * Number(it.quantite), 0)
@@ -388,7 +390,7 @@ export default function OrdersListPage() {
                     </span>
                   </div>
                   <div className="flex justify-between text-text-secondary">
-                    <span>{isFr ? 'Frais de livraison' : 'Delivery fee'}</span>
+                    <span>{isFr ? tx("Frais de livraison") : 'Delivery fee'}</span>
                     <span>{Number(selected.frais_livraison ?? 0).toLocaleString('fr-FR')} FCFA</span>
                   </div>
                   <div className="flex justify-between font-bold text-text-main">
@@ -404,7 +406,7 @@ export default function OrdersListPage() {
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary-lighter text-primary-dark">
                     <MIcon name="local_shipping" className="text-[16px]" />
                   </span>
-                  {isFr ? 'Livraison' : 'Delivery'}
+                  {isFr ? tx("Livraison") : 'Delivery'}
                 </h3>
                 <div className="bg-warm rounded-card p-md space-y-xs text-body">
                   <p className="text-text-main font-bold">{selected.landmark?.nom ?? '—'}</p>
@@ -414,7 +416,7 @@ export default function OrdersListPage() {
                   <p className="text-text-secondary">
                     {selected.livreur ? (
                       <>
-                        {isFr ? 'Livreur' : 'Rider'} : {selected.livreur.nom_complet}
+                        {isFr ? tx("Livreur") : 'Rider'} : {selected.livreur.nom_complet}
                         {selected.livreur.telephone && (
                           <>
                             {' · '}
@@ -440,7 +442,7 @@ export default function OrdersListPage() {
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary-lighter text-primary-dark">
                     <MIcon name="credit_card" className="text-[16px]" />
                   </span>
-                  {isFr ? 'Paiement' : 'Payment'}
+                  {isFr ? tx("Paiement") : 'Payment'}
                 </h3>
                 <div className="bg-warm rounded-card p-md text-body text-text-secondary">
                   {selected.payment ? (
@@ -453,7 +455,7 @@ export default function OrdersListPage() {
                       </span>
                     </div>
                   ) : (
-                    <span>{isFr ? 'Paiement non initialisé' : 'Payment not initialized'}</span>
+                    <span>{isFr ? tx("Paiement non initialisé") : 'Payment not initialized'}</span>
                   )}
                 </div>
               </section>
@@ -463,14 +465,14 @@ export default function OrdersListPage() {
                 {!selected.payment && selected.statut !== 'annule' && (
                   <button type="button" onClick={() => handlePayer(selected)} disabled={paying} className="btn btn-primary flex-1 disabled:opacity-60">
                     <MIcon name={paying ? 'sync' : 'payments'} className={paying ? 'animate-spin' : undefined} />
-                    {isFr ? 'Payer' : 'Pay'}
+                    {isFr ? tx("Payer") : 'Pay'}
                   </button>
                 )}
                 <button type="button" onClick={() => handleSuivre(selected.id)} className="btn btn-primary flex-1">
                   <MIcon name="near_me" />
-                  {isFr ? 'Suivre cette commande' : 'Track this order'}
+                  {isFr ? tx("Suivre cette commande") : 'Track this order'}
                 </button>
-                {selected.statut === 'en_attente' && (
+                {selected.statut === "en_attente" && (
                   <button
                     type="button"
                     onClick={() => handleAnnuler(selected)}
@@ -478,11 +480,11 @@ export default function OrdersListPage() {
                     className="btn btn-danger disabled:opacity-60"
                   >
                     <MIcon name={cancelling ? 'sync' : 'cancel'} className={cancelling ? 'animate-spin' : undefined} />
-                    {isFr ? 'Annuler' : 'Cancel'}
+                    {isFr ? tx("Annuler") : 'Cancel'}
                   </button>
                 )}
                 <button type="button" onClick={() => setSelected(null)} className="btn btn-ghost">
-                  {isFr ? 'Fermer' : 'Close'}
+                  {isFr ? tx("Fermer") : 'Close'}
                 </button>
               </div>
             </div>

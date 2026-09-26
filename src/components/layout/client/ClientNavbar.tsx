@@ -6,6 +6,8 @@ import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
 import { useLanguage } from '../../../context/LanguageContext';
 import { currentRole, staffSpace } from '../../../routes/authGuard';
+import { tx } from '../../../i18n/tx';
+
 
 interface ClientNavbarProps {
   search?: string;
@@ -19,6 +21,7 @@ interface ClientNavbarProps {
  * fixed 52px, fond #fff8f6, logo + liens, recherche pillule #fff1eb, icônes #9d4300, sélecteur de langue FR/EN.
  */
 export default function ClientNavbar({ search, onSearch, searchPlaceholder }: ClientNavbarProps) {
+  useLanguage();
   const cartCount = useAppSelector((s) => selectCount(s.cart.items));
   const negotiations = useAppSelector((s) => s.negotiation.history);
   const activeNegoCount = negotiations.filter((n) => n.status === 'accepted' || n.status === 'counter_offer').length;
@@ -108,7 +111,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
           <button
             type="button"
             onClick={toggleLanguage}
-            title={language === 'fr' ? 'Switch to English' : 'Passer en Français'}
+            title={language === 'fr' ? 'Switch to English' : tx("Passer en Français")}
             className="flex items-center gap-1 rounded-full border border-primary-light bg-primary-lighter px-2.5 py-1 text-xs font-bold text-primary-shade transition-transform active:scale-95"
           >
             <MIcon name="language" className="text-[16px]" />
@@ -127,7 +130,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
           <Link to="/notifications" className="scale-interaction" aria-label="Notifications">
             <MIcon name="notifications" />
           </Link>
-          <Link to="/panier" className="scale-interaction relative" aria-label="Panier">
+          <Link to="/panier" className="scale-interaction relative" aria-label={tx("Panier")}>
             <MIcon name="shopping_cart" />
             {cartCount > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />}
           </Link>
@@ -143,7 +146,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
           <Link
             to="/profil"
             className="scale-interaction"
-            aria-label="Profil"
+            aria-label={tx("Profil")}
           >
             <MIcon name="account_circle" />
           </Link>

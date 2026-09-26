@@ -1,6 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 /**
  * ProfileStats — Cartes de statistiques utilisateur (Commandes, Repères, Négociations).
@@ -13,7 +15,7 @@ export default function ProfileStats() {
       icon: 'shopping_bag',
       label: t('profile.ordersCount'),
       value: '12',
-      sub: isFr ? 'effectuées' : 'completed',
+      sub: isFr ? tx("effectuées") : 'completed',
       iconBg: 'bg-primary-lighter text-primary-dark',
       link: '/profil',
     },
@@ -21,7 +23,7 @@ export default function ProfileStats() {
       icon: 'location_on',
       label: t('profile.landmarksCount'),
       value: '3',
-      sub: isFr ? 'enregistrés' : 'saved',
+      sub: isFr ? tx("enregistrés") : 'saved',
       iconBg: 'bg-success-light text-success-dark',
       link: '/profil',
     },
@@ -29,7 +31,7 @@ export default function ProfileStats() {
       icon: 'handshake',
       label: t('profile.negotiations'),
       value: '14 500 F',
-      sub: isFr ? 'économies réalisées' : 'savings made',
+      sub: isFr ? tx("économies réalisées") : 'savings made',
       iconBg: 'bg-amber-light text-amber-text',
       link: '/negociations',
     },

@@ -1,4 +1,6 @@
 import clsx from 'clsx';
+import { useLanguage } from '../../context/LanguageContext';
+import { tx } from '../../i18n/tx';
 import {
   IconUser,
   IconMotorbike,
@@ -37,9 +39,10 @@ interface RoleSelectorProps {
  * Cartes rôles (Client, Livreur, Manager, Admin, Super Admin).
  */
 export default function RoleSelector({ value, onChange, error }: RoleSelectorProps) {
+  useLanguage();
   return (
     <fieldset className="rounded-[12px] bg-primary-lighter p-md">
-      <legend className="mb-md px-xs text-[13px] font-medium text-primary-dark">Je suis…</legend>
+      <legend className="mb-md px-xs text-[13px] font-medium text-primary-dark">{tx("Je suis…")}</legend>
       <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
         {ROLES.map(({ id, title, description, icon: Icon, disabled }) => {
           const selected = value === id;
@@ -70,11 +73,11 @@ export default function RoleSelector({ value, onChange, error }: RoleSelectorPro
                   <Icon size={20} />
                 </span>
                 <span className={clsx('text-[15px] font-semibold', disabled ? 'text-ink-3' : 'text-ink')}>
-                  {title}
+                  {tx(title)}
                 </span>
               </span>
               <span className={clsx('mt-sm block text-[12px]', disabled ? 'text-ink-3' : 'text-ink-2')}>
-                {description}
+                {tx(description)}
               </span>
             </button>
           );

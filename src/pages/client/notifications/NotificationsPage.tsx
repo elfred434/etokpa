@@ -15,6 +15,8 @@ import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotification
 import { notificationsApi, type ApiNotification } from '../../../services/api';
 import type { NotificationType } from '../../../types/models';
 import { describeNotification, formatTime } from '../../../utils/notificationText';
+import { tx } from '../../../i18n/tx';
+
 
 type FilterKey = 'all' | NotificationType;
 
@@ -121,7 +123,7 @@ export default function NotificationsPage() {
     markRead(item);
     if (item.orderId) {
       navigate({ to: '/commandes/suivi', search: { order: String(item.orderId) } });
-    } else if (item.type === 'promo') {
+    } else if (item.type === "promo") {
       navigate({ to: '/negociations' });
     } else {
       navigate({ to: '/profil' });
@@ -136,7 +138,7 @@ export default function NotificationsPage() {
         {/* Sidebar Navigation */}
         <aside className="hidden md:flex w-64 border-r border-border-default bg-white flex-col p-4 gap-2 shrink-0">
           <div className="px-2 py-3">
-            <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Filtres</p>
+            <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider">{tx("Filtres")}</p>
           </div>
           <nav className="space-y-1">
             {FILTERS.map(({ key, label, icon }) => (
@@ -152,7 +154,7 @@ export default function NotificationsPage() {
                 )}
               >
                 <MIcon name={icon} className="text-lg" />
-                <span>{label}</span>
+                <span>{tx(label)}</span>
               </button>
             ))}
           </nav>
@@ -160,10 +162,10 @@ export default function NotificationsPage() {
           <div className="mt-auto p-4 bg-primary-tint rounded-xl border border-primary-light">
             <div className="flex items-center gap-2 mb-2">
               <MIcon name="lightbulb" className="text-primary" />
-              <span className="text-xs font-bold text-primary-dark">Astuce TOKPa</span>
+              <span className="text-xs font-bold text-primary-dark">{tx("Astuce TOKPa")}</span>
             </div>
             <p className="text-xs text-primary-deep leading-relaxed">
-              Les notifications de statut de commande arrivent en temps réel — aucune actualisation nécessaire.
+              {tx("Les notifications de statut de commande arrivent en temps réel — aucune actualisation nécessaire.")}
             </p>
           </div>
         </aside>
@@ -175,7 +177,7 @@ export default function NotificationsPage() {
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-h2 md:text-h1 font-bold text-text-main mb-1">
-                  Historique des notifications
+                  {tx("Historique des notifications")}
                 </h1>
                 <p className="text-text-secondary text-sm">
                   {unreadCount > 0
@@ -190,7 +192,7 @@ export default function NotificationsPage() {
                 className="px-4 py-2.5 rounded-xl border border-primary text-primary hover:bg-primary-tint transition-all flex items-center gap-2 text-sm font-semibold cursor-pointer disabled:opacity-50"
               >
                 <MIcon name="done_all" />
-                Tout marquer comme lu
+                {tx("Tout marquer comme lu")}
               </button>
             </div>
 
@@ -209,7 +211,7 @@ export default function NotificationsPage() {
                   )}
                 >
                   <MIcon name={icon} className="text-sm" />
-                  <span>{label}</span>
+                  <span>{tx(label)}</span>
                 </button>
               ))}
             </div>
@@ -218,7 +220,7 @@ export default function NotificationsPage() {
             {loadError ? (
               <div className="bg-white border border-border-default rounded-xl">
                 <ApiErrorState
-                  title="Impossible de charger les notifications"
+                  title={tx("Impossible de charger les notifications")}
                   message={loadError}
                   onRetry={() => loadPage(page)}
                 />
@@ -227,8 +229,8 @@ export default function NotificationsPage() {
               <div className="bg-white border border-border-default rounded-xl">
                 <EmptyState
                   icon={<MIcon name="notifications" className="text-4xl text-primary" />}
-                  title={filter === 'all' ? 'Aucune notification' : 'Aucune notification de ce type'}
-                  description="Vos alertes (commandes, négociations, paiements) apparaîtront ici."
+                  title={filter === 'all' ? tx("Aucune notification") : 'Aucune notification de ce type'}
+                  description={tx("Vos alertes (commandes, négociations, paiements) apparaîtront ici.")}
                 />
               </div>
             ) : (
@@ -238,7 +240,7 @@ export default function NotificationsPage() {
                   const typeIcon =
                     item.type === 'order'
                       ? 'shopping_bag'
-                      : item.type === 'promo'
+                      : item.type === "promo"
                         ? 'local_offer'
                         : item.type === 'security'
                           ? 'shield'
@@ -247,7 +249,7 @@ export default function NotificationsPage() {
                   const iconBg =
                     item.type === 'order'
                       ? 'bg-success-light text-success-dark border-success-dark/20'
-                      : item.type === 'promo'
+                      : item.type === "promo"
                         ? 'bg-amber-light text-amber-text border-amber-hover/20'
                         : item.type === 'security'
                           ? 'bg-error-light text-error-dark border-error-dark/20'

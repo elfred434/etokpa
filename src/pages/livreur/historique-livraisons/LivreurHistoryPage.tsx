@@ -7,6 +7,9 @@ import LoadingState from '../../../components/shared/LoadingState';
 import { fmtFcfa } from '../../../services/api/unwrap';
 import { alertApiError } from '../../../utils/apiError';
 import { articlesCount, dateHeure, fetchAllHistory, fetchZoneNames, statutLabel, tokRef, type LivreurOrder } from '../livreurData';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 const PER_PAGE = 10;
 type Filtre = 'all' | 'week' | 'month';
@@ -32,6 +35,7 @@ const sameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.g
  * distance, note, versements/virement, palier bonus, téléphone du client, horodatages, reçu.
  */
 export default function LivreurHistoryPage() {
+  useLanguage();
   const [data, setData] = useState<{ orders: LivreurOrder[]; total: number; capped: boolean } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [zones, setZones] = useState<Map<number, string>>(new Map());
@@ -106,38 +110,38 @@ export default function LivreurHistoryPage() {
               <div className="flex items-center justify-center rounded-lg bg-primary p-sm text-on-primary">
                 <MIcon name="history" className="text-h1" />
               </div>
-              <h1 className="font-h1 text-h1 text-on-background">Historique des livraisons</h1>
+              <h1 className="font-h1 text-h1 text-on-background">{tx("Historique des livraisons")}</h1>
             </div>
           </div>
 
           {err ? (
             <ApiErrorState
-              title="Impossible de charger l'historique"
+              title={tx("Impossible de charger l'historique")}
               message={err}
               onRetry={() => setReloadKey((k) => k + 1)}
               className="rounded-xl border border-border-default bg-bg-card px-md"
             />
           ) : !data ? (
-            <LoadingState label="Chargement de l'historique…" className="rounded-xl border border-border-default bg-bg-card" />
+            <LoadingState label={tx("Chargement de l'historique…")} className="rounded-xl border border-border-default bg-bg-card" />
           ) : (
             <>
               {/* Stats Summary */}
               <div className="mb-xl grid grid-cols-1 gap-lg md:grid-cols-4">
                 <div className="rounded-xl border border-border-default bg-bg-card p-lg shadow-sm transition-colors hover:border-primary/30">
-                  <p className="mb-xs font-label text-label text-text-secondary">Frais de livraison cumulés</p>
+                  <p className="mb-xs font-label text-label text-text-secondary">{tx("Frais de livraison cumulés")}</p>
                   <p className="font-h1 text-h1 font-bold text-[#F97316]">{fmtFcfa(cumul)}</p>
-                  {data.capped && <p className="text-micro text-text-secondary">Sur les 500 dernières courses</p>}
+                  {data.capped && <p className="text-micro text-text-secondary">{tx("Sur les 500 dernières courses")}</p>}
                 </div>
                 <div className="rounded-xl border border-border-default bg-bg-card p-lg shadow-sm transition-colors hover:border-primary/30">
-                  <p className="mb-xs font-label text-label text-text-secondary">Courses terminées</p>
+                  <p className="mb-xs font-label text-label text-text-secondary">{tx("Courses terminées")}</p>
                   <p className="font-h1 text-h1 font-bold text-on-background">{data.total}</p>
                 </div>
                 <div className="rounded-xl border border-border-default bg-bg-card p-lg shadow-sm transition-colors hover:border-primary/30">
-                  <p className="mb-xs font-label text-label text-text-secondary">Cette semaine</p>
+                  <p className="mb-xs font-label text-label text-text-secondary">{tx("Cette semaine")}</p>
                   <p className="font-h1 text-h1 font-bold text-on-background">{orders.filter(inWeek).length}</p>
                 </div>
                 <div className="rounded-xl border border-border-default bg-bg-card p-lg shadow-sm transition-colors hover:border-primary/30">
-                  <p className="mb-xs font-label text-label text-text-secondary">Ce mois</p>
+                  <p className="mb-xs font-label text-label text-text-secondary">{tx("Ce mois")}</p>
                   <p className="font-h1 text-h1 font-bold text-on-background">{orders.filter(inMonth).length}</p>
                 </div>
               </div>
@@ -146,9 +150,9 @@ export default function LivreurHistoryPage() {
                 {/* Left Column: Table & Filters */}
                 <div className="space-y-lg lg:col-span-8">
                   <div className="flex flex-wrap gap-sm">
-                    {filterBtn('all', 'Toutes les courses')}
-                    {filterBtn('week', 'Cette semaine')}
-                    {filterBtn('month', 'Ce mois')}
+                    {filterBtn('all', tx("Toutes les courses"))}
+                    {filterBtn('week', tx("Cette semaine"))}
+                    {filterBtn('month', tx("Ce mois"))}
                   </div>
 
                   <div className="overflow-hidden rounded-xl border border-border-default bg-bg-card shadow-sm">
@@ -156,12 +160,12 @@ export default function LivreurHistoryPage() {
                       <table className="w-full border-collapse text-left">
                         <thead>
                           <tr className="border-b border-border-default bg-bg-secondary text-[13px]">
-                            <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">Commande du</th>
-                            <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">N° Commande</th>
+                            <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">{tx("Commande du")}</th>
+                            <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">{tx("N° Commande")}</th>
                             <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">Destination</th>
                             <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">Zone</th>
-                            <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">Frais de livraison</th>
-                            <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">Statut</th>
+                            <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">{tx("Frais de livraison")}</th>
+                            <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">{tx("Statut")}</th>
                             <th className="whitespace-nowrap px-md py-md text-right font-label text-text-secondary">Action</th>
                           </tr>
                         </thead>
@@ -169,7 +173,7 @@ export default function LivreurHistoryPage() {
                           {visible.length === 0 && (
                             <tr>
                               <td colSpan={7} className="px-md py-lg text-center text-text-secondary">
-                                Aucune livraison sur cette période.
+                                {tx("Aucune livraison sur cette période.")}
                               </td>
                             </tr>
                           )}
@@ -207,13 +211,13 @@ export default function LivreurHistoryPage() {
                     <div className="flex items-center justify-between bg-bg-secondary px-lg py-md">
                       <span className="text-label text-text-secondary">
                         {filtered.length === 0
-                          ? 'Aucune course'
+                          ? tx("Aucune course")
                           : `Affichage ${(current - 1) * PER_PAGE + 1}-${Math.min(current * PER_PAGE, filtered.length)} sur ${filtered.length} courses`}
                       </span>
                       <div className="flex items-center gap-xs">
                         <button
                           type="button"
-                          aria-label="Page précédente"
+                          aria-label={tx("Page précédente")}
                           disabled={current <= 1}
                           onClick={() => setPage(current - 1)}
                           className="rounded-md p-1 text-text-secondary hover:bg-white disabled:opacity-40"
@@ -237,7 +241,7 @@ export default function LivreurHistoryPage() {
                           ))}
                         <button
                           type="button"
-                          aria-label="Page suivante"
+                          aria-label={tx("Page suivante")}
                           disabled={current >= pages}
                           onClick={() => setPage(current + 1)}
                           className="rounded-md p-1 text-text-secondary hover:bg-white disabled:opacity-40"
@@ -253,7 +257,7 @@ export default function LivreurHistoryPage() {
                 <div className="space-y-lg lg:col-span-4">
                   <div className="rounded-xl border border-border-default bg-bg-card p-lg shadow-sm">
                     <div className="mb-lg flex items-center justify-between">
-                      <h2 className="font-h2 text-h2 text-on-background">Frais de la semaine</h2>
+                      <h2 className="font-h2 text-h2 text-on-background">{tx("Frais de la semaine")}</h2>
                       <span className="text-micro text-text-secondary">
                         {fmtJour(week[0].d)} – {fmtJour(week[6].d)}
                       </span>
@@ -274,7 +278,7 @@ export default function LivreurHistoryPage() {
                       ))}
                     </div>
                     <p className="mt-md text-label text-text-secondary">
-                      Total de la semaine : <span className="font-bold text-[#F97316]">{fmtFcfa(week.reduce((s, w) => s + w.total, 0))}</span>
+                      {tx("Total de la semaine :")} <span className="font-bold text-[#F97316]">{fmtFcfa(week.reduce((s, w) => s + w.total, 0))}</span>
                     </p>
                   </div>
                 </div>
@@ -301,14 +305,14 @@ export default function LivreurHistoryPage() {
                 </div>
                 <div>
                   <h3 className="font-h3 text-h3 font-bold text-on-surface">Détails de la course {tokRef(selected.id)}</h3>
-                  <p className="text-micro text-text-secondary">Historique officiel TOKPa</p>
+                  <p className="text-micro text-text-secondary">{tx("Historique officiel TOKPa")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-sm">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[12px] font-semibold text-emerald-700">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> {statutLabel(selected.statut)}
                 </span>
-                <button type="button" aria-label="Fermer" onClick={() => setSelected(null)} className="rounded-md p-1 text-text-secondary hover:bg-bg-app">
+                <button type="button" aria-label={tx("Fermer")} onClick={() => setSelected(null)} className="rounded-md p-1 text-text-secondary hover:bg-bg-app">
                   <MIcon name="close" />
                 </button>
               </div>
@@ -328,7 +332,7 @@ export default function LivreurHistoryPage() {
                 </div>
               </div>
               <div className="space-y-sm">
-                <span className="text-micro font-bold uppercase tracking-wider text-text-secondary">Détails de la commande</span>
+                <span className="text-micro font-bold uppercase tracking-wider text-text-secondary">{tx("Détails de la commande")}</span>
                 <div className="flex justify-between gap-md text-label">
                   <span className="text-text-secondary">Articles livrés ({articlesCount(selected)})</span>
                   <span className="text-right font-medium text-on-surface">
@@ -336,15 +340,15 @@ export default function LivreurHistoryPage() {
                   </span>
                 </div>
                 <div className="flex justify-between text-label">
-                  <span className="text-text-secondary">Montant de la commande</span>
+                  <span className="text-text-secondary">{tx("Montant de la commande")}</span>
                   <span className="font-medium text-on-surface">{fmtFcfa(selected.montant_total)}</span>
                 </div>
                 <div className="flex justify-between text-label">
-                  <span className="text-text-secondary">Frais de livraison</span>
+                  <span className="text-text-secondary">{tx("Frais de livraison")}</span>
                   <span className="font-bold text-[#F97316]">{fmtFcfa(selected.frais_livraison)}</span>
                 </div>
                 <div className="flex justify-between text-label">
-                  <span className="text-text-secondary">Commande passée le</span>
+                  <span className="text-text-secondary">{tx("Commande passée le")}</span>
                   <span className="font-medium text-on-surface">{dateHeure(selected.created_at)}</span>
                 </div>
               </div>
@@ -356,7 +360,7 @@ export default function LivreurHistoryPage() {
                 onClick={() => setSelected(null)}
                 className="rounded-lg border border-border-default px-lg py-sm font-label text-label font-semibold text-on-surface hover:bg-bg-app"
               >
-                Fermer
+                {tx("Fermer")}
               </button>
             </div>
           </div>

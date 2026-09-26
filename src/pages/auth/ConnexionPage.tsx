@@ -3,14 +3,19 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import MIcon from '../../components/shared/MIcon';
+import LangToggle from '../../components/shared/LangToggle';
 import { authApi } from '../../services/api';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { rememberRedirect } from '../../routes/authGuard';
+import { useLanguage } from '../../context/LanguageContext';
+import { tx } from '../../i18n/tx';
+
 
 /**
  * Page Connexion — Intégration API Backend Laravel + UI Stitch 100% fidèle
  */
 export default function ConnexionPage() {
+  useLanguage();
   const navigate = useNavigate();
   // Page demandée avant la connexion (?redirect=) : mémorisée pour y revenir après la 2FA ;
   // arrivée sans ?redirect= → on oublie toute ancienne demande.
@@ -33,7 +38,7 @@ export default function ConnexionPage() {
     try {
       // API call to Laravel backend POST /api/auth/login
       const res = await authApi.login({ email, password });
-      toast.success(res.message || 'Code 2FA envoyé par email.');
+      toast.success(res.message || tx("Code 2FA envoyé par email."));
       localStorage.setItem('tokpa_pending_email', email);
       navigate({ to: '/verification-2fa' });
     } catch (err: unknown) {
@@ -41,7 +46,7 @@ export default function ConnexionPage() {
       const info = extractApiError(err);
       setAuthError(
         info.status === 401
-          ? info.message || 'Email ou mot de passe incorrect.'
+          ? info.message || tx("Email ou mot de passe incorrect.")
           : formatApiError(info),
       );
     } finally {
@@ -51,6 +56,7 @@ export default function ConnexionPage() {
 
   return (
     <div className="bg-white min-h-screen font-body text-text-main">
+      <div className="fixed right-4 top-4 z-50"><LangToggle /></div>
       <main className="flex flex-col md:flex-row min-h-screen">
         {/* Left Column: Branding (Desktop) */}
         <section className="hidden md:flex md:w-[40%] bg-[#F97316] flex-col justify-between p-lg relative overflow-hidden">
@@ -67,20 +73,20 @@ export default function ConnexionPage() {
             <div className="space-y-md w-full max-w-[280px]">
               <div className="flex items-center gap-sm text-white">
                 <MIcon name="local_shipping" className="text-[20px]" />
-                <span className="font-body text-body font-medium">Livraison rapide</span>
+                <span className="font-body text-body font-medium">{tx("Livraison rapide")}</span>
               </div>
               <div className="flex items-center gap-sm text-white">
                 <MIcon name="handshake" className="text-[20px]" />
-                <span className="font-body text-body font-medium">Prix négociables</span>
+                <span className="font-body text-body font-medium">{tx("Prix négociables")}</span>
               </div>
               <div className="flex items-center gap-sm text-white">
                 <MIcon name="location_on" className="text-[20px]" />
-                <span className="font-body text-body font-medium">Suivi en temps réel</span>
+                <span className="font-body text-body font-medium">{tx("Suivi en temps réel")}</span>
               </div>
             </div>
           </div>
           <div className="relative z-10">
-            <p className="text-[18px] font-h3 text-white font-medium opacity-90">Ton marché, ta façon</p>
+            <p className="text-[18px] font-h3 text-white font-medium opacity-90">{tx("Ton marché, ta façon")}</p>
           </div>
         </section>
 
@@ -98,7 +104,7 @@ export default function ConnexionPage() {
                 Bon retour 👋
               </h2>
               <p className="text-[14px] font-secondary text-text-secondary">
-                Connectez-vous à votre compte TOKPa
+                {tx("Connectez-vous à votre compte TOKPa")}
               </p>
             </header>
 
@@ -107,7 +113,7 @@ export default function ConnexionPage() {
               {/* Email Field */}
               <div className="space-y-xs">
                 <label className="block text-[13px] font-label text-text-secondary" htmlFor="email">
-                  Adresse email
+                  {tx("Adresse email")}
                 </label>
                 <div className="relative">
                   <MIcon name="mail" className="absolute left-md top-1/2 -translate-y-1/2 text-text-secondary text-[20px]" />
@@ -130,7 +136,7 @@ export default function ConnexionPage() {
               <div className="space-y-xs">
                 <div className="flex justify-between items-center">
                   <label className="block text-[13px] font-label text-text-secondary" htmlFor="password">
-                    Mot de passe
+                    {tx("Mot de passe")}
                   </label>
                   <button
                     type="button"
@@ -141,7 +147,7 @@ export default function ConnexionPage() {
                       }
                       try {
                         const res = await authApi.forgotPassword(email.trim());
-                        toast.success(res?.message || 'Si un compte existe, un lien de réinitialisation a été envoyé.');
+                        toast.success(res?.message || tx("Si un compte existe, un lien de réinitialisation a été envoyé."));
                       } catch (err) {
                         console.warn('Forgot password error:', err);
                         toast.error(formatApiError(extractApiError(err)));
@@ -149,7 +155,7 @@ export default function ConnexionPage() {
                     }}
                     className="text-[13px] font-label text-[#F97316] hover:underline cursor-pointer"
                   >
-                    Mot de passe oublié ?
+                    {tx("Mot de passe oublié ?")}
                   </button>
                 </div>
                 <div className="relative">
@@ -186,7 +192,7 @@ export default function ConnexionPage() {
                   onChange={(e) => setRemember(e.target.checked)}
                 />
                 <label className="ml-sm text-[13px] font-secondary text-text-secondary cursor-pointer select-none" htmlFor="remember">
-                  Se souvenir de moi
+                  {tx("Se souvenir de moi")}
                 </label>
               </div>
 
@@ -197,7 +203,7 @@ export default function ConnexionPage() {
                   disabled={loading}
                   className="w-full bg-[#F97316] hover:bg-primary-hover text-white font-bold py-sm rounded-[10px] transition-all active:scale-[97%] duration-200 cursor-pointer disabled:opacity-50"
                 >
-                  {loading ? 'Connexion en cours...' : 'Se connecter'}
+                  {loading ? tx("Connexion en cours...") : 'Se connecter'}
                 </button>
 
                 {/* Error Message */}
@@ -217,7 +223,7 @@ export default function ConnexionPage() {
                   <div className="w-full border-t border-border-default" />
                 </div>
                 <div className="relative flex justify-center text-[12px] uppercase">
-                  <span className="bg-white px-md text-text-tertiary">ou continuer avec</span>
+                  <span className="bg-white px-md text-text-tertiary">{tx("ou continuer avec")}</span>
                 </div>
               </div>
 
@@ -228,21 +234,21 @@ export default function ConnexionPage() {
                 className="w-full flex items-center justify-center gap-sm bg-[#FFF7ED] hover:bg-primary-tint border border-primary-light text-[#C2410C] font-medium py-sm rounded-[10px] transition-all active:scale-[97%] cursor-pointer"
               >
                 <MIcon name="verified_user" className="text-[20px]" />
-                Vérification en 2 étapes (2FA)
+                {tx("Vérification en 2 étapes (2FA)")}
               </button>
             </form>
 
             <p className="mt-lg flex items-center justify-center gap-xs text-[13px] text-text-secondary text-center">
               Vous n'avez pas encore de compte ?{' '}
               <Link to="/inscription" className="font-semibold text-[#F97316] hover:underline">
-                S'inscrire
+                {tx("S'inscrire")}
               </Link>
             </p>
 
             {/* Footer Info */}
             <footer className="mt-xl flex items-center justify-center gap-xs text-[#9CA3AF] text-[12px] font-secondary">
               <MIcon name="lock" className="text-[16px]" />
-              Paiement sécurisé via FedaPay
+              {tx("Paiement sécurisé via FedaPay")}
             </footer>
           </div>
         </section>

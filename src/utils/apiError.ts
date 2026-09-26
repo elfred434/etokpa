@@ -1,4 +1,5 @@
 import toast from 'react-hot-toast';
+import { tr } from '../i18n/tx';
 
 /**
  * Extraction & mise en forme des erreurs API Laravel pour l'UX.
@@ -31,26 +32,32 @@ export function extractApiError(err: unknown): ApiErrorInfo {
     const status = e.response.status ?? 0;
     const data = e.response.data ?? {};
     const fieldErrors = data.errors && typeof data.errors === 'object' ? data.errors : {};
-    let message = (data.message || '').trim() || `Erreur HTTP ${status}`;
+    let message = (data.message || '').trim() || tr(`Erreur HTTP ${status}`, `HTTP error ${status}`);
     if (status === 419) {
-      message += ' — Session expirée (CSRF). Rechargez la page et réessayez.';
+      message += tr(
+        ' — Session expirée (CSRF). Rechargez la page et réessayez.',
+        ' — Session expired (CSRF). Reload the page and try again.',
+      );
     }
     return { status, message, fieldErrors };
   }
 
   return {
     status: null,
-    message: (e?.message || '').trim() || 'Erreur réseau inconnue',
+    message: (e?.message || '').trim() || tr('Erreur réseau inconnue', 'Unknown network error'),
     fieldErrors: {},
   };
 }
 
 /** Formatte pour affichage UX : « [HTTP 500] … — champ : … ». */
 export function formatApiError(info: ApiErrorInfo): string {
-  const prefix = info.status != null ? `[HTTP ${info.status}]` : '[Réseau]';
+  const prefix = info.status != null ? `[HTTP ${info.status}]` : tr('[Réseau]', '[Network]');
   let text = `${prefix} ${info.message}`;
   if (info.status === null) {
-    text += ' — Backend injoignable (serveur arrêté ? CORS ? vérifiez localhost:8000).';
+    text += tr(
+    ' — Backend injoignable (serveur arrêté ? CORS ? vérifiez localhost:8000).',
+    ' — Backend unreachable (server stopped? CORS? check localhost:8000).',
+  );
   }
   const fields = Object.entries(info.fieldErrors).map(([field, msgs]) => {
     const list = Array.isArray(msgs) ? msgs.join(' ') : String(msgs);

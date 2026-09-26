@@ -4,6 +4,8 @@ import ClientNavbar from '../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../components/layout/client/ClientBottomNav';
 import MIcon from '../components/shared/MIcon';
 import { useLanguage } from '../context/LanguageContext';
+import { tx } from '../i18n/tx';
+
 
 /**
  * NotFoundPage (404) — Reproduction 100% intégrale et fidèle du design Stitch HTML `page_404_tokpa/code.html`
@@ -60,11 +62,11 @@ export default function NotFoundPage() {
 
           <div className="space-y-sm relative z-20">
             <h2 className="font-h1 text-h1 text-on-surface">
-              {isFr ? "Oups ! Cette page s'est perdue au marché." : 'Oops! This page got lost at the market.'}
+              {isFr ? tx("Oups ! Cette page s'est perdue au marché.") : 'Oops! This page got lost at the market.'}
             </h2>
             <p className="font-body text-body text-text-secondary max-w-[400px] mx-auto">
               {isFr
-                ? 'La page que vous recherchez semble avoir quitté son étal. Elle est peut-être en train de négocier un meilleur prix ailleurs.'
+                ? tx("La page que vous recherchez semble avoir quitté son étal. Elle est peut-être en train de négocier un meilleur prix ailleurs.")
                 : 'The page you are looking for seems to have left its stall. It might be bargaining for a better price elsewhere.'}
             </p>
           </div>
@@ -76,7 +78,7 @@ export default function NotFoundPage() {
               className="group w-full sm:w-auto flex items-center justify-center gap-xs px-lg py-3 bg-primary-container text-white font-h3 rounded-xl active:scale-[0.97] transition-all hover:bg-primary-hover shadow-md cursor-pointer"
             >
               <MIcon name="home" />
-              <span>{isFr ? "Retour à l'accueil" : 'Back to home'}</span>
+              <span>{isFr ? tx("Retour à l'accueil") : 'Back to home'}</span>
             </Link>
 
             <Link

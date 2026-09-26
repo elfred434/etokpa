@@ -9,6 +9,9 @@ import { authApi, livreurApi } from '../../../services/api';
 import { fmtFcfa, listOf } from '../../../services/api/unwrap';
 import { alertApiError } from '../../../utils/apiError';
 import { currentUserName, initialsOf } from '../../../routes/authGuard';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 import {
   articlesCount,
   dateHeure,
@@ -29,6 +32,7 @@ import {
  * interrupteur « Disponible » (la disponibilité réelle est affichée, pas modifiable : B-26).
  */
 export default function LivreurDashboardPage() {
+  useLanguage();
   const navigate = useNavigate();
   const nom = currentUserName();
   const [deliveries, setDeliveries] = useState<LivreurOrder[] | null>(null);
@@ -80,7 +84,7 @@ export default function LivreurDashboardPage() {
     setBusy(o.id);
     try {
       const r = await livreurApi.acceptDelivery(o.id);
-      toast.success(r?.message ?? 'Course acceptée.');
+      toast.success(r?.message ?? tx("Course acceptée."));
       navigate({ to: '/livreur/course', search: { commande: o.id } });
     } catch (e) {
       alertApiError(e, 'livreur-accept');
@@ -94,7 +98,7 @@ export default function LivreurDashboardPage() {
     setBusy(o.id);
     try {
       const r = await livreurApi.refuseDelivery(o.id);
-      toast.success(r?.message ?? 'Course refusée.');
+      toast.success(r?.message ?? tx("Course refusée."));
       setDeliveries((l) => (l ?? []).filter((x) => x.id !== o.id));
     } catch (e) {
       alertApiError(e, 'livreur-refuse');
@@ -121,7 +125,7 @@ export default function LivreurDashboardPage() {
                 >
                   <div className={profile.disponible ? 'h-2 w-2 rounded-full bg-success' : 'h-2 w-2 rounded-full bg-text-tertiary'} />
                   <span className="text-[11px] font-bold uppercase tracking-wider">
-                    {profile.disponible ? 'Disponible' : 'Indisponible'}
+                    {profile.disponible ? tx("Disponible") : 'Indisponible'}
                   </span>
                 </div>
               ) : (
@@ -132,8 +136,8 @@ export default function LivreurDashboardPage() {
               <div className="mb-sm flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-4 border-primary-light bg-primary-tint text-2xl font-bold text-primary">
                 {initialsOf(nom, 'LV')}
               </div>
-              <h2 className="text-center font-h2 text-h2 text-text-main">{nom ?? 'Livreur'}</h2>
-              <p className="font-secondary text-secondary">{profile?.zone ? `Zone ${profile.zone}` : 'Zone non attribuée'}</p>
+              <h2 className="text-center font-h2 text-h2 text-text-main">{nom ?? tx("Livreur")}</h2>
+              <p className="font-secondary text-secondary">{profile?.zone ? `Zone ${profile.zone}` : tx("Zone non attribuée")}</p>
             </div>
           </div>
 
@@ -144,9 +148,9 @@ export default function LivreurDashboardPage() {
                 <MIcon name="motorcycle" className="text-3xl" />
               </div>
               <div>
-                <p className="font-label text-text-secondary">Courses</p>
+                <p className="font-label text-text-secondary">{tx("Courses")}</p>
                 <h3 className="font-h1 text-h1 text-primary">{dash ? String(dash.commandes).padStart(2, '0') : '—'}</h3>
-                <p className="text-[11px] font-bold text-text-secondary">Assignées depuis le début</p>
+                <p className="text-[11px] font-bold text-text-secondary">{tx("Assignées depuis le début")}</p>
               </div>
             </div>
             <div className="flex items-center gap-md rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
@@ -154,10 +158,10 @@ export default function LivreurDashboardPage() {
                 <MIcon name="task_alt" className="text-3xl" />
               </div>
               <div>
-                <p className="font-label text-text-secondary">Succès</p>
+                <p className="font-label text-text-secondary">{tx("Succès")}</p>
                 <h3 className="font-h1 text-h1 text-success">{succes != null ? `${succes}%` : '—'}</h3>
                 <p className="text-[11px] font-bold text-text-secondary">
-                  {terminees ? `${histTotal ?? 0} livrées sur ${terminees} terminées` : 'Aucune course terminée'}
+                  {terminees ? `${histTotal ?? 0} livrées sur ${terminees} terminées` : tx("Aucune course terminée")}
                 </p>
               </div>
             </div>
@@ -166,9 +170,9 @@ export default function LivreurDashboardPage() {
                 <MIcon name="pending_actions" className="text-3xl" />
               </div>
               <div>
-                <p className="font-label text-text-secondary">En cours</p>
+                <p className="font-label text-text-secondary">{tx("En cours")}</p>
                 <h3 className="font-h1 text-h1 text-on-surface">{dash ? String(dash.en_cours) : '—'}</h3>
-                <p className="text-[11px] font-bold text-text-secondary">À préparer ou à livrer</p>
+                <p className="text-[11px] font-bold text-text-secondary">{tx("À préparer ou à livrer")}</p>
               </div>
             </div>
           </div>
@@ -180,23 +184,23 @@ export default function LivreurDashboardPage() {
           <section className="space-y-md">
             <h3 className="flex items-center gap-sm font-h2 text-h2 text-text-main">
               <MIcon name="speed" className="text-primary" />
-              En livraison
+              {tx("En livraison")}
             </h3>
             {delivErr ? (
               <ApiErrorState
-                title="Impossible de charger vos courses"
+                title={tx("Impossible de charger vos courses")}
                 message={delivErr}
                 onRetry={retry}
                 className="rounded-lg border border-border-default bg-bg-card px-md"
               />
             ) : deliveries === null ? (
-              <LoadingState label="Chargement de vos courses…" className="rounded-lg border border-border-default bg-bg-card" />
+              <LoadingState label={tx("Chargement de vos courses…")} className="rounded-lg border border-border-default bg-bg-card" />
             ) : active ? (
               <div className="rounded-lg border-l-4 border-primary bg-bg-card p-lg shadow-sm">
                 <div className="mb-md flex items-start justify-between gap-md">
                   <div>
                     <span className="rounded bg-primary-tint px-sm py-1 text-xs font-bold text-primary">{tokRef(active.id)}</span>
-                    <h4 className="mt-sm font-h3 text-h3">{active.landmark?.nom ?? 'Point de repère non renseigné'}</h4>
+                    <h4 className="mt-sm font-h3 text-h3">{active.landmark?.nom ?? tx("Point de repère non renseigné")}</h4>
                     <p className="text-sm text-secondary">
                       {articlesCount(active)} article(s) · {statutLabel(active.statut)}
                     </p>
@@ -218,12 +222,12 @@ export default function LivreurDashboardPage() {
                   search={{ commande: active.id }}
                   className="block w-full rounded-xl bg-[#F97316] py-3.5 text-center text-[15px] font-bold text-white shadow-lg shadow-orange-500/20 transition-all hover:bg-[#EA580C] active:scale-95"
                 >
-                  Voir la course active
+                  {tx("Voir la course active")}
                 </Link>
               </div>
             ) : (
               <div className="rounded-lg border border-border-default bg-bg-card p-lg text-center text-secondary text-text-secondary shadow-sm">
-                Aucune livraison en cours pour le moment.
+                {tx("Aucune livraison en cours pour le moment.")}
               </div>
             )}
           </section>
@@ -236,13 +240,13 @@ export default function LivreurDashboardPage() {
                 En attente ({pending.length})
               </span>
               <Link to="/livreur/course" className="text-sm font-bold text-primary hover:underline">
-                Voir tout
+                {tx("Voir tout")}
               </Link>
             </h3>
             <div className="space-y-md">
               {deliveries !== null && pending.length === 0 && !delivErr && (
                 <div className="rounded-lg border border-border-default bg-bg-card p-lg text-center text-secondary text-text-secondary shadow-sm">
-                  Aucune course en attente.
+                  {tx("Aucune course en attente.")}
                 </div>
               )}
               {pending.map((o) => (
@@ -255,7 +259,7 @@ export default function LivreurDashboardPage() {
                       <MIcon name="inventory_2" className="text-on-surface-variant" />
                     </div>
                     <div>
-                      <h4 className="font-h3 text-h3">{o.landmark?.nom ?? 'Point de repère non renseigné'}</h4>
+                      <h4 className="font-h3 text-h3">{o.landmark?.nom ?? tx("Point de repère non renseigné")}</h4>
                       <p className="text-xs text-secondary">
                         {tokRef(o.id)} • {articlesCount(o)} article(s) • {statutLabel(o.statut)}
                       </p>
@@ -268,7 +272,7 @@ export default function LivreurDashboardPage() {
                     <div className="flex gap-xs">
                       <button
                         type="button"
-                        title="Refuser"
+                        title={tx("Refuser")}
                         aria-label={`Refuser la course ${tokRef(o.id)}`}
                         disabled={busy === o.id}
                         onClick={() => refuse(o)}
@@ -283,7 +287,7 @@ export default function LivreurDashboardPage() {
                         className="flex items-center gap-xs rounded-lg bg-success px-lg py-md font-bold text-white transition-all hover:bg-success-dark active:scale-95 disabled:opacity-50"
                       >
                         <MIcon name="check" />
-                        Accepter
+                        {tx("Accepter")}
                       </button>
                     </div>
                   </div>
@@ -297,20 +301,20 @@ export default function LivreurDashboardPage() {
         <section className="space-y-md">
           <h3 className="flex items-center gap-sm font-h2 text-h2 text-text-main">
             <MIcon name="event_available" className="text-success" />
-            Dernières livraisons
+            {tx("Dernières livraisons")}
           </h3>
           {histErr ? (
             <ApiErrorState
-              title="Impossible de charger l'historique"
+              title={tx("Impossible de charger l'historique")}
               message={histErr}
               onRetry={retry}
               className="rounded-lg border border-border-default bg-bg-card px-md"
             />
           ) : recent === null ? (
-            <LoadingState label="Chargement de l'historique…" className="rounded-lg border border-border-default bg-bg-card" />
+            <LoadingState label={tx("Chargement de l'historique…")} className="rounded-lg border border-border-default bg-bg-card" />
           ) : recent.length === 0 ? (
             <div className="rounded-lg border border-border-default bg-bg-card p-lg text-center text-secondary text-text-secondary shadow-sm">
-              Aucune livraison effectuée pour le moment.
+              {tx("Aucune livraison effectuée pour le moment.")}
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border-default bg-bg-card shadow-sm">
@@ -319,9 +323,9 @@ export default function LivreurDashboardPage() {
                   <tr>
                     <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">ID Course</th>
                     <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">Destination</th>
-                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">Commande du</th>
-                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">Frais de livraison</th>
-                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">Statut</th>
+                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">{tx("Commande du")}</th>
+                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">{tx("Frais de livraison")}</th>
+                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">{tx("Statut")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-default">

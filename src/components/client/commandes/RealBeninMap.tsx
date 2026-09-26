@@ -2,6 +2,9 @@ import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 // Coordonnées réelles du Bénin (Cotonou / Marché Dantokpa / Cadjehoun)
 export const DANTOKPA_COORDS: [number, number] = [6.3725, 2.4332]; // Marché Dantokpa
@@ -43,6 +46,7 @@ const clientIcon = L.divIcon({
 });
 
 function MapRecenterController({ center }: { center: [number, number] }) {
+  useLanguage();
   const map = useMap();
   useEffect(() => {
     map.setView(center, map.getZoom(), { animate: true });
@@ -69,6 +73,7 @@ export default function RealBeninMap({
   destinationLabel,
   onRecenterRider,
 }: RealBeninMapProps) {
+  useLanguage();
   const mapCenter: [number, number] = riderCoords ?? destinationCoords ?? DANTOKPA_COORDS;
   const routePath: [number, number][] = [
     DANTOKPA_COORDS,
@@ -99,8 +104,8 @@ export default function RealBeninMap({
         <Marker position={DANTOKPA_COORDS} icon={sellerIcon}>
           <Popup>
             <div className="text-center font-sans p-1">
-              <strong className="block text-primary font-bold">Marché Dantokpa</strong>
-              <span className="text-xs text-gray-600">Cotonou, Bénin</span>
+              <strong className="block text-primary font-bold">{tx("Marché Dantokpa")}</strong>
+              <span className="text-xs text-gray-600">{tx("Cotonou, Bénin")}</span>
             </div>
           </Popup>
         </Marker>
@@ -123,7 +128,7 @@ export default function RealBeninMap({
             <Popup>
               <div className="text-center font-sans p-1">
                 <strong className="block text-info-dark font-bold">{destinationLabel || 'Point de livraison'}</strong>
-                <span className="text-xs text-gray-600">Destination de la commande</span>
+                <span className="text-xs text-gray-600">{tx("Destination de la commande")}</span>
               </div>
             </Popup>
           </Marker>
@@ -134,7 +139,7 @@ export default function RealBeninMap({
       <button
         type="button"
         onClick={onRecenterRider}
-        title="Recentrer sur la position temps réel du livreur"
+        title={tx("Recentrer sur la position temps réel du livreur")}
         className="absolute bottom-6 right-6 z-[400] w-12 h-12 bg-white rounded-full flex items-center justify-center border border-border-default shadow-xl hover:bg-bg-secondary transition-transform active:scale-95 cursor-pointer"
       >
         <span className="material-symbols-outlined text-text-main">my_location</span>

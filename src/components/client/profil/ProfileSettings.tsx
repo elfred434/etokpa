@@ -3,6 +3,8 @@ import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 /**
  * ProfileSettings — Encart Paramètres & Sécurité (mot de passe, notifications, langue, déconnexion).
@@ -16,16 +18,16 @@ export default function ProfileSettings() {
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (pwForm.newPw !== pwForm.confirmPw) {
-      toast.error('Les mots de passe ne correspondent pas');
+      toast.error(tx("Les mots de passe ne correspondent pas"));
       return;
     }
     setPasswordOpen(false);
     setPwForm({ oldPw: '', newPw: '', confirmPw: '' });
-    toast.success('Mot de passe modifié avec succès');
+    toast.success(tx("Mot de passe modifié avec succès"));
   };
 
   const handleLogout = () => {
-    toast.success('Déconnexion réussie');
+    toast.success(tx("Déconnexion réussie"));
     navigate({ to: '/connexion' });
   };
 
@@ -51,14 +53,14 @@ export default function ProfileSettings() {
           {/* Notifications */}
           <button
             type="button"
-            onClick={() => toast('Paramètres notifications SMS / App enregistrés')}
+            onClick={() => toast(tx("Paramètres notifications SMS / App enregistrés"))}
             className="scale-interaction flex w-full items-center justify-between border-t border-line p-md text-left transition-colors hover:bg-surface"
           >
             <div className="flex items-center gap-md">
               <MIcon name="notifications_active" className="text-ink-2" />
               <span className="text-body font-medium text-ink">{t('profile.notificationsSms')}</span>
             </div>
-            <span className="text-xs font-semibold text-success">Activées</span>
+            <span className="text-xs font-semibold text-success">{tx("Activées")}</span>
           </button>
 
           {/* Langue (Interrupteur FR / EN) */}
@@ -66,7 +68,7 @@ export default function ProfileSettings() {
             type="button"
             onClick={() => {
               toggleLanguage();
-              toast.success(language === 'fr' ? 'Language switched to English' : 'Langue passée en Français');
+              toast.success(language === 'fr' ? 'Language switched to English' : tx("Langue passée en Français"));
             }}
             className="scale-interaction flex w-full items-center justify-between border-t border-line p-md text-left transition-colors hover:bg-surface"
           >
@@ -75,7 +77,7 @@ export default function ProfileSettings() {
               <span className="text-body font-medium text-ink">{t('profile.language')}</span>
             </div>
             <div className="flex items-center gap-1.5 text-primary font-bold">
-              <span className="text-xs">{language === 'fr' ? 'Français (FR)' : 'English (EN)'}</span>
+              <span className="text-xs">{language === 'fr' ? tx("Français (FR)") : 'English (EN)'}</span>
               <MIcon name="sync" className="text-xs" />
             </div>
           </button>
@@ -97,7 +99,7 @@ export default function ProfileSettings() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-[440px] rounded-2xl bg-white p-lg shadow-xl">
             <div className="mb-md flex items-center justify-between border-b border-line pb-sm">
-              <h3 className="font-h2 text-h2 text-ink">Changer le mot de passe</h3>
+              <h3 className="font-h2 text-h2 text-ink">{tx("Changer le mot de passe")}</h3>
               <button
                 type="button"
                 onClick={() => setPasswordOpen(false)}
@@ -109,7 +111,7 @@ export default function ProfileSettings() {
 
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <div>
-                <label className="label">Mot de passe actuel</label>
+                <label className="label">{tx("Mot de passe actuel")}</label>
                 <input
                   type="password"
                   value={pwForm.oldPw}
@@ -120,7 +122,7 @@ export default function ProfileSettings() {
               </div>
 
               <div>
-                <label className="label">Nouveau mot de passe</label>
+                <label className="label">{tx("Nouveau mot de passe")}</label>
                 <input
                   type="password"
                   value={pwForm.newPw}
@@ -131,7 +133,7 @@ export default function ProfileSettings() {
               </div>
 
               <div>
-                <label className="label">Confirmer le nouveau mot de passe</label>
+                <label className="label">{tx("Confirmer le nouveau mot de passe")}</label>
                 <input
                   type="password"
                   value={pwForm.confirmPw}
@@ -147,13 +149,13 @@ export default function ProfileSettings() {
                   onClick={() => setPasswordOpen(false)}
                   className="w-1/2 rounded-lg border border-line py-2.5 text-xs font-bold text-ink-2"
                 >
-                  Annuler
+                  {tx("Annuler")}
                 </button>
                 <button
                   type="submit"
                   className="w-1/2 rounded-lg bg-primary py-2.5 text-xs font-bold text-white shadow-sm"
                 >
-                  Valider
+                  {tx("Valider")}
                 </button>
               </div>
             </form>

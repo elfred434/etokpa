@@ -6,6 +6,9 @@ import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotification
 import { describeNotification, formatTime } from '../../../utils/notificationText';
 import { alertApiError } from '../../../utils/apiError';
 import type { AppNotification } from '../../../types/models';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 interface AdminNotificationBellProps {
   /** Classes du bouton : chaque barre garde le style de sa maquette. */
@@ -22,6 +25,7 @@ interface AdminNotificationBellProps {
  * rafraîchissement en temps réel, lien vers l'historique complet (/notifications).
  */
 export default function AdminNotificationBell({ className, icon, dotClassName = 'absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full' }: AdminNotificationBellProps) {
+  useLanguage();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);
 
@@ -76,7 +80,7 @@ export default function AdminNotificationBell({ className, icon, dotClassName = 
               </span>
             </div>
             <div className="max-h-[320px] overflow-y-auto">
-              {items.length === 0 && <p className="p-md text-center text-[13px] text-ink-3">Aucune notification.</p>}
+              {items.length === 0 && <p className="p-md text-center text-[13px] text-ink-3">{tx("Aucune notification.")}</p>}
               {items.slice(0, 6).map((n) => (
                 <NotificationItem key={n.id} notification={n} compact onClick={() => markRead(n)} />
               ))}
@@ -86,7 +90,7 @@ export default function AdminNotificationBell({ className, icon, dotClassName = 
               onClick={() => setOpen(false)}
               className="block bg-surface p-md text-center text-[13px] font-medium text-primary transition-colors hover:bg-primary-lighter"
             >
-              Voir tout l'historique
+              {tx("Voir tout l'historique")}
             </Link>
           </div>
         </>

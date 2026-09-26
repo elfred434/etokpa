@@ -79,8 +79,8 @@ export function describeNotification(n: ApiNotification, isFr: boolean): { type:
     default:
       return {
         type: 'order',
-        title: 'Notification TOKPa',
-        message: 'Mise à jour concernant votre compte',
+        title: isFr ? 'Notification TOKPa' : 'TOKPa notification',
+        message: isFr ? 'Mise à jour concernant votre compte' : 'An update about your account',
         orderId,
       };
   }

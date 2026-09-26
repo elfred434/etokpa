@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { tx } from '../i18n/tx';
 
 /**
  * useDesignScript — exécute le script JS d'un code.html Stitch à l'affichage
@@ -44,11 +45,24 @@ function injectModalCss() {
 
 function build(script: string): Runtime {
   // Le script du design + une rampe d'invocation dans SON scope (eval local).
+  // tx est injecté pour que les toasts / titres de modale suivent la langue.
   // eslint-disable-next-line no-new-func
   const factory = new Function(
-    `${script}\n;return { invoke: function (code, el, event) { return eval(code); } };`,
-  ) as () => Runtime;
-  return factory();
+    'tx',
+    `${script}
+;try {
+  if (typeof showToast === 'function') {
+    const __rawToast = showToast;
+    showToast = function (title, body) { return __rawToast(tx(String(title ?? '')), tx(String(body ?? ''))); };
+  }
+  if (typeof openActionModal === 'function') {
+    const __rawModal = openActionModal;
+    openActionModal = function (title, cli, key) { return __rawModal(tx(String(title ?? '')), cli, key); };
+  }
+} catch (e) {}
+;return { invoke: function (code, el, event) { return eval(code); } };`,
+  ) as (translate: (fr: string) => string) => Runtime;
+  return factory(tx);
 }
 
 /** Ferme une modale via le close du design (data-onclick), sinon masquage direct. */

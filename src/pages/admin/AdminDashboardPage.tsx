@@ -6,6 +6,9 @@ import { useLiveRows } from '../../services/api/useLiveRows';
 import { unwrap, fmtFcfa, listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import MIcon from '../../components/shared/MIcon';
+import { useLanguage } from '../../context/LanguageContext';
+import { tr, tx } from '../../i18n/tx';
+
 
 /** Activité récente — données statiques du design Stitch (copie conforme). */
 interface Activity {
@@ -49,6 +52,7 @@ const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate(
  * design Stitch (`tableau_de_bord_global_admin_tokpa/code.html`).
  */
 export default function AdminDashboardPage() {
+  useLanguage();
   const { rows: commandes, err, loading } = useLiveRows(() => adminApi.getOrders({ page: 1 }));
   const [dash, setDash] = useState<any>(null);
   const SC = (s: string) => (s || '').includes('attente') ? 'bg-amber-light text-amber-text'
@@ -67,7 +71,7 @@ export default function AdminDashboardPage() {
   const orders = commandes.map((r: any) => r?.data ?? r);
   const activities: Activity[] = orders.slice(0, 6).map((o: any) => ({
     id: `CMD-${o.id}`,
-    action: 'Commande',
+    action: tx("Commande"),
     detail: `Commande #${o.id} — ${o.statut ?? '—'}`,
     status: o.statut ?? '—',
     statusColor: SC(o.statut),
@@ -83,7 +87,7 @@ export default function AdminDashboardPage() {
     deliveryFee: fmtFcfa(o.frais_livraison),
     items: (o.items ?? []).map((i: any) => `${i.nom ?? ''}${i.quantite ? ` ×${i.quantite}` : ''}`).join(', ') || '—',
     audit: `Commande n°${o.id}`,
-    cta: 'Voir la commande',
+    cta: tx("Voir la commande"),
   }));
   useEffect(() => {
     adminApi.getDashboard().then((r: any) => setDash(unwrap(r))).catch(() => setDash(null));
@@ -161,7 +165,7 @@ export default function AdminDashboardPage() {
     const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
     const top = sorted.slice(0, 3).map(([nom, n]) => ({ nom, n }));
     const autres = sorted.slice(3).reduce((sum, [, n]) => sum + n, 0);
-    return autres > 0 ? [...top, { nom: 'Autres', n: autres }] : top;
+    return autres > 0 ? [...top, { nom: tx("Autres"), n: autres }] : top;
   }, [periodOrders, zoneNames]);
   const totalPeriode = periodOrders?.length ?? 0;
   const donut = (() => {
@@ -197,11 +201,11 @@ export default function AdminDashboardPage() {
     <AdminLayout currentPath="/admin">
       {err && (
         <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
-          <p className="font-bold">Erreur API</p>
+          <p className="font-bold">{tx("Erreur API")}</p>
           <p>{err}</p>
         </div>
       )}
-      {loading && <p className="m-lg text-label text-text-secondary">Chargement des données réelles…</p>}
+      {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
       {/* KPI SECTION */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
         <div className="stat-card-gradient p-lg rounded-lg border border-border-default hover:shadow-lg transition-all duration-300">
@@ -215,7 +219,7 @@ export default function AdminDashboardPage() {
             <h2 className="font-h1 text-h1 text-on-surface">{dash?.ca != null ? fmtFcfa(dash.ca) : '—'}</h2>
             <div className="flex items-center gap-1 text-text-secondary">
               <MIcon name="payments" className="text-sm" />
-              <span className="font-secondary text-label font-bold">Paiements réussis</span>
+              <span className="font-secondary text-label font-bold">{tx("Paiements réussis")}</span>
             </div>
           </div>
         </div>
@@ -223,7 +227,7 @@ export default function AdminDashboardPage() {
         <div className="stat-card-gradient p-lg rounded-lg border border-border-default hover:shadow-lg transition-all duration-300">
           <div className="flex justify-between items-start mb-sm">
             <span className="font-secondary text-label text-text-secondary uppercase tracking-wider">
-              Commandes totales
+              {tx("Commandes totales")}
             </span>
             <span className="p-2 bg-secondary-container/20 text-secondary rounded-lg material-symbols-outlined">
               shopping_cart
@@ -241,7 +245,7 @@ export default function AdminDashboardPage() {
         <div className="stat-card-gradient p-lg rounded-lg border border-border-default hover:shadow-lg transition-all duration-300">
           <div className="flex justify-between items-start mb-sm">
             <span className="font-secondary text-label text-text-secondary uppercase tracking-wider">
-              Utilisateurs actifs
+              {tx("Utilisateurs actifs")}
             </span>
             <span className="p-2 bg-tertiary-container/20 text-tertiary rounded-lg material-symbols-outlined">
               person_add
@@ -270,7 +274,7 @@ export default function AdminDashboardPage() {
             <h2 className="font-h1 text-h1 text-on-surface">{tauxLivraison}</h2>
             <div className="flex items-center gap-1 text-success">
               <MIcon name="check_circle" className="text-sm" />
-              <span className="font-secondary text-label font-bold">{dash ? `${nbLivrees} livrées sur ${Math.max(0, nbNonAnnulees)}` : '—'}</span>
+              <span className="font-secondary text-label font-bold">{dash ? tr(`${nbLivrees} livrées sur ${Math.max(0, nbNonAnnulees)}`, `${nbLivrees} delivered out of ${Math.max(0, nbNonAnnulees)}`) : '—'}</span>
             </div>
           </div>
         </div>
@@ -282,9 +286,9 @@ export default function AdminDashboardPage() {
         <div className="lg:col-span-2 bg-bg-card p-lg rounded-lg border border-border-default">
           <div className="flex justify-between items-center mb-xl">
             <div>
-              <h3 className="font-h2 text-h2 text-on-surface">Croissance des ventes</h3>
+              <h3 className="font-h2 text-h2 text-on-surface">{tx("Croissance des ventes")}</h3>
               <p className="font-secondary text-label text-text-secondary">
-                Performances journalières du réseau (commandes non annulées){capped ? ' — calculé sur les 500 dernières commandes' : ''}
+                Performances journalières du réseau (commandes non annulées){capped ? tx(" — calculé sur les 500 dernières commandes") : ''}
               </p>
             </div>
             <select
@@ -300,7 +304,7 @@ export default function AdminDashboardPage() {
             {chartErr ? (
               <p className="m-auto max-w-[420px] text-center font-secondary text-label text-error">Ventes indisponibles : {chartErr}</p>
             ) : !series ? (
-              <p className="m-auto font-secondary text-label text-text-secondary">Chargement des ventes…</p>
+              <p className="m-auto font-secondary text-label text-text-secondary">{tx("Chargement des ventes…")}</p>
             ) : (
               series.map((d) => (
                 <div
@@ -321,7 +325,7 @@ export default function AdminDashboardPage() {
 
         {/* Ventes par Zone */}
         <div className="bg-bg-card p-lg rounded-lg border border-border-default">
-          <h3 className="font-h2 text-h2 text-on-surface mb-xl">Ventes par Zone</h3>
+          <h3 className="font-h2 text-h2 text-on-surface mb-xl">{tx("Ventes par Zone")}</h3>
           <div className="relative h-[220px] flex items-center justify-center">
             <div className="w-40 h-40 rounded-full relative flex items-center justify-center" style={{ background: donut }}>
               <div className="absolute inset-[12px] rounded-full bg-bg-card" />
@@ -332,9 +336,9 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <div className="mt-lg space-y-sm">
-            {chartErr && <p className="font-secondary text-label text-error">Données indisponibles.</p>}
+            {chartErr && <p className="font-secondary text-label text-error">{tx("Données indisponibles.")}</p>}
             {zoneStats && zoneStats.length === 0 && (
-              <p className="font-secondary text-label text-text-secondary">Aucune commande sur la période.</p>
+              <p className="font-secondary text-label text-text-secondary">{tx("Aucune commande sur la période.")}</p>
             )}
             {(zoneStats ?? []).map((z, i) => (
               <div key={z.nom} className="flex items-center justify-between">
@@ -354,12 +358,12 @@ export default function AdminDashboardPage() {
         {/* RECENT ACTIVITIES TABLE */}
         <div className="xl:col-span-3 bg-bg-card rounded-lg border border-border-default overflow-hidden shadow-sm">
           <div className="p-lg border-b border-border-default flex justify-between items-center">
-            <h3 className="font-h2 text-h2 text-on-surface">Activités Récentes de la Plateforme</h3>
+            <h3 className="font-h2 text-h2 text-on-surface">{tx("Activités Récentes de la Plateforme")}</h3>
             <button
               type="button"
               className="text-primary font-secondary text-label font-bold flex items-center gap-1 hover:underline cursor-pointer"
             >
-              Tout voir <MIcon name="arrow_forward" className="text-sm" />
+              {tx("Tout voir")} <MIcon name="arrow_forward" className="text-sm" />
             </button>
           </div>
           <div className="overflow-x-auto">
@@ -368,9 +372,9 @@ export default function AdminDashboardPage() {
                 <tr>
                   <th className="px-lg py-md">Date</th>
                   <th className="px-lg py-md">Type d'action</th>
-                  <th className="px-lg py-md">Utilisateur</th>
-                  <th className="px-lg py-md">Détails</th>
-                  <th className="px-lg py-md">Statut</th>
+                  <th className="px-lg py-md">{tx("Utilisateur")}</th>
+                  <th className="px-lg py-md">{tx("Détails")}</th>
+                  <th className="px-lg py-md">{tx("Statut")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-default text-label">
@@ -401,15 +405,15 @@ export default function AdminDashboardPage() {
           <div className="bg-bg-card p-lg rounded-lg border border-border-default border-l-4 border-l-error">
             <div className="flex items-center gap-sm mb-md text-error">
               <MIcon name="warning" />
-              <h4 className="font-h3 text-h3 font-bold">Alertes Système</h4>
+              <h4 className="font-h3 text-h3 font-bold">{tx("Alertes Système")}</h4>
             </div>
             <ul className="space-y-md">
               {lowStockErr ? (
                 <li className="font-secondary text-micro text-error">Stocks indisponibles : {lowStockErr}</li>
               ) : lowStock === null ? (
-                <li className="font-secondary text-micro text-text-secondary">Chargement…</li>
+                <li className="font-secondary text-micro text-text-secondary">{tx("Chargement…")}</li>
               ) : lowStock.length === 0 ? (
-                <li className="font-secondary text-micro text-text-secondary">Aucune alerte pour le moment.</li>
+                <li className="font-secondary text-micro text-text-secondary">{tx("Aucune alerte pour le moment.")}</li>
               ) : (
                 <li className="flex flex-col gap-1 border-b border-border-default pb-md last:border-0 last:pb-0">
                   <span className="font-secondary text-label font-bold text-on-surface">
@@ -424,7 +428,7 @@ export default function AdminDashboardPage() {
                     <p className="font-secondary text-secondary text-micro">+ {lowStock.length - 4} autre(s)</p>
                   )}
                   <Link to="/admin/catalogue" className="mt-2 text-primary font-bold text-micro text-left hover:underline">
-                    Gérer le catalogue
+                    {tx("Gérer le catalogue")}
                   </Link>
                 </li>
               )}
@@ -434,9 +438,9 @@ export default function AdminDashboardPage() {
           {/* Support card */}
           <div className="bg-primary text-white p-lg rounded-lg shadow-md relative overflow-hidden">
             <div className="relative z-10">
-              <h4 className="font-h3 text-h3 font-bold mb-xs">Besoin d'aide ?</h4>
+              <h4 className="font-h3 text-h3 font-bold mb-xs">{tx("Besoin d'aide ?")}</h4>
               <p className="text-micro opacity-80 mb-md font-secondary">
-                Contactez le support technique 24/7 dédié aux administrateurs TOKPa.
+                {tx("Contactez le support technique 24/7 dédié aux administrateurs TOKPa.")}
               </p>
               <button
                 type="button"
@@ -480,7 +484,7 @@ export default function AdminDashboardPage() {
               </div>
               <button
                 type="button"
-                aria-label="Fermer le modal"
+                aria-label={tx("Fermer le modal")}
                 onClick={() => setSelected(null)}
                 className="p-1.5 text-text-secondary hover:text-on-surface hover:bg-black/5 rounded-full transition-colors cursor-pointer"
               >
@@ -497,7 +501,7 @@ export default function AdminDashboardPage() {
                       #{selected.id}
                     </span>
                     <span className="text-micro text-text-secondary font-medium">
-                      {selected.date} à {selected.time}
+                      {tr(`${selected.date} à ${selected.time}`, `${selected.date} at ${selected.time}`)}
                     </span>
                   </div>
                   <h4 className="text-h2 font-bold text-on-surface">{selected.action}</h4>
@@ -512,7 +516,7 @@ export default function AdminDashboardPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
                     <MIcon name="person" className="text-sm" />
-                    Profil de l'Acteur
+                    {tx("Profil de l'Acteur")}
                   </span>
                   <span className="text-micro font-bold text-primary bg-white px-2 py-0.5 rounded border border-border-default">
                     {selected.userRole}
@@ -538,14 +542,14 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-surface-container-low p-3 rounded-lg border border-border-default">
                   <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold block mb-1">
-                    Montant &amp; Paiement
+                    {tx("Montant &amp; Paiement")}
                   </span>
                   <p className="font-price text-h3 text-primary font-bold">{selected.amount}</p>
                   <p className="text-micro text-text-secondary mt-0.5">{selected.payment}</p>
                 </div>
                 <div className="bg-bg-app p-3 rounded-lg border border-border-default">
                   <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold block mb-1">
-                    Frais &amp; Livraison
+                    {tx("Frais &amp; Livraison")}
                   </span>
                   <p className="text-label font-semibold text-on-surface">Commission TOKPa: {selected.fee}</p>
                   <p className="text-micro text-text-secondary mt-0.5">Livraison: {selected.deliveryFee}</p>
@@ -556,7 +560,7 @@ export default function AdminDashboardPage() {
               <div className="space-y-1.5">
                 <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
                   <MIcon name="shopping_bag" className="text-sm" />
-                  Articles / Objet de l'opération
+                  {tx("Articles / Objet de l'opération")}
                 </span>
                 <div className="bg-white p-3 rounded-lg border border-border-default">
                   <p className="text-label text-on-surface font-medium leading-relaxed">{selected.items}</p>
@@ -567,7 +571,7 @@ export default function AdminDashboardPage() {
               <div className="space-y-1 pt-1">
                 <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
                   <MIcon name="verified" className="text-sm" />
-                  Journal d'Audit Système
+                  {tx("Journal d'Audit Système")}
                 </span>
                 <p className="text-micro font-mono text-text-secondary bg-bg-app p-2.5 rounded border border-border-default">
                   {selected.audit}
@@ -582,7 +586,7 @@ export default function AdminDashboardPage() {
                 className="px-3 py-2 text-label font-medium text-text-secondary hover:bg-border-default/40 rounded-lg transition-colors flex items-center gap-1.5 border border-border-default bg-white cursor-pointer"
               >
                 <MIcon name="download" className="text-base" />
-                <span>Télécharger reçu</span>
+                <span>{tx("Télécharger reçu")}</span>
               </button>
               <div className="flex items-center gap-2">
                 <button
@@ -590,7 +594,7 @@ export default function AdminDashboardPage() {
                   onClick={() => setSelected(null)}
                   className="px-4 py-2 text-label font-medium text-text-secondary hover:bg-border-default/40 rounded-lg transition-colors cursor-pointer"
                 >
-                  Fermer
+                  {tx("Fermer")}
                 </button>
                 <button
                   type="button"

@@ -1,5 +1,6 @@
 import { redirect, type AnyRouter } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
+import { tr, tx } from '../i18n/tx';
 
 /**
  * Garde de connexion (décision du 24/09) : sans session, toute page redirige vers /connexion,
@@ -178,7 +179,7 @@ export function guardRoute({
 }): void {
   if (isPublicPath(location.pathname)) return;
   if (!hasSession()) {
-    if (!preload) toast.error('Veuillez vous connecter pour accéder à cette page.', { id: AUTH_TOAST_ID });
+    if (!preload) toast.error(tx('Veuillez vous connecter pour accéder à cette page.'), { id: AUTH_TOAST_ID });
     const requestedLocation = new URL(location.href, window.location.origin);
     const requestedUrl = `${requestedLocation.pathname}${requestedLocation.search}${requestedLocation.hash}`;
     throw redirect({ to: '/connexion', search: { redirect: requestedUrl }, replace: true });
@@ -186,7 +187,7 @@ export function guardRoute({
   const role = currentRole();
   const rule = pageRoles(location.pathname);
   if (rule && !(role !== null && (rule.roles as string[]).includes(role))) {
-    if (!preload) toast.error(`Accès refusé : cette page est réservée ${rule.label}.`, { id: ROLE_TOAST_ID });
+    if (!preload) toast.error(tr(`Accès refusé : cette page est réservée ${rule.label}.`, `Access denied: this page is reserved ${tx(rule.label)}.`), { id: ROLE_TOAST_ID });
     throw redirect({ to: homeForRole(role), replace: true });
   }
 }
@@ -198,7 +199,7 @@ export function guardRoute({
 export function redirectOnSessionExpired(router: AnyRouter): () => void {
   const onExpired = () => {
     if (isPublicPath(router.state.location.pathname)) return;
-    toast.error('Session expirée : veuillez vous reconnecter.', { id: AUTH_TOAST_ID });
+    toast.error(tx('Session expirée : veuillez vous reconnecter.'), { id: AUTH_TOAST_ID });
     // retour à la même page après la reconnexion
     const current = router.state.location;
     const requestedUrl = `${current.pathname}${current.searchStr ?? ''}${current.hash ?? ''}`;

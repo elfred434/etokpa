@@ -7,6 +7,9 @@ import {
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
 import type { AppNotification, NotificationType } from '../../types/models';
+import { useLanguage } from '../../context/LanguageContext';
+import { tx } from '../../i18n/tx';
+
 
 const STYLES: Record<NotificationType, { icon: TablerIcon; circle: string }> = {
   order: { icon: IconShoppingBag, circle: 'bg-success-light text-success-dark' },
@@ -24,6 +27,7 @@ interface NotificationItemProps {
 
 /** Ligne de notification (maquette historique) : cercle icône, titre, message, temps, pastille non lue. */
 export default function NotificationItem({ notification, compact, onClick }: NotificationItemProps) {
+  useLanguage();
   const { icon: Icon, circle } = STYLES[notification.type];
 
   return (
@@ -48,7 +52,7 @@ export default function NotificationItem({ notification, compact, onClick }: Not
         )}
       </span>
       {notification.unread && (
-        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" aria-label="Non lue" />
+        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" aria-label={tx("Non lue")} />
       )}
     </button>
   );

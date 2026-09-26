@@ -10,6 +10,9 @@ import { unwrap } from '../../../services/api/unwrap';
 import { alertApiError } from '../../../utils/apiError';
 import { initialsOf } from '../../../routes/authGuard';
 import { fetchLivreurProfile, forgetLivreurProfile, type LivreurProfile } from '../livreurData';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 /**
  * Paramètres livreur — design Stitch « param_tres_livreur_tokpa », données réelles : GET /profile
@@ -18,6 +21,7 @@ import { fetchLivreurProfile, forgetLivreurProfile, type LivreurProfile } from '
  * véhicule & documents, reversement des gains, interrupteur de service (B-26).
  */
 export default function LivreurSettingsPage() {
+  useLanguage();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<LivreurProfile | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -59,7 +63,7 @@ export default function LivreurSettingsPage() {
         /* session illisible : ignorée */
       }
       forgetLivreurProfile();
-      toast.success(res?.message ?? 'Profil mis à jour avec succès.');
+      toast.success(res?.message ?? tx("Profil mis à jour avec succès."));
       setReloadKey((k) => k + 1);
     } catch (error) {
       alertApiError(error, 'livreur-profile');
@@ -70,11 +74,11 @@ export default function LivreurSettingsPage() {
 
   const logout = async () => {
     await authApi.logout();
-    toast.success('Déconnexion effectuée');
+    toast.success(tx("Déconnexion effectuée"));
     navigate({ to: '/connexion' });
   };
 
-  const nomAffiche = profile?.nom_complet || [profile?.prenom, profile?.nom].filter(Boolean).join(' ') || 'Livreur';
+  const nomAffiche = profile?.nom_complet || [profile?.prenom, profile?.nom].filter(Boolean).join(' ') || tx("Livreur");
   const inputCls =
     'w-full rounded-[10px] border border-border-default bg-bg-card px-md py-sm font-body text-body text-text-main transition-all focus:bg-primary-tint/30 focus:outline-none';
 
@@ -87,15 +91,15 @@ export default function LivreurSettingsPage() {
             <div>
               <div className="mb-xs flex items-center gap-xs text-micro uppercase tracking-wider text-text-secondary">
                 <MIcon name="tune" className="text-[16px] text-primary-container" />
-                <span>Espace Livreur • Préférences opérationnelles</span>
+                <span>{tx("Espace Livreur • Préférences opérationnelles")}</span>
               </div>
-              <h1 className="font-h1 text-h1 font-bold text-text-main">Paramètres du compte</h1>
-              <p className="mt-xs font-body text-secondary text-text-secondary">Gérez vos informations personnelles.</p>
+              <h1 className="font-h1 text-h1 font-bold text-text-main">{tx("Paramètres du compte")}</h1>
+              <p className="mt-xs font-body text-secondary text-text-secondary">{tx("Gérez vos informations personnelles.")}</p>
             </div>
             {profile && (
               <div className="flex items-center gap-md self-start rounded-[14px] bg-bg-card px-md py-sm shadow-sm md:self-auto">
                 <div className="flex flex-col">
-                  <span className="text-micro font-semibold uppercase text-text-secondary">Statut opérationnel</span>
+                  <span className="text-micro font-semibold uppercase text-text-secondary">{tx("Statut opérationnel")}</span>
                   <div className="mt-xs flex items-center gap-xs">
                     <span className={profile.disponible ? 'h-2.5 w-2.5 animate-pulse rounded-full bg-success' : 'h-2.5 w-2.5 rounded-full bg-text-tertiary'} />
                     <span className="text-label font-bold text-text-main">
@@ -110,13 +114,13 @@ export default function LivreurSettingsPage() {
 
           {err ? (
             <ApiErrorState
-              title="Impossible de charger votre profil"
+              title={tx("Impossible de charger votre profil")}
               message={err}
               onRetry={() => setReloadKey((k) => k + 1)}
               className="rounded-[14px] bg-bg-card px-md shadow-sm"
             />
           ) : !profile ? (
-            <LoadingState label="Chargement de votre profil…" className="rounded-[14px] bg-bg-card shadow-sm" />
+            <LoadingState label={tx("Chargement de votre profil…")} className="rounded-[14px] bg-bg-card shadow-sm" />
           ) : (
             <div className="grid grid-cols-1 gap-lg lg:grid-cols-12">
               {/* Profil & Identité */}
@@ -127,8 +131,8 @@ export default function LivreurSettingsPage() {
                       <MIcon name="badge" className="text-[20px]" />
                     </div>
                     <div>
-                      <h2 className="font-h2 text-h2 font-semibold text-text-main">Profil &amp; Identité</h2>
-                      <p className="font-secondary text-micro text-text-secondary">Identifiants et zone géographique assignée</p>
+                      <h2 className="font-h2 text-h2 font-semibold text-text-main">{tx("Profil &amp; Identité")}</h2>
+                      <p className="font-secondary text-micro text-text-secondary">{tx("Identifiants et zone géographique assignée")}</p>
                     </div>
                   </div>
                 </div>
@@ -141,34 +145,34 @@ export default function LivreurSettingsPage() {
                       <span className="font-h3 text-h3 font-bold text-text-main">{nomAffiche}</span>
                       {profile.id != null && <span className="text-micro text-text-tertiary">#LIV-{profile.id}</span>}
                     </div>
-                    <p className="font-secondary text-micro text-text-secondary">{profile.zone ? `Zone ${profile.zone}` : 'Zone non attribuée'}</p>
+                    <p className="font-secondary text-micro text-text-secondary">{profile.zone ? `Zone ${profile.zone}` : tx("Zone non attribuée")}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
                   <label className="flex flex-col gap-xs">
-                    <span className="font-secondary text-secondary text-text-secondary">Prénom</span>
+                    <span className="font-secondary text-secondary text-text-secondary">{tx("Prénom")}</span>
                     <input className={inputCls} type="text" value={prenom} onChange={(e) => setPrenom(e.target.value)} maxLength={80} />
                   </label>
                   <label className="flex flex-col gap-xs">
-                    <span className="font-secondary text-secondary text-text-secondary">Nom</span>
+                    <span className="font-secondary text-secondary text-text-secondary">{tx("Nom")}</span>
                     <input className={inputCls} type="text" value={nom} onChange={(e) => setNom(e.target.value)} maxLength={80} />
                   </label>
                   <label className="flex flex-col gap-xs">
-                    <span className="font-secondary text-secondary text-text-secondary">Téléphone direct</span>
+                    <span className="font-secondary text-secondary text-text-secondary">{tx("Téléphone direct")}</span>
                     <input className={inputCls} type="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)} maxLength={20} />
                   </label>
                   <label className="flex flex-col gap-xs">
-                    <span className="font-secondary text-secondary text-text-secondary">Adresse e-mail</span>
+                    <span className="font-secondary text-secondary text-text-secondary">{tx("Adresse e-mail")}</span>
                     <input className={`${inputCls} opacity-70`} type="email" value={profile.email ?? ''} readOnly title="Non modifiable depuis l'application" />
                   </label>
                   <label className="flex flex-col gap-xs sm:col-span-2">
-                    <span className="font-secondary text-secondary text-text-secondary">Zone principale assignée</span>
+                    <span className="font-secondary text-secondary text-text-secondary">{tx("Zone principale assignée")}</span>
                     <input
                       className={`${inputCls} opacity-70`}
                       type="text"
-                      value={profile.zone ?? 'Non attribuée'}
+                      value={profile.zone ?? tx("Non attribuée")}
                       readOnly
-                      title="Attribuée par l'administration"
+                      title={tx("Attribuée par l'administration")}
                     />
                   </label>
                 </div>
@@ -179,7 +183,7 @@ export default function LivreurSettingsPage() {
                     className="flex items-center gap-xs rounded-[10px] bg-primary-container px-md py-sm font-label text-label font-medium text-on-primary shadow-sm transition-all hover:bg-primary-hover active:scale-95 disabled:opacity-60"
                   >
                     <MIcon name="save" className="text-[18px]" />
-                    {saving ? 'Enregistrement…' : 'Mettre à jour le profil'}
+                    {saving ? 'Enregistrement…' : tx("Mettre à jour le profil")}
                   </button>
                 </div>
               </form>
@@ -188,7 +192,7 @@ export default function LivreurSettingsPage() {
               <div className="flex flex-col gap-sm lg:hidden">
                 <Link to="/" className="flex items-center justify-center gap-sm rounded-[10px] border border-border-default bg-bg-card py-sm font-label text-label font-semibold text-primary">
                   <MIcon name="storefront" className="text-[18px]" />
-                  Espace client
+                  {tx("Espace client")}
                 </Link>
                 <button
                   type="button"
@@ -196,7 +200,7 @@ export default function LivreurSettingsPage() {
                   className="flex items-center justify-center gap-sm rounded-[10px] border border-border-default bg-bg-card py-sm font-label text-label font-semibold text-error"
                 >
                   <MIcon name="logout" className="text-[18px]" />
-                  Déconnexion
+                  {tx("Déconnexion")}
                 </button>
               </div>
             </div>

@@ -4,6 +4,9 @@ import MIcon from '../../components/shared/MIcon';
 import { managerApi } from '../../services/api';
 import { unwrap, fmtFcfa } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
+import { useLanguage } from '../../context/LanguageContext';
+import { tx } from '../../i18n/tx';
+
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -14,6 +17,7 @@ const PERIODES = [
 ];
 
 export default function ManagerStatsPage() {
+  useLanguage();
   const [periode, setPeriode] = useState<'jour' | 'semaine' | 'mois'>('jour');
   const [stats, setStats] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -35,9 +39,9 @@ export default function ManagerStatsPage() {
 
   const kpis = [
     { icon: 'trending_up', label: "Volume d'Affaires", value: stats?.ca ?? '—' },
-    { icon: 'shopping_basket', label: 'Commandes Total', value: stats?.commandes ?? '—' },
+    { icon: 'shopping_basket', label: tx("Commandes Total"), value: stats?.commandes ?? '—' },
     { icon: 'task_alt', label: 'Taux de Livraison', value: stats && Number(stats.commandes) > 0 ? `${((Number(stats.livrees ?? 0) / Number(stats.commandes)) * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %` : '—' },
-    { icon: 'delivery_dining', label: 'Commandes livrées', value: stats?.livrees ?? '—' },
+    { icon: 'delivery_dining', label: tx("Commandes livrées"), value: stats?.livrees ?? '—' },
   ];
 
   return (
@@ -45,8 +49,8 @@ export default function ManagerStatsPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-h2 font-h2 font-bold">Statistiques de la Zone - Akpakpa</h1>
-            <p className="text-text-secondary">Données réelles — GET /manager/stats</p>
+            <h1 className="text-h2 font-h2 font-bold">{tx("Statistiques de la Zone - Akpakpa")}</h1>
+            <p className="text-text-secondary">{tx("Données réelles — GET /manager/stats")}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {PERIODES.map((p) => (
@@ -61,7 +65,7 @@ export default function ManagerStatsPage() {
                 }`}
               >
                 {p.param === 'jour' && <MIcon name="calendar_today" className="text-[16px]" />}
-                {p.label}
+                {tx(p.label)}
               </button>
             ))}
           </div>
@@ -69,18 +73,18 @@ export default function ManagerStatsPage() {
 
         {err && (
           <div className="rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
-            <p className="font-bold">Erreur API</p>
+            <p className="font-bold">{tx("Erreur API")}</p>
             <p>{err}</p>
           </div>
         )}
-        {loading && <p className="text-label text-text-secondary">Chargement…</p>}
+        {loading && <p className="text-label text-text-secondary">{tx("Chargement…")}</p>}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {kpis.map((k) => (
             <div key={k.label} className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
               <div className="flex items-center gap-2">
                 <MIcon name={k.icon} className="text-primary text-[20px]" />
-                <p className="text-label text-text-secondary">{k.label}</p>
+                <p className="text-label text-text-secondary">{tx(k.label)}</p>
               </div>
               <p className="mt-2 text-h1 font-h1 font-bold">
                 {typeof k.value === 'number' ? fmtFcfa(k.value) : k.value}
@@ -92,7 +96,7 @@ export default function ManagerStatsPage() {
         {/* Phase dev : forme brute de la réponse pour caler le mapping */}
         {stats != null && (
           <div className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
-            <h2 className="text-h3 font-h3 font-bold">Réponse brute (phase dev)</h2>
+            <h2 className="text-h3 font-h3 font-bold">{tx("Réponse brute (phase dev)")}</h2>
             <pre className="mt-2 overflow-x-auto rounded-lg bg-bg-app p-3 text-micro">{JSON.stringify(stats, null, 2)}</pre>
           </div>
         )}

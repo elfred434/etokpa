@@ -1,5 +1,7 @@
 import EmptyState from './EmptyState';
 import MIcon from './MIcon';
+import { useLanguage } from '../../context/LanguageContext';
+import { tx } from '../../i18n/tx';
 
 interface ApiErrorStateProps {
   /** Ce qui n'a pas pu être chargé, ex. « Impossible de charger les produits ». */
@@ -13,6 +15,7 @@ interface ApiErrorStateProps {
 
 /** Échec d'un appel API : message exact du backend + « Réessayer » (jamais de données factices). */
 export default function ApiErrorState({ title, message, onRetry, className }: ApiErrorStateProps) {
+  useLanguage();
   return (
     <EmptyState
       icon={<MIcon name="cloud_off" className="text-4xl text-primary" />}
@@ -25,7 +28,7 @@ export default function ApiErrorState({ title, message, onRetry, className }: Ap
             onClick={onRetry}
             className="rounded-lg bg-primary-container px-lg py-3 font-bold text-white transition-all active:scale-[0.97]"
           >
-            Réessayer
+{tx("Réessayer")}
           </button>
         )
       }

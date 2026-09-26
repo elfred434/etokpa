@@ -11,6 +11,9 @@ import type { GeoPlace } from '../../services/api/geocode';
 import DESIGN_SCRIPT from './_scripts/AdminZonesPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import { useLanguage } from '../../context/LanguageContext';
+import { tr, tx } from '../../i18n/tx';
+
 
 const DESIGN_CSS = `
         .material-symbols-outlined {
@@ -128,7 +131,7 @@ function PlaceSearch({ onPick, placeholder }: { onPick: (p: GeoPlace) => void; p
         })
         .catch((e: any) => {
           setRes([]);
-          setSerr(String(e?.message ?? 'Recherche indisponible (connexion ?)'));
+          setSerr(String(e?.message ?? tx("Recherche indisponible (connexion ?)")));
         })
         .finally(() => setBusy(false));
     }, 350);
@@ -146,9 +149,9 @@ function PlaceSearch({ onPick, placeholder }: { onPick: (p: GeoPlace) => void; p
       />
       {open && (
         <div className="absolute z-[50] top-full mt-1 w-full bg-white border border-border-default rounded-lg shadow-lg max-h-[210px] overflow-y-auto design-modal-scroll">
-          {busy && <p className="px-3 py-2 text-micro text-text-tertiary">Recherche du lieu…</p>}
+          {busy && <p className="px-3 py-2 text-micro text-text-tertiary">{tx("Recherche du lieu…")}</p>}
           {!busy && serr && <p className="px-3 py-2 text-micro text-error">{serr}</p>}
-          {!busy && !serr && res.length === 0 && <p className="px-3 py-2 text-micro text-text-secondary">Aucun lieu trouvé.</p>}
+          {!busy && !serr && res.length === 0 && <p className="px-3 py-2 text-micro text-text-secondary">{tx("Aucun lieu trouvé.")}</p>}
           {res.map((p, i) => (
             <button
               key={`${p.lat},${p.lng},${i}`}
@@ -177,6 +180,7 @@ function PlaceSearch({ onPick, placeholder }: { onPick: (p: GeoPlace) => void; p
  * recalcule dès qu'un repère est ajouté ou supprimé.
  */
 export default function AdminZonesPage() {
+  useLanguage();
   useDesignScript(DESIGN_SCRIPT);
   const { rows: zones, err, loading, reload } = useLiveRows(() => adminApi.getZones());
   const { rows: landmarks, reload: reloadLm } = useLiveRows(() => adminApi.getLandmarks());
@@ -234,7 +238,7 @@ export default function AdminZonesPage() {
   };
   const delZone = async () => {
     if (!sel) return;
-    if (!window.confirm(`Supprimer la zone « ${sel.nom} » et ses points de repère ?`)) return;
+    if (!window.confirm(tr(`Supprimer la zone « ${sel.nom} » et ses points de repère ?`, `Delete zone “${sel.nom}” and its landmarks?`))) return;
     try {
       await adminApi.deleteZone(sel.id);
       setSelId(null);
@@ -281,12 +285,12 @@ export default function AdminZonesPage() {
       return;
     }
     if (zonePts.length < 3) {
-      window.alert('Une zone = la délimitation de ses points de repère : ajoutez au moins 3 points à la limite (3 = triangle, 6 = hexagone).');
+      window.alert(tx("Une zone = la délimitation de ses points de repère : ajoutez au moins 3 points à la limite (3 = triangle, 6 = hexagone)."));
       return;
     }
     const hull = hullPoly(zonePts);
     if (!hull) {
-      window.alert('Les points sont alignés : impossible de former une surface.');
+      window.alert(tx("Les points sont alignés : impossible de former une surface."));
       return;
     }
     try {
@@ -325,7 +329,7 @@ export default function AdminZonesPage() {
   /* ---------- Modale « Nouveau point de repère » (intérieur ou à la limite) ---------- */
   const openLmModal = () => {
     if (!zones.length) {
-      window.alert("Créez d'abord une zone (avec ses points à la limite).");
+      window.alert(tx("Créez d'abord une zone (avec ses points à la limite)."));
       return;
     }
     setLmEditId(null);
@@ -347,11 +351,11 @@ export default function AdminZonesPage() {
   const saveLm = async () => {
     const zoneId = Number(lmForm.zone_id);
     if (!zoneId) {
-      window.alert('Choisissez la zone du repère.');
+      window.alert(tx("Choisissez la zone du repère."));
       return;
     }
     if (!lmForm.nom.trim()) {
-      window.alert('Le nom du repère est obligatoire.');
+      window.alert(tx("Le nom du repère est obligatoire."));
       return;
     }
     const lat = Number(lmForm.latitude);
@@ -395,7 +399,7 @@ export default function AdminZonesPage() {
     }
   };
   const delLm = async (lm: any) => {
-    if (!window.confirm(`Supprimer le point de repère « ${lm.nom} » ?`)) return;
+    if (!window.confirm(tr(`Supprimer le point de repère « ${lm.nom} » ?`, `Delete landmark “${lm.nom}”?`))) return;
     try {
       await adminApi.deleteLandmark(lm.id);
       const rest = landmarks.filter((l: any) => l.id !== lm.id);
@@ -565,50 +569,50 @@ export default function AdminZonesPage() {
       <style>{DESIGN_CSS}</style>
       {err && (
         <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
-          <p className="font-bold">Erreur API</p>
+          <p className="font-bold">{tx("Erreur API")}</p>
           <p>{err}</p>
         </div>
       )}
-      {loading && <p className="m-lg text-label text-text-secondary">Chargement des données réelles…</p>}
-  <header className="bg-bg-card h-16 px-lg flex justify-between items-center border-b border-border-default sticky top-0 z-40"> <div className="flex items-center gap-4"> <h1 className="font-h1 text-h2 text-text-main">Gestion des zones</h1> </div> <div className="flex items-center gap-md"> <button className="bg-primary text-on-primary flex items-center gap-2 px-md py-2.5 rounded-lg hover:bg-primary-hover active:scale-95 transition-all font-label" onClick={openZoneModal}> <MIcon name="add" className="text-[20px]" />
-                        Nouvelle zone
-                    </button> </div> </header>  <div className="p-lg grid grid-cols-10 gap-6">  <div className="col-span-10 lg:col-span-4 space-y-md"> <div className="flex items-center justify-between mb-2"> <h2 className="font-h3 text-text-secondary uppercase tracking-widest text-micro">Liste des zones actives</h2> <span className="text-micro font-bold text-primary">{zones.length} Zones au total</span> </div>
+      {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
+  <header className="bg-bg-card h-16 px-lg flex justify-between items-center border-b border-border-default sticky top-0 z-40"> <div className="flex items-center gap-4"> <h1 className="font-h1 text-h2 text-text-main">{tx("Gestion des zones")}</h1> </div> <div className="flex items-center gap-md"> <button className="bg-primary text-on-primary flex items-center gap-2 px-md py-2.5 rounded-lg hover:bg-primary-hover active:scale-95 transition-all font-label" onClick={openZoneModal}> <MIcon name="add" className="text-[20px]" />
+                        {tx("Nouvelle zone")}
+                    </button> </div> </header>  <div className="p-lg grid grid-cols-10 gap-6">  <div className="col-span-10 lg:col-span-4 space-y-md"> <div className="flex items-center justify-between mb-2"> <h2 className="font-h3 text-text-secondary uppercase tracking-widest text-micro">{tx("Liste des zones actives")}</h2> <span className="text-micro font-bold text-primary">{zones.length} Zones au total</span> </div>
                 {zones.length === 0 && !loading && (
-                  <p className="text-secondary text-text-secondary p-5 bg-bg-card rounded-[14px] card-shadow">Aucune zone enregistrée. Utilisez « Nouvelle zone ».</p>
+                  <p className="text-secondary text-text-secondary p-5 bg-bg-card rounded-[14px] card-shadow">{tx("Aucune zone enregistrée. Utilisez « Nouvelle zone ».")}</p>
                 )}
                 {zones.map((z: any) => {
                   const isSel = z.id === selId;
                   const lmCount = landmarks.filter((l: any) => String(l.zone_id) === String(z.id)).length;
                   return (
-                    <div key={z.id} onClick={() => selectZone(z)} className={isSel ? 'bg-primary-tint border-2 border-primary rounded-[14px] p-5 card-shadow cursor-pointer transition-all' : 'bg-bg-card border-[0.5px] border-border-default rounded-[14px] p-5 card-shadow hover:border-primary-light cursor-pointer group transition-all'}> <div className="flex justify-between items-start mb-4"> <div> <h3 className="font-h3 text-h3 text-text-main mb-1">{z.nom}</h3> <div className="flex items-center gap-2"> <span className={`w-2 h-2 rounded-full ${z.open_zone ? 'bg-success' : 'bg-error'}`}></span> <span className={`text-secondary font-medium ${z.open_zone ? 'text-success' : 'text-error'}`}>{z.open_zone ? 'Active' : 'Fermée'}</span> </div> </div> <div className={`flex gap-2 ${isSel ? '' : 'opacity-0 group-hover:opacity-100 transition-opacity'}`}> <button className={isSel ? 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-primary-light/20 text-primary transition-colors border border-primary-light/50' : 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default'} onClick={(e) => { e.stopPropagation(); selectZone(z); }}> <MIcon name="edit" className="text-[18px]" /> </button> <button className={isSel ? 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-primary-light/20 text-primary transition-colors border border-primary-light/50' : 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default'} onClick={(e) => { e.stopPropagation(); selectZone(z); }}> <MIcon name="visibility" className="text-[18px]" /> </button> </div> </div> <p className="text-secondary text-text-secondary mb-4">{countRole(managers, z.id)} managers · {countRole(livreurs, z.id)} livreurs · {lmCount} points de repère</p> <div className={`flex justify-between items-center pt-4 ${isSel ? 'border-t border-primary-light/30' : 'border-t border-border-default'}`}> <span className="text-secondary text-text-tertiary">Frais de livraison</span> <span className="font-price text-price text-primary">{fmtFcfa(Number(z.km_prix ?? z.tarif_km ?? 0))}</span> </div> </div>
+                    <div key={z.id} onClick={() => selectZone(z)} className={isSel ? 'bg-primary-tint border-2 border-primary rounded-[14px] p-5 card-shadow cursor-pointer transition-all' : 'bg-bg-card border-[0.5px] border-border-default rounded-[14px] p-5 card-shadow hover:border-primary-light cursor-pointer group transition-all'}> <div className="flex justify-between items-start mb-4"> <div> <h3 className="font-h3 text-h3 text-text-main mb-1">{z.nom}</h3> <div className="flex items-center gap-2"> <span className={`w-2 h-2 rounded-full ${z.open_zone ? 'bg-success' : 'bg-error'}`}></span> <span className={`text-secondary font-medium ${z.open_zone ? 'text-success' : 'text-error'}`}>{z.open_zone ? 'Active' : tx("Fermée")}</span> </div> </div> <div className={`flex gap-2 ${isSel ? '' : 'opacity-0 group-hover:opacity-100 transition-opacity'}`}> <button className={isSel ? 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-primary-light/20 text-primary transition-colors border border-primary-light/50' : 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default'} onClick={(e) => { e.stopPropagation(); selectZone(z); }}> <MIcon name="edit" className="text-[18px]" /> </button> <button className={isSel ? 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-primary-light/20 text-primary transition-colors border border-primary-light/50' : 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default'} onClick={(e) => { e.stopPropagation(); selectZone(z); }}> <MIcon name="visibility" className="text-[18px]" /> </button> </div> </div> <p className="text-secondary text-text-secondary mb-4">{countRole(managers, z.id)} managers · {countRole(livreurs, z.id)} livreurs · {lmCount} points de repère</p> <div className={`flex justify-between items-center pt-4 ${isSel ? 'border-t border-primary-light/30' : 'border-t border-border-default'}`}> <span className="text-secondary text-text-tertiary">{tx("Frais de livraison")}</span> <span className="font-price text-price text-primary">{fmtFcfa(Number(z.km_prix ?? z.tarif_km ?? 0))}</span> </div> </div>
                   );
                 })}
-                </div>  <div className="col-span-10 lg:col-span-6 space-y-lg">  <div className="map-container h-[420px] card-shadow flex flex-col relative"> <div className="absolute top-4 left-4 z-[1000] bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-sm border border-border-default"> <p className="text-micro font-bold text-text-main uppercase">Visualisation Géo</p> <p className="text-secondary text-text-secondary">{sel ? sel.nom : 'Bénin'}</p> </div>
+                </div>  <div className="col-span-10 lg:col-span-6 space-y-lg">  <div className="map-container h-[420px] card-shadow flex flex-col relative"> <div className="absolute top-4 left-4 z-[1000] bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-sm border border-border-default"> <p className="text-micro font-bold text-text-main uppercase">{tx("Visualisation Géo")}</p> <p className="text-secondary text-text-secondary">{sel ? sel.nom : tx("Bénin")}</p> </div>
                 {sel && !selHasGeo && (
                   <div className="absolute inset-0 z-[1000] flex items-center justify-center pointer-events-none">
-                    <span className="bg-white/95 text-text-secondary text-label px-4 py-2 rounded-lg border border-border-default shadow-sm">Pas encore 3 points de repère géolocalisés — la forme de la zone naît de ses points à la limite (3 = triangle, 6 = hexagone).</span>
+                    <span className="bg-white/95 text-text-secondary text-label px-4 py-2 rounded-lg border border-border-default shadow-sm">{tx("Pas encore 3 points de repère géolocalisés — la forme de la zone naît de ses points à la limite (3 = triangle, 6 = hexagone).")}</span>
                   </div>
                 )}
                 <div ref={mapElRef} className="w-full h-full relative" id="map-canvas"></div>
                 <div className="absolute bottom-4 right-4 z-[1000] flex gap-2"> <button className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md border border-border-default hover:bg-app text-text-main" onClick={() => mapRef.current?.zoomIn()}> <MIcon name="zoom_in" /> </button> <button className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md border border-border-default hover:bg-app text-text-main" onClick={() => mapRef.current?.zoomOut()}> <MIcon name="zoom_out" /> </button> <button className="bg-white px-md h-10 rounded-full flex items-center gap-2 shadow-md border border-border-default hover:bg-app text-text-main font-label" onClick={() => setTileIdx((i) => (i + 1) % TILE_URLS.length)}> <MIcon name="layers" />
                                 Calques
                             </button> </div> </div>  <div className="bg-bg-card p-lg rounded-[14px] card-shadow"> <div className="flex items-center justify-between mb-md"> <h2 className="font-h2 text-h2 text-text-main">Points de repère — Zone {sel ? sel.nom : '—'}</h2> <button className="text-primary hover:text-primary-hover font-label flex items-center gap-1 group" onClick={openLmModal}> <MIcon name="add_circle" className="text-[18px]" />
-                                Ajouter
+                                {tx("Ajouter")}
                             </button> </div> <div className="flex flex-wrap gap-3">
-                {lmSel.length === 0 && <span className="text-secondary text-text-secondary">Aucun point de repère enregistré pour cette zone.</span>}
+                {lmSel.length === 0 && <span className="text-secondary text-text-secondary">{tx("Aucun point de repère enregistré pour cette zone.")}</span>}
                 {lmSel.map((lm: any) => (
-                  <div key={lm.id} className="chip group flex items-center gap-2 px-3 py-2 rounded-full bg-primary-tint text-primary-dark"> <MIcon name="location_on" className="text-[16px]" /> <span className="text-label">{lm.nom}</span> <button className="opacity-0 group-hover:opacity-100 transition-opacity text-primary-dark/70 hover:text-primary" title="Modifier" onClick={() => openLmEdit(lm)}> <MIcon name="edit" className="text-[14px]" /> </button> <button className="opacity-0 group-hover:opacity-100 transition-opacity text-primary-dark/70 hover:text-error" title="Supprimer" onClick={() => void delLm(lm)}> <MIcon name="close" className="text-[14px]" /> </button> </div>
+                  <div key={lm.id} className="chip group flex items-center gap-2 px-3 py-2 rounded-full bg-primary-tint text-primary-dark"> <MIcon name="location_on" className="text-[16px]" /> <span className="text-label">{lm.nom}</span> <button className="opacity-0 group-hover:opacity-100 transition-opacity text-primary-dark/70 hover:text-primary" title={tx("Modifier")} onClick={() => openLmEdit(lm)}> <MIcon name="edit" className="text-[14px]" /> </button> <button className="opacity-0 group-hover:opacity-100 transition-opacity text-primary-dark/70 hover:text-error" title={tx("Supprimer")} onClick={() => void delLm(lm)}> <MIcon name="close" className="text-[14px]" /> </button> </div>
                 ))}
-              </div> </div>  <div className="bg-bg-card p-lg rounded-[14px] card-shadow"> <h3 className="font-h3 text-h3 text-text-main mb-lg">Détails de la zone</h3> <form className="grid grid-cols-2 gap-md" onSubmit={(e) => e.preventDefault()}> <div className="col-span-2 md:col-span-1 space-y-1"> <label className="text-secondary text-text-secondary">Nom de la zone</label> <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" value={f.nom} onChange={(e) => setF({ ...f, nom: e.target.value })} /> </div> <div className="col-span-2 md:col-span-1 space-y-1"> <label className="text-secondary text-text-secondary">Frais de livraison (FCFA)</label> <div className="relative"> <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-16" type="number" value={f.km_prix} onChange={(e) => setF({ ...f, km_prix: e.target.value })} /> <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary font-bold text-micro">FCFA</span> </div> </div> <div className="col-span-2 space-y-1"> <label className="text-secondary text-text-secondary">Manager responsable</label> <div className="relative"> <select className="w-full h-11 px-md rounded-lg border-border-default appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-12 bg-white" value={f.manager} onChange={(e) => setF({ ...f, manager: e.target.value })}> <option value="">— Aucun —</option>
+              </div> </div>  <div className="bg-bg-card p-lg rounded-[14px] card-shadow"> <h3 className="font-h3 text-h3 text-text-main mb-lg">{tx("Détails de la zone")}</h3> <form className="grid grid-cols-2 gap-md" onSubmit={(e) => e.preventDefault()}> <div className="col-span-2 md:col-span-1 space-y-1"> <label className="text-secondary text-text-secondary">{tx("Nom de la zone")}</label> <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" value={f.nom} onChange={(e) => setF({ ...f, nom: e.target.value })} /> </div> <div className="col-span-2 md:col-span-1 space-y-1"> <label className="text-secondary text-text-secondary">{tx("Frais de livraison (FCFA)")}</label> <div className="relative"> <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-16" type="number" value={f.km_prix} onChange={(e) => setF({ ...f, km_prix: e.target.value })} /> <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary font-bold text-micro">FCFA</span> </div> </div> <div className="col-span-2 space-y-1"> <label className="text-secondary text-text-secondary">{tx("Manager responsable")}</label> <div className="relative"> <select className="w-full h-11 px-md rounded-lg border-border-default appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-12 bg-white" value={f.manager} onChange={(e) => setF({ ...f, manager: e.target.value })}> <option value="">{tx("— Aucun —")}</option>
                     {managers.map((m: any) => (
                       <option key={m.id} value={String(m.id)}>{m.nom_complet ?? m.name ?? m.email ?? `Manager #${m.id}`}</option>
                     ))}
                   </select> <MIcon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-tertiary" /> </div> </div> <div className="col-span-2 space-y-1"> <label className="text-secondary text-text-secondary">Description</label> <textarea className="w-full px-md py-2 rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })}></textarea> </div> <div className="col-span-2 flex justify-end gap-3 mt-4">
                 {sel && (
-                  <button className="px-md py-2.5 text-error font-label hover:bg-error-light rounded-lg transition-colors" type="button" onClick={() => void delZone()}>Supprimer</button>
+                  <button className="px-md py-2.5 text-error font-label hover:bg-error-light rounded-lg transition-colors" type="button" onClick={() => void delZone()}>{tx("Supprimer")}</button>
                 )}
-                <button className="px-md py-2.5 text-text-secondary font-label hover:bg-app rounded-lg transition-colors" type="button" onClick={resetForm}>Réinitialiser</button>
-                <button className="bg-primary text-on-primary px-lg py-2.5 rounded-lg hover:bg-primary-hover active:scale-97 transition-all font-label" type="button" onClick={() => void saveZone()}>Enregistrer les modifications</button>
+                <button className="px-md py-2.5 text-text-secondary font-label hover:bg-app rounded-lg transition-colors" type="button" onClick={resetForm}>{tx("Réinitialiser")}</button>
+                <button className="bg-primary text-on-primary px-lg py-2.5 rounded-lg hover:bg-primary-hover active:scale-97 transition-all font-label" type="button" onClick={() => void saveZone()}>{tx("Enregistrer les modifications")}</button>
               </div> </form> </div> </div> </div>
 
       {/* Modale « Nouvelle zone » : la zone = la délimitation de ses points */}
@@ -616,18 +620,18 @@ export default function AdminZonesPage() {
         <div className="fixed inset-0 z-[1200] bg-black/40 flex items-center justify-center p-4 pointer-events-none">
           <div className="bg-white rounded-[14px] shadow-xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto design-modal-scroll p-lg pointer-events-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-lg">
-              <h3 className="font-h2 text-h2 text-on-surface">Nouvelle zone</h3>
+              <h3 className="font-h2 text-h2 text-on-surface">{tx("Nouvelle zone")}</h3>
               <button className="p-2 text-text-tertiary hover:text-on-surface transition-colors" onClick={() => setModal(null)}>
                 <MIcon name="close" />
               </button>
             </div>
             <form className="space-y-md" onSubmit={(e) => { e.preventDefault(); void saveZoneModal(); }}>
               <div className="p-3 bg-primary-tint/50 rounded-xl">
-                <p className="font-label text-label text-on-surface">Une zone = la délimitation de plusieurs points de repère</p>
-                <p className="text-micro text-text-secondary">Ajoutez ses points à la limite (3 = triangle, 6 = hexagone…) par la recherche ou en cliquant sur la carte. Les points ajoutés à l'intérieur plus tard ne changent pas la forme.</p>
+                <p className="font-label text-label text-on-surface">{tx("Une zone = la délimitation de plusieurs points de repère")}</p>
+                <p className="text-micro text-text-secondary">{tx("Ajoutez ses points à la limite (3 = triangle, 6 = hexagone…) par la recherche ou en cliquant sur la carte. Les points ajoutés à l'intérieur plus tard ne changent pas la forme.")}</p>
               </div>
               <div className="space-y-xs">
-                <label className="font-label text-label text-text-secondary">Points à la limite (recherche de lieu ou clic sur la carte)</label>
+                <label className="font-label text-label text-text-secondary">{tx("Points à la limite (recherche de lieu ou clic sur la carte)")}</label>
                 <PlaceSearch onPick={(p) => { addZonePoint(p.nom, p.lat, p.lng); mapRef.current?.flyTo([p.lat, p.lng], 14, { animate: true }); }} placeholder="Ex : Akpakpa, Cotonou…" />
               </div>
               {zonePts.length > 0 && (
@@ -648,18 +652,18 @@ export default function AdminZonesPage() {
                   : `${zonePts.length} point(s) — encore ${Math.max(0, 3 - zonePts.length)} minimum pour former une surface`}
               </p>
               <div className="space-y-xs">
-                <label className="font-label text-label text-text-secondary">Nom de la zone</label>
+                <label className="font-label text-label text-text-secondary">{tx("Nom de la zone")}</label>
                 <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" value={zoneForm.nom} onChange={(e) => setZoneForm({ ...zoneForm, nom: e.target.value })} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-xs">
-                  <label className="font-label text-label text-text-secondary">Frais de livraison (FCFA)</label>
+                  <label className="font-label text-label text-text-secondary">{tx("Frais de livraison (FCFA)")}</label>
                   <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="number" value={zoneForm.km_prix} onChange={(e) => setZoneForm({ ...zoneForm, km_prix: e.target.value })} />
                 </div>
                 <div className="space-y-xs">
-                  <label className="font-label text-label text-text-secondary">Manager responsable</label>
+                  <label className="font-label text-label text-text-secondary">{tx("Manager responsable")}</label>
                   <select className="w-full h-11 px-md rounded-lg border-border-default appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white" value={zoneForm.manager} onChange={(e) => setZoneForm({ ...zoneForm, manager: e.target.value })}>
-                    <option value="">— Aucun —</option>
+                    <option value="">{tx("— Aucun —")}</option>
                     {managers.map((m: any) => (
                       <option key={m.id} value={String(m.id)}>{m.nom_complet ?? m.name ?? m.email ?? `Manager #${m.id}`}</option>
                     ))}
@@ -671,8 +675,8 @@ export default function AdminZonesPage() {
                 <textarea className="w-full px-md py-2 rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" rows={2} value={zoneForm.description} onChange={(e) => setZoneForm({ ...zoneForm, description: e.target.value })}></textarea>
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button className="px-md py-2.5 text-text-secondary font-label hover:bg-app rounded-lg transition-colors" type="button" onClick={() => setModal(null)}>Annuler</button>
-                <button className="bg-primary text-on-primary px-lg py-2.5 rounded-lg hover:bg-primary-hover active:scale-97 transition-all font-label" type="submit">Créer la zone</button>
+                <button className="px-md py-2.5 text-text-secondary font-label hover:bg-app rounded-lg transition-colors" type="button" onClick={() => setModal(null)}>{tx("Annuler")}</button>
+                <button className="bg-primary text-on-primary px-lg py-2.5 rounded-lg hover:bg-primary-hover active:scale-97 transition-all font-label" type="submit">{tx("Créer la zone")}</button>
               </div>
             </form>
           </div>
@@ -684,15 +688,15 @@ export default function AdminZonesPage() {
         <div className="fixed inset-0 z-[1200] bg-black/40 flex items-center justify-center p-4 pointer-events-none">
           <div className="bg-white rounded-[14px] shadow-xl w-full max-w-[480px] max-h-[90vh] overflow-y-auto design-modal-scroll p-lg pointer-events-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-lg">
-              <h3 className="font-h2 text-h2 text-on-surface">{lmEditId !== null ? 'Modifier le point de repère' : 'Nouveau point de repère'}</h3>
+              <h3 className="font-h2 text-h2 text-on-surface">{lmEditId !== null ? tx("Modifier le point de repère") : 'Nouveau point de repère'}</h3>
               <button className="p-2 text-text-tertiary hover:text-on-surface transition-colors" onClick={() => setModal(null)}>
                 <MIcon name="close" />
               </button>
             </div>
             <form className="space-y-md" onSubmit={(e) => { e.preventDefault(); void saveLm(); }}>
               <div className="space-y-xs">
-                <label className="font-label text-label text-text-secondary">Rechercher le lieu du repère (comme Google Maps)</label>
-                <PlaceSearch onPick={pickPlaceLm} placeholder="Ex : Marché Dantokpa…" />
+                <label className="font-label text-label text-text-secondary">{tx("Rechercher le lieu du repère (comme Google Maps)")}</label>
+                <PlaceSearch onPick={pickPlaceLm} placeholder={tx("Ex : Marché Dantokpa…")} />
               </div>
               <div className="space-y-xs">
                 <label className="font-label text-label text-text-secondary">Zone</label>
@@ -703,16 +707,16 @@ export default function AdminZonesPage() {
                 </select>
               </div>
               <div className="space-y-xs">
-                <label className="font-label text-label text-text-secondary">Nom du point de repère</label>
-                <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" placeholder="Ex : Marché Dantokpa" value={lmForm.nom} onChange={(e) => setLmForm({ ...lmForm, nom: e.target.value })} />
+                <label className="font-label text-label text-text-secondary">{tx("Nom du point de repère")}</label>
+                <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" placeholder={tx("Ex : Marché Dantokpa")} value={lmForm.nom} onChange={(e) => setLmForm({ ...lmForm, nom: e.target.value })} />
               </div>
               <div className="space-y-xs">
                 <label className="font-label text-label text-text-secondary">Description</label>
-                <textarea className="w-full px-md py-2 rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" rows={2} placeholder="Repère, accès, indication utile…" value={lmForm.description} onChange={(e) => setLmForm({ ...lmForm, description: e.target.value })}></textarea>
+                <textarea className="w-full px-md py-2 rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" rows={2} placeholder={tx("Repère, accès, indication utile…")} value={lmForm.description} onChange={(e) => setLmForm({ ...lmForm, description: e.target.value })}></textarea>
               </div>
               <div className="p-3 bg-primary-tint/50 rounded-xl space-y-2">
-                <p className="font-label text-label text-on-surface">Position sur la carte</p>
-                <p className="text-micro text-text-secondary">Recherche ou clic sur la carte. Si le point est à la limite, il élargit la forme de la zone ; s'il est à l'intérieur, la forme ne change pas.</p>
+                <p className="font-label text-label text-on-surface">{tx("Position sur la carte")}</p>
+                <p className="text-micro text-text-secondary">{tx("Recherche ou clic sur la carte. Si le point est à la limite, il élargit la forme de la zone ; s'il est à l'intérieur, la forme ne change pas.")}</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-xs">
                     <label className="font-label text-micro text-text-secondary">Latitude</label>
@@ -723,11 +727,11 @@ export default function AdminZonesPage() {
                     <input className="w-full h-11 px-md rounded-lg border-border-default bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" readOnly value={lmForm.longitude} placeholder="—" />
                   </div>
                 </div>
-                <p className="text-micro text-text-tertiary">{lmForm.latitude && lmForm.longitude ? `Position choisie : ${lmForm.latitude}, ${lmForm.longitude}` : 'Aucune position choisie pour le moment.'}</p>
+                <p className="text-micro text-text-tertiary">{lmForm.latitude && lmForm.longitude ? `Position choisie : ${lmForm.latitude}, ${lmForm.longitude}` : tx("Aucune position choisie pour le moment.")}</p>
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button className="px-md py-2.5 text-text-secondary font-label hover:bg-app rounded-lg transition-colors" type="button" onClick={() => setModal(null)}>Annuler</button>
-                <button className="bg-primary text-on-primary px-lg py-2.5 rounded-lg hover:bg-primary-hover active:scale-97 transition-all font-label" type="submit">Enregistrer le repère</button>
+                <button className="px-md py-2.5 text-text-secondary font-label hover:bg-app rounded-lg transition-colors" type="button" onClick={() => setModal(null)}>{tx("Annuler")}</button>
+                <button className="bg-primary text-on-primary px-lg py-2.5 rounded-lg hover:bg-primary-hover active:scale-97 transition-all font-label" type="submit">{tx("Enregistrer le repère")}</button>
               </div>
             </form>
           </div>

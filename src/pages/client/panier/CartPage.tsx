@@ -10,6 +10,9 @@ import EmptyState from '../../../components/shared/EmptyState';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { clear, remove, setQuantity, selectCount, selectSubtotal, selectSavings } from '../../../store/slices/cart/cartSlice';
 import { authApi, catalogApi, landmarksApi, ordersApi, paymentsApi } from '../../../services/api';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 interface ApiLandmark {
   id: number;
@@ -57,6 +60,7 @@ interface ConfirmationPayload {
  * Le panier est synchronisé avec le serveur par SystemBridge (useCartSync).
  */
 export default function CartPage() {
+  useLanguage();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const items = useAppSelector((s) => s.cart.items);
@@ -106,7 +110,7 @@ export default function CartPage() {
         rows.forEach((r, i) => {
           list.push({
             key: `row-${r.id ?? i}`,
-            nom: String(r.nom ?? 'Point de repère'),
+            nom: String(r.nom ?? tx("Point de repère")),
             description: String(r.description ?? ''),
             rowId: Number(r.id),
             zoneId: r.zone_id != null ? Number(r.zone_id) : undefined,
@@ -125,7 +129,7 @@ export default function CartPage() {
               if (!list.some((l) => l.nom === item)) list.push({ key: `mine-${i}`, nom: item, description: '' });
             } else if (item && typeof item === 'object') {
               const o = item as Record<string, unknown>;
-              const nom = String(o.nom ?? 'Point de repère');
+              const nom = String(o.nom ?? tx("Point de repère"));
               const description = String(o.landmark ?? o.description ?? '');
               if (!list.some((l) => l.nom === nom)) list.push({ key: `mine-${i}`, nom, description });
             }
@@ -150,12 +154,12 @@ export default function CartPage() {
 
   const handlePaid = async () => {
     if (!selectedZone) {
-      toast.error('Sélectionnez une zone de livraison.');
+      toast.error(tx("Sélectionnez une zone de livraison."));
       return;
     }
     if (!landmarkId) {
       setLandmarkError(true);
-      toast.error('Sélectionnez un point de repère.');
+      toast.error(tx("Sélectionnez un point de repère."));
       return;
     }
 
@@ -197,7 +201,7 @@ export default function CartPage() {
             window.open(redirectUrl, '_blank', 'noopener');
             toast.success('Redirection vers FedaPay…');
           } else {
-            toast.success('Paiement FedaPay initialisé (mode sandbox dev).');
+            toast.success(tx("Paiement FedaPay initialisé (mode sandbox dev)."));
           }
         }
       } catch (payErr) {
@@ -207,7 +211,7 @@ export default function CartPage() {
 
       // 3) Nettoyage local + confirmation avec les données réelles
       dispatch(clear());
-      toast.success('Commande enregistrée avec succès !');
+      toast.success(tx("Commande enregistrée avec succès !"));
       const payload: ConfirmationPayload = {
         orderId,
         total: orderTotal,
@@ -246,7 +250,7 @@ export default function CartPage() {
               <div className="w-9 h-9 rounded-full border-2 border-primary-container bg-white text-primary-container flex items-center justify-center font-bold text-h3 transition-all duration-300">
                 <MIcon name="check" style={{ fontSize: 20 }} />
               </div>
-              <span className="font-label text-label font-medium text-primary-container">Panier</span>
+              <span className="font-label text-label font-medium text-primary-container">{tx("Panier")}</span>
             </div>
 
             {/* Step 2: Livraison (Active) */}
@@ -254,7 +258,7 @@ export default function CartPage() {
               <div className="w-9 h-9 rounded-full border-2 border-primary-container bg-primary-container text-white flex items-center justify-center font-bold text-h3 shadow-md transition-all duration-300">
                 2
               </div>
-              <span className="font-label text-label font-bold text-primary-container">Livraison</span>
+              <span className="font-label text-label font-bold text-primary-container">{tx("Livraison")}</span>
             </div>
 
             {/* Step 3: Paiement */}
@@ -262,7 +266,7 @@ export default function CartPage() {
               <div className="w-9 h-9 rounded-full border-2 border-border-default bg-bg-app text-text-tertiary flex items-center justify-center font-bold text-h3 transition-all duration-300">
                 3
               </div>
-              <span className="font-label text-label font-medium text-text-tertiary">Paiement</span>
+              <span className="font-label text-label font-medium text-text-tertiary">{tx("Paiement")}</span>
             </div>
 
             {/* Step 4: Confirmation */}
@@ -289,15 +293,15 @@ export default function CartPage() {
               {items.length === 0 ? (
                 <EmptyState
                   icon={<MIcon name="shopping_cart" className="text-4xl text-primary" />}
-                  title="Votre panier est vide"
-                  description="Ajoutez des produits frais du marché pour commencer vos achats."
+                  title={tx("Votre panier est vide")}
+                  description={tx("Ajoutez des produits frais du marché pour commencer vos achats.")}
                   action={
                     <button
                       type="button"
                       className="px-lg py-3 bg-primary-container hover:bg-primary-hover text-white rounded-lg font-bold transition-all shadow-md cursor-pointer"
                       onClick={() => navigate({ to: '/catalogue' })}
                     >
-                      Explorer le marché
+                      {tx("Explorer le marché")}
                     </button>
                   }
                 />
@@ -332,7 +336,7 @@ export default function CartPage() {
                             <h3 className="font-h3 text-h3 text-on-surface truncate font-bold">{item.product.nom}</h3>
                             {isNegotiated && (
                               <span className="bg-[#F59E0B]/10 text-[#F59E0B] text-micro px-2 py-0.5 rounded-full border border-[#F59E0B]/20 font-bold uppercase tracking-wider">
-                                Offre acceptée
+                                {tx("Offre acceptée")}
                               </span>
                             )}
                           </div>
@@ -379,7 +383,7 @@ export default function CartPage() {
                             type="button"
                             onClick={() => dispatch(remove(item.product.id))}
                             className="text-error hover:bg-error-light p-2 rounded-full transition-colors opacity-80 sm:opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer"
-                            title="Supprimer"
+                            title={tx("Supprimer")}
                           >
                             <MIcon name="delete" className="text-[20px]" />
                           </button>
@@ -395,13 +399,13 @@ export default function CartPage() {
             <div className="bg-white rounded-lg p-lg shadow-sm border border-border-default/50">
               <div className="flex items-center gap-sm mb-lg">
                 <MIcon name="location_on" className="text-primary-container" />
-                <h2 className="font-h2 text-h2 text-on-surface">Lieu de livraison</h2>
+                <h2 className="font-h2 text-h2 text-on-surface">{tx("Lieu de livraison")}</h2>
               </div>
               <div className="space-y-md">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
                   <div>
                     <label className="block font-label text-secondary text-text-secondary mb-xs">
-                      Zone de livraison
+                      {tx("Zone de livraison")}
                     </label>
                     <div className="relative">
                       <MIcon name="map" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
@@ -411,7 +415,7 @@ export default function CartPage() {
                         onChange={(e) => handleZoneChange(Number(e.target.value))}
                         disabled={zonesLoading}
                       >
-                        {zonesLoading && <option value="">Chargement des zones…</option>}
+                        {zonesLoading && <option value="">{tx("Chargement des zones…")}</option>}
                         {zones.map((z) => (
                           <option key={z.id} value={z.id}>
                             {z.nom}
@@ -424,7 +428,7 @@ export default function CartPage() {
 
                   <div>
                     <label className="block font-label text-secondary text-text-secondary mb-xs">
-                      Point de repère <span className="text-error">*</span>
+                      {tx("Point de repère")} <span className="text-error">*</span>
                     </label>
                     <div className="relative">
                       <MIcon name="edit_location" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
@@ -474,11 +478,11 @@ export default function CartPage() {
                       >
                         <option value="">
                           {myLandmarks.length === 0 && (!selectedZone || (selectedZone.points_repere ?? []).length === 0)
-                            ? 'Aucun point de repère disponible'
-                            : 'Sélectionner un point de repère…'}
+                            ? tx("Aucun point de repère disponible")
+                            : tx("Sélectionner un point de repère…")}
                         </option>
                         {myLandmarks.length > 0 && (
-                          <optgroup label="Mes points de repère">
+                          <optgroup label={tx("Mes points de repère")}>
                             {myLandmarks.map((l) => (
                               <option key={l.key} value={l.key}>
                                 {l.nom}
@@ -501,7 +505,7 @@ export default function CartPage() {
                     </div>
                     {landmarkError && (
                       <p className="mt-1 text-xs font-semibold text-error">
-                        Le point de repère est requis pour la livraison.
+                        {tx("Le point de repère est requis pour la livraison.")}
                       </p>
                     )}
                   </div>
@@ -518,7 +522,7 @@ export default function CartPage() {
                       type="text"
                       value={descriptionLieu}
                       onChange={(e) => setDescriptionLieu(e.target.value)}
-                      placeholder="Ex : face à la pharmacie, portail bleu…"
+                      placeholder={tx("Ex : face à la pharmacie, portail bleu…")}
                       maxLength={255}
                     />
                   </div>
@@ -539,24 +543,24 @@ export default function CartPage() {
           {/* Right Column: Summary (Sticky) */}
           <div className="lg:w-[40%]">
             <div className="bg-white rounded-lg p-lg shadow-sm border border-border-default/50 sticky top-[72px]">
-              <h2 className="font-h2 text-h2 text-on-surface mb-lg">Récapitulatif</h2>
+              <h2 className="font-h2 text-h2 text-on-surface mb-lg">{tx("Récapitulatif")}</h2>
               <div className="space-y-sm pb-lg border-b border-border-default">
                 <div className="flex justify-between items-center">
-                  <span className="text-body text-text-secondary">Sous-total</span>
+                  <span className="text-body text-text-secondary">{tx("Sous-total")}</span>
                   <span className="text-body font-medium text-on-surface">
                     {subtotal.toLocaleString('fr-FR')} FCFA
                   </span>
                 </div>
                 {savings > 0 && (
                   <div className="flex justify-between items-center">
-                    <span className="text-body text-text-secondary">Économie (négociations)</span>
+                    <span className="text-body text-text-secondary">{tx("Économie (négociations)")}</span>
                     <span className="text-body font-medium text-success">
                       -{savings.toLocaleString('fr-FR')} FCFA
                     </span>
                   </div>
                 )}
                 <div className="flex justify-between items-center">
-                  <span className="text-body text-text-secondary">Frais de livraison</span>
+                  <span className="text-body text-text-secondary">{tx("Frais de livraison")}</span>
                   <span className="text-body font-medium text-on-surface">
                     {deliveryFee.toLocaleString('fr-FR')} FCFA
                   </span>
@@ -578,12 +582,12 @@ export default function CartPage() {
                   className="w-full py-4 bg-primary-container hover:bg-primary-hover text-white rounded-lg font-h3 flex items-center justify-center gap-sm transition-all transform active:scale-95 shadow-md shadow-primary-container/20 cursor-pointer disabled:opacity-50"
                 >
                   <MIcon name="credit_card" />
-                  {loading ? 'Traitement de la commande...' : 'Payer avec FedaPay'}
+                  {loading ? 'Traitement de la commande...' : tx("Payer avec FedaPay")}
                 </button>
 
                 <div className="flex items-center justify-center gap-xs py-sm px-md bg-success-light text-success-dark rounded-full border border-success-light">
                   <MIcon name="verified_user" className="text-[18px]" />
-                  <span className="text-micro font-bold">Paiement sécurisé FedaPay</span>
+                  <span className="text-micro font-bold">{tx("Paiement sécurisé FedaPay")}</span>
                 </div>
 
                 <button
@@ -591,7 +595,7 @@ export default function CartPage() {
                   onClick={() => navigate({ to: '/catalogue' })}
                   className="w-full py-3 border-2 border-primary-container text-primary-container hover:bg-primary-tint rounded-lg font-label font-bold transition-colors cursor-pointer"
                 >
-                  Continuer les achats
+                  {tx("Continuer les achats")}
                 </button>
               </div>
 
@@ -599,7 +603,7 @@ export default function CartPage() {
                 <div className="flex gap-sm">
                   <MIcon name="info" className="text-info shrink-0" />
                   <p className="text-secondary text-text-secondary">
-                    Livraison par nos coursiers partenaires TOKPa Express — le livreur se présente au point de repère choisi.
+                    {tx("Livraison par nos coursiers partenaires TOKPa Express — le livreur se présente au point de repère choisi.")}
                   </p>
                 </div>
               </div>

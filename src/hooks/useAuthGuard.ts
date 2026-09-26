@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
+import { tx } from '../i18n/tx';
 
 export interface AuthUser {
   id?: number;
@@ -27,7 +28,7 @@ export function useAuthGuard(redirectTo = '/connexion') {
     const storedUser = localStorage.getItem('tokpa_user');
 
     if (!token) {
-      toast.error('Veuillez vous connecter pour accéder à cette page.');
+      toast.error(tx('Veuillez vous connecter pour accéder à cette page.'));
       setIsAuthenticated(false);
       setUser(null);
       setIsLoading(false);

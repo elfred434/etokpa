@@ -1,6 +1,9 @@
 import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 import { currentUserName, currentUserZone, initialsOf } from '../../../routes/authGuard';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 type Item = { label: string; path: string; icon: string; badge?: string };
 
@@ -16,6 +19,7 @@ const ITEMS: Item[] = [
 type Props = { currentPath: string };
 
 export default function ManagerSidebar({ currentPath }: Props) {
+  useLanguage();
   return (
     <aside
       className="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-white/10"
@@ -33,9 +37,9 @@ export default function ManagerSidebar({ currentPath }: Props) {
           <div className="flex-1">
             {/* Vraie zone du manager connecté (UserResource.profil.zone) — plus de « Zone Akpakpa » inventée */}
             <p className="text-label font-semibold text-white">
-              {currentUserZone() ? `Zone ${currentUserZone()}` : 'Zone non attribuée'}
+              {currentUserZone() ? `Zone ${currentUserZone()}` : tx("Zone non attribuée")}
             </p>
-            <p className="text-label text-white/80">Votre zone de gestion</p>
+            <p className="text-label text-white/80">{tx("Votre zone de gestion")}</p>
           </div>
         </div>
       </div>
@@ -52,7 +56,7 @@ export default function ManagerSidebar({ currentPath }: Props) {
               }`}
             >
               <MIcon name={item.icon} className="text-[18px]" />
-              <span className="flex-1">{item.label}</span>
+              <span className="flex-1">{tx(item.label)}</span>
               {item.badge && (
                 <span className="rounded-full bg-primary-container px-2 py-0.5 text-overline text-on-surface">
                   {item.badge}
@@ -69,7 +73,7 @@ export default function ManagerSidebar({ currentPath }: Props) {
           className="mb-3 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-body text-white transition hover:bg-white/10"
         >
           <MIcon name="storefront" className="text-[18px]" />
-          <span className="flex-1">Espace client</span>
+          <span className="flex-1">{tx("Espace client")}</span>
         </Link>
         {/* Utilisateur réellement connecté (plus de « Serge Migan » inventé) */}
         <div className="flex items-center gap-3">
@@ -78,7 +82,7 @@ export default function ManagerSidebar({ currentPath }: Props) {
           </div>
           <div className="flex-1">
             <p className="text-label font-semibold text-white">{currentUserName() ?? 'Manager'}</p>
-            <p className="text-label text-white/80">Manager de zone</p>
+            <p className="text-label text-white/80">{tx("Manager de zone")}</p>
           </div>
         </div>
       </div>

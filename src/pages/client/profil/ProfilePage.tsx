@@ -10,6 +10,8 @@ import { parseLandmarks } from '../../../utils/landmarks';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { authApi, ordersApi, type UserProfile } from '../../../services/api';
+import { tx } from '../../../i18n/tx';
+
 
 /** Point de repère stocké dans `profil.point_repere` (JSON du backend). */
 interface Landmark {
@@ -103,7 +105,7 @@ export default function ProfilePage() {
         const mapped: OrderItem[] = list
           .map((o) => {
             const order = (o.data ?? o) as Record<string, unknown>;
-            const statut = String(order.statut ?? 'en_attente');
+            const statut = String(order.statut ?? "en_attente");
             const label = STATUT_LABELS[statut] ?? { fr: statut, en: statut, active: false };
             return {
               id: Number(order.id),
@@ -111,7 +113,7 @@ export default function ProfilePage() {
                 ? new Date(String(order.created_at)).toLocaleDateString('fr-FR')
                 : order.date_commande
                   ? new Date(String(order.date_commande)).toLocaleDateString('fr-FR')
-                  : 'Récemment',
+                  : tx("Récemment"),
               totalLabel: `${Number(order.montant_total ?? 0).toLocaleString('fr-FR')} FCFA`,
               statut,
               statusFr: label.fr,
@@ -140,7 +142,7 @@ export default function ProfilePage() {
       <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
         <div className="flex flex-col items-center gap-3">
           <MIcon name="sync" className="text-primary text-4xl animate-spin" />
-          <p className="text-sm font-semibold text-text-secondary">Redirection vers la connexion...</p>
+          <p className="text-sm font-semibold text-text-secondary">{tx("Redirection vers la connexion...")}</p>
         </div>
       </div>
     );
@@ -160,7 +162,7 @@ export default function ProfilePage() {
         point_repere: next.map((l) => (l.description ? { nom: l.nom, landmark: l.description } : { nom: l.nom })),
       } as Record<string, unknown>);
       setLandmarks(next);
-      toast.success(isFr ? 'Points de repère enregistrés' : 'Landmarks saved');
+      toast.success(isFr ? tx("Points de repère enregistrés") : 'Landmarks saved');
       return true;
     } catch (err) {
       alertApiError(err, 'profile-landmarks');
@@ -216,12 +218,12 @@ export default function ProfilePage() {
         nom: formNomUser.trim(),
         telephone: formTelephone.trim() || undefined,
       });
-      toast.success(isFr ? 'Profil mis à jour' : 'Profile updated');
+      toast.success(isFr ? tx("Profil mis à jour") : 'Profile updated');
       setEditProfileOpen(false);
       await loadProfile();
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { message?: string } } })?.response?.data;
-      toast.error(detail?.message || (isFr ? 'Erreur lors de la mise à jour' : 'Update error'));
+      toast.error(detail?.message || (isFr ? tx("Erreur lors de la mise à jour") : 'Update error'));
     } finally {
       setSaving(false);
     }
@@ -232,7 +234,7 @@ export default function ProfilePage() {
     e.preventDefault();
     setPwError(null);
     if (pwNew.length < 8) {
-      setPwError(isFr ? 'Le nouveau mot de passe doit contenir au moins 8 caractères.' : 'New password must be at least 8 characters.');
+      setPwError(isFr ? tx("Le nouveau mot de passe doit contenir au moins 8 caractères.") : 'New password must be at least 8 characters.');
       return;
     }
     if (pwNew !== pwConfirm) {
@@ -246,14 +248,14 @@ export default function ProfilePage() {
         new_password: pwNew,
         new_password_confirmation: pwConfirm,
       });
-      toast.success(res?.message || (isFr ? 'Mot de passe modifié' : 'Password changed'));
+      toast.success(res?.message || (isFr ? tx("Mot de passe modifié") : 'Password changed'));
       setPwModalOpen(false);
       setPwCurrent('');
       setPwNew('');
       setPwConfirm('');
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { message?: string } } })?.response?.data;
-      setPwError(detail?.message || (isFr ? 'Mot de passe actuel incorrect.' : 'Current password incorrect.'));
+      setPwError(detail?.message || (isFr ? tx("Mot de passe actuel incorrect.") : 'Current password incorrect.'));
     } finally {
       setSaving(false);
     }
@@ -261,7 +263,7 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     await authApi.logout();
-    toast.success(isFr ? 'Déconnexion effectuée' : 'Logged out');
+    toast.success(isFr ? tx("Déconnexion effectuée") : 'Logged out');
     navigate({ to: '/connexion' });
   };
 
@@ -292,7 +294,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex items-center text-text-secondary mt-1">
                     <MIcon name="mail" className="text-sm mr-1" />
-                    <span className="text-secondary">{profile?.email || 'Non renseigné'}</span>
+                    <span className="text-secondary">{profile?.email || tx("Non renseigné")}</span>
                   </div>
                 </div>
               </div>
@@ -302,7 +304,7 @@ export default function ProfilePage() {
                 className="px-md py-sm bg-white border border-border-default text-text-secondary rounded-lg font-label text-label flex items-center gap-sm transition-all hover:bg-bg-secondary cursor-pointer"
               >
                 <MIcon name="edit" className="text-sm" />
-                {isFr ? 'Modifier' : 'Edit'}
+                {isFr ? tx("Modifier") : 'Edit'}
               </button>
             </section>
 
@@ -311,13 +313,13 @@ export default function ProfilePage() {
               <div className="bg-bg-card p-md rounded-[10px] border border-border-default flex flex-col items-center justify-center text-center shadow-xs">
                 <span className="font-h2 text-h2 text-text-main font-bold">{orderCount}</span>
                 <span className="text-micro text-text-tertiary uppercase mt-1">
-                  {isFr ? 'Commandes' : 'Orders'}
+                  {isFr ? tx("Commandes") : 'Orders'}
                 </span>
               </div>
               <div className="bg-bg-card p-md rounded-[10px] border border-border-default flex flex-col items-center justify-center text-center shadow-xs">
                 <span className="font-h2 text-h2 text-primary-container font-bold">{landmarkCount}</span>
                 <span className="text-micro text-text-tertiary uppercase mt-1">
-                  {isFr ? 'Points de repère' : 'Landmarks'}
+                  {isFr ? tx("Points de repère") : 'Landmarks'}
                 </span>
               </div>
             </section>
@@ -326,7 +328,7 @@ export default function ProfilePage() {
             <section className="mb-md">
               <div className="flex items-center justify-between mb-sm">
                 <h3 className="font-h3 text-h3 text-text-main font-bold">
-                  {isFr ? 'Mes points de repère' : 'My landmarks'}
+                  {isFr ? tx("Mes points de repère") : 'My landmarks'}
                 </h3>
                 <button
                   type="button"
@@ -334,7 +336,7 @@ export default function ProfilePage() {
                   className="flex items-center gap-xs text-primary-container font-bold text-label cursor-pointer hover:underline"
                 >
                   <MIcon name="add" className="text-lg" />
-                  {isFr ? 'Ajouter' : 'Add'}
+                  {isFr ? tx("Ajouter") : 'Add'}
                 </button>
               </div>
 
@@ -342,11 +344,11 @@ export default function ProfilePage() {
                 <div className="bg-bg-card p-lg rounded-[10px] border border-border-default text-center text-text-secondary">
                   <MIcon name="location_on" className="text-3xl text-text-tertiary mb-2" />
                   <p className="text-sm font-semibold">
-                    {isFr ? 'Aucun point de repère enregistré' : 'No landmarks saved'}
+                    {isFr ? tx("Aucun point de repère enregistré") : 'No landmarks saved'}
                   </p>
                   <p className="text-xs text-text-tertiary mt-1">
                     {isFr
-                      ? 'Ajoutez un repère (maison, bureau…) pour faciliter la livraison.'
+                      ? tx("Ajoutez un repère (maison, bureau…) pour faciliter la livraison.")
                       : 'Add a landmark (home, office…) to ease delivery.'}
                   </p>
                 </div>
@@ -368,7 +370,7 @@ export default function ProfilePage() {
                           type="button"
                           onClick={() => handleOpenEdit(lm)}
                           className="w-9 h-9 flex items-center justify-center rounded-lg border border-border-default text-text-secondary hover:bg-bg-secondary transition-colors cursor-pointer"
-                          title={isFr ? 'Modifier' : 'Edit'}
+                          title={isFr ? tx("Modifier") : 'Edit'}
                         >
                           <MIcon name="edit" className="text-sm" />
                         </button>
@@ -376,7 +378,7 @@ export default function ProfilePage() {
                           type="button"
                           onClick={() => handleDeleteLandmark(lm)}
                           className="w-9 h-9 flex items-center justify-center rounded-lg border border-error/30 text-error hover:bg-error-light transition-colors cursor-pointer"
-                          title={isFr ? 'Supprimer' : 'Delete'}
+                          title={isFr ? tx("Supprimer") : 'Delete'}
                         >
                           <MIcon name="delete" className="text-sm" />
                         </button>
@@ -391,22 +393,22 @@ export default function ProfilePage() {
             <section className="mb-md">
               <div className="flex items-center justify-between mb-sm">
                 <h3 className="font-h3 text-h3 text-text-main font-bold">
-                  {isFr ? 'Mes commandes récentes' : 'Recent orders'}
+                  {isFr ? tx("Mes commandes récentes") : 'Recent orders'}
                 </h3>
                 <Link
                   to="/commandes"
                   className="text-primary-container font-label text-label hover:underline font-bold"
                 >
-                  {isFr ? 'Voir tout' : 'See all'}
+                  {isFr ? tx("Voir tout") : 'See all'}
                 </Link>
               </div>
 
               {recentOrders.length === 0 ? (
                 <div className="bg-bg-card p-lg rounded-[10px] border border-border-default text-center text-text-secondary">
                   <MIcon name="shopping_bag" className="text-3xl text-text-tertiary mb-2" />
-                  <p className="text-sm font-semibold">Aucune commande enregistrée</p>
+                  <p className="text-sm font-semibold">{tx("Aucune commande enregistrée")}</p>
                   <p className="text-xs text-text-tertiary mt-1">
-                    Vos commandes apparaîtront ici une fois validées.
+                    {tx("Vos commandes apparaîtront ici une fois validées.")}
                   </p>
                 </div>
               ) : (
@@ -434,7 +436,7 @@ export default function ProfilePage() {
                             search={o.active ? { order: String(o.id) } : { detail: String(o.id) }}
                             className="text-primary-container font-label text-label flex items-center gap-xs font-bold"
                           >
-                            {o.active ? (isFr ? 'Suivre' : 'Track') : (isFr ? 'Détails' : 'Details')}
+                            {o.active ? (isFr ? tx("Suivre") : 'Track') : (isFr ? tx("Détails") : 'Details')}
                             <MIcon name="chevron_right" className="text-sm" />
                           </Link>
                         </div>
@@ -448,7 +450,7 @@ export default function ProfilePage() {
             {/* SECURITY & SETTINGS */}
             <section className="mb-xl">
               <h3 className="font-h3 text-h3 text-text-main mb-sm font-bold">
-                {isFr ? 'Paramètres & Sécurité' : 'Settings & Security'}
+                {isFr ? tx("Paramètres & Sécurité") : 'Settings & Security'}
               </h3>
               <div className="bg-bg-card border border-border-default rounded-[14px] overflow-hidden">
                 <button
@@ -459,7 +461,7 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-md">
                     <MIcon name="lock" className="text-text-secondary" />
                     <span className="text-body text-text-main">
-                      {isFr ? 'Changer mot de passe' : 'Change password'}
+                      {isFr ? tx("Changer mot de passe") : 'Change password'}
                     </span>
                   </div>
                   <MIcon name="chevron_right" className="text-text-tertiary" />
@@ -483,7 +485,7 @@ export default function ProfilePage() {
                 >
                   <div className="flex items-center gap-md">
                     <MIcon name="language" className="text-text-secondary" />
-                    <span className="text-body text-text-main">{isFr ? 'Langue' : 'Language'}</span>
+                    <span className="text-body text-text-main">{isFr ? tx("Langue") : 'Language'}</span>
                   </div>
                   <div className="flex items-center gap-sm">
                     <span className="text-secondary text-text-tertiary font-bold uppercase">{language}</span>
@@ -497,7 +499,7 @@ export default function ProfilePage() {
                   className="w-full p-md flex items-center gap-md border-t border-border-default hover:bg-error-light transition-colors text-error font-medium cursor-pointer"
                 >
                   <MIcon name="logout" />
-                  {isFr ? 'Déconnexion' : 'Logout'}
+                  {isFr ? tx("Déconnexion") : 'Logout'}
                 </button>
               </div>
             </section>
@@ -513,10 +515,10 @@ export default function ProfilePage() {
               <h3 className="font-h2 text-h2 font-bold">
                 {editingLandmark
                   ? isFr
-                    ? 'Modifier le repère'
+                    ? tx("Modifier le repère")
                     : 'Edit landmark'
                   : isFr
-                    ? 'Nouveau point de repère'
+                    ? tx("Nouveau point de repère")
                     : 'New landmark'}
               </h3>
               <button
@@ -531,7 +533,7 @@ export default function ProfilePage() {
             <form onSubmit={handleSaveLandmark} className="space-y-md">
               <div>
                 <label className="block text-label mb-1 text-text-secondary font-medium">
-                  Nom du point de repère
+                  {tx("Nom du point de repère")}
                 </label>
                 <input
                   type="text"
@@ -545,13 +547,13 @@ export default function ProfilePage() {
 
               <div>
                 <label className="block text-label mb-1 text-text-secondary font-medium">
-                  Description précise
+                  {tx("Description précise")}
                 </label>
                 <textarea
                   rows={3}
                   value={formDesc}
                   onChange={(e) => setFormDescription(e.target.value)}
-                  placeholder="Ex : Face à la pharmacie, portail bleu…"
+                  placeholder={tx("Ex : Face à la pharmacie, portail bleu…")}
                   className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none resize-none"
                 />
               </div>
@@ -562,14 +564,14 @@ export default function ProfilePage() {
                   onClick={() => setLandmarkModalOpen(false)}
                   className="px-md py-2 rounded-lg border border-border-default font-medium hover:bg-gray-50 transition-all cursor-pointer"
                 >
-                  {isFr ? 'Annuler' : 'Cancel'}
+                  {isFr ? tx("Annuler") : 'Cancel'}
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
                   className="px-lg py-2 rounded-lg bg-primary-container hover:bg-primary-hover text-white font-bold transition-all shadow-md cursor-pointer disabled:opacity-50"
                 >
-                  {isFr ? 'Enregistrer' : 'Save'}
+                  {isFr ? tx("Enregistrer") : 'Save'}
                 </button>
               </div>
             </form>
@@ -582,7 +584,7 @@ export default function ProfilePage() {
         <div className="fixed inset-0 bg-on-surface/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4 animate-fade-in">
           <div className="bg-white w-full max-w-[500px] rounded-xl shadow-2xl overflow-hidden p-lg">
             <div className="flex justify-between items-center mb-md border-b border-border-default pb-3">
-              <h3 className="font-h2 text-h2 font-bold">{isFr ? 'Modifier mon profil' : 'Edit my profile'}</h3>
+              <h3 className="font-h2 text-h2 font-bold">{isFr ? tx("Modifier mon profil") : 'Edit my profile'}</h3>
               <button
                 type="button"
                 onClick={() => setEditProfileOpen(false)}
@@ -594,7 +596,7 @@ export default function ProfilePage() {
 
             <form onSubmit={handleSaveProfile} className="space-y-md">
               <div>
-                <label className="block text-label mb-1 text-text-secondary font-medium">Prénom</label>
+                <label className="block text-label mb-1 text-text-secondary font-medium">{tx("Prénom")}</label>
                 <input
                   type="text"
                   value={formPrenom}
@@ -604,7 +606,7 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-label mb-1 text-text-secondary font-medium">Nom</label>
+                <label className="block text-label mb-1 text-text-secondary font-medium">{tx("Nom")}</label>
                 <input
                   type="text"
                   value={formNomUser}
@@ -614,7 +616,7 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-label mb-1 text-text-secondary font-medium">Téléphone</label>
+                <label className="block text-label mb-1 text-text-secondary font-medium">{tx("Téléphone")}</label>
                 <input
                   type="tel"
                   value={formTelephone}
@@ -630,14 +632,14 @@ export default function ProfilePage() {
                   onClick={() => setEditProfileOpen(false)}
                   className="px-md py-2 rounded-lg border border-border-default font-medium hover:bg-gray-50 transition-all cursor-pointer"
                 >
-                  {isFr ? 'Annuler' : 'Cancel'}
+                  {isFr ? tx("Annuler") : 'Cancel'}
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
                   className="px-lg py-2 rounded-lg bg-primary-container hover:bg-primary-hover text-white font-bold transition-all shadow-md cursor-pointer disabled:opacity-50"
                 >
-                  {isFr ? 'Enregistrer' : 'Save'}
+                  {isFr ? tx("Enregistrer") : 'Save'}
                 </button>
               </div>
             </form>
@@ -650,7 +652,7 @@ export default function ProfilePage() {
         <div className="fixed inset-0 bg-on-surface/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4 animate-fade-in">
           <div className="bg-white w-full max-w-[500px] rounded-xl shadow-2xl overflow-hidden p-lg">
             <div className="flex justify-between items-center mb-md border-b border-border-default pb-3">
-              <h3 className="font-h2 text-h2 font-bold">{isFr ? 'Changer le mot de passe' : 'Change password'}</h3>
+              <h3 className="font-h2 text-h2 font-bold">{isFr ? tx("Changer le mot de passe") : 'Change password'}</h3>
               <button
                 type="button"
                 onClick={() => setPwModalOpen(false)}
@@ -663,7 +665,7 @@ export default function ProfilePage() {
             <form onSubmit={handleChangePassword} className="space-y-md">
               <div>
                 <label className="block text-label mb-1 text-text-secondary font-medium">
-                  Mot de passe actuel
+                  {tx("Mot de passe actuel")}
                 </label>
                 <input
                   type="password"
@@ -675,7 +677,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <label className="block text-label mb-1 text-text-secondary font-medium">
-                  Nouveau mot de passe
+                  {tx("Nouveau mot de passe")}
                 </label>
                 <input
                   type="password"
@@ -687,7 +689,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <label className="block text-label mb-1 text-text-secondary font-medium">
-                  Confirmer le nouveau mot de passe
+                  {tx("Confirmer le nouveau mot de passe")}
                 </label>
                 <input
                   type="password"
@@ -710,14 +712,14 @@ export default function ProfilePage() {
                   onClick={() => setPwModalOpen(false)}
                   className="px-md py-2 rounded-lg border border-border-default font-medium hover:bg-gray-50 transition-all cursor-pointer"
                 >
-                  {isFr ? 'Annuler' : 'Cancel'}
+                  {isFr ? tx("Annuler") : 'Cancel'}
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
                   className="px-lg py-2 rounded-lg bg-primary-container hover:bg-primary-hover text-white font-bold transition-all shadow-md cursor-pointer disabled:opacity-50"
                 >
-                  {isFr ? 'Changer' : 'Change'}
+                  {isFr ? tx("Changer") : 'Change'}
                 </button>
               </div>
             </form>

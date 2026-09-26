@@ -1,4 +1,5 @@
 import { authApi, catalogApi, livreurApi } from '../../services/api';
+import { uiLang } from '../../i18n/tx';
 import { listOf, unwrap } from '../../services/api/unwrap';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -43,11 +44,21 @@ export const STATUT_LABEL: Record<string, string> = {
   annule: 'Annulé',
 };
 
-export const statutLabel = (s: string) => STATUT_LABEL[s] ?? s;
+const STATUT_LABEL_EN: Record<string, string> = {
+  en_attente: 'Pending',
+  en_preparation: 'Preparing',
+  en_livraison: 'Out for delivery',
+  livre: 'Delivered',
+  annule: 'Cancelled',
+};
+
+export const statutLabel = (s: string) =>
+  (uiLang() === 'en' ? STATUT_LABEL_EN[s] : STATUT_LABEL[s]) ?? STATUT_LABEL[s] ?? s;
 
 /** Destination lisible : nom du point de repère + précision saisie par le client. */
 export const destination = (o: LivreurOrder) =>
-  [o.landmark?.nom, o.description_lieu].filter(Boolean).join(' — ') || 'Destination non renseignée';
+  [o.landmark?.nom, o.description_lieu].filter(Boolean).join(' — ') ||
+  (uiLang() === 'en' ? 'Destination not provided' : 'Destination non renseignée');
 
 export const articlesCount = (o: LivreurOrder) => (o.items ?? []).reduce((s, it) => s + Number(it.quantite ?? 0), 0);
 

@@ -8,6 +8,9 @@ import { statutLivreur } from '../../utils/riderStatus';
 import { absImageUrl } from '../../utils/imageUrl';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import { useLanguage } from '../../context/LanguageContext';
+import { tr, tx } from '../../i18n/tx';
+
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -24,9 +27,9 @@ const MAX_PAGES = 25;
 const ilYa = (iso?: string | null) => {
   if (!iso) return '—';
   const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-  if (min < 60) return `Il y a ${Math.max(1, min)}m`;
+  if (min < 60) return tr(`Il y a ${Math.max(1, min)}m`, `${Math.max(1, min)}m ago`);
   const h = Math.round(min / 60);
-  return h < 48 ? `Il y a ${h}h` : `Il y a ${Math.round(h / 24)} j`;
+  return h < 48 ? tr(`Il y a ${h}h`, `${h}h ago`) : tr(`Il y a ${Math.round(h / 24)} j`, `${Math.round(h / 24)}d ago`);
 };
 
 const ACTIVITE: Record<string, string> = {
@@ -45,6 +48,7 @@ const ACTIVITE: Record<string, string> = {
  * Laissés tels quels (décision utilisateur P3, aucune donnée backend) : ligne « Véhicule », « Assigner ».
  */
 export default function AdminLivreursPage() {
+  useLanguage();
   const [livreurs, setLivreurs] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [zones, setZones] = useState<{ id: number; nom: string }[]>([]);
@@ -144,7 +148,7 @@ export default function AdminLivreursPage() {
         disponibilite: editDispo,
         ...(editZone ? { zone_id: Number(editZone) } : {}),
       });
-      toast.success('Livreur mis à jour.');
+      toast.success(tx("Livreur mis à jour."));
       setEditing(false);
       reload();
     } catch (e) {
@@ -156,10 +160,10 @@ export default function AdminLivreursPage() {
 
   const desactiver = async (l: any) => {
     const nom = l.nom_complet ?? '—';
-    if (!confirm(`Désactiver le compte du livreur ${nom} ? Il ne pourra plus se connecter.`)) return;
+    if (!confirm(tr(`Désactiver le compte du livreur ${nom} ? Il ne pourra plus se connecter.`, `Deactivate rider ${nom}? They will no longer be able to log in.`))) return;
     try {
       const r = await adminApi.deleteUser(Number(l.id));
-      toast.success(r?.message ?? 'Utilisateur désactivé.');
+      toast.success(r?.message ?? tx("Utilisateur désactivé."));
       reload();
     } catch (e) {
       alertApiError(e, 'admin-livreurs-delete');
@@ -176,22 +180,22 @@ export default function AdminLivreursPage() {
     <AdminLayout currentPath="/admin/livreurs" mainClassName="ml-64 h-screen pt-[52px] p-lg flex gap-lg overflow-hidden">
       {err && (
         <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
-          <p className="font-bold">Erreur API</p>
+          <p className="font-bold">{tx("Erreur API")}</p>
           <p>{err}</p>
         </div>
       )}
-      {loading && <p className="m-lg text-label text-text-secondary">Chargement des données réelles…</p>}
+      {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
       <style>{DESIGN_CSS}</style>
       <div className="flex-1 bg-white rounded-lg border border-border-default overflow-hidden flex flex-col">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead className="bg-bg-secondary border-b border-border-default">
               <tr>
-                <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">Nom</th>
+                <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">{tx("Nom")}</th>
                 <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">ID</th>
                 <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">Zone</th>
-                <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">Statut</th>
-                <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">Succès (%)</th>
+                <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">{tx("Statut")}</th>
+                <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">{tx("Succès (%)")}</th>
                 <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider text-right">Actions</th>
               </tr>
             </thead>
@@ -199,7 +203,7 @@ export default function AdminLivreursPage() {
               {!loading && livreurs.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-md py-6 text-center text-text-secondary">
-                    Aucun livreur enregistré.
+                    {tx("Aucun livreur enregistré.")}
                   </td>
                 </tr>
               )}
@@ -222,7 +226,7 @@ export default function AdminLivreursPage() {
                     <td className="px-md py-4">
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${st.badge}`}>
                         <span className={`w-2 h-2 rounded-full ${st.dot}`}></span>
-                        {st.label}
+                        {tx(st.label)}
                       </span>
                     </td>
                     <td className="px-md py-4">
@@ -237,7 +241,7 @@ export default function AdminLivreursPage() {
                       <button
                         type="button"
                         className="p-2 hover:text-primary transition-colors"
-                        title="Modifier"
+                        title={tx("Modifier")}
                         onClick={(e) => {
                           e.stopPropagation();
                           openDetails(l, true);
@@ -248,7 +252,7 @@ export default function AdminLivreursPage() {
                       <button
                         type="button"
                         className="p-2 hover:text-error transition-colors"
-                        title="Désactiver"
+                        title={tx("Désactiver")}
                         onClick={(e) => {
                           e.stopPropagation();
                           void desactiver(l);
@@ -266,8 +270,8 @@ export default function AdminLivreursPage() {
         <div className="mt-auto p-md border-t border-border-default flex justify-between items-center bg-bg-secondary">
           <span className="text-secondary text-micro">
             {livreurs.length === 0
-              ? 'Aucun livreur'
-              : `Affichage de ${(current - 1) * PER_PAGE + 1} à ${Math.min(current * PER_PAGE, livreurs.length)} sur ${livreurs.length} livreurs`}
+              ? tx("Aucun livreur")
+              : tr(`Affichage de ${(current - 1) * PER_PAGE + 1} à ${Math.min(current * PER_PAGE, livreurs.length)} sur ${livreurs.length} livreurs`, `Showing ${(current - 1) * PER_PAGE + 1}–${Math.min(current * PER_PAGE, livreurs.length)} of ${livreurs.length} riders`)}
           </span>
           <div className="flex gap-2">
             <button type="button" className="px-3 py-1 border border-border-default rounded hover:bg-white transition-colors disabled:opacity-40" disabled={current <= 1} onClick={() => setPage(current - 1)}>
@@ -298,7 +302,7 @@ export default function AdminLivreursPage() {
       {selected && (
         <aside className="w-80 bg-white rounded-lg border border-border-default flex flex-col p-lg transition-all transform translate-x-0 overflow-y-auto" id="detailPanel">
           <div className="flex justify-between items-start mb-lg">
-            <h3 className="font-h2 text-h2 text-primary">Détails du Livreur</h3>
+            <h3 className="font-h2 text-h2 text-primary">{tx("Détails du Livreur")}</h3>
             <button
               type="button"
               className="text-text-secondary hover:text-text-main"
@@ -322,7 +326,7 @@ export default function AdminLivreursPage() {
               {selNom}
             </h4>
             <p className="text-text-secondary font-label" id="detailId">
-              ID: #{selected.id} · {selStatut?.label}
+              ID: #{selected.id} · {selStatut ? tx(selStatut.label) : ""}
             </p>
           </div>
           <div className="space-y-lg flex-1">
@@ -332,28 +336,28 @@ export default function AdminLivreursPage() {
                 <span className="font-h1 text-h1 text-success" id="detailSuccess">
                   {selPerf != null ? `${selPerf}%` : '—'}
                 </span>
-                <span className="text-text-secondary text-label">livrées / courses terminées</span>
+                <span className="text-text-secondary text-label">{tx("livrées / courses terminées")}</span>
               </div>
             </div>
             <div className="space-y-md">
               <div className="flex items-start gap-3">
                 <MIcon name="call" className="text-primary p-2 bg-primary-tint rounded-lg" />
                 <div>
-                  <p className="text-text-secondary text-micro">Téléphone</p>
+                  <p className="text-text-secondary text-micro">{tx("Téléphone")}</p>
                   <p className="font-body font-medium">{selected.telephone ?? '—'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <MIcon name="motorcycle" className="text-primary p-2 bg-primary-tint rounded-lg" />
                 <div>
-                  <p className="text-text-secondary text-micro">Véhicule</p>
+                  <p className="text-text-secondary text-micro">{tx("Véhicule")}</p>
                   <p className="font-body font-medium">Bajaj Pulsar (BJ-9921)</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <MIcon name="location_on" className="text-primary p-2 bg-primary-tint rounded-lg" />
                 <div>
-                  <p className="text-text-secondary text-micro">Zone Actuelle</p>
+                  <p className="text-text-secondary text-micro">{tx("Zone Actuelle")}</p>
                   <p className="font-body font-medium" id="detailZone">
                     {zoneNom(selected.profil?.zone ?? selected.zone)}
                   </p>
@@ -362,11 +366,11 @@ export default function AdminLivreursPage() {
             </div>
             {editing && (
               <div className="p-md bg-bg-secondary rounded-lg border border-border-default space-y-sm">
-                <p className="text-text-secondary text-micro uppercase">Modifier le livreur</p>
+                <p className="text-text-secondary text-micro uppercase">{tx("Modifier le livreur")}</p>
                 <label className="block text-label">
                   Zone
                   <select className="mt-1 w-full rounded border border-border-default bg-white px-2 py-1 text-label" value={editZone} onChange={(e) => setEditZone(e.target.value)}>
-                    <option value="">— Aucune —</option>
+                    <option value="">{tx("— Aucune —")}</option>
                     {zones.map((z) => (
                       <option key={z.id} value={String(z.id)}>
                         {z.nom}
@@ -375,35 +379,35 @@ export default function AdminLivreursPage() {
                   </select>
                 </label>
                 <label className="block text-label">
-                  Statut du compte
+                  {tx("Statut du compte")}
                   <select className="mt-1 w-full rounded border border-border-default bg-white px-2 py-1 text-label" value={editStatut} onChange={(e) => setEditStatut(e.target.value)}>
-                    <option value="actif">Actif</option>
-                    <option value="inactif">Inactif</option>
-                    <option value="suspendu">Suspendu</option>
+                    <option value="actif">{tx("Actif")}</option>
+                    <option value="inactif">{tx("Inactif")}</option>
+                    <option value="suspendu">{tx("Suspendu")}</option>
                   </select>
                 </label>
                 <label className="flex items-center justify-between text-label">
-                  Disponible pour les livraisons
+                  {tx("Disponible pour les livraisons")}
                   <input type="checkbox" className="accent-primary" checked={editDispo} onChange={(e) => setEditDispo(e.target.checked)} />
                 </label>
                 <div className="flex gap-2 pt-1">
                   <button type="button" className="flex-1 border border-border-default py-1.5 rounded-lg text-label" onClick={() => setEditing(false)}>
-                    Annuler
+                    {tx("Annuler")}
                   </button>
                   <button type="button" disabled={saving} className="flex-1 bg-primary-container text-white py-1.5 rounded-lg font-bold text-label disabled:opacity-60" onClick={save}>
-                    {saving ? 'Enregistrement…' : 'Enregistrer'}
+                    {saving ? 'Enregistrement…' : tx("Enregistrer")}
                   </button>
                 </div>
               </div>
             )}
             <div className="pt-lg border-t border-border-default">
-              <p className="font-label text-label mb-md">Activités récentes</p>
+              <p className="font-label text-label mb-md">{tx("Activités récentes")}</p>
               <ul className="space-y-sm">
-                {selActivites.length === 0 && <li className="text-secondary font-body">Aucune commande assignée.</li>}
+                {selActivites.length === 0 && <li className="text-secondary font-body">{tx("Aucune commande assignée.")}</li>}
                 {selActivites.map((o) => (
                   <li key={o.id} className="flex justify-between text-secondary">
                     <span className="font-body">
-                      {ACTIVITE[o.statut] ?? o.statut} #{o.id}
+                      {tx(ACTIVITE[o.statut] ?? o.statut)} #{o.id}
                     </span>
                     <span className="font-micro">{ilYa(o.created_at)}</span>
                   </li>
@@ -417,14 +421,14 @@ export default function AdminLivreursPage() {
                 href={`tel:+${String(selected.telephone).replace(/\D/g, '')}`}
                 className="flex-1 bg-white border border-primary-container text-primary-container py-2 rounded-lg font-bold hover:bg-primary-tint active:scale-97 transition-all text-center"
               >
-                Contacter
+                {tx("Contacter")}
               </a>
             ) : (
               <button type="button" disabled className="flex-1 bg-white border border-primary-container text-primary-container py-2 rounded-lg font-bold opacity-50">
-                Contacter
+                {tx("Contacter")}
               </button>
             )}
-            <button className="flex-1 bg-primary-container text-white py-2 rounded-lg font-bold hover:bg-primary-hover active:scale-97 transition-all">Assigner</button>
+            <button className="flex-1 bg-primary-container text-white py-2 rounded-lg font-bold hover:bg-primary-hover active:scale-97 transition-all">{tx("Assigner")}</button>
           </div>
         </aside>
       )}

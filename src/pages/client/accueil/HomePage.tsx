@@ -17,6 +17,8 @@ import { catalogApi, negotiationApi, type ApiCategory, type ApiProduct } from '.
 import { absImageUrl } from '../../../utils/imageUrl';
 import { categoryKind, type CategoryKind } from '../../../utils/categoryKind';
 import { alertApiError, apiErrorStatus } from '../../../utils/apiError';
+import { tx } from '../../../i18n/tx';
+
 
 /** Icônes de la maquette accueil (Categories Grid), par famille — icone non persistée côté backend (B-17). */
 const HOME_KIND_ICON: Record<CategoryKind, string> = {
@@ -84,7 +86,7 @@ export default function HomePage() {
             prixMinimum: Number(p.prix_minimum ?? 0),
             // Même source que l'admin ; pas d'image → null = dégradé
             image: absImageUrl(p.image_url ?? p.img_url),
-            badge: Number(p.stock) > 5 ? 'Disponible' : 'Stock Limité',
+            badge: Number(p.stock) > 5 ? tx("Disponible") : tx("Stock Limité"),
           }));
         setSelection(items.slice(0, 4));
         const nego = items.find((it) => it.prixMinimum > 0 && it.prixMinimum < it.prix) ?? null;
@@ -159,7 +161,7 @@ export default function HomePage() {
           minPrice: negoProduct.prixMinimum,
         }),
       );
-      toast.success(isFr ? 'Offre envoyée au marché ! Vous serez notifié de sa réponse.' : 'Offer sent! You will be notified of the answer.');
+      toast.success(isFr ? tx("Offre envoyée au marché ! Vous serez notifié de sa réponse.") : 'Offer sent! You will be notified of the answer.');
       navigate({ to: '/negociations' });
     } catch (err) {
       alertApiError(err, 'home-offer');
@@ -194,7 +196,7 @@ export default function HomePage() {
       prix: item.prix,
       prixMinimum: item.prixMinimum,
       categorie: ((k) => (k === 'other' ? 'vegetable' : k))(categoryKind({ nom: item.categorie })),
-      stock: item.badge === 'Disponible' ? 'available' : 'low',
+      stock: item.badge === tx("Disponible") ? 'available' : 'low',
       badges: [],
       image: item.image ?? undefined,
     };
@@ -211,7 +213,7 @@ export default function HomePage() {
         <section className="relative mt-md sm:mt-lg flex min-h-[380px] sm:min-h-[460px] md:min-h-[500px] items-center overflow-hidden rounded-[20px] sm:rounded-[24px] border border-line bg-white shadow-sm">
           <div className="absolute inset-0 z-0">
             <img
-              alt="Marché TOKPa Illustration"
+              alt={tx("Marché TOKPa Illustration")}
               className="h-full w-full object-cover"
               src="/images/brand/illustration-pattern.png"
             />
@@ -261,13 +263,13 @@ export default function HomePage() {
           </div>
           {catsError ? (
             <ApiErrorState
-              title={isFr ? 'Impossible de charger les catégories' : 'Unable to load categories'}
+              title={isFr ? tx("Impossible de charger les catégories") : 'Unable to load categories'}
               message={catsError}
               onRetry={retry}
               className="rounded-[14px] border border-line bg-white px-md"
             />
           ) : apiCats === null ? (
-            <LoadingState label={isFr ? 'Chargement des catégories…' : 'Loading categories…'} className="rounded-[14px] bg-warm-low" />
+            <LoadingState label={isFr ? tx("Chargement des catégories…") : 'Loading categories…'} className="rounded-[14px] bg-warm-low" />
           ) : (
           <div className="grid grid-cols-2 gap-3 sm:gap-md md:grid-cols-4">
             {categoriesList.map((c) => (
@@ -297,7 +299,7 @@ export default function HomePage() {
 
             {selLoading ? (
               <LoadingState
-                label={isFr ? 'Chargement des produits…' : 'Loading products…'}
+                label={isFr ? tx("Chargement des produits…") : 'Loading products…'}
                 className="rounded-[14px] border border-line bg-white"
               />
             ) : needsLogin ? (
@@ -306,19 +308,19 @@ export default function HomePage() {
                 title={isFr ? 'Connectez-vous pour voir les produits du jour' : 'Log in to see today’s products'}
                 description={
                   isFr
-                    ? 'Les produits et les prix du marché sont réservés aux clients connectés.'
+                    ? tx("Les produits et les prix du marché sont réservés aux clients connectés.")
                     : 'Market products and prices are available to signed-in customers.'
                 }
                 action={
                   <Link to="/connexion" className="rounded-lg bg-primary-container px-lg py-3 font-bold text-white">
-                    {isFr ? 'Se connecter' : 'Log in'}
+                    {isFr ? tx("Se connecter") : 'Log in'}
                   </Link>
                 }
                 className="rounded-[14px] border border-line bg-white px-md"
               />
             ) : selError ? (
               <ApiErrorState
-                title={isFr ? 'Impossible de charger les produits' : 'Unable to load products'}
+                title={isFr ? tx("Impossible de charger les produits") : 'Unable to load products'}
                 message={selError}
                 onRetry={retry}
                 className="rounded-[14px] border border-line bg-white px-md"
@@ -410,7 +412,7 @@ export default function HomePage() {
                 onClick={sendOffer}
                 className="w-full bg-secondary text-white font-bold py-2 rounded-lg mt-2 text-xs sm:text-sm scale-interaction cursor-pointer disabled:cursor-wait disabled:opacity-60"
               >
-                {sendingOffer ? (isFr ? 'Envoi…' : 'Sending…') : t('home.sendOffer')}
+                {sendingOffer ? (isFr ? tx("Envoi…") : 'Sending…') : t('home.sendOffer')}
               </button>
             </div>
           </div>

@@ -2,6 +2,10 @@ import type { ReactNode } from 'react';
 import AdminSidebar from './AdminSidebar';
 import MIcon from '../../shared/MIcon';
 import AdminNotificationBell from './AdminNotificationBell';
+import LangToggle from '../../shared/LangToggle';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -14,6 +18,7 @@ interface AdminLayoutProps {
  * sidebar sombre + top bar fixe (recherche, notifications, aide, profil) + canvas.
  */
 export default function AdminLayout({ children, currentPath, mainClassName }: AdminLayoutProps) {
+  useLanguage();
   return (
     <div className="bg-bg-app text-on-surface font-body min-h-screen">
       <AdminSidebar currentPath={currentPath} />
@@ -28,12 +33,13 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
             />
             <input
               type="text"
-              placeholder="Rechercher une commande, un utilisateur..."
+              placeholder={tx("Rechercher une commande, un utilisateur...")}
               className="w-full pl-10 pr-4 py-1.5 text-secondary text-label bg-bg-app border-none rounded-lg focus:ring-2 focus:ring-primary-container focus:ring-opacity-20 placeholder:text-text-tertiary"
             />
           </div>
         </div>
         <div className="flex items-center gap-md">
+          <LangToggle />
           {/* Vraies notifications (GET /notifications) : compteur, liste, marquer comme lue */}
           <AdminNotificationBell
             className="p-2 text-text-secondary hover:bg-bg-app rounded-full transition-all active:scale-[0.97] cursor-pointer"
@@ -51,7 +57,7 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
             <div className="w-8 h-8 rounded-full bg-primary-light text-primary-dark flex items-center justify-center text-micro font-bold">
               AT
             </div>
-            <span className="font-secondary text-label font-bold text-primary">Admin TOKPa</span>
+            <span className="font-secondary text-label font-bold text-primary">{tx("Admin TOKPa")}</span>
           </div>
         </div>
       </header>

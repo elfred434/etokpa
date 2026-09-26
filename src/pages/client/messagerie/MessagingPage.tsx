@@ -10,6 +10,8 @@ import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import { windowEcho } from '../../../services/realtime/echo';
 import { chatApi, ordersApi, type ConversationItem, type MessageItem } from '../../../services/api';
+import { tx } from '../../../i18n/tx';
+
 
 interface UIConversation {
   id: number;
@@ -278,7 +280,7 @@ export default function MessagingPage() {
                 <div className="bg-bg-app border border-border-default rounded-lg p-md text-center">
                   <MIcon name="chat_bubble_outline" className="text-3xl text-text-tertiary mb-2" />
                   <p className="font-label text-label text-text-secondary font-bold">
-                    {isFr ? 'Aucune conversation' : 'No conversation'}
+                    {isFr ? tx("Aucune conversation") : 'No conversation'}
                   </p>
                   <p className="text-xs text-text-tertiary mt-1">
                     {isFr
@@ -367,7 +369,7 @@ export default function MessagingPage() {
               <div className="flex items-center gap-sm">
                 <MIcon name="shopping_bag" className="text-primary-container" />
                 <span className="font-label text-label text-text-main">
-                  {isFr ? 'Commande' : 'Order'}{' '}
+                  {isFr ? tx("Commande") : 'Order'}{' '}
                   <strong className="text-primary-container">#TOK-{activeOrder.orderId}</strong> ·{' '}
                   {fmtFCFA(activeOrder.total)} · {STATUT_LABELS[activeOrder.statut] ?? activeOrder.statut}
                 </span>
@@ -377,7 +379,7 @@ export default function MessagingPage() {
                 search={{ order: String(activeOrder.orderId) }}
                 className="text-primary-container font-bold text-label hover:underline"
               >
-                {isFr ? 'Suivre' : 'Track'}
+                {isFr ? tx("Suivre") : 'Track'}
               </Link>
             </div>
           )}
@@ -388,11 +390,11 @@ export default function MessagingPage() {
               <div className="m-auto text-center">
                 <MIcon name="chat" className="text-5xl text-text-tertiary mb-3" />
                 <p className="font-label text-label text-text-secondary font-bold">
-                  {isFr ? 'Début de la conversation' : 'Start of the conversation'}
+                  {isFr ? tx("Début de la conversation") : 'Start of the conversation'}
                 </p>
                 <p className="text-xs text-text-tertiary mt-1">
                   {isFr
-                    ? 'Écrivez au livreur pour préciser le lieu de livraison.'
+                    ? tx("Écrivez au livreur pour préciser le lieu de livraison.")
                     : 'Message the rider to clarify the delivery spot.'}
                 </p>
               </div>
@@ -437,7 +439,7 @@ export default function MessagingPage() {
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder={isFr ? 'Écrire un message...' : 'Type a message...'}
+                placeholder={isFr ? tx("Écrire un message...") : 'Type a message...'}
                 className="bg-transparent border-none focus:ring-0 text-body py-[10px] w-full text-sm outline-none"
               />
               <button

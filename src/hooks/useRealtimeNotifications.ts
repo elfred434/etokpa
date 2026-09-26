@@ -27,12 +27,12 @@ export function subscribeRealtimeRefresh(scopes: RealtimeRefreshEvent['scope'][]
   return () => window.removeEventListener('tokpa:realtime-refresh', handler as EventListener);
 }
 
-const STATUT_LABELS_FR: Record<string, string> = {
-  en_attente: 'en attente',
-  en_preparation: 'en préparation',
-  en_livraison: 'en livraison',
-  livre: 'livrée',
-  annule: 'annulée',
+const STATUT_LABELS: Record<string, { fr: string; en: string }> = {
+  en_attente: { fr: 'en attente', en: 'pending' },
+  en_preparation: { fr: 'en préparation', en: 'preparing' },
+  en_livraison: { fr: 'en livraison', en: 'out for delivery' },
+  livre: { fr: 'livrée', en: 'delivered' },
+  annule: { fr: 'annulée', en: 'cancelled' },
 };
 
 /**
@@ -64,11 +64,11 @@ export function useRealtimeNotifications(sessionKey: number): void {
     const channel = echo.private(`notifications.${user.id}`);
 
     const onStatusChanged = (data: { order_id: number; statut: string; previous: string }) => {
-      const label = STATUT_LABELS_FR[data.statut] ?? data.statut;
+      const label = STATUT_LABELS[data.statut];
       toast(
         isFrRef.current
-          ? `Commande #${data.order_id} : ${label}`
-          : `Order #${data.order_id}: ${data.statut}`,
+          ? `Commande #${data.order_id} : ${label?.fr ?? data.statut}`
+          : `Order #${data.order_id}: ${label?.en ?? data.statut}`,
       );
       emitRealtimeRefresh({ scope: 'orders', payload: data });
       emitRealtimeRefresh({ scope: 'notifications' });

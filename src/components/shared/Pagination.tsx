@@ -1,5 +1,8 @@
 import clsx from 'clsx';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import { useLanguage } from '../../context/LanguageContext';
+import { tx } from '../../i18n/tx';
+
 
 interface PaginationProps {
   page: number;
@@ -10,6 +13,7 @@ interface PaginationProps {
 
 /** Pagination carrés 40px : actif orange, ellipsis si beaucoup de pages (maquettes). */
 export default function Pagination({ page, pageCount, onChange, className }: PaginationProps) {
+  useLanguage();
   const pages: (number | '…')[] =
     pageCount <= 5
       ? Array.from({ length: pageCount }, (_, i) => i + 1)
@@ -29,7 +33,7 @@ export default function Pagination({ page, pageCount, onChange, className }: Pag
         className={clsx(cell, 'bg-card text-ink-2 hover:text-ink disabled:opacity-40')}
         disabled={page <= 1}
         onClick={() => onChange(page - 1)}
-        aria-label="Page précédente"
+        aria-label={tx("Page précédente")}
       >
         <IconChevronLeft size={18} />
       </button>
@@ -58,7 +62,7 @@ export default function Pagination({ page, pageCount, onChange, className }: Pag
         className={clsx(cell, 'bg-card text-ink-2 hover:text-ink disabled:opacity-40')}
         disabled={page >= pageCount}
         onClick={() => onChange(page + 1)}
-        aria-label="Page suivante"
+        aria-label={tx("Page suivante")}
       >
         <IconChevronRight size={18} />
       </button>

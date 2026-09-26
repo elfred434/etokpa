@@ -7,6 +7,9 @@ import ClientFooter from '../../../components/layout/client/ClientFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import { alertApiError } from '../../../utils/apiError';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+
 
 /**
  * Données passées par CartPage après POST /api/orders (vraies valeurs backend).
@@ -36,6 +39,7 @@ const PAY_MSG: Record<string, string> = {
  * Les valeurs affichées proviennent de la commande réellement créée (state) ; fallbacks neutres si accès direct.
  */
 export default function ConfirmationPage() {
+  useLanguage();
   const navigate = useNavigate();
   const state = useRouterState({ select: (s) => s.location.state as ConfirmationState | undefined });
   const total = state?.total ?? 0;
@@ -62,8 +66,8 @@ export default function ConfirmationPage() {
         if (!alive) return;
         const st = p?.statut ?? null;
         setPayStatut(st);
-        finalRef.current = st !== null && st !== 'en_attente';
-        if (st === 'en_attente' && ++tries < 36) timer = setTimeout(load, 5000);
+        finalRef.current = st !== null && st !== "en_attente";
+        if (st === "en_attente" && ++tries < 36) timer = setTimeout(load, 5000);
       } catch (err) {
         alertApiError(err, 'payment-status');
       }
@@ -83,8 +87,8 @@ export default function ConfirmationPage() {
     };
   }, [paymentId]);
 
-  const payMessage = (payStatut && PAY_MSG[payStatut]) || 'Votre commande a bien été enregistrée';
-  const totalLabel = payStatut === 'reussi' || payStatut === 'rembourse' ? 'Total payé' : 'Total à payer';
+  const payMessage = tx((payStatut && PAY_MSG[payStatut]) || "Votre commande a bien été enregistrée");
+  const totalLabel = payStatut === "reussi" || payStatut === "rembourse" ? tx("Total payé") : tx("Total à payer");
 
   return (
     <div className="bg-bg-app font-body text-text-main flex flex-col min-h-screen">
@@ -121,8 +125,8 @@ export default function ConfirmationPage() {
           </div>
 
           {/* Title & Messaging */}
-          <h1 className="font-h1 text-h1 text-text-main mb-sm font-bold">Commande confirmée !</h1>
-          <p className={`font-body text-body mb-md ${payStatut === 'echoue' ? 'text-error' : 'text-text-secondary'}`}>
+          <h1 className="font-h1 text-h1 text-text-main mb-sm font-bold">{tx("Commande confirmée !")}</h1>
+          <p className={`font-body text-body mb-md ${payStatut === "echoue" ? 'text-error' : 'text-text-secondary'}`}>
             {payMessage}
           </p>
 
@@ -144,33 +148,33 @@ export default function ConfirmationPage() {
             <div className="h-[1px] bg-border-default w-full" />
             {paymentRef && (
               <div className="flex justify-between gap-md">
-                <span className="font-body text-text-secondary">Référence FedaPay</span>
+                <span className="font-body text-text-secondary">{tx("Référence FedaPay")}</span>
                 <span className="font-body font-medium text-text-main text-right break-all">{paymentRef}</span>
               </div>
             )}
             {payStatut && (
               <div className="flex justify-between">
-                <span className="font-body text-text-secondary">Statut du paiement</span>
-                <span className={`font-body font-bold ${payStatut === 'reussi' ? 'text-success' : payStatut === 'echoue' ? 'text-error' : 'text-amber-text'}`}>
+                <span className="font-body text-text-secondary">{tx("Statut du paiement")}</span>
+                <span className={`font-body font-bold ${payStatut === "reussi" ? 'text-success' : payStatut === "echoue" ? 'text-error' : 'text-amber-text'}`}>
                   {payStatut}
                 </span>
               </div>
             )}
             <div className="space-y-sm">
               <div className="flex justify-between">
-                <span className="font-body text-text-secondary">Zone de livraison</span>
+                <span className="font-body text-text-secondary">{tx("Zone de livraison")}</span>
                 <span className="font-body font-medium text-text-main">{zoneNom}</span>
               </div>
               <div className="flex justify-between">
-                <span className="font-body text-text-secondary">Point de repère</span>
+                <span className="font-body text-text-secondary">{tx("Point de repère")}</span>
                 <span className="font-body font-medium text-text-main text-right">{landmarkNom}</span>
               </div>
               <div className="flex justify-between">
-                <span className="font-body text-text-secondary">Arrivée estimée</span>
+                <span className="font-body text-text-secondary">{tx("Arrivée estimée")}</span>
                 <span className="font-body font-medium text-text-main">30–45 minutes</span>
               </div>
               <div className="flex justify-between">
-                <span className="font-body text-text-secondary">Livreur assigné</span>
+                <span className="font-body text-text-secondary">{tx("Livreur assigné")}</span>
                 <span className="font-body font-medium text-primary italic">En cours d'assignation...</span>
               </div>
             </div>
@@ -186,7 +190,7 @@ export default function ConfirmationPage() {
               className="w-full bg-primary-container text-white font-label font-bold h-[48px] rounded-lg flex items-center justify-center gap-sm hover:bg-primary-hover active:scale-95 transition-all shadow-md cursor-pointer"
             >
               <MIcon name="map" className="text-[20px]" />
-              Suivre ma commande
+              {tx("Suivre ma commande")}
             </button>
             <button
               type="button"
@@ -200,24 +204,24 @@ export default function ConfirmationPage() {
           {/* Footer Link */}
           <button
             type="button"
-            onClick={() => toast('Support client TOKPa — ouvert 7j/7')}
+            onClick={() => toast(tx("Support client TOKPa — ouvert 7j/7"))}
             className="mt-lg flex items-center gap-xs font-label text-primary-container font-bold hover:underline transition-all cursor-pointer"
           >
             <MIcon name="headset_mic" className="text-[18px]" />
-            Besoin d'aide ? Contactez le support
+            {tx("Besoin d'aide ? Contactez le support")}
           </button>
 
           {/* Promo Banner */}
           <button
             type="button"
-            onClick={() => toast.success('Lien de parrainage copié ! Partagez-le avec vos proches.')}
+            onClick={() => toast.success(tx("Lien de parrainage copié ! Partagez-le avec vos proches."))}
             className="w-full mt-xl bg-primary-tint border border-primary-light rounded-lg p-md flex items-center justify-between text-left hover:bg-primary-light/30 transition-all cursor-pointer"
           >
             <div className="flex flex-col">
               <span className="font-label text-primary-dark font-bold text-h3 flex items-center gap-1">
                 🌟 Partagez TOKPa avec vos amis
               </span>
-              <span className="text-micro text-primary">Obtenez 500 FCFA sur votre prochaine commande</span>
+              <span className="text-micro text-primary">{tx("Obtenez 500 FCFA sur votre prochaine commande")}</span>
             </div>
             <MIcon name="chevron_right" className="text-primary-dark" />
           </button>
