@@ -4,7 +4,7 @@ import { tr, tx } from '../i18n/tx';
 
 /**
  * Garde de connexion (décision du 24/09) : sans session, toute page redirige vers /connexion,
- * SAUF l'accueil et les écrans d'authentification (sinon boucle de redirection).
+ * SAUF l'accueil, le catalogue, le profil et les écrans d'authentification (sinon boucle).
  * Session = token Sanctum dans le localStorage ; sa validité réelle est vérifiée par l'API
  * (401 → services/api/client.ts émet `tokpa:session-expired`).
  */
@@ -15,6 +15,7 @@ export const PUBLIC_PATHS: readonly string[] = [
   '/verification-2fa',
   '/reset-password',
   '/profil',
+  '/catalogue',
 ];
 
 const AUTH_TOAST_ID = 'auth-required';
@@ -30,7 +31,10 @@ const under = (path: string, base: string) => path === base || path.startsWith(`
 
 /** Chemin public ? (tolère un « / » final : /connexion/ = /connexion). */
 export function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.includes(normPath(pathname));
+  const path = normPath(pathname);
+  // La fiche produit fait partie du catalogue public (GET /products/{id} sans jeton).
+  if (path === '/produit' || path.startsWith('/produit/')) return true;
+  return PUBLIC_PATHS.includes(path);
 }
 
 /** Une session est-elle ouverte côté front ? */

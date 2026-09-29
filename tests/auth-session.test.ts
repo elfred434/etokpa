@@ -24,7 +24,9 @@ describe('session and public paths', () => {
 
   it('treats auth screens as public, including a trailing slash', () => {
     expect(isPublicPath('/connexion/')).toBe(true);
-    expect(isPublicPath('/catalogue')).toBe(false);
+    expect(isPublicPath('/catalogue')).toBe(true);
+    expect(isPublicPath('/produit/12')).toBe(true);
+    expect(isPublicPath('/panier')).toBe(false);
     expect(hasSession()).toBe(false);
     localStorage.setItem('tokpa_token', 'tok');
     expect(hasSession()).toBe(true);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -7,7 +7,7 @@ import MIcon from '../../components/shared/MIcon';
 import LangToggle from '../../components/shared/LangToggle';
 import { authApi } from '../../services/api';
 import { extractApiError, formatApiError } from '../../utils/apiError';
-import { currentRole, postLoginTarget } from '../../routes/authGuard';
+import { currentRole, hasSession, postLoginTarget } from '../../routes/authGuard';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 
@@ -29,6 +29,8 @@ export default function Verification2faPage() {
   const [attemptsLeft, setAttemptsLeft] = useState(MAX_ATTEMPTS);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Empêche l'effet « pas d'email » de renvoyer vers /connexion après une 2FA réussie.
+  const verified = useRef(false);
 
   // Email de la connexion (ou de l'inscription) en cours. Aucun email de repli : avant, sans connexion
   // en cours, la page utilisait « client@tokpa.bj », à qui « Renvoyer le code » envoyait un vrai code.
@@ -43,9 +45,10 @@ export default function Verification2faPage() {
     return () => window.clearInterval(timer);
   }, [expired]);
 
-  // Pas de connexion en cours (accès direct à /verification-2fa, email déjà utilisé) → retour à la connexion.
+  // Accès direct à /verification-2fa, sans login en cours. Après une 2FA réussie, l'email
+  // est effacé et setLoading relance ce rendu : ne pas écraser la destination du rôle.
   useEffect(() => {
-    if (pendingEmail) return;
+    if (pendingEmail || verified.current || hasSession()) return;
     toast.error(tx("Aucune connexion en cours : saisissez d’abord votre email et votre mot de passe."), { id: '2fa-no-email' });
     navigate({ to: '/connexion', replace: true });
   }, [pendingEmail, navigate]);
@@ -60,11 +63,11 @@ export default function Verification2faPage() {
     try {
       // Tentative d'appel API Backend POST /api/auth/verify-2fa
       const res = await authApi.verify2fa({ email: pendingEmail, code });
+      verified.current = true;
       localStorage.removeItem('tokpa_pending_email'); // connexion terminée : l'email en attente ne sert plus
       toast.success(res.message || tx("Authentification réussie !"));
-      // Retour à la page demandée avant la connexion si ce rôle y a droit ; sinon l'espace du rôle
-      // (admin → /admin, manager → /manager, client/livreur → accueil).
-      navigate({ href: postLoginTarget(currentRole()) });
+      // Ouverture directe de /connexion : espace du rôle. Sinon, la page demandée avant le login.
+      navigate({ href: postLoginTarget(currentRole()), replace: true });
     } catch (err: unknown) {
       console.warn('API 2FA verification error:', err);
       // Pas de fallback factice : sans token réel du backend, on ne « connecte » personne.
