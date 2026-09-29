@@ -12,6 +12,7 @@ import { clear, remove, setQuantity, selectCount, selectSubtotal, selectSavings 
 import { authApi, catalogApi, landmarksApi, ordersApi, paymentsApi, readCreatedOrder } from '../../../services/api';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
+import { saveConfirmation } from '../confirmation-commande/confirmationMemory';
 
 
 interface ApiLandmark {
@@ -199,6 +200,16 @@ export default function CartPage() {
         paymentId = Number(payment?.id) || undefined;
         paymentRef = payment?.fedapay_ref ?? undefined;
         paymentCurrency = paymentRes?.currency || 'XOF';
+        saveConfirmation({
+          orderId,
+          total: orderTotal,
+          zoneNom: selectedZone.nom,
+          landmarkNom,
+          nbItems: count,
+          paymentId,
+          paymentRef,
+          paymentCurrency,
+        });
         const redirectUrl: string | undefined = paymentRes?.redirect_url ?? undefined;
         if (redirectUrl) {
           const isRealFedaPay = /fedapay\.com/i.test(redirectUrl);
@@ -227,6 +238,8 @@ export default function CartPage() {
         paymentRef,
         paymentCurrency,
       };
+      // FedaPay recharge /confirmation?status=&id= : le state React disparaît.
+      saveConfirmation(payload);
       navigate({ to: '/confirmation', state: payload as unknown as Record<string, unknown> });
     } catch (err: unknown) {
       // Statut + message exact de l'API (erreurs de validation comprises)

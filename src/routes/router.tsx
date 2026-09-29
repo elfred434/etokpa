@@ -108,7 +108,16 @@ const catalogueRoute = createRoute({
 });
 const produitRoute = createRoute({ getParentRoute: () => rootRoute, path: '/produit/$productId', component: ProductPage });
 const panierRoute = createRoute({ getParentRoute: () => rootRoute, path: '/panier', component: CartPage });
-const confirmationRoute = createRoute({ getParentRoute: () => rootRoute, path: '/confirmation', component: ConfirmationPage });
+const confirmationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/confirmation',
+  component: ConfirmationPage,
+  // Retour navigateur FedaPay : /confirmation?status=approved&id=515107
+  validateSearch: (search: Record<string, unknown>): { status?: string; id?: string } => ({
+    status: typeof search.status === 'string' ? search.status : undefined,
+    id: typeof search.id === 'string' || typeof search.id === 'number' ? String(search.id) : undefined,
+  }),
+});
 const profilRoute = createRoute({ getParentRoute: () => rootRoute, path: '/profil', component: ProfilePage });
 const negociationsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/negociations', component: NegotiationsPage });
 const orderTrackingRoute = createRoute({

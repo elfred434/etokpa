@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { useRouterState, useNavigate } from '@tanstack/react-router';
+import { useRouterState, useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
-import { paymentsApi } from '../../../services/api';
+import { catalogApi, ordersApi, paymentsApi } from '../../../services/api';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientFooter from '../../../components/layout/client/ClientFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
@@ -9,6 +9,7 @@ import MIcon from '../../../components/shared/MIcon';
 import { alertApiError } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
+import { loadConfirmation, statutFromFedaPayReturn, type ConfirmationMemory } from './confirmationMemory';
 
 
 /**
@@ -38,17 +39,72 @@ const PAY_MSG: Record<string, string> = {
  * Page Confirmation de Commande — Reproduction 100% intégrale et fidèle de Stitch HTML `confirmation_de_commande_tokpa/code.html`
  * Les valeurs affichées proviennent de la commande réellement créée (state) ; fallbacks neutres si accès direct.
  */
+function asOrder(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object') return null;
+  const row = value as Record<string, unknown>;
+  const nested = row.data;
+  if (nested && typeof nested === 'object' && 'id' in (nested as object)) return nested as Record<string, unknown>;
+  return row;
+}
+
 export default function ConfirmationPage() {
   useLanguage();
   const navigate = useNavigate();
-  const state = useRouterState({ select: (s) => s.location.state as ConfirmationState | undefined });
+  const { status, id: fedapayId } = useSearch({ from: '/confirmation' });
+  const passed = useRouterState({ select: (s) => s.location.state as ConfirmationState | undefined });
+  const remembered = !passed?.orderId ? loadConfirmation(fedapayId) : null;
+  const [restored, setRestored] = useState<ConfirmationMemory | null>(remembered);
+  const state = passed?.orderId ? passed : restored ?? passed;
+
+  useEffect(() => {
+    if (passed?.orderId || restored?.orderId || (!fedapayId && !status)) return;
+    if (!localStorage.getItem('tokpa_token')) return;
+    let alive = true;
+    (async () => {
+      try {
+        const listRes = await ordersApi.getOrders(1);
+        const raw = (listRes?.data ?? listRes ?? []) as unknown[];
+        const first = asOrder(Array.isArray(raw) ? raw[0] : null);
+        const orderId = Number(first?.id ?? 0);
+        if (!orderId) return;
+        const detailRes = await ordersApi.getOrder(orderId);
+        const detail = asOrder(detailRes);
+        if (!detail || !alive) return;
+        const landmark = detail.landmark as { nom?: string; zone_id?: number } | undefined;
+        let zoneNom: string | undefined;
+        if (landmark?.zone_id) {
+          const zonesRes = await catalogApi.getZones();
+          const zones = (zonesRes?.data ?? zonesRes ?? []) as unknown[];
+          const match = zones.map(asOrder).find((z) => Number(z?.id) === landmark.zone_id);
+          zoneNom = typeof match?.nom === 'string' ? match.nom : undefined;
+        }
+        const payment = detail.payment as { id?: number } | undefined;
+        setRestored({
+          orderId,
+          total: Number(detail.montant_total ?? 0),
+          zoneNom,
+          landmarkNom: landmark?.nom,
+          paymentId: payment?.id ? Number(payment.id) : undefined,
+          paymentRef: fedapayId,
+          paymentCurrency: 'XOF',
+        });
+      } catch (err) {
+        alertApiError(err, 'confirmation-order');
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [passed?.orderId, restored?.orderId, fedapayId, status]);
+
   const total = state?.total ?? 0;
   const zoneNom = state?.zoneNom ?? '—';
   const landmarkNom = state?.landmarkNom ?? '—';
   const orderNumber = state?.orderId ? `#TOK-${state.orderId}` : null;
   const paymentId = state?.paymentId;
-  const paymentRef = state?.paymentRef;
+  const paymentRef = state?.paymentRef ?? fedapayId;
   const paymentCurrency = state?.paymentCurrency ?? 'XOF';
+  const returnStatut = statutFromFedaPayReturn(status);
 
   // Statut réel du paiement — GET /api/payments/{id}. Relu toutes les 5 s tant qu'il est
   // « en_attente » (3 min max) et au retour sur l'onglet (le client revient de FedaPay).
@@ -87,8 +143,11 @@ export default function ConfirmationPage() {
     };
   }, [paymentId]);
 
-  const payMessage = tx((payStatut && PAY_MSG[payStatut]) || "Votre commande a bien été enregistrée");
-  const totalLabel = payStatut === "reussi" || payStatut === "rembourse" ? tx("Total payé") : tx("Total à payer");
+  // Le webhook local n'est pas toujours joignable. Le retour FedaPay (?status=approved) fait foi
+  // tant que l'API dit encore en_attente.
+  const shownStatut = payStatut && payStatut !== 'en_attente' ? payStatut : (returnStatut ?? payStatut);
+  const payMessage = tx((shownStatut && PAY_MSG[shownStatut]) || "Votre commande a bien été enregistrée");
+  const totalLabel = shownStatut === "reussi" || shownStatut === "rembourse" ? tx("Total payé") : tx("Total à payer");
 
   return (
     <div className="bg-bg-app font-body text-text-main flex flex-col min-h-screen">
@@ -126,7 +185,7 @@ export default function ConfirmationPage() {
 
           {/* Title & Messaging */}
           <h1 className="font-h1 text-h1 text-text-main mb-sm font-bold">{tx("Commande confirmée !")}</h1>
-          <p className={`font-body text-body mb-md ${payStatut === "echoue" ? 'text-error' : 'text-text-secondary'}`}>
+          <p className={`font-body text-body mb-md ${shownStatut === "echoue" ? 'text-error' : 'text-text-secondary'}`}>
             {payMessage}
           </p>
 
@@ -152,11 +211,11 @@ export default function ConfirmationPage() {
                 <span className="font-body font-medium text-text-main text-right break-all">{paymentRef}</span>
               </div>
             )}
-            {payStatut && (
+            {shownStatut && (
               <div className="flex justify-between">
                 <span className="font-body text-text-secondary">{tx("Statut du paiement")}</span>
-                <span className={`font-body font-bold ${payStatut === "reussi" ? 'text-success' : payStatut === "echoue" ? 'text-error' : 'text-amber-text'}`}>
-                  {payStatut}
+                <span className={`font-body font-bold ${shownStatut === "reussi" ? 'text-success' : shownStatut === "echoue" ? 'text-error' : 'text-amber-text'}`}>
+                  {shownStatut}
                 </span>
               </div>
             )}
