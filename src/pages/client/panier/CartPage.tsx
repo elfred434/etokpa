@@ -9,7 +9,7 @@ import { alertApiError } from '../../../utils/apiError';
 import EmptyState from '../../../components/shared/EmptyState';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { clear, remove, setQuantity, selectCount, selectSubtotal, selectSavings } from '../../../store/slices/cart/cartSlice';
-import { authApi, catalogApi, landmarksApi, ordersApi, paymentsApi } from '../../../services/api';
+import { authApi, catalogApi, landmarksApi, ordersApi, paymentsApi, readCreatedOrder } from '../../../services/api';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
@@ -176,20 +176,25 @@ export default function CartPage() {
         payment_method: 'fedapay',
       });
 
-      const orderData = orderRes?.data ?? orderRes;
-      const orderId: number = orderData?.id ?? 0;
-      const orderTotal: number = Number(orderData?.montant_total ?? grandTotal);
+      const created = readCreatedOrder(orderRes);
+      const orderId = created.id;
+      const orderTotal = Number(created.montantTotal ?? grandTotal);
       const landmarkNom: string =
         landmarkNomSel ??
         (selectedZone.points_repere ?? []).find((l) => l.id === landmarkId)?.nom ??
         selectedZone.nom;
 
-      // 2) POST /api/payments/init — FedaPay (sandbox si SDK absent)
+      if (!orderId) {
+        toast.error(tx("La commande n'a pas renvoyé de numéro. Le paiement n'a pas été relancé."));
+        return;
+      }
+
+      // 2) Le nouveau backend renvoie déjà le paiement. Sinon, ancien POST /payments/init.
       let paymentId: number | undefined;
       let paymentRef: string | undefined;
       let paymentCurrency = 'XOF';
       try {
-        const paymentRes = await paymentsApi.initPayment({ order_id: orderId });
+        const paymentRes = created.payment ?? await paymentsApi.initPayment({ order_id: orderId });
         const payment = paymentRes?.payment;
         paymentId = Number(payment?.id) || undefined;
         paymentRef = payment?.fedapay_ref ?? undefined;

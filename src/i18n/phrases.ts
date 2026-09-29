@@ -468,6 +468,7 @@ export const EN: Record<string, string> = {
   "Commande confirmée &amp; Prise en charge": "Order confirmed & accepted",
   "Commande en préparation": "Order being prepared",
   "Commande enregistrée avec succès !": "Order saved successfully!",
+  "La commande n'a pas renvoyé de numéro. Le paiement n'a pas été relancé.": "The order did not return a number. Payment was not started again.",
   "Commande envoyée avec succès au cluster.": "Command sent to the cluster successfully.",
   "Commande livrée": "Order delivered",
   "Commande passée le": "Order placed on",
