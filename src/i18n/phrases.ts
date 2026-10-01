@@ -3110,4 +3110,13 @@ export const EN: Record<string, string> = {
   "Synchroniser la langue avec mon compte": "Sync the language with my account",
   "La langue du compte n'est pas encore enregistrée côté serveur.": "Account language is not stored on the server yet.",
   "Elle reste enregistrée dans ce navigateur.": "It stays saved in this browser.",
+  "Détails de la catégorie": "Category details",
+  "Détails du pack": "Pack details",
+  "Stock": "Stock",
+  "Aucune description.": "No description.",
+  "Produits inclus": "Included products",
+  "Parent": "Parent",
+  "Description": "Description",
+  "Slug": "Slug",
+  "Image": "Image",
 };
