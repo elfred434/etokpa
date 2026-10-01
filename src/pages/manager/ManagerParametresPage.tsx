@@ -2,6 +2,7 @@ import { useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
+import { currentUserZone } from '../../routes/authGuard';
 
 
 const ONGLETS = ['Zone & Tarification', 'Règles d’attribution', 'Alertes & Notifications', 'Compte & Sécurité'];
@@ -69,13 +70,15 @@ export default function ManagerParametresPage() {
           {onglet === ONGLETS[0] && (
             <div className="space-y-6">
               <section className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
-                <h2 className="text-h3 font-h3 font-bold">{tx("Périmètre Opérationnel — Zone Akpakpa")}</h2>
+                <h2 className="text-h3 font-h3 font-bold">
+                  {tx("Périmètre opérationnel")} — {currentUserZone() ?? tx("Zone non attribuée")}
+                </h2>
                 <p className="text-label text-text-secondary">
                   {tx("Définition de la couverture géographique et des marchés couverts")}
                 </p>
                 <div className="mt-4">
                   <Ligne label={tx("Nom officiel de la zone")}>
-                    <input type="text" defaultValue={tx("Zone Akpakpa")} className={inputCls} />
+                    <input type="text" defaultValue={currentUserZone() ?? ''} className={inputCls} />
                   </Ligne>
                   <Ligne label="Rayon de couverture maximal">
                     <select className={inputCls} defaultValue="12 km (Akpakpa)">

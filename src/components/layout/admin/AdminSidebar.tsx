@@ -100,6 +100,10 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
         style={{ borderColor: 'rgba(249, 115, 22, 0.15)' }}
       >
         {/* Bascule vers l'espace client (l'admin y a accès) */}
+        <Link to="/manager" className={IDLE_CLASS}>
+          <MIcon name="supervisor_account" />
+          <span className="font-secondary text-body">{tx("Espace manager")}</span>
+        </Link>
         <Link to="/" className={IDLE_CLASS}>
           <MIcon name="storefront" />
           <span className="font-secondary text-body">{tx("Espace client")}</span>

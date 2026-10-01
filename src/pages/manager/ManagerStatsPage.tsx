@@ -6,6 +6,7 @@ import { unwrap, fmtFcfa } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
+import { currentUserZone } from '../../routes/authGuard';
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -49,7 +50,9 @@ export default function ManagerStatsPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-h2 font-h2 font-bold">{tx("Statistiques de la Zone - Akpakpa")}</h1>
+            <h1 className="text-h2 font-h2 font-bold">
+              {tx("Statistiques de la zone")} — {currentUserZone() ?? tx("Zone non attribuée")}
+            </h1>
             <p className="text-text-secondary">{tx("Données réelles — GET /manager/stats")}</p>
           </div>
           <div className="flex flex-wrap gap-2">

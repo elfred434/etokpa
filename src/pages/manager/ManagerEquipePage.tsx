@@ -6,6 +6,7 @@ import { unwrap, listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
+import { currentUserZone } from '../../routes/authGuard';
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -44,7 +45,9 @@ export default function ManagerEquipePage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-h2 font-h2 font-bold">{tx("Mon équipe — Zone Akpakpa")}</h1>
+            <h1 className="text-h2 font-h2 font-bold">
+              {tx("Mon équipe")} — {currentUserZone() ? `Zone ${currentUserZone()}` : tx("Zone non attribuée")}
+            </h1>
             <div className="mt-2 flex flex-wrap gap-2 text-label">
               <span className="rounded-full bg-bg-secondary px-2.5 py-1 font-semibold">{livreurs.length} {tx("livreurs")}</span>
               <span className="rounded-full bg-success-container px-2.5 py-1 font-semibold">{actifs} {tx("actifs")}</span>

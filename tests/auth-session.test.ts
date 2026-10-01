@@ -84,7 +84,7 @@ describe('page roles and route guard', () => {
 
   it('assigns each space to the expected roles', () => {
     expect(pageRoles('/admin/logs')?.roles).toEqual(['admin', 'super_admin']);
-    expect(pageRoles('/manager/stats')?.roles).toEqual(['manager']);
+    expect(pageRoles('/manager/stats')?.roles).toEqual(['manager', 'admin', 'super_admin']);
     expect(pageRoles('/livreur')?.roles).toEqual(['livreur']);
     expect(pageRoles('/panier')).toBeNull();
     expect(canAccess('/panier', 'admin')).toBe(true);
@@ -93,7 +93,10 @@ describe('page roles and route guard', () => {
     expect(pageRoles('/inconnue')).toBeNull();
     expect(canAccess('/', null)).toBe(true);
     expect(canAccess('/catalogue', 'livreur')).toBe(true);
-    expect(canAccess('/manager', 'admin')).toBe(false);
+    expect(canAccess('/manager', 'admin')).toBe(true);
+    expect(canAccess('/manager', 'super_admin')).toBe(true);
+    expect(canAccess('/manager', 'livreur')).toBe(false);
+    expect(canAccess('/admin', 'manager')).toBe(false);
   });
 
   it('does nothing on a public page', () => {

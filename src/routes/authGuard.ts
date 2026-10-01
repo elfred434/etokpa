@@ -65,6 +65,11 @@ export function currentRole(): string | null {
   return role || null;
 }
 
+/** Un admin ou un super-admin. Le backend les laisse aussi passer sur les routes manager. */
+export function isAdminRole(role: string | null = currentRole()): boolean {
+  return role === 'admin' || role === 'super_admin';
+}
+
 /** Nom affichable de l'utilisateur connecté (barres admin / manager / livreur), sinon null. */
 export function currentUserName(): string | null {
   const u = storedUser();
@@ -102,6 +107,7 @@ export function homeForRole(role: string | null): '/admin' | '/manager' | '/livr
 /**
  * Rôles autorisés pour une page — décision du 26/09 :
  *  - admin, manager et livreur vérifient le rôle uniquement dans leur espace ;
+ *  - un admin peut aussi ouvrir l'espace manager (le backend accepte déjà role:manager,admin) ;
  *  - l'espace clientèle ne vérifie pas le rôle : chacun y voit ses propres achats ;
  *  - /profil est public : sans session, une icône de connexion s'y affiche.
  * null = pas de contrôle de rôle (clientèle, ou page inconnue).
@@ -109,7 +115,7 @@ export function homeForRole(role: string | null): '/admin' | '/manager' | '/livr
 export function pageRoles(pathname: string): { roles: AppRole[]; label: string } | null {
   const p = normPath(pathname);
   if (under(p, '/admin')) return { roles: ['admin', 'super_admin'], label: 'aux administrateurs' };
-  if (under(p, '/manager')) return { roles: ['manager'], label: 'aux managers' };
+  if (under(p, '/manager')) return { roles: ['manager', 'admin', 'super_admin'], label: 'aux managers et aux administrateurs' };
   if (under(p, '/livreur')) return { roles: ['livreur'], label: 'aux livreurs' };
   return null;
 }
