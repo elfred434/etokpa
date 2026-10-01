@@ -415,17 +415,15 @@ export default function AdminPacksPage() {
 
       {vue === 'galerie' && (
         <div className="space-y-6">
-          <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#3c2415] via-[#7c2d12] to-[#f97316] px-6 py-7 text-white shadow-xl">
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-orange-100">{tx("Gestion des packs")}</p>
-            <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-black tracking-tight">{tx("Atelier des packs")}</h1>
-                <p className="mt-2 max-w-xl text-sm text-orange-50/90">{tx("Glissez un produit sur la page")}. {tx("La page blanche, c'est le pack.")}</p>
-              </div>
-              <button type="button" className="rounded-2xl bg-white px-5 py-3 text-sm font-bold text-primary-dark shadow-lg transition hover:-translate-y-0.5" onClick={() => aller({ nouveau: 1 })}>
-                {tx("Composer un pack")}
-              </button>
+          <section className="flex h-[168px] max-h-[188px] items-center justify-between gap-6 overflow-hidden rounded-3xl bg-gradient-to-br from-[#3c2415] via-[#7c2d12] to-[#f97316] px-6 text-white shadow-xl">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-orange-100">{tx("Gestion des packs")}</p>
+              <h1 className="mt-1 truncate text-2xl font-black tracking-tight sm:text-3xl">{tx("Atelier des packs")}</h1>
+              <p className="mt-1 line-clamp-3 max-w-3xl text-sm leading-5 text-orange-50/90">{tx("Glissez un produit sur la page")}. {tx("La page blanche, c'est le pack.")}</p>
             </div>
+            <button type="button" className="shrink-0 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-primary-dark shadow-lg transition hover:-translate-y-0.5" onClick={() => aller({ nouveau: 1 })}>
+              {tx("Composer un pack")}
+            </button>
           </section>
 
           <div className="flex flex-wrap items-center gap-3">
