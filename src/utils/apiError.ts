@@ -59,7 +59,7 @@ export function formatApiError(info: ApiErrorInfo): string {
     ' — Backend unreachable (server stopped? CORS? check localhost:8000).',
   );
   }
-  const fields = Object.entries(info.fieldErrors).map(([field, msgs]) => {
+  const fields = Object.entries(info.fieldErrors ?? {}).map(([field, msgs]) => {
     const list = Array.isArray(msgs) ? msgs.join(' ') : String(msgs);
     return `${field} : ${list}`;
   });
@@ -86,4 +86,28 @@ export function alertApiError(err: unknown, toastId?: string): string {
   const text = formatApiError(info);
   if (info.status !== 401) toast.error(text, toastId ? { id: toastId } : undefined);
   return text;
+}
+
+const SQL = /SQLSTATE|Integrity constraint|foreign key|Cannot delete or update a parent row|Erreur serveur/i;
+
+/**
+ * Message affiché quand une suppression est refusée.
+ * Une phrase claire du backend (souvent 409) est montrée telle quelle.
+ * Un 500 SQL brut est remplacé par la raison connue.
+ */
+export function messageRefusSuppression(err: unknown, sujet: 'zone' | 'categorie'): string {
+  const info = extractApiError(err);
+  const brut = (info.message || '').trim();
+  const sql = !brut || SQL.test(brut) || brut.startsWith('Request failed') || brut === 'Server Error';
+  if (!sql) return formatApiError(info);
+  const clair = sujet === 'zone'
+    ? tr(
+      'Impossible de supprimer cette zone : elle contient des points de repère. Retirez-les d’abord.',
+      'Cannot delete this zone: it contains landmarks. Remove them first.',
+    )
+    : tr(
+      'Impossible de supprimer cette catégorie : elle contient des produits déjà commandés.',
+      'Cannot delete this category: it contains products that have already been ordered.',
+    );
+  return info.status != null ? `[HTTP ${info.status}] ${clair}` : clair;
 }

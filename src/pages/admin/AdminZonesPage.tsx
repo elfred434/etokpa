@@ -5,7 +5,7 @@ import { useDesignScript } from '../../utils/designRuntime';
 import { adminApi } from '../../services/api';
 import { useLiveRows } from '../../services/api/useLiveRows';
 import { fmtFcfa } from '../../services/api/unwrap';
-import { formatApiError } from '../../utils/apiError';
+import { extractApiError, formatApiError, messageRefusSuppression } from '../../utils/apiError';
 import { searchPlaces } from '../../services/api/geocode';
 import type { GeoPlace } from '../../services/api/geocode';
 import DESIGN_SCRIPT from './_scripts/AdminZonesPage';
@@ -187,6 +187,7 @@ export default function AdminZonesPage() {
   const { rows: managers } = useLiveRows(() => adminApi.getUsers({ role: 'manager', per_page: 100 }));
   const { rows: livreurs } = useLiveRows(() => adminApi.getUsers({ role: 'livreur', per_page: 100 }));
   const [selId, setSelId] = useState<number | null>(null);
+  const [refus, setRefus] = useState('');
   const [f, setF] = useState({ nom: '', km_prix: '', description: '', manager: '' });
   const [tileIdx, setTileIdx] = useState(0);
   const [modal, setModal] = useState<null | 'zone' | 'lm'>(null);
@@ -201,6 +202,7 @@ export default function AdminZonesPage() {
     rows.filter((u: any) => String(u.zone?.id ?? u.zone_id ?? u.profil?.zone?.id ?? '') === String(id)).length;
 
   const selectZone = (z: any) => {
+    setRefus('');
     setSelId(z.id);
     setF({
       nom: String(z.nom ?? ''),
@@ -233,19 +235,33 @@ export default function AdminZonesPage() {
       reload();
       reloadLm();
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      window.alert(formatApiError(extractApiError(e)));
     }
   };
   const delZone = async () => {
     if (!sel) return;
-    if (!window.confirm(tr(`Supprimer la zone « ${sel.nom} » et ses points de repère ?`, `Delete zone “${sel.nom}” and its landmarks?`))) return;
+    const nested = Array.isArray(sel.points_repere) ? sel.points_repere.length : Array.isArray(sel.pointsRepere) ? sel.pointsRepere.length : 0;
+    const n = Math.max(landmarks.filter((l: any) => String(l.zone_id) === String(sel.id)).length, nested);
+    if (n > 0) {
+      const msg = tr(
+        `Impossible de supprimer la zone « ${sel.nom} » : elle contient ${n} point${n > 1 ? 's' : ''} de repère. Retirez-les d’abord.`,
+        `Cannot delete zone “${sel.nom}”: it contains ${n} landmark${n > 1 ? 's' : ''}. Remove them first.`,
+      );
+      setRefus(msg);
+      window.alert(msg);
+      return;
+    }
+    if (!window.confirm(tr(`Supprimer la zone « ${sel.nom} » ?`, `Delete zone “${sel.nom}”?`))) return;
     try {
       await adminApi.deleteZone(sel.id);
+      setRefus('');
       setSelId(null);
       reload();
       reloadLm();
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      const msg = messageRefusSuppression(e, 'zone');
+      setRefus(msg);
+      window.alert(msg);
     }
   };
 
@@ -255,7 +271,7 @@ export default function AdminZonesPage() {
     try {
       await adminApi.updateZone(zoneId, { polygone_geo: hull });
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      window.alert(formatApiError(extractApiError(e)));
     }
   };
   const geoPtsOf = (zoneId: number, list: any[] = landmarks) =>
@@ -312,7 +328,7 @@ export default function AdminZonesPage() {
       reloadLm();
       if (Number.isFinite(zoneId)) setSelId(zoneId);
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      window.alert(formatApiError(extractApiError(e)));
     }
   };
 
@@ -395,7 +411,7 @@ export default function AdminZonesPage() {
       reloadLm();
       reload();
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      window.alert(formatApiError(extractApiError(e)));
     }
   };
   const delLm = async (lm: any) => {
@@ -407,7 +423,7 @@ export default function AdminZonesPage() {
       reloadLm();
       reload();
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      window.alert(formatApiError(extractApiError(e)));
     }
   };
 
@@ -607,7 +623,13 @@ export default function AdminZonesPage() {
                     {managers.map((m: any) => (
                       <option key={m.id} value={String(m.id)}>{m.nom_complet ?? m.name ?? m.email ?? `Manager #${m.id}`}</option>
                     ))}
-                  </select> <MIcon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-tertiary" /> </div> </div> <div className="col-span-2 space-y-1"> <label className="text-secondary text-text-secondary">Description</label> <textarea className="w-full px-md py-2 rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })}></textarea> </div> <div className="col-span-2 flex justify-end gap-3 mt-4">
+                  </select> <MIcon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-tertiary" /> </div> </div> <div className="col-span-2 space-y-1"> <label className="text-secondary text-text-secondary">Description</label> <textarea className="w-full px-md py-2 rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })}></textarea> </div> {refus && (
+                <div className="col-span-2 rounded-lg border border-error bg-error-container px-4 py-3 text-label text-on-error-container" role="alert">
+                  <p className="font-bold">{tx("Suppression refusée")}</p>
+                  <p>{refus}</p>
+                </div>
+              )}
+              <div className="col-span-2 flex justify-end gap-3 mt-4">
                 {sel && (
                   <button className="px-md py-2.5 text-error font-label hover:bg-error-light rounded-lg transition-colors" type="button" onClick={() => void delZone()}>{tx("Supprimer")}</button>
                 )}

@@ -6,7 +6,7 @@ import { useLiveRows } from '../../services/api/useLiveRows';
 import { unwrap, listOf, fmtFcfa } from '../../services/api/unwrap';
 import { absImageUrl } from '../../utils/imageUrl';
 import { fichierEnWebp, ImageWebpError } from '../../utils/toWebp';
-import { extractApiError, formatApiError } from '../../utils/apiError';
+import { extractApiError, formatApiError, messageRefusSuppression } from '../../utils/apiError';
 import DESIGN_SCRIPT from './_scripts/AdminCatalogPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
@@ -134,7 +134,7 @@ export default function AdminCatalogPage() {
   };
   const supprimerCat = async (c: any) => {
     if (!window.confirm(tr(`Supprimer la catégorie « ${c.nom} » ?`, `Delete category “${c.nom}”?`))) return;
-    try { await adminApi.deleteCategory(c.id); loadCats(); reload(); } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
+    try { await adminApi.deleteCategory(c.id); loadCats(); reload(); } catch (e: any) { window.alert(messageRefusSuppression(e, 'categorie')); }
   };
   const qMin = q.trim().toLowerCase();
   const produitsF = produits.filter((p: any) => {

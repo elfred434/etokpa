@@ -3163,4 +3163,7 @@ export const EN: Record<string, string> = {
   "Retirer l'image choisie": "Remove the selected image",
   "Retirer l'image": "Remove the image",
   "Image du produit": "Product image",
+  "Impossible de supprimer cette zone : elle contient des points de repère. Retirez-les d’abord.": "Cannot delete this zone: it contains landmarks. Remove them first.",
+  "Impossible de supprimer cette catégorie : elle contient des produits déjà commandés.": "Cannot delete this category: it contains products that have already been ordered.",
+  "Suppression refusée": "Deletion refused",
 };

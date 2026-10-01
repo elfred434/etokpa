@@ -3,7 +3,7 @@ import { useDesignScript } from '../../utils/designRuntime';
 import { adminApi } from '../../services/api';
 import { useLiveRows } from '../../services/api/useLiveRows';
 import { listOf } from '../../services/api/unwrap';
-import { formatApiError } from '../../utils/apiError';
+import { extractApiError, formatApiError, messageRefusSuppression } from '../../utils/apiError';
 import DESIGN_SCRIPT from './_scripts/AdminCategoriesPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
@@ -72,6 +72,7 @@ export default function AdminCategoriesPage() {
   const [fIcon, setFIcon] = useState('nutrition');
   const [fColor, setFColor] = useState('primary');
   const [fAccueil, setFAccueil] = useState(true);
+  const [refus, setRefus] = useState('');
 
   const showToast = () => {
     const el = document.getElementById('toast');
@@ -80,6 +81,7 @@ export default function AdminCategoriesPage() {
     window.setTimeout(() => el.classList.add('translate-y-20', 'opacity-0'), 2200);
   };
   const selectCat = (c: any) => {
+    setRefus('');
     setSel(c);
     setFNom(String(c.nom ?? ''));
     setFDesc(String(c.description ?? ''));
@@ -88,6 +90,7 @@ export default function AdminCategoriesPage() {
     setFAccueil(c.en_accueil ?? true);
   };
   const newCat = () => {
+    setRefus('');
     setSel({ id: null });
     setFNom('');
     setFDesc('');
@@ -114,16 +117,19 @@ export default function AdminCategoriesPage() {
       showToast();
       reload();
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      window.alert(formatApiError(extractApiError(e)));
     }
   };
   const delCat = async (c: any) => {
     if (!window.confirm(tr(`Supprimer la catégorie « ${c.nom} » ?`, `Delete category “${c.nom}”?`))) return;
     try {
       await adminApi.deleteCategory(c.id);
+      setRefus('');
       reload();
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      const msg = messageRefusSuppression(e, 'categorie');
+      setRefus(msg);
+      window.alert(msg);
     }
   };
 
@@ -133,6 +139,12 @@ export default function AdminCategoriesPage() {
         <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
           <p className="font-bold">{tx("Erreur API")}</p>
           <p>{err}</p>
+        </div>
+      )}
+      {refus && (
+        <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container" role="alert">
+          <p className="font-bold">{tx("Suppression refusée")}</p>
+          <p>{refus}</p>
         </div>
       )}
       {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
