@@ -47,14 +47,14 @@ export default function AdminCatalogPage() {
   const [dispoF, setDispoF] = useState('');
   const [page, setPage] = useState(1);
   useEffect(() => setPage(1), [tab, q, catF, dispoF]); // nouveau filtre → première page
+  const [edition, setEdition] = useState<any | null>(null);
+  const [detail, setDetail] = useState<{ kind: 'produit' | 'categorie' | 'pack'; item: any } | null>(null);
   useEffect(() => {
     if (!detail) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setDetail(null); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [detail]);
-  const [edition, setEdition] = useState<any | null>(null);
-  const [detail, setDetail] = useState<{ kind: 'produit' | 'categorie' | 'pack'; item: any } | null>(null);
   const [form, setForm] = useState({ nom: '', description: '', prix: '', prix_minimum: '', stock: '', categorie_id: '' });
   // Mode « pack » de la MÊME modale (POST/PUT /admin/bundles) : champs du modèle Pack + produits inclus.
   const [mode, setMode] = useState<'produit' | 'pack'>('produit');
