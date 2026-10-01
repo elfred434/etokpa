@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientFooter from '../../../components/layout/client/ClientFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
-import { alertApiError } from '../../../utils/apiError';
+import { alertApiError, extractApiError } from '../../../utils/apiError';
 import EmptyState from '../../../components/shared/EmptyState';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { clear, remove, setQuantity, selectCount, selectSubtotal, selectSavings } from '../../../store/slices/cart/cartSlice';
@@ -13,6 +13,19 @@ import { authApi, catalogApi, landmarksApi, ordersApi, paymentsApi, readCreatedO
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import { saveConfirmation } from '../confirmation-commande/confirmationMemory';
+import {
+  attemptStillPending,
+  beginCheckout,
+  checkoutFingerprint,
+  clearCheckoutIntent,
+  loadCheckoutIntent,
+  loadPayment,
+  paymentIdempotencyKey,
+  rememberPayment,
+  sameAttempt,
+  saveCheckoutIntent,
+  type CartLine,
+} from '../../../utils/idempotence';
 
 
 interface ApiLandmark {
@@ -38,6 +51,44 @@ interface MyLandmark {
   description: string;
   rowId?: number;
   zoneId?: number;
+}
+
+function asOrderRow(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object') return null;
+  const row = value as Record<string, unknown>;
+  const nested = row.data;
+  if (nested && typeof nested === 'object' && 'id' in (nested as object)) return nested as Record<string, unknown>;
+  return 'id' in row ? row : null;
+}
+
+/** Si le POST a abouti mais que la page a été rechargée avant la réponse, on reprend cette commande. */
+async function findRecentMatchingOrder(lines: CartLine[], landmarkId: number, description: string) {
+  const wanted = checkoutFingerprint(lines, landmarkId, description);
+  const listRes = await ordersApi.getOrders(1);
+  const raw = (listRes?.data ?? listRes ?? []) as unknown[];
+  const rows = Array.isArray(raw) ? raw : [];
+  for (const row of rows.slice(0, 3)) {
+    const order = asOrderRow(row);
+    const orderId = Number(order?.id ?? 0);
+    if (!orderId) continue;
+    const createdAt = order?.created_at ? Date.parse(String(order.created_at)) : 0;
+    if (createdAt && Date.now() - createdAt > 2 * 60 * 1000) continue;
+    if (order?.statut && order.statut !== 'en_attente') continue;
+    const detail = asOrderRow(await ordersApi.getOrder(orderId)) ?? order;
+    const items = Array.isArray(detail.items) ? detail.items : [];
+    const landmark = detail.landmark as { id?: number } | undefined;
+    const got = checkoutFingerprint(
+      items.map((item) => {
+        const line = item as { product_id?: number; quantite?: number };
+        return { product_id: Number(line.product_id), quantite: Number(line.quantite) };
+      }),
+      Number(landmark?.id ?? 0),
+      String(detail.description_lieu ?? ''),
+    );
+    if (got !== wanted) continue;
+    return { orderId, total: Number(detail.montant_total ?? 0) };
+  }
+  return null;
 }
 
 interface ConfirmationPayload {
@@ -80,6 +131,7 @@ export default function CartPage() {
   const [descriptionLieu, setDescriptionLieu] = useState('');
   const [landmarkError, setLandmarkError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const payLock = useRef(false);
 
   const selectedZone = zones.find((z) => z.id === zoneId) ?? null;
   const deliveryFee = selectedZone ? Number(selectedZone.km_prix) : 0;
@@ -154,6 +206,7 @@ export default function CartPage() {
   };
 
   const handlePaid = async () => {
+    if (payLock.current) return;
     if (!selectedZone) {
       toast.error(tx("Sélectionnez une zone de livraison."));
       return;
@@ -164,70 +217,17 @@ export default function CartPage() {
       return;
     }
 
-    setLoading(true);
-    try {
-      // 1) POST /api/orders — le backend vérifie stock + dispo et vide le panier serveur
-      const orderRes = await ordersApi.createOrder({
-        items: items.map((item) => ({
-          product_id: Number(item.product.id),
-          quantite: item.quantite,
-        })),
-        landmark_id: landmarkId,
-        description_lieu: descriptionLieu.trim() || undefined,
-        payment_method: 'fedapay',
-      });
+    const lines: CartLine[] = items.map((item) => ({
+      product_id: Number(item.product.id),
+      quantite: item.quantite,
+    }));
+    const fingerprint = checkoutFingerprint(lines, landmarkId, descriptionLieu);
+    const landmarkNom: string =
+      landmarkNomSel ??
+      (selectedZone.points_repere ?? []).find((l) => l.id === landmarkId)?.nom ??
+      selectedZone.nom;
 
-      const created = readCreatedOrder(orderRes);
-      const orderId = created.id;
-      const orderTotal = Number(created.montantTotal ?? grandTotal);
-      const landmarkNom: string =
-        landmarkNomSel ??
-        (selectedZone.points_repere ?? []).find((l) => l.id === landmarkId)?.nom ??
-        selectedZone.nom;
-
-      if (!orderId) {
-        toast.error(tx("La commande n'a pas renvoyé de numéro. Le paiement n'a pas été relancé."));
-        return;
-      }
-
-      // 2) Le nouveau backend renvoie déjà le paiement. Sinon, ancien POST /payments/init.
-      let paymentId: number | undefined;
-      let paymentRef: string | undefined;
-      let paymentCurrency = 'XOF';
-      try {
-        const paymentRes = created.payment ?? await paymentsApi.initPayment({ order_id: orderId });
-        const payment = paymentRes?.payment;
-        paymentId = Number(payment?.id) || undefined;
-        paymentRef = payment?.fedapay_ref ?? undefined;
-        paymentCurrency = paymentRes?.currency || 'XOF';
-        saveConfirmation({
-          orderId,
-          total: orderTotal,
-          zoneNom: selectedZone.nom,
-          landmarkNom,
-          nbItems: count,
-          paymentId,
-          paymentRef,
-          paymentCurrency,
-        });
-        const redirectUrl: string | undefined = paymentRes?.redirect_url ?? undefined;
-        if (redirectUrl) {
-          const isRealFedaPay = /fedapay\.com/i.test(redirectUrl);
-          if (isRealFedaPay) {
-            window.open(redirectUrl, '_blank', 'noopener');
-            toast.success('Redirection vers FedaPay…');
-          } else {
-            toast.success(tx("Paiement FedaPay initialisé (mode sandbox dev)."));
-          }
-        }
-      } catch (payErr) {
-        // Commande déjà enregistrée : on prévient que le paiement n'a pas pu démarrer (message de l'API)
-        alertApiError(payErr, 'cart-payment');
-      }
-
-      // 3) Nettoyage local + confirmation avec les données réelles
-      dispatch(clear());
-      toast.success(tx("Commande enregistrée avec succès !"));
+    const finish = (orderId: number, orderTotal: number, paymentId?: number, paymentRef?: string, paymentCurrency = 'XOF', redirectUrl?: string) => {
       const payload: ConfirmationPayload = {
         orderId,
         total: orderTotal,
@@ -238,13 +238,142 @@ export default function CartPage() {
         paymentRef,
         paymentCurrency,
       };
-      // FedaPay recharge /confirmation?status=&id= : le state React disparaît.
       saveConfirmation(payload);
+      if (redirectUrl) {
+        if (/fedapay\.com/i.test(redirectUrl)) {
+          window.open(redirectUrl, '_blank', 'noopener');
+          toast.success('Redirection vers FedaPay…');
+        } else {
+          toast.success(tx("Paiement FedaPay initialisé (mode sandbox dev)."));
+        }
+      }
+      dispatch(clear());
+      clearCheckoutIntent();
+      toast.success(tx("Commande enregistrée avec succès !"));
       navigate({ to: '/confirmation', state: payload as unknown as Record<string, unknown> });
+    };
+
+    payLock.current = true;
+    setLoading(true);
+    try {
+      const known = loadCheckoutIntent();
+      if (sameAttempt(known, fingerprint) && known.orderId) {
+        const savedPay = loadPayment(known.orderId);
+        let redirectUrl = known.redirectUrl ?? savedPay?.redirectUrl;
+        let paymentId = known.paymentId ?? savedPay?.paymentId;
+        let paymentRef = known.paymentRef ?? savedPay?.paymentRef;
+        let paymentCurrency = known.currency ?? savedPay?.currency ?? 'XOF';
+        if (!redirectUrl) {
+          const paymentRes = await paymentsApi.initPayment(
+            { order_id: known.orderId },
+            paymentIdempotencyKey(known.orderId),
+          );
+          const payment = paymentRes?.payment;
+          paymentId = Number(payment?.id) || paymentId;
+          paymentRef = payment?.fedapay_ref ?? paymentRef;
+          paymentCurrency = paymentRes?.currency || paymentCurrency;
+          redirectUrl = paymentRes?.redirect_url ?? undefined;
+          rememberPayment({ orderId: known.orderId, paymentId, paymentRef, redirectUrl, currency: paymentCurrency });
+        }
+        toast.success(tx("On reprend la même commande, sans la recréer."));
+        finish(known.orderId, Number(known.total ?? grandTotal), paymentId, paymentRef, paymentCurrency, redirectUrl);
+        return;
+      }
+      if (attemptStillPending(known, fingerprint)) {
+        const reused = await findRecentMatchingOrder(lines, landmarkId, descriptionLieu);
+        if (!reused) {
+          toast.error(tx("Cette commande est déjà en cours d'envoi. On ne la recrée pas."));
+          return;
+        }
+        saveCheckoutIntent({ ...known, orderId: reused.orderId, total: reused.total, pending: false });
+        toast.success(tx("On reprend la même commande, sans la recréer."));
+        finish(reused.orderId, reused.total);
+        return;
+      }
+
+      if (sameAttempt(known, fingerprint) && !known.orderId) {
+        const reused = await findRecentMatchingOrder(lines, landmarkId, descriptionLieu);
+        if (reused) {
+          saveCheckoutIntent({ ...known, orderId: reused.orderId, total: reused.total, pending: false });
+          toast.success(tx("On reprend la même commande, sans la recréer."));
+          finish(reused.orderId, reused.total);
+          return;
+        }
+      }
+
+      const intent = beginCheckout(fingerprint);
+      const orderRes = await ordersApi.createOrder({
+        items: lines,
+        landmark_id: landmarkId,
+        description_lieu: descriptionLieu.trim() || undefined,
+        payment_method: 'fedapay',
+      }, intent.idempotencyKey);
+
+      const created = readCreatedOrder(orderRes);
+      const orderId = created.id;
+      const orderTotal = Number(created.montantTotal ?? grandTotal);
+      if (!orderId) {
+        toast.error(tx("La commande n'a pas renvoyé de numéro. Le paiement n'a pas été relancé."));
+        return;
+      }
+
+      let paymentId: number | undefined;
+      let paymentRef: string | undefined;
+      let paymentCurrency = 'XOF';
+      let redirectUrl: string | undefined;
+      try {
+        const paymentRes = created.payment ?? await paymentsApi.initPayment(
+          { order_id: orderId },
+          paymentIdempotencyKey(orderId),
+        );
+        const payment = paymentRes?.payment;
+        paymentId = Number(payment?.id) || undefined;
+        paymentRef = payment?.fedapay_ref ?? undefined;
+        paymentCurrency = paymentRes?.currency || 'XOF';
+        redirectUrl = paymentRes?.redirect_url ?? undefined;
+        rememberPayment({
+          orderId,
+          paymentId,
+          paymentRef,
+          redirectUrl,
+          currency: paymentCurrency,
+        });
+      } catch (payErr) {
+        saveCheckoutIntent({
+          ...intent,
+          orderId,
+          total: orderTotal,
+          zoneNom: selectedZone.nom,
+          landmarkNom,
+          nbItems: count,
+          pending: false,
+          savedAt: Date.now(),
+        });
+        alertApiError(payErr, 'cart-payment');
+        return;
+      }
+
+      saveCheckoutIntent({
+        ...intent,
+        orderId,
+        total: orderTotal,
+        zoneNom: selectedZone.nom,
+        landmarkNom,
+        nbItems: count,
+        paymentId,
+        paymentRef,
+        redirectUrl,
+        currency: paymentCurrency,
+        pending: false,
+        savedAt: Date.now(),
+      });
+      finish(orderId, orderTotal, paymentId, paymentRef, paymentCurrency, redirectUrl);
     } catch (err: unknown) {
-      // Statut + message exact de l'API (erreurs de validation comprises)
+      const status = extractApiError(err).status;
+      if (status != null && status < 500 && !loadCheckoutIntent()?.orderId) clearCheckoutIntent();
       alertApiError(err, 'cart-order');
     } finally {
+      payLock.current = false;
       setLoading(false);
     }
   };

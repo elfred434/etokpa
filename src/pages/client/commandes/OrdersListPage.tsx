@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
@@ -13,6 +13,7 @@ import { isOwnOrder } from '../../../utils/ownOrder';
 import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
 import { tx } from '../../../i18n/tx';
 import { orderLineName } from '../../../utils/orderLine';
+import { loadPayment, paymentIdempotencyKey, rememberPayment } from '../../../utils/idempotence';
 
 
 interface ApiOrderItem {
@@ -107,17 +108,40 @@ export default function OrdersListPage() {
       .finally(() => setLoading(false));
   }, [isAuthenticated, page, statusFilter]);
 
+  const payLock = useRef(false);
   const handlePayer = async (order: ApiOrder) => {
-    if (paying) return;
+    if (payLock.current || paying) return;
+    if (order.payment?.statut === 'reussi') {
+      toast.success(tx("Cette commande est déjà payée."));
+      return;
+    }
+    const saved = loadPayment(order.id);
+    if (saved?.redirectUrl && order.payment?.statut !== 'echoue') {
+      toast.success(tx("Ce paiement est déjà lancé. On rouvre le même lien."));
+      window.location.assign(saved.redirectUrl);
+      return;
+    }
+    payLock.current = true;
     setPaying(true);
     try {
-      const result = await paymentsApi.initPayment({ order_id: order.id });
+      const result = await paymentsApi.initPayment({ order_id: order.id }, paymentIdempotencyKey(order.id));
       const payment = result?.data ?? result;
-      if (payment?.redirect_url) window.location.assign(payment.redirect_url);
+      const redirectUrl = payment?.redirect_url as string | undefined;
+      rememberPayment({
+        orderId: order.id,
+        paymentId: Number(payment?.payment?.id ?? payment?.id) || undefined,
+        paymentRef: payment?.payment?.fedapay_ref ?? payment?.fedapay_ref,
+        redirectUrl,
+        currency: payment?.currency,
+      });
+      if (redirectUrl) window.location.assign(redirectUrl);
       else toast.success(isFr ? tx("Paiement initialisé.") : 'Payment initialized.');
     } catch (err) {
       toast.error(formatApiError(extractApiError(err)));
-    } finally { setPaying(false); }
+    } finally {
+      payLock.current = false;
+      setPaying(false);
+    }
   };
 
   const search = useSearch({ from: '/commandes' }) as unknown as { detail?: string };

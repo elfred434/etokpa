@@ -24,8 +24,10 @@ export interface InitPaymentResponse {
 
 export const paymentsApi = {
   // POST /api/payments/init -> initialise le paiement FedaPay
-  initPayment: async (payload: InitPaymentPayload) => {
-    const response = await apiClient.post('/payments/init', payload);
+  initPayment: async (payload: InitPaymentPayload, idempotencyKey?: string) => {
+    const response = await apiClient.post('/payments/init', payload, {
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+    });
     return response.data;
   },
 
