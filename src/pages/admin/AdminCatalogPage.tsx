@@ -6,7 +6,7 @@ import { useLiveRows } from '../../services/api/useLiveRows';
 import { unwrap, listOf, fmtFcfa } from '../../services/api/unwrap';
 import { absImageUrl } from '../../utils/imageUrl';
 import { fichierEnWebp, ImageWebpError } from '../../utils/toWebp';
-import { extractApiError, formatApiError } from '../../utils/apiError';
+import { extractApiError, formatApiError, messageApi } from '../../utils/apiError';
 import DESIGN_SCRIPT from './_scripts/AdminCatalogPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
@@ -49,6 +49,8 @@ export default function AdminCatalogPage() {
   useEffect(() => setPage(1), [tab, q, catF, dispoF]); // nouveau filtre → première page
   const [edition, setEdition] = useState<any | null>(null);
   const [detail, setDetail] = useState<{ kind: 'produit' | 'categorie'; item: any } | null>(null);
+  const [refus, setRefus] = useState('');
+  const [refusTitre, setRefusTitre] = useState('Suppression refusée');
   useEffect(() => {
     if (!detail) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setDetail(null); };
@@ -129,8 +131,39 @@ export default function AdminCatalogPage() {
     setDetail(null);
     if (kind === 'produit') ouvrir(item);
   };
+  const produitDe = (res: any) => {
+    const body = res?.data ?? res;
+    if (body && typeof body === 'object' && 'nom' in body) return body;
+    if (body?.data && typeof body.data === 'object' && 'nom' in body.data) return body.data;
+    return null;
+  };
+  const ouvrirFicheProduit = (pr: any) => {
+    setDetail({ kind: 'produit', item: pr });
+    void adminApi.getProduct(pr.id).then((res: any) => {
+      const frais = produitDe(res);
+      if (!frais?.id) return;
+      setDetail((cur) => (
+        cur?.kind === 'produit' && String(cur.item?.id) === String(pr.id)
+          ? { kind: 'produit', item: { ...pr, ...frais, categorie: frais.categorie ?? pr.categorie } }
+          : cur
+      ));
+    }).catch((e) => {
+      setRefusTitre('Erreur API');
+      setRefus(messageApi(e));
+    });
+  };
   const supprimer = async (id: number) => {
-    try { await adminApi.deleteProduct(id); reload(); } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
+    try {
+      await adminApi.deleteProduct(id);
+      setRefus('');
+      setDetail((cur) => (cur?.kind === 'produit' && String(cur.item?.id) === String(id) ? null : cur));
+      reload();
+    } catch (e: any) {
+      setRefusTitre('Suppression refusée');
+      const msg = messageApi(e);
+      setRefus(msg);
+      window.alert(msg);
+    }
   };
   const supprimerCat = async (c: any) => {
     if (!window.confirm(tr(`Supprimer la catégorie « ${c.nom} » ?`, `Delete category “${c.nom}”?`))) return;
@@ -154,6 +187,12 @@ export default function AdminCatalogPage() {
 
   return (
     <AdminLayout currentPath="/admin/catalogue">
+      {refus && (
+        <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container" role="alert">
+          <p className="font-bold">{tx(refusTitre)}</p>
+          <p>{refus}</p>
+        </div>
+      )}
       {err && (
         <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
           <p className="font-bold">{tx("Erreur API")}</p>
@@ -177,7 +216,7 @@ export default function AdminCatalogPage() {
                 ))}
               </select> <select className="px-md py-2 text-label bg-white border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" value={dispoF} onChange={(e) => setDispoF(e.target.value)}> <option value="">{tx("Disponibilité")}</option> <option value="stock">{tx("En stock")}</option> <option value="rupture">{tx("Rupture")}</option> </select> <div className="flex border border-border-default rounded-lg overflow-hidden"> <button className="p-2 bg-bg-secondary text-primary"><MIcon name="format_list_bulleted" /></button> <button className="p-2 hover:bg-bg-secondary text-text-tertiary"><MIcon name="grid_view" /></button> </div> </div>  <div className="bg-white rounded-lg shadow-sm border border-border-default overflow-hidden"> <table className="w-full text-left border-collapse"> <thead> <tr className="bg-bg-secondary border-b border-border-default"> <th className="py-md px-lg w-10"> <input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /> </th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Produit")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Catégorie")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Prix")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Statut")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider text-right">Actions</th> </tr> </thead> <tbody>
                 {tab === 'produits' && slicePage(produitsF).map((pr: any) => (
-                  <tr key={pr.id} tabIndex={0} title={tx("Voir le détail")} className="cursor-pointer hover:bg-bg-secondary/50 transition-colors" onClick={() => setDetail({ kind: 'produit', item: pr })} onKeyDown={(e) => { if (e.key === 'Enter') setDetail({ kind: 'produit', item: pr }); }}>
+                  <tr key={pr.id} tabIndex={0} title={tx("Voir le détail")} className="cursor-pointer hover:bg-bg-secondary/50 transition-colors" onClick={() => ouvrirFicheProduit(pr)} onKeyDown={(e) => { if (e.key === 'Enter') ouvrirFicheProduit(pr); }}>
                     <td className="py-4 px-lg" onClick={(e) => e.stopPropagation()}><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /></td>
                     <td className="py-4 px-md"> <div className="flex items-center gap-3"> {pr.image_url ? (
                       <img src={absImageUrl(pr.image_url) ?? undefined} alt="" className="h-10 w-10 rounded-lg bg-bg-secondary object-cover" />

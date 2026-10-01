@@ -1,5 +1,5 @@
 import toast from 'react-hot-toast';
-import { tr } from '../i18n/tx';
+import { tr, tx } from '../i18n/tx';
 
 /**
  * Extraction & mise en forme des erreurs API Laravel pour l'UX.
@@ -69,6 +69,12 @@ export function formatApiError(info: ApiErrorInfo): string {
   return text;
 }
 
+/** Message exact du backend, traduit s'il est une phrase connue. */
+export function messageApi(err: unknown): string {
+  const info = extractApiError(err);
+  return formatApiError({ ...info, message: tx(info.message) });
+}
+
 /** Statut HTTP d'une erreur axios (null si la requête n'a jamais atteint le serveur). */
 export function apiErrorStatus(err: unknown): number | null {
   return extractApiError(err).status;
@@ -86,23 +92,4 @@ export function alertApiError(err: unknown, toastId?: string): string {
   const text = formatApiError(info);
   if (info.status !== 401) toast.error(text, toastId ? { id: toastId } : undefined);
   return text;
-}
-
-const SQL = /SQLSTATE|Integrity constraint|foreign key|Cannot delete or update a parent row|Erreur serveur/i;
-
-/**
- * Message affiché quand une suppression est refusée.
- * Une phrase claire du backend (souvent 409) est montrée telle quelle.
- * Un 500 SQL brut est remplacé par la raison connue.
- */
-export function messageRefusSuppression(err: unknown): string {
-  const info = extractApiError(err);
-  const brut = (info.message || '').trim();
-  const sql = !brut || SQL.test(brut) || brut.startsWith('Request failed') || brut === 'Server Error';
-  if (!sql) return formatApiError(info);
-  const clair = tr(
-    'Impossible de supprimer cette zone : elle contient des points de repère. Retirez-les d’abord.',
-    'Cannot delete this zone: it contains landmarks. Remove them first.',
-  );
-  return info.status != null ? `[HTTP ${info.status}] ${clair}` : clair;
 }

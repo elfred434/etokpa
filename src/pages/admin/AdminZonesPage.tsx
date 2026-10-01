@@ -5,7 +5,7 @@ import { useDesignScript } from '../../utils/designRuntime';
 import { adminApi } from '../../services/api';
 import { useLiveRows } from '../../services/api/useLiveRows';
 import { fmtFcfa } from '../../services/api/unwrap';
-import { extractApiError, formatApiError, messageRefusSuppression } from '../../utils/apiError';
+import { extractApiError, formatApiError, messageApi } from '../../utils/apiError';
 import { searchPlaces } from '../../services/api/geocode';
 import type { GeoPlace } from '../../services/api/geocode';
 import DESIGN_SCRIPT from './_scripts/AdminZonesPage';
@@ -240,17 +240,6 @@ export default function AdminZonesPage() {
   };
   const delZone = async () => {
     if (!sel) return;
-    const nested = Array.isArray(sel.points_repere) ? sel.points_repere.length : Array.isArray(sel.pointsRepere) ? sel.pointsRepere.length : 0;
-    const n = Math.max(landmarks.filter((l: any) => String(l.zone_id) === String(sel.id)).length, nested);
-    if (n > 0) {
-      const msg = tr(
-        `Impossible de supprimer la zone « ${sel.nom} » : elle contient ${n} point${n > 1 ? 's' : ''} de repère. Retirez-les d’abord.`,
-        `Cannot delete zone “${sel.nom}”: it contains ${n} landmark${n > 1 ? 's' : ''}. Remove them first.`,
-      );
-      setRefus(msg);
-      window.alert(msg);
-      return;
-    }
     if (!window.confirm(tr(`Supprimer la zone « ${sel.nom} » ?`, `Delete zone “${sel.nom}”?`))) return;
     try {
       await adminApi.deleteZone(sel.id);
@@ -259,7 +248,7 @@ export default function AdminZonesPage() {
       reload();
       reloadLm();
     } catch (e) {
-      const msg = messageRefusSuppression(e);
+      const msg = messageApi(e);
       setRefus(msg);
       window.alert(msg);
     }
@@ -423,7 +412,9 @@ export default function AdminZonesPage() {
       reloadLm();
       reload();
     } catch (e) {
-      window.alert(formatApiError(extractApiError(e)));
+      const msg = messageApi(e);
+      setRefus(msg);
+      window.alert(msg);
     }
   };
 

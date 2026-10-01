@@ -8,6 +8,10 @@ export const adminApi = {
     });
     return response.data;
   },
+  getProduct: async (id: number | string) => {
+    const response = await apiClient.get(`/admin/products/${id}`);
+    return response.data;
+  },
   createProduct: async (formData: FormData | Record<string, unknown>) => {
     if (formData instanceof FormData) {
       // Adaptateur fetch : supprime le Content-Type sans boundary (sinon illisible pour Laravel),

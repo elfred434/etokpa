@@ -10,7 +10,7 @@ import { add } from '../../../store/slices/cart/cartSlice';
 import { acceptCounterOffer, setProposals, type NegotiationItem } from '../../../store/slices/negotiation/negotiationSlice';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
-import { negotiationApi } from '../../../services/api';
+import { negotiationApi, ordersApi } from '../../../services/api';
 import { absImageUrl } from '../../../utils/imageUrl';
 import { alertApiError } from '../../../utils/apiError';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
@@ -38,7 +38,7 @@ export default function NegotiationsPage() {
     setIsApiLoading(true);
 
     negotiationApi.getProposals()
-      .then((res) => {
+      .then(async (res) => {
         const proposalsList = res?.data || (Array.isArray(res) ? res : []);
         if (Array.isArray(proposalsList)) {
           const mapped: NegotiationItem[] = proposalsList.map((p: any) => ({
@@ -61,6 +61,20 @@ export default function NegotiationsPage() {
             createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR') : tx("Récemment"),
           }));
           dispatch(setProposals(mapped));
+          const accepted = mapped.filter((n) => n.status === 'accepted' && !n.orderId);
+          if (accepted.length === 0) return;
+          const ordersRes = await ordersApi.getOrders(1);
+          const raw = (ordersRes?.data ?? ordersRes ?? []) as unknown[];
+          const rows = (Array.isArray(raw) ? raw : []).map((row) => {
+            const o = row as { data?: Record<string, unknown> };
+            return (o.data ?? row) as { id?: number; description_lieu?: string };
+          });
+          const withOrder = mapped.map((n) => {
+            if (n.orderId || n.status !== 'accepted') return n;
+            const match = rows.find((o) => String(o.description_lieu ?? '').includes(`négociation #${n.id}`));
+            return match?.id ? { ...n, orderId: match.id } : n;
+          });
+          dispatch(setProposals(withOrder));
         }
       })
       .catch((err) => {

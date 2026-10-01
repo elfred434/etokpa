@@ -9,7 +9,7 @@ import { alertApiError, extractApiError } from '../../../utils/apiError';
 import EmptyState from '../../../components/shared/EmptyState';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { clear, remove, setQuantity, selectCount, selectSubtotal, selectSavings } from '../../../store/slices/cart/cartSlice';
-import { authApi, catalogApi, landmarksApi, ordersApi, paymentsApi, readCreatedOrder } from '../../../services/api';
+import { authApi, catalogApi, landmarksApi, negotiationApi, ordersApi, paymentsApi, readCreatedOrder } from '../../../services/api';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import { saveConfirmation } from '../confirmation-commande/confirmationMemory';
@@ -131,7 +131,26 @@ export default function CartPage() {
   const [descriptionLieu, setDescriptionLieu] = useState('');
   const [landmarkError, setLandmarkError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [offres, setOffres] = useState<Map<number, number>>(new Map());
   const payLock = useRef(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem('tokpa_token')) return;
+    let alive = true;
+    negotiationApi.getProposals()
+      .then((res) => {
+        const list = (res?.data ?? []) as Array<{ product_id?: number; product?: { id?: number }; prix_propose?: number }>;
+        if (!alive || !Array.isArray(list)) return;
+        const map = new Map<number, number>();
+        for (const p of list) {
+          const id = Number(p.product_id ?? p.product?.id);
+          if (id && !map.has(id) && p.prix_propose != null) map.set(id, Number(p.prix_propose));
+        }
+        setOffres(map);
+      })
+      .catch(() => undefined);
+    return () => { alive = false; };
+  }, []);
 
   const selectedZone = zones.find((z) => z.id === zoneId) ?? null;
   const deliveryFee = selectedZone ? Number(selectedZone.km_prix) : 0;
@@ -455,9 +474,11 @@ export default function CartPage() {
               ) : (
                 <div className="flex flex-col gap-md">
                   {items.map((item) => {
-                    const isNegotiated = !!item.product.negotiated;
-                    const unitPrice = item.product.prix;
-                    const oldPrice = item.product.negotiated?.oldPrice;
+                    const catalogue = item.product.negotiated?.oldPrice ?? item.product.prix;
+                    const negocie = offres.get(Number(item.product.id));
+                    const unitPrice = negocie ?? item.product.prix;
+                    const isNegotiated = negocie != null || !!item.product.negotiated;
+                    const oldPrice = isNegotiated && catalogue !== unitPrice ? catalogue : item.product.negotiated?.oldPrice;
 
                     return (
                       <div
@@ -483,7 +504,7 @@ export default function CartPage() {
                             <h3 className="font-h3 text-h3 text-on-surface truncate font-bold">{item.product.nom}</h3>
                             {isNegotiated && (
                               <span className="bg-[#F59E0B]/10 text-[#F59E0B] text-micro px-2 py-0.5 rounded-full border border-[#F59E0B]/20 font-bold uppercase tracking-wider">
-                                {tx("Offre acceptée")}
+                                {item.product.negotiated ? tx("Offre acceptée") : tx("Prix négocié sur la ligne")}
                               </span>
                             )}
                           </div>
@@ -705,6 +726,11 @@ export default function CartPage() {
                       -{savings.toLocaleString('fr-FR')} FCFA
                     </span>
                   </div>
+                )}
+                {items.some((item) => offres.has(Number(item.product.id))) && (
+                  <p className="text-micro text-text-secondary">
+                    {tx("Le prix affiché est votre dernière proposition. Le total à payer reste le prix catalogue.")}
+                  </p>
                 )}
                 <div className="flex justify-between items-center">
                   <span className="text-body text-text-secondary">{tx("Frais de livraison")}</span>

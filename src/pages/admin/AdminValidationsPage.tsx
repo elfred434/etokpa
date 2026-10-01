@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { adminApi } from '../../services/api';
 import { fmtFcfa, dateCourte, listOf, unwrap } from '../../services/api/unwrap';
-import { alertApiError } from '../../utils/apiError';
+import { alertApiError, messageApi } from '../../utils/apiError';
 import { absImageUrl } from '../../utils/imageUrl';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
 import { useLanguage } from '../../context/LanguageContext';
-import { tx } from '../../i18n/tx';
+import { tr, tx } from '../../i18n/tx';
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -123,14 +123,44 @@ export default function AdminValidationsPage() {
     return { total: siennes.length, taux: decidees.length ? Math.round((acceptees / decidees.length) * 100) : null };
   }, [proposals, selected]);
 
+  const [landmarks, setLandmarks] = useState<any[]>([]);
+  const [landmarkId, setLandmarkId] = useState('');
+  const [actionErr, setActionErr] = useState('');
+  useEffect(() => {
+    adminApi.getLandmarks()
+      .then((r: any) => setLandmarks(listOf(unwrap(r))))
+      .catch(() => setLandmarks([]));
+  }, []);
+
   const [busy, setBusy] = useState(false);
   const decider = async (pr: any, decision: 'accepte' | 'refuse', admin_response?: string) => {
+    if (decision === 'accepte' && !landmarkId) {
+      setSelectedId(pr.id);
+      const msg = tx("Choisissez un point de livraison avant d'accepter.");
+      setActionErr(msg);
+      toast.error(msg);
+      return;
+    }
     setBusy(true);
+    setActionErr('');
     try {
-      await adminApi.respondProposal(pr.id, { decision, ...(admin_response ? { admin_response } : {}) });
-      toast.success(decision === 'accepte' ? tx("Proposition acceptée.") : tx("Proposition refusée."));
+      const res = await adminApi.respondProposal(pr.id, {
+        decision,
+        ...(admin_response ? { admin_response } : {}),
+        ...(decision === 'accepte' ? { landmark_id: Number(landmarkId) } : {}),
+      });
+      const orderId = Number(res?.order?.id ?? 0);
+      toast.success(
+        decision === 'refuse'
+          ? tx("Proposition refusée.")
+          : orderId
+            ? tr(`Proposition acceptée. Commande #TOK-${orderId} créée.`, `Proposal accepted. Order #TOK-${orderId} created.`)
+            : tx("Proposition acceptée."),
+      );
       reload();
     } catch (e) {
+      const msg = messageApi(e);
+      setActionErr(msg);
       alertApiError(e, 'admin-validations-respond');
     } finally {
       setBusy(false);
@@ -152,6 +182,12 @@ export default function AdminValidationsPage() {
         <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
           <p className="font-bold">{tx("Erreur API")}</p>
           <p>{err}</p>
+        </div>
+      )}
+      {actionErr && (
+        <div className="mx-8 mt-4 rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container" role="alert">
+          <p className="font-bold">{tx("Erreur API")}</p>
+          <p>{actionErr}</p>
         </div>
       )}
       {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
@@ -336,6 +372,22 @@ export default function AdminValidationsPage() {
               </div>
             </div>
             <div className="flex flex-col gap-2 mt-auto">
+              <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">
+                {tx("Point de livraison de la commande")}
+              </label>
+              <select
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm"
+                value={landmarkId}
+                onChange={(e) => setLandmarkId(e.target.value)}
+                disabled={!selEnAttente || busy}
+              >
+                <option value="">{tx("— Aucun —")}</option>
+                {landmarks.map((lm) => (
+                  <option key={lm.id} value={String(lm.id)}>
+                    {lm.zone?.nom ? `${lm.zone.nom} — ${lm.nom}` : lm.nom}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
                 disabled={!selEnAttente || busy}
@@ -345,7 +397,11 @@ export default function AdminValidationsPage() {
                 <MIcon name="check_circle" className="text-[18px]" />
                 Accepter ce prix
               </button>
-              <button className="w-full py-3 bg-white border-2 border-primary text-primary hover:bg-primary-tint rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2">
+              <button
+                type="button"
+                className="w-full py-3 bg-white border-2 border-primary text-primary hover:bg-primary-tint rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                onClick={() => toast.error(tx("La contre-proposition n'est pas encore disponible."))}
+              >
                 <MIcon name="edit" className="text-[18px]" />
                 Contre-proposer
               </button>
