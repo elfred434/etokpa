@@ -95,19 +95,14 @@ const SQL = /SQLSTATE|Integrity constraint|foreign key|Cannot delete or update a
  * Une phrase claire du backend (souvent 409) est montrée telle quelle.
  * Un 500 SQL brut est remplacé par la raison connue.
  */
-export function messageRefusSuppression(err: unknown, sujet: 'zone' | 'categorie'): string {
+export function messageRefusSuppression(err: unknown): string {
   const info = extractApiError(err);
   const brut = (info.message || '').trim();
   const sql = !brut || SQL.test(brut) || brut.startsWith('Request failed') || brut === 'Server Error';
   if (!sql) return formatApiError(info);
-  const clair = sujet === 'zone'
-    ? tr(
-      'Impossible de supprimer cette zone : elle contient des points de repère. Retirez-les d’abord.',
-      'Cannot delete this zone: it contains landmarks. Remove them first.',
-    )
-    : tr(
-      'Impossible de supprimer cette catégorie : elle contient des produits déjà commandés.',
-      'Cannot delete this category: it contains products that have already been ordered.',
-    );
+  const clair = tr(
+    'Impossible de supprimer cette zone : elle contient des points de repère. Retirez-les d’abord.',
+    'Cannot delete this zone: it contains landmarks. Remove them first.',
+  );
   return info.status != null ? `[HTTP ${info.status}] ${clair}` : clair;
 }

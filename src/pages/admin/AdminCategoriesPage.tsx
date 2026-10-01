@@ -3,7 +3,7 @@ import { useDesignScript } from '../../utils/designRuntime';
 import { adminApi } from '../../services/api';
 import { useLiveRows } from '../../services/api/useLiveRows';
 import { listOf } from '../../services/api/unwrap';
-import { extractApiError, formatApiError, messageRefusSuppression } from '../../utils/apiError';
+import { extractApiError, formatApiError } from '../../utils/apiError';
 import DESIGN_SCRIPT from './_scripts/AdminCategoriesPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
@@ -127,7 +127,7 @@ export default function AdminCategoriesPage() {
       setRefus('');
       reload();
     } catch (e) {
-      const msg = messageRefusSuppression(e, 'categorie');
+      const msg = formatApiError(extractApiError(e));
       setRefus(msg);
       window.alert(msg);
     }

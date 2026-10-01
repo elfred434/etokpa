@@ -259,7 +259,7 @@ export default function AdminZonesPage() {
       reload();
       reloadLm();
     } catch (e) {
-      const msg = messageRefusSuppression(e, 'zone');
+      const msg = messageRefusSuppression(e);
       setRefus(msg);
       window.alert(msg);
     }

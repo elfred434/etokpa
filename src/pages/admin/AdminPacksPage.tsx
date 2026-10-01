@@ -419,7 +419,6 @@ export default function AdminPacksPage() {
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-orange-100">{tx("Gestion des packs")}</p>
               <h1 className="mt-1 truncate text-2xl font-black tracking-tight sm:text-3xl">{tx("Atelier des packs")}</h1>
-              <p className="mt-1 line-clamp-3 max-w-3xl text-sm leading-5 text-orange-50/90">{tx("Glissez un produit sur la page")}. {tx("La page blanche, c'est le pack.")}</p>
             </div>
             <button type="button" className="shrink-0 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-primary-dark shadow-lg transition hover:-translate-y-0.5" onClick={() => aller({ nouveau: 1 })}>
               {tx("Composer un pack")}
