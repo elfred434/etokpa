@@ -639,8 +639,8 @@ export default function AdminPacksPage() {
       )}
 
       {aSupprimer && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4" onClick={() => setASupprimer(null)}>
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/50 p-4" onClick={() => setASupprimer(null)}>
+          <div className="w-[min(92vw,36rem)] shrink-0 rounded-3xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-error-light text-error">
               <MIcon name="delete" />
             </div>

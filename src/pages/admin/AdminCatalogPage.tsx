@@ -265,8 +265,8 @@ export default function AdminCatalogPage() {
         />
       )}
       {edition && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={fermer}>
-          <div className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl" onClick={(e: any) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" onClick={fermer}>
+          <div className="flex max-h-[85vh] w-[min(92vw,600px)] shrink-0 flex-col rounded-2xl bg-white shadow-2xl" onClick={(e: any) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border-default p-4">
               <h3 className="text-h3 font-h3 font-bold">
                 {mode === 'pack' ? (edition.id ? tx("Modifier le pack") : tx("Nouveau pack")) : edition.id ? tx("Modifier le produit") : tx("Nouveau produit")}
@@ -400,12 +400,12 @@ function CatalogueDetailModal({
     ?? cats.find((c: any) => String(c.id) === String(item.parent_id))?.nom;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="catalogue-detail-title"
-        className="flex max-h-[85vh] w-full max-w-[640px] flex-col rounded-2xl bg-white shadow-2xl"
+        className="flex max-h-[85vh] w-[min(92vw,640px)] shrink-0 flex-col rounded-2xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 border-b border-border-default p-4">
