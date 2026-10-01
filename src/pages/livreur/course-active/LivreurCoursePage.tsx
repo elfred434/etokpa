@@ -15,6 +15,7 @@ import { currentUserName } from '../../../routes/authGuard';
 import { dateHeure, destination, fetchDeliveries, statutLabel, tokRef, type LivreurOrder } from '../livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
+import { orderLineName } from '../../../utils/orderLine';
 
 
 /** Envoi de la position au plus toutes les 20 s (POST /livreur/position) pendant la livraison. */
@@ -282,7 +283,7 @@ export default function LivreurCoursePage() {
                 {(order.items ?? []).map((it) => (
                   <div key={it.id} className="flex items-center justify-between rounded-lg bg-bg-app px-md py-sm">
                     <p className="text-sm">
-                      <span className="font-bold text-primary">{it.quantite}x</span> {it.nom ?? `Produit #${it.product_id}`}
+                      <span className="font-bold text-primary">{it.quantite}x</span> {tx(orderLineName(it))}
                     </p>
                     <span className="text-xs text-on-surface-variant">{fmtFcfa(it.prix_unitaire)}</span>
                   </div>

@@ -1315,6 +1315,7 @@ export const EN: Record<string, string> = {
   "Montant": "Amount",
   "Client": "Customer",
   "Produit": "Product",
+  "Produit retiré": "Removed product",
   "Produits": "Products",
   "Prix": "Price",
   "Rechercher...": "Search...",

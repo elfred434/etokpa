@@ -9,6 +9,7 @@ import { alertApiError } from '../../../utils/apiError';
 import { articlesCount, dateHeure, fetchAllHistory, fetchZoneNames, statutLabel, tokRef, type LivreurOrder } from '../livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
+import { orderLineName } from '../../../utils/orderLine';
 
 
 const PER_PAGE = 10;
@@ -336,7 +337,7 @@ export default function LivreurHistoryPage() {
                 <div className="flex justify-between gap-md text-label">
                   <span className="text-text-secondary">Articles livrés ({articlesCount(selected)})</span>
                   <span className="text-right font-medium text-on-surface">
-                    {(selected.items ?? []).map((it) => `${it.quantite}x ${it.nom ?? `Produit #${it.product_id}`}`).join(', ') || '—'}
+                    {(selected.items ?? []).map((it) => `${it.quantite}x ${tx(orderLineName(it))}`).join(', ') || '—'}
                   </span>
                 </div>
                 <div className="flex justify-between text-label">

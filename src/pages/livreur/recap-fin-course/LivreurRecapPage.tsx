@@ -11,6 +11,7 @@ import { currentUserName } from '../../../routes/authGuard';
 import { articlesCount, destination, tokRef, unwrapOrder, type LivreurOrder } from '../livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
+import { orderLineName } from '../../../utils/orderLine';
 
 
 /**
@@ -130,7 +131,7 @@ export default function LivreurRecapPage() {
                         <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#FED7AA]/50 bg-[#FFF7ED] text-xs font-bold text-[#F97316]">
                           {it.quantite}x
                         </span>
-                        <span className="text-sm font-medium text-[#111827]">{it.nom ?? `Produit #${it.product_id}`}</span>
+                        <span className="text-sm font-medium text-[#111827]">{tx(orderLineName(it))}</span>
                       </div>
                       <span className="rounded-full bg-[#F3F4F6] px-2.5 py-1 text-xs font-medium text-[#6B7280]">{fmtFcfa(it.prix_unitaire)}</span>
                     </li>

@@ -12,11 +12,12 @@ import { ordersApi, paymentsApi } from '../../../services/api';
 import { isOwnOrder } from '../../../utils/ownOrder';
 import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
 import { tx } from '../../../i18n/tx';
+import { orderLineName } from '../../../utils/orderLine';
 
 
 interface ApiOrderItem {
   id: number;
-  product_id: number;
+  product_id?: number | null;
   nom?: string;
   quantite: number;
   prix_unitaire: number;
@@ -362,7 +363,7 @@ export default function OrdersListPage() {
                   <tbody>
                     {(selected.items ?? []).map((it) => (
                       <tr key={it.id} className="border-b border-line/60 last:border-0">
-                        <td className="py-xs pr-sm text-text-main">{it.nom ?? `Produit #${it.product_id}`}</td>
+                        <td className="py-xs pr-sm text-text-main">{tx(orderLineName(it))}</td>
                         <td className="py-xs px-sm text-text-secondary whitespace-nowrap">× {it.quantite}</td>
                         <td className="py-xs px-sm text-text-secondary whitespace-nowrap">
                           {Number(it.prix_unitaire).toLocaleString('fr-FR')} FCFA

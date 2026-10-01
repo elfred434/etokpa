@@ -13,7 +13,7 @@ import { listOf, unwrap } from '../../services/api/unwrap';
  */
 export interface LivreurOrderItem {
   id: number;
-  product_id: number;
+  product_id?: number | null;
   nom?: string | null;
   quantite: number;
   prix_unitaire: number;

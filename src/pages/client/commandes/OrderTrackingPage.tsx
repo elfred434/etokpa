@@ -24,7 +24,7 @@ interface ApiRider {
 /** Un item de commande — exactement `OrderResource::$items`. */
 interface ApiOrderItem {
   id: number;
-  product_id: number;
+  product_id?: number | null;
   nom?: string;
   quantite: number;
   prix_unitaire: number;

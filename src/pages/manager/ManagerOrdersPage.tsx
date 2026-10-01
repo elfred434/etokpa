@@ -6,6 +6,7 @@ import { unwrap, listOf, fmtFcfa, heureCourte } from '../../services/api/unwrap'
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
+import { orderLineName } from '../../utils/orderLine';
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -249,7 +250,7 @@ export default function ManagerOrdersPage() {
                     {selection.items.map((it: any) => (
                       <li key={it.id} className="flex justify-between rounded-lg bg-bg-app px-3 py-2">
                         <span>
-                          {it.nom ?? `Produit #${it.product_id}`} × {it.quantite}
+                          {tx(orderLineName(it))} × {it.quantite}
                         </span>
                         <span className="font-semibold">{fmtFcfa(it.prix_unitaire)}</span>
                       </li>

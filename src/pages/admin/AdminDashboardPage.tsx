@@ -8,6 +8,7 @@ import { extractApiError, formatApiError } from '../../utils/apiError';
 import MIcon from '../../components/shared/MIcon';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
+import { orderLineName } from '../../utils/orderLine';
 
 
 /** Activité récente — données statiques du design Stitch (copie conforme). */
@@ -85,7 +86,7 @@ export default function AdminDashboardPage() {
     payment: o.payment?.methode ?? '—',
     fee: fmtFcfa(o.commission_plateforme ?? o.commission),
     deliveryFee: fmtFcfa(o.frais_livraison),
-    items: (o.items ?? []).map((i: any) => `${i.nom ?? ''}${i.quantite ? ` ×${i.quantite}` : ''}`).join(', ') || '—',
+    items: (o.items ?? []).map((i: any) => `${tx(orderLineName(i))}${i.quantite ? ` ×${i.quantite}` : ''}`).join(', ') || '—',
     audit: `Commande n°${o.id}`,
     cta: tx("Voir la commande"),
   }));
