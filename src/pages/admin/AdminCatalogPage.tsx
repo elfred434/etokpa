@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useDesignScript } from '../../utils/designRuntime';
 import { adminApi } from '../../services/api';
 import { useLiveRows } from '../../services/api/useLiveRows';
@@ -28,6 +28,7 @@ const PER_PAGE = 8;
 
 export default function AdminCatalogPage() {
   useLanguage();
+  const navigate = useNavigate();
   useDesignScript(DESIGN_SCRIPT);
   // Tous les produits (100 par page, au plus 10 pages) : filtres et pagination portent sur le catalogue entier
   const { rows: produits, err, loading, reload } = useLiveRows(async () => {
@@ -124,27 +125,12 @@ export default function AdminCatalogPage() {
       fermer(); reload();
     } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
   };
-  /* ---- Packs (F-08) : même modale en mode « pack » ---- */
-  const ouvrirPack = (b: any) => {
-    revokeObjectUrl();
-    setMode('pack');
-    setEdition(b ?? {});
-    const inclus: any[] = b?.produits ?? b?.products ?? [];
-    setPackForm({
-      nom: b?.nom ?? '',
-      description: b?.description ?? '',
-      prix_total: b?.prix_total != null ? String(Number(b.prix_total)) : '',
-      prix_minimum: b?.prix_minimum != null ? String(Number(b.prix_minimum)) : '',
-      disponible: b?.disponible !== false,
-      items: inclus.map((p: any) => ({ id: String(p.id), qte: String(p.pivot?.qte ?? 1) })),
-    });
-  };
   const modifierDepuisDetail = () => {
     if (!detail) return;
     const { kind, item } = detail;
     setDetail(null);
     if (kind === 'produit') ouvrir(item);
-    else if (kind === 'pack') ouvrirPack(item);
+    else if (kind === 'pack') navigate({ to: '/admin/packs', search: { edit: Number(item.id), pack: undefined, nouveau: undefined } });
   };
   const enregistrerPack = async () => {
     if (!packForm.nom.trim()) { window.alert('Le nom du pack est obligatoire.'); return; }
@@ -212,20 +198,26 @@ export default function AdminCatalogPage() {
       )}
       {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
       <div className="m-lg">
-        <button type="button" className="btn btn-primary" onClick={() => (tab === 'packs' ? ouvrirPack(null) : ouvrir(null))}>
-          {tab === 'packs' ? tx("+ Nouveau pack (réel)") : '+ Nouveau produit (réel)'}
+        <button type="button" className="btn btn-primary" onClick={() => (tab === 'packs' ? navigate({ to: '/admin/packs', search: { nouveau: 1, pack: undefined, edit: undefined } }) : ouvrir(null))}>
+          {tab === 'packs' ? tx("Composer un pack") : '+ Nouveau produit (réel)'}
         </button>
       </div>
       <style>{DESIGN_CSS}</style>
   <header className="h-16 flex justify-between items-center px-lg bg-white sticky top-0 z-40 border-b border-border-default"> <div className="flex items-center gap-4"> <span className="font-h2 text-h2 font-bold text-primary">{tx("Gestion du catalogue")}</span> </div> <div className="flex items-center gap-6"> <div className="relative hidden lg:block"> <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" /> <input className="pl-10 pr-4 py-2 bg-bg-secondary border border-border-default rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all w-64" placeholder={tx("Rechercher un produit...")} type="text" value={q} onChange={(e) => setQ(e.target.value)} /> </div> <div className="flex items-center gap-4 border-l border-border-default pl-6">  </div> </div> </header>  <div className="p-lg space-y-lg">  <div className="flex flex-col md:flex-row md:items-center justify-between gap-md"> <div className="flex gap-lg border-b border-border-default w-full md:w-auto"> {([['produits', `Produits (${produitsF.length})`], ['categories', `Catégories (${catsF.length})`], ['packs', `Packs (${packsF.length})`]] as const).map(([k, label]) => (
                 <button key={k} type="button" onClick={() => setTab(k)} className={`pb-3 px-2 font-h3 text-h3 transition-all ${tab === k ? 'text-primary border-b-2 border-primary' : 'text-text-tertiary hover:text-on-surface-variant'}`}>{label}</button>
-              ))} </div> <button className="flex items-center gap-2 bg-primary-container hover:bg-primary-hover text-white px-md py-2.5 rounded-lg font-bold shadow-lg shadow-primary/10 transition-transform active:scale-95" type="button" onClick={() => (tab === 'packs' ? ouvrirPack(null) : ouvrir(null))}> <MIcon name="add" />
-                    {tx("Nouveau produit")}
+              ))} </div> <button className="flex items-center gap-2 bg-primary-container hover:bg-primary-hover text-white px-md py-2.5 rounded-lg font-bold shadow-lg shadow-primary/10 transition-transform active:scale-95" type="button" onClick={() => (tab === 'packs' ? navigate({ to: '/admin/packs', search: { nouveau: 1, pack: undefined, edit: undefined } }) : ouvrir(null))}> <MIcon name="add" />
+                    {tab === 'packs' ? tx("Composer un pack") : tx("Nouveau produit")}
                 </button> </div>  <div className="bg-white p-md rounded-lg shadow-sm flex flex-wrap items-center gap-4 border border-border-default"> <div className="flex-1 min-w-[200px]"> <div className="relative"> <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-sm" /> <input className="w-full pl-9 pr-4 py-2 text-label bg-white border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" placeholder="Nom, SKU ou ID..." type="text" value={q} onChange={(e) => setQ(e.target.value)} /> </div> </div> <select className="px-md py-2 text-label bg-white border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none min-w-[140px]" value={catF} onChange={(e) => setCatF(e.target.value)}> <option value="">{tx("Catégorie: Tout")}</option>
                 {cats.map((c: any) => (
                   <option key={c.id} value={String(c.id)}>{c.nom}</option>
                 ))}
-              </select> <select className="px-md py-2 text-label bg-white border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" value={dispoF} onChange={(e) => setDispoF(e.target.value)}> <option value="">{tx("Disponibilité")}</option> <option value="stock">{tx("En stock")}</option> <option value="rupture">{tx("Rupture")}</option> </select> <div className="flex border border-border-default rounded-lg overflow-hidden"> <button className="p-2 bg-bg-secondary text-primary"><MIcon name="format_list_bulleted" /></button> <button className="p-2 hover:bg-bg-secondary text-text-tertiary"><MIcon name="grid_view" /></button> </div> </div>  <div className="bg-white rounded-lg shadow-sm border border-border-default overflow-hidden"> <table className="w-full text-left border-collapse"> <thead> <tr className="bg-bg-secondary border-b border-border-default"> <th className="py-md px-lg w-10"> <input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /> </th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Produit")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Catégorie")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Prix")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Statut")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider text-right">Actions</th> </tr> </thead> <tbody>
+              </select> <select className="px-md py-2 text-label bg-white border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" value={dispoF} onChange={(e) => setDispoF(e.target.value)}> <option value="">{tx("Disponibilité")}</option> <option value="stock">{tx("En stock")}</option> <option value="rupture">{tx("Rupture")}</option> </select> <div className="flex border border-border-default rounded-lg overflow-hidden"> <button className="p-2 bg-bg-secondary text-primary"><MIcon name="format_list_bulleted" /></button> <button className="p-2 hover:bg-bg-secondary text-text-tertiary"><MIcon name="grid_view" /></button> </div> </div>  {tab === 'packs' && (
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary-tint px-4 py-3">
+                  <p className="text-sm text-on-surface">{tx("Les packs se composent dans l'atelier : une page blanche, les produits se glissent dessus.")}</p>
+                  <Link to="/admin/packs" className="btn btn-primary shrink-0">{tx("Ouvrir l'atelier")}</Link>
+                </div>
+              )}
+              <div className="bg-white rounded-lg shadow-sm border border-border-default overflow-hidden"> <table className="w-full text-left border-collapse"> <thead> <tr className="bg-bg-secondary border-b border-border-default"> <th className="py-md px-lg w-10"> <input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /> </th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Produit")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Catégorie")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Prix")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Statut")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider text-right">Actions</th> </tr> </thead> <tbody>
                 {tab === 'produits' && slicePage(produitsF).map((pr: any) => (
                   <tr key={pr.id} tabIndex={0} title={tx("Voir le détail")} className="cursor-pointer hover:bg-bg-secondary/50 transition-colors" onClick={() => setDetail({ kind: 'produit', item: pr })} onKeyDown={(e) => { if (e.key === 'Enter') setDetail({ kind: 'produit', item: pr }); }}>
                     <td className="py-4 px-lg" onClick={(e) => e.stopPropagation()}><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /></td>
@@ -257,7 +249,7 @@ export default function AdminCatalogPage() {
                     <td className="py-4 px-md text-text-secondary">{b.description ?? '—'}</td>
                     <td className="py-4 px-md font-price text-primary">{fmtFcfa(Number(b.prix_total ?? b.prix_minimum ?? 0))}</td>
                     <td className="py-4 px-md"> <span className={`px-2 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 w-fit ${b.disponible !== false ? 'bg-success-light text-success-dark' : 'bg-bg-secondary text-text-secondary'}`}> <span className={`w-1.5 h-1.5 rounded-full ${b.disponible !== false ? 'bg-success' : 'bg-text-tertiary'}`}></span> {b.disponible !== false ? tx("Disponible") : 'Rupture'} </span> </td>
-                    <td className="py-4 px-md text-right" onClick={(e) => e.stopPropagation()}> <div className="flex gap-2 justify-end"> <button type="button" className="font-semibold text-primary hover:underline" onClick={() => ouvrirPack(b)}>{tx("Modifier")}</button> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimerPack(b)}>{tx("Supprimer")}</button> </div> </td>
+                    <td className="py-4 px-md text-right" onClick={(e) => e.stopPropagation()}> <div className="flex gap-2 justify-end"> <Link to="/admin/packs" search={{ edit: Number(b.id) }} className="font-semibold text-primary hover:underline">{tx("Modifier")}</Link> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimerPack(b)}>{tx("Supprimer")}</button> </div> </td>
                   </tr>
                 ))}
                 {((tab === 'produits' && produitsF.length === 0) || (tab === 'categories' && catsF.length === 0) || (tab === 'packs' && packsF.length === 0)) && (

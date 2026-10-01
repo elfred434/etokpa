@@ -20,6 +20,7 @@ interface NavItem {
 const METIER_ITEMS: NavItem[] = [
   { key: 'dashboard', icon: 'dashboard', label: 'Dashboard Global', to: '/admin' },
   { key: 'catalogue', icon: 'inventory_2', label: 'Catalogue & Produits', to: '/admin/catalogue' },
+  { key: 'packs', icon: 'package_2', label: 'Packs', to: '/admin/packs' },
   { key: 'categories', icon: 'category', label: 'Catégories', to: '/admin/categories' },
   { key: 'zones', icon: 'map', label: 'Zones de Livraison', to: '/admin/zones' },
   { key: 'utilisateurs', icon: 'group', label: 'Utilisateurs', to: '/admin/utilisateurs' },

@@ -17,6 +17,7 @@ import OrderTrackingPage from '../pages/client/commandes/OrderTrackingPage';
 import OrdersListPage from '../pages/client/commandes/OrdersListPage';
 import MessagingPage from '../pages/client/messagerie/MessagingPage';
 import AdminCatalogPage from '../pages/admin/AdminCatalogPage';
+import AdminPacksPage from '../pages/admin/AdminPacksPage';
 import AdminCategoriesPage from '../pages/admin/AdminCategoriesPage';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import AdminOrdersPage from '../pages/admin/AdminOrdersPage';
@@ -131,6 +132,22 @@ const orderTrackingRoute = createRoute({
 const ordersListRoute = createRoute({ getParentRoute: () => rootRoute, path: '/commandes', component: OrdersListPage });
 const messagingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/messagerie', component: MessagingPage });
 const adminCatalogueRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/catalogue', component: AdminCatalogPage });
+const adminPacksRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/packs',
+  component: AdminPacksPage,
+  validateSearch: (search: Record<string, unknown>): { pack?: number; edit?: number; nouveau?: number } => {
+    const num = (v: unknown) => {
+      const n = typeof v === 'number' ? v : typeof v === 'string' && v !== '' ? Number(v) : NaN;
+      return Number.isInteger(n) && n > 0 ? n : undefined;
+    };
+    return {
+      pack: num(search.pack),
+      edit: num(search.edit),
+      nouveau: search.nouveau === 1 || search.nouveau === '1' ? 1 : undefined,
+    };
+  },
+});
 const adminDashboardRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin', component: AdminDashboardPage });
 const adminOrdersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/commandes', component: AdminOrdersPage });
 const adminCategoriesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/categories', component: AdminCategoriesPage });
@@ -191,6 +208,7 @@ const routeTree = rootRoute.addChildren([
   adminDashboardRoute,
   adminOrdersRoute,
   adminCatalogueRoute,
+  adminPacksRoute,
   adminCategoriesRoute,
   adminZonesPageRoute,
   adminUsersPageRoute,
