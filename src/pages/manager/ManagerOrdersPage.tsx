@@ -71,7 +71,6 @@ export default function ManagerOrdersPage() {
           source={toutePlateforme ? 'admin' : 'zone'}
           reloadKey={reloadKey}
           title={toutePlateforme ? tx("Toutes les commandes de la plateforme") : tx("Commandes de votre zone")}
-          hint={toutePlateforme ? undefined : tx("Le serveur ne renvoie encore au manager que les commandes de sa zone.")}
           renderActions={(o) => !o.livreur && (
             <button
               type="button"

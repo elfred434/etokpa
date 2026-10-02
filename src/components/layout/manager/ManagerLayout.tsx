@@ -38,14 +38,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
           </div>
         </div>
       </header>
-      <main className="ml-64 space-y-lg p-lg pt-[calc(52px+16px)]">
-        {admin && !zone && (
-          <div className="rounded-lg border border-border-default bg-bg-secondary p-4 text-label text-text-secondary">
-            {tx("Un administrateur peut ouvrir cet espace. Les listes sont encore filtrées sur la zone du compte manager, absente pour un admin.")}
-          </div>
-        )}
-        {children}
-      </main>
+      <main className="ml-64 space-y-lg p-lg pt-[calc(52px+16px)]">{children}</main>
     </div>
   );
 }
