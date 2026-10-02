@@ -43,11 +43,12 @@ export function hasSession(): boolean {
 }
 
 type StoredUser = {
+  id?: number;
   nom_complet?: string;
   prenom?: string;
   nom?: string;
   role?: string | { nom?: string } | null;
-  profil?: { zone?: { nom?: string } | null } | null;
+  profil?: { zone_id?: number; zone?: { id?: number; nom?: string } | null } | null;
 };
 function storedUser(): StoredUser | null {
   try {
@@ -77,9 +78,32 @@ export function currentUserName(): string | null {
   return nom || null;
 }
 
+/** Id du compte connecté, sinon null. */
+export function currentUserId(): number | null {
+  const id = Number(storedUser()?.id);
+  return id > 0 ? id : null;
+}
+
 /** Zone du manager / livreur connecté (UserResource.profil.zone, chargée à la 2FA), sinon null. */
 export function currentUserZone(): string | null {
   return storedUser()?.profil?.zone?.nom || null;
+}
+
+/** Garde la zone choisie pour l'en-tête, en attendant le prochain profil renvoyé par l'API. */
+export function rememberUserZone(zoneId: number, nom?: string) {
+  try {
+    const raw = localStorage.getItem('tokpa_user');
+    const u = raw ? JSON.parse(raw) as StoredUser : {};
+    const profil = u.profil && typeof u.profil === 'object' ? u.profil : {};
+    u.profil = {
+      ...profil,
+      zone_id: zoneId,
+      zone: { ...(profil.zone ?? {}), id: zoneId, nom: nom || profil.zone?.nom },
+    };
+    localStorage.setItem('tokpa_user', JSON.stringify(u));
+  } catch {
+    /* l'affichage reprendra la zone au prochain profil */
+  }
 }
 
 /** Initiales d'un nom (« Awa Dossou » → « AD »). */

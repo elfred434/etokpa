@@ -9,6 +9,7 @@ import AdminLayout from '../../components/layout/admin/AdminLayout';
 import AdminNotificationBell from '../../components/layout/admin/AdminNotificationBell';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
+import { currentUserId, currentUserZone, rememberUserZone } from '../../routes/authGuard';
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -195,16 +196,22 @@ export default function AdminUsersPage() {
     setEditDispo(Boolean(u?.profil?.disponibilite));
   };
   const selRole = selected ? roleOf(selected) : '';
-  const hasZone = selRole === 'manager' || selRole === 'livreur';
+  const ownAdmin = !!selected && (selRole === 'admin' || selRole === 'super_admin') && Number(selected.id) === currentUserId();
+  const hasZone = selRole === 'manager' || selRole === 'livreur' || ownAdmin;
 
   const saveUser = async () => {
     if (!selected) return;
     const data: Record<string, unknown> = { statut: editStatut };
-    if (hasZone && editZone) data.zone_id = Number(editZone);
+    if (hasZone && !ownAdmin && editZone) data.zone_id = Number(editZone);
     if (selRole === 'livreur') data.disponibilite = editDispo;
     setSaving(true);
     try {
       await adminApi.updateUser(Number(selected.id), data);
+      if (ownAdmin && editZone) {
+        const zoneId = Number(editZone);
+        await adminApi.setManagerZone(Number(selected.id), zoneId);
+        rememberUserZone(zoneId, zones.find((z) => z.id === zoneId)?.nom);
+      }
       toast.success(tx("Modifications enregistrées."));
       setSelected(null);
       setReloadKey((k) => k + 1);
@@ -228,32 +235,7 @@ export default function AdminUsersPage() {
     }
   };
 
-  const rememberAdminZone = (zoneId: number) => {
-    const zone = zones.find((z) => z.id === zoneId);
-    try {
-      const raw = localStorage.getItem('tokpa_user');
-      const u = raw ? JSON.parse(raw) as { profil?: { zone?: { id?: number; nom?: string }; zone_id?: number } } : {};
-      const profil = u.profil && typeof u.profil === 'object' ? u.profil : {};
-      u.profil = {
-        ...profil,
-        zone_id: zoneId,
-        zone: { ...(profil.zone ?? {}), id: zoneId, nom: zone?.nom ?? profil.zone?.nom },
-      };
-      localStorage.setItem('tokpa_user', JSON.stringify(u));
-    } catch {
-      /* l'en-tête manager relira la zone au prochain chargement si elle est bien enregistrée */
-    }
-  };
-
-  const currentAdminId = (): number | null => {
-    try {
-      const raw = localStorage.getItem('tokpa_user');
-      const id = Number(raw ? (JSON.parse(raw) as { id?: number }).id : 0);
-      return id > 0 ? id : null;
-    } catch {
-      return null;
-    }
-  };
+  const currentAdminId = currentUserId;
 
   const [managerTarget, setManagerTarget] = useState<{ id: number; nom: string; kind: 'client' | 'self' } | null>(null);
   const [managerZone, setManagerZone] = useState('');
@@ -285,9 +267,11 @@ export default function AdminUsersPage() {
     setPromoting(true);
     try {
       const zoneId = Number(managerZone);
-      await adminApi.promoteAsManager(managerTarget.id, { zone_id: zoneId });
-      if (managerTarget.kind === 'self') rememberAdminZone(zoneId);
-      toast.success(managerTarget.kind === 'self' ? tx("Compte manager créé.") : tx("Client promu manager."));
+      const dejaZone = managerTarget.kind === 'self' && !!currentUserZone();
+      if (managerTarget.kind === 'self') await adminApi.setManagerZone(managerTarget.id, zoneId);
+      else await adminApi.promoteAsManager(managerTarget.id, { zone_id: zoneId });
+      if (managerTarget.kind === 'self') rememberUserZone(zoneId, zones.find((z) => z.id === zoneId)?.nom);
+      toast.success(managerTarget.kind === 'self' ? tx(dejaZone ? "Zone mise à jour." : "Compte manager créé.") : tx("Client promu manager."));
       setManagerTarget(null);
       setSelected(null);
       setReloadKey((k) => k + 1);
@@ -438,7 +422,7 @@ export default function AdminUsersPage() {
             onClick={openSelfManager}
           >
             <i className="ti ti-shield-check text-sm"></i>
-            <span>{tx("Créer mon compte manager")}</span>
+            <span>{tx(currentUserZone() ? "Changer de zone" : "Créer mon compte manager")}</span>
           </button>
           <button
             className="btn-press bg-primary hover:bg-primary-hover text-white text-xs font-medium px-3.5 py-2 rounded-[10px] flex items-center gap-1.5 shadow-sm transition-all"
@@ -1134,7 +1118,7 @@ export default function AdminUsersPage() {
           <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50/80">
             <div>
               <h3 className="text-base font-bold text-gray-900">
-                {managerTarget?.kind === 'self' ? tx("Créer mon compte manager") : tx("Promouvoir en manager")}
+                {managerTarget?.kind === 'self' ? tx(currentUserZone() ? "Changer de zone" : "Créer mon compte manager") : tx("Promouvoir en manager")}
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">{managerTarget?.nom}</p>
             </div>

@@ -337,6 +337,7 @@ export const EN: Record<string, string> = {
   "Créer mon compte manager": "Create my manager account",
   "Client promu manager.": "Client promoted to manager.",
   "Compte manager créé.": "Manager account created.",
+  "Zone mise à jour.": "Zone updated.",
   "Choisissez la zone de ce manager.": "Choose this manager's zone.",
   "Ajouter une catégorie": "Add a category",
   "Ajoutez des produits frais du marché pour commencer vos achats.": "Add fresh market products to start shopping.",

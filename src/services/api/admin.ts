@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { unwrap } from './unwrap';
 
 export const adminApi = {
   // Produits
@@ -140,6 +141,15 @@ export const adminApi = {
   promoteAsManager: async (id: number, data: { zone_id: number; heure_debut?: string; heure_fin?: string }) => {
     const response = await apiClient.post(`/admin/users/${id}/managers`, data);
     return response.data;
+  },
+  /** Met à jour la zone d'une fiche manager. La crée si l'admin n'en a pas encore. */
+  setManagerZone: async (id: number, zoneId: number) => {
+    const updated = (await apiClient.put(`/admin/users/${id}`, { zone_id: zoneId })).data;
+    const user = unwrap(updated) as { profil?: { zone_id?: number; zone?: { id?: number } } };
+    const saved = Number(user?.profil?.zone_id ?? user?.profil?.zone?.id ?? 0);
+    if (saved === zoneId) return updated;
+    const created = (await apiClient.post(`/admin/users/${id}/managers`, { zone_id: zoneId })).data;
+    return created;
   },
 
   // Budget proposals (Négociations)
