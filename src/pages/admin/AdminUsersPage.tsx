@@ -1130,7 +1130,7 @@ export default function AdminUsersPage() {
         id="managerModal"
         onClick={() => setManagerTarget(null)}
       >
-        <div className="bg-white rounded-[16px] shadow-2xl max-w-md w-full overflow-hidden border border-gray-200" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-white rounded-[16px] shadow-2xl max-w-[512px] w-full max-h-[90vh] overflow-y-auto border border-gray-200 animate-in fade-in zoom-in duration-150" onClick={(e) => e.stopPropagation()}>
           <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50/80">
             <div>
               <h3 className="text-base font-bold text-gray-900">
