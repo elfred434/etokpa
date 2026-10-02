@@ -137,6 +137,10 @@ export const adminApi = {
     const response = await apiClient.delete(`/admin/users/${id}`);
     return response.data;
   },
+  promoteAsManager: async (id: number, data: { zone_id: number; heure_debut?: string; heure_fin?: string }) => {
+    const response = await apiClient.post(`/admin/users/${id}/managers`, data);
+    return response.data;
+  },
 
   // Budget proposals (Négociations)
   getProposals: async (params?: { statut?: string; page?: number }) => {

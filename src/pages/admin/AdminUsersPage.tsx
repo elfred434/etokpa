@@ -18,7 +18,7 @@ const DESIGN_CSS = `
       transform: scale(0.97);
     }
     /* Modal transitions */
-    #userModal.active, #addUserModal.active {
+    #userModal.active, #addUserModal.active, #managerModal.active {
       display: flex !important;
     }
   `;
@@ -228,6 +228,76 @@ export default function AdminUsersPage() {
     }
   };
 
+  const rememberAdminZone = (zoneId: number) => {
+    const zone = zones.find((z) => z.id === zoneId);
+    try {
+      const raw = localStorage.getItem('tokpa_user');
+      const u = raw ? JSON.parse(raw) as { profil?: { zone?: { id?: number; nom?: string }; zone_id?: number } } : {};
+      const profil = u.profil && typeof u.profil === 'object' ? u.profil : {};
+      u.profil = {
+        ...profil,
+        zone_id: zoneId,
+        zone: { ...(profil.zone ?? {}), id: zoneId, nom: zone?.nom ?? profil.zone?.nom },
+      };
+      localStorage.setItem('tokpa_user', JSON.stringify(u));
+    } catch {
+      /* l'en-tête manager relira la zone au prochain chargement si elle est bien enregistrée */
+    }
+  };
+
+  const currentAdminId = (): number | null => {
+    try {
+      const raw = localStorage.getItem('tokpa_user');
+      const id = Number(raw ? (JSON.parse(raw) as { id?: number }).id : 0);
+      return id > 0 ? id : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const [managerTarget, setManagerTarget] = useState<{ id: number; nom: string; kind: 'client' | 'self' } | null>(null);
+  const [managerZone, setManagerZone] = useState('');
+  const [promoting, setPromoting] = useState(false);
+  const openPromote = (u: { id: number; nom?: string }, kind: 'client' | 'self') => {
+    setManagerZone('');
+    setManagerTarget({ id: Number(u.id), nom: u.nom || nomOf(u), kind });
+  };
+  const openSelfManager = () => {
+    const id = currentAdminId();
+    if (!id) {
+      toast.error(tx("Session expirée, reconnectez-vous"));
+      return;
+    }
+    let nom = 'Admin';
+    try {
+      const raw = localStorage.getItem('tokpa_user');
+      const u = raw ? JSON.parse(raw) as { nom_complet?: string; prenom?: string; nom?: string } : null;
+      nom = u?.nom_complet || [u?.prenom, u?.nom].filter(Boolean).join(' ') || nom;
+    } catch { /* nom par défaut */ }
+    openPromote({ id, nom }, 'self');
+  };
+  const confirmPromote = async () => {
+    if (!managerTarget) return;
+    if (!managerZone) {
+      toast.error(tx("Choisissez la zone de ce manager."));
+      return;
+    }
+    setPromoting(true);
+    try {
+      const zoneId = Number(managerZone);
+      await adminApi.promoteAsManager(managerTarget.id, { zone_id: zoneId });
+      if (managerTarget.kind === 'self') rememberAdminZone(zoneId);
+      toast.success(managerTarget.kind === 'self' ? tx("Compte manager créé.") : tx("Client promu manager."));
+      setManagerTarget(null);
+      setSelected(null);
+      setReloadKey((k) => k + 1);
+    } catch (e) {
+      alertApiError(e, 'admin-users-manager');
+    } finally {
+      setPromoting(false);
+    }
+  };
+
   const resetPassword = async (u: any) => {
     if (!u?.email) {
       toast.error(tx("Ce compte n'a pas d'adresse email."));
@@ -362,6 +432,14 @@ export default function AdminUsersPage() {
             className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             icon={<i className="ti ti-bell text-lg"></i>}
           />
+          <button
+            className="btn-press bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 text-xs font-medium px-3.5 py-2 rounded-[10px] flex items-center gap-1.5 shadow-sm transition-all"
+            type="button"
+            onClick={openSelfManager}
+          >
+            <i className="ti ti-shield-check text-sm"></i>
+            <span>{tx("Créer mon compte manager")}</span>
+          </button>
           <button
             className="btn-press bg-primary hover:bg-primary-hover text-white text-xs font-medium px-3.5 py-2 rounded-[10px] flex items-center gap-1.5 shadow-sm transition-all"
             type="button"
@@ -549,6 +627,16 @@ export default function AdminUsersPage() {
                       <td className="py-3 px-4 text-gray-500">{cmds != null ? `${fmt(cmds)} commande${cmds > 1 ? 's' : ''}` : '—'}</td>
                       <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
+                          {role === 'client' && (
+                            <button
+                              type="button"
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                              onClick={() => openPromote(u, 'client')}
+                              title={tx("Promouvoir en manager")}
+                            >
+                              <i className="ti ti-shield-check text-sm"></i>
+                            </button>
+                          )}
                           <button type="button" className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-orange-50 transition-colors" onClick={() => openUser(u)} title={tx("Modifier")}>
                             <i className="ti ti-edit text-sm"></i>
                           </button>
@@ -713,6 +801,16 @@ export default function AdminUsersPage() {
               </div>
               <div className="pt-2 flex flex-col gap-2">
                 <label className="font-medium text-gray-700 block">Actions administratives :</label>
+                {selRole === 'client' && (
+                  <button
+                    type="button"
+                    className="btn-press w-full py-2 px-3 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-800 font-medium rounded-[10px] flex items-center justify-center gap-1.5 transition-all"
+                    onClick={() => openPromote(selected, 'client')}
+                  >
+                    <i className="ti ti-shield-check text-sm"></i>
+                    <span>{tx("Promouvoir en manager")}</span>
+                  </button>
+                )}
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -1022,6 +1120,61 @@ export default function AdminUsersPage() {
                   <span>{creating ? tx("Création…") : 'Valider & Enregistrer le livreur'}</span>
                 </button>
               </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div
+        className={`fixed inset-0 bg-black/50 z-[60] ${managerTarget ? 'active' : 'hidden'} items-center justify-center p-4 backdrop-blur-xs`}
+        id="managerModal"
+        onClick={() => setManagerTarget(null)}
+      >
+        <div className="bg-white rounded-[16px] shadow-2xl max-w-md w-full overflow-hidden border border-gray-200" onClick={(e) => e.stopPropagation()}>
+          <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50/80">
+            <div>
+              <h3 className="text-base font-bold text-gray-900">
+                {managerTarget?.kind === 'self' ? tx("Créer mon compte manager") : tx("Promouvoir en manager")}
+              </h3>
+              <p className="text-xs text-gray-500 mt-0.5">{managerTarget?.nom}</p>
+            </div>
+            <button type="button" className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-200 transition-colors" onClick={() => setManagerTarget(null)}>
+              <i className="ti ti-x text-lg"></i>
+            </button>
+          </div>
+          <form
+            className="p-5 space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void confirmPromote();
+            }}
+          >
+            <p className="text-xs text-gray-600">{tx("Choisissez la zone de ce manager.")}</p>
+            <label className="block text-xs font-medium text-gray-700">
+              {tx("Zone géographique")}
+              <select
+                value={managerZone}
+                onChange={(e) => setManagerZone(e.target.value)}
+                className="mt-1 w-full border border-gray-200 rounded-[10px] px-3 py-2 text-sm bg-white"
+                required
+              >
+                <option value="">{tx("— Choisir une zone —")}</option>
+                {zones.map((z) => (
+                  <option key={z.id} value={z.id}>{z.nom}</option>
+                ))}
+              </select>
+            </label>
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button type="button" className="btn-press px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all" onClick={() => setManagerTarget(null)}>
+                {tx("Annuler")}
+              </button>
+              <button
+                type="submit"
+                disabled={promoting}
+                className="btn-press px-4 py-2 bg-primary hover:bg-primary-hover text-white font-medium rounded-[10px] shadow-sm transition-all disabled:opacity-60"
+              >
+                {promoting ? tx("Enregistrement…") : tx("Valider")}
+              </button>
             </div>
           </form>
         </div>
