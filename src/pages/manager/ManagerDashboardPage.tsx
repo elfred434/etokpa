@@ -22,6 +22,11 @@ const STATUT_CLASS: Record<string, string> = {
   'livree': 'bg-success-container text-on-surface',
 };
 
+function orderOf(row: any) {
+  const inner = row?.data && typeof row.data === 'object' && 'id' in row.data ? row.data : row;
+  return inner ?? row;
+}
+
 function statutClass(s: string) {
   return STATUT_CLASS[(s ?? '').toLowerCase()] ?? 'bg-bg-secondary text-text-secondary';
 }
@@ -39,7 +44,7 @@ export default function ManagerDashboardPage() {
       .then(([s, o]) => {
         if (!alive) return;
         setStats(unwrap(s));
-        setCommandes(listOf(unwrap(o)));
+        setCommandes(listOf(unwrap(o)).map(orderOf));
       })
       .catch((e) => {
         if (!alive) return;
