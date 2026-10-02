@@ -53,7 +53,6 @@ export default function ManagerStatsPage() {
             <h1 className="text-h2 font-h2 font-bold">
               {tx("Statistiques de la zone")} — {currentUserZone() ?? tx("Zone non attribuée")}
             </h1>
-            <p className="text-text-secondary">{tx("Données réelles — GET /manager/stats")}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {PERIODES.map((p) => (

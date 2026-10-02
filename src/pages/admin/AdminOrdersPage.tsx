@@ -11,7 +11,6 @@ export default function AdminOrdersPage() {
       <PlatformOrdersPanel
         source="admin"
         title={tx("Toutes les commandes de la plateforme")}
-        hint={tx("Liste réelle — GET /admin/orders")}
       />
     </AdminLayout>
   );

@@ -55,7 +55,6 @@ export default function AdminUserDetailPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-h2 font-h2 font-bold">Fiche utilisateur {id != null ? `#${id}` : ''}</h1>
-          <p className="text-text-secondary">{tx("Données réelles — GET /admin/users (recherche paginée)")}</p>
         </div>
 
         {err && (

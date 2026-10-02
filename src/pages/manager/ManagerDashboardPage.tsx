@@ -85,7 +85,6 @@ export default function ManagerDashboardPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="text-h2 font-h2 font-bold">Tableau de bord — Zone {currentUserZone() ?? '—'}</h1>
-            <p className="text-text-secondary">{tx("Données réelles — GET /manager/stats + /manager/orders")}</p>
           </div>
         </div>
 
