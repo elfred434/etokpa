@@ -136,7 +136,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                       </td>
                       <td className="px-4 py-3">
                         <span className={`rounded-full px-2.5 py-1 text-overline font-semibold ${STATUT_CLASS[statut] ?? 'bg-bg-secondary text-text-secondary'}`}>
-                          {tx(STATUT_LABEL[statut] ?? statut || '—')}
+                          {tx(STATUT_LABEL[statut] ?? (statut || '—'))}
                         </span>
                       </td>
                       <td className="px-4 py-3">
