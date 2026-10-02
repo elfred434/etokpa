@@ -19,6 +19,7 @@ interface NavItem {
 /** Gestion Métier (Admin) + DevOps (super-admin) — libellés des designs Stitch. */
 const METIER_ITEMS: NavItem[] = [
   { key: 'dashboard', icon: 'dashboard', label: 'Dashboard Global', to: '/admin' },
+  { key: 'commandes', icon: 'shopping_cart', label: 'Commandes', to: '/admin/commandes' },
   { key: 'catalogue', icon: 'inventory_2', label: 'Catalogue & Produits', to: '/admin/catalogue' },
   { key: 'packs', icon: 'package_2', label: 'Packs', to: '/admin/packs' },
   { key: 'categories', icon: 'category', label: 'Catégories', to: '/admin/categories' },

@@ -13,6 +13,7 @@ import { isOwnOrder } from '../../../utils/ownOrder';
 import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
 import { tx } from '../../../i18n/tx';
 import { orderLineName } from '../../../utils/orderLine';
+import { isCancelledStatut } from '../../../utils/orderStatus';
 import { loadPayment, paymentIdempotencyKey, rememberPayment } from '../../../utils/idempotence';
 
 
@@ -312,17 +313,19 @@ export default function OrdersListPage() {
                             {o.livreur?.nom_complet ?? '—'}
                           </td>
                           <td className="px-md py-sm text-right">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSuivre(o.id);
-                              }}
-                              className="inline-flex items-center gap-xs px-md py-xs rounded-lg bg-primary-tint border border-primary-light text-primary-container text-micro font-bold hover:bg-primary-lighter active:scale-95 transition-all cursor-pointer whitespace-nowrap"
-                            >
-                              <MIcon name="near_me" className="text-[14px]" />
-                              {isFr ? tx("Suivre") : 'Track'}
-                            </button>
+                            {!isCancelledStatut(o.statut) && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSuivre(o.id);
+                                }}
+                                className="inline-flex items-center gap-xs px-md py-xs rounded-lg bg-primary-tint border border-primary-light text-primary-container text-micro font-bold hover:bg-primary-lighter active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                              >
+                                <MIcon name="near_me" className="text-[14px]" />
+                                {isFr ? tx("Suivre") : 'Track'}
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
@@ -493,10 +496,12 @@ export default function OrdersListPage() {
                     {isFr ? tx("Payer") : 'Pay'}
                   </button>
                 )}
-                <button type="button" onClick={() => handleSuivre(selected.id)} className="btn btn-primary flex-1">
-                  <MIcon name="near_me" />
-                  {isFr ? tx("Suivre cette commande") : 'Track this order'}
-                </button>
+                {!isCancelledStatut(selected.statut) && (
+                  <button type="button" onClick={() => handleSuivre(selected.id)} className="btn btn-primary flex-1">
+                    <MIcon name="near_me" />
+                    {isFr ? tx("Suivre cette commande") : 'Track this order'}
+                  </button>
+                )}
                 {selected.statut === "en_attente" && (
                   <button
                     type="button"

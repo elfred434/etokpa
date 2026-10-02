@@ -104,11 +104,9 @@ export default function OrderTrackingPage() {
         const list: ApiOrder[] = (res?.data ?? res ?? []).map((o: Record<string, unknown> & { data?: ApiOrder }) => o.data ?? o);
         setAllOrders(list);
         if (!selectedId && list.length > 0) {
-          // sans ?order= : la commande active la plus récente (sinon la plus récente).
-          // Le choix d'une commande se fait via /commandes → « Suivre » — le sélecteur de
-          // statuts/commandes est réservé au livreur assigné (design Stitch), pas au client.
-          const active = list.find((o) => ["en_attente", 'en_preparation', 'en_livraison'].includes(o.statut));
-          setSelectedId((active ?? list[0]).id);
+          // sans ?order= : seulement une commande encore en cours. Une commande annulée n'est pas suivie.
+          const active = list.find((o) => ['en_attente', 'en_preparation', 'en_livraison'].includes(o.statut));
+          if (active) setSelectedId(active.id);
         }
       })
       .catch((err) => {
@@ -142,7 +140,9 @@ export default function OrderTrackingPage() {
         }
         const res = await ordersApi.getOrder(selectedId);
         if (!alive) return;
-        setOrder((res?.data ?? res) as ApiOrder);
+        const full = (res?.data ?? res) as ApiOrder;
+        setOrder(full);
+        if (full.statut === 'annule') return;
         const t = await ordersApi.getTracking(selectedId);
         if (alive) setTracking(t as TrackingInfo);
       } catch (err) {
@@ -209,7 +209,7 @@ export default function OrderTrackingPage() {
 
   const { riderCoords, estimatedMinutes, source } = useRiderLocation({
     orderId: selectedId ? String(selectedId) : undefined,
-    enabled: isAuthenticated && !!selectedId && !accessDenied,
+    enabled: isAuthenticated && !!selectedId && !accessDenied && order?.statut !== 'annule',
     realPosition,
     destinationCoords: destCoords ?? undefined, // ETA vers la destination RÉELLE de la commande
     allowSimulation: search.simu === '1', // démo opt-in uniquement : sans ça, aucune position inventée
@@ -241,15 +241,17 @@ export default function OrderTrackingPage() {
       <ClientNavbar />
 
       <main className="flex-grow pt-[52px] pb-[80px] md:pb-0 relative overflow-hidden flex flex-col">
-        {/* GPS MAP SECTION */}
-        <section className="relative h-[420px] sm:h-[520px] w-full overflow-hidden bg-[#E8F4FD]">
-          <RealBeninMap
-            riderCoords={riderCoords}
-            riderName={rider?.nom_complet}
-            destinationCoords={destCoords}
-            destinationLabel={[order?.landmark?.nom, order?.description_lieu].filter(Boolean).join(' — ')}
-          />
-        </section>
+        {/* Pas de carte ni de suivi GPS pour une commande annulée. */}
+        {!isCancelled && (
+          <section className="relative h-[420px] sm:h-[520px] w-full overflow-hidden bg-[#E8F4FD]">
+            <RealBeninMap
+              riderCoords={riderCoords}
+              riderName={rider?.nom_complet}
+              destinationCoords={destCoords}
+              destinationLabel={[order?.landmark?.nom, order?.description_lieu].filter(Boolean).join(' — ')}
+            />
+          </section>
+        )}
 
         {/* STATUS PANEL (Floating Bottom Sheet) */}
         <section className="relative flex-grow bg-white rounded-t-[20px] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-lg pt-lg pb-xl z-40 -mt-8 overflow-y-auto max-w-[800px] mx-auto w-full">
@@ -265,7 +267,7 @@ export default function OrderTrackingPage() {
             <div className="py-2xl flex justify-center">
               <MIcon name="sync" className="text-primary text-3xl animate-spin" />
             </div>
-          ) : allOrders.length === 0 ? (
+          ) : allOrders.length === 0 || !selectedId ? (
             <div className="py-xl">
               <EmptyState
                 icon={<MIcon name="local_shipping" className="text-4xl text-primary" />}
@@ -357,6 +359,7 @@ export default function OrderTrackingPage() {
                   )}
                 </div>
 
+                {!isCancelled && (
                 <div className="text-micro bg-bg-secondary px-3 py-1.5 rounded-lg border border-border-default font-mono text-text-secondary">
                   {riderCoords ? (
                     <>
@@ -373,9 +376,11 @@ export default function OrderTrackingPage() {
                     'Rider position not available yet'
                   )}
                 </div>
+                )}
               </div>
 
-              {/* Progress Stepper — état piloté par le statut backend */}
+              {/* Progress Stepper — pas de suivi si la commande est annulée */}
+              {!isCancelled && (
               <div className="relative flex justify-between items-center mb-xl px-sm">
                 <div className="absolute left-md right-md h-[3px] bg-border-default top-1/2 -translate-y-1/2 z-0" />
                 <div
@@ -415,8 +420,10 @@ export default function OrderTrackingPage() {
                   );
                 })}
               </div>
+              )}
 
-              {/* Rider Info Card — livreur réel assigné (GET /orders/{id}) */}
+              {/* Rider Info Card — pas de suivi livreur si la commande est annulée */}
+              {!isCancelled && (
               <div className="bg-bg-secondary rounded-lg p-md mb-lg flex items-center justify-between">
                 <div className="flex items-center gap-md">
                   <div className="w-12 h-12 bg-success rounded-full flex items-center justify-center text-white font-bold text-h3">
@@ -463,6 +470,7 @@ export default function OrderTrackingPage() {
                   </Link>
                 </div>
               </div>
+              )}
 
               {/* Order Summary Card — données réelles */}
               {order && (

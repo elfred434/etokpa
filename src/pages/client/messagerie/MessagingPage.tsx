@@ -351,7 +351,7 @@ export default function MessagingPage() {
                   <MIcon name="call" />
                 </a>
               )}
-              {activeConvId && (
+              {activeConvId && activeOrder?.statut !== 'annule' && (
                 <Link
                   to="/commandes/suivi"
                   search={{ order: String(activeConvId) }}
@@ -374,13 +374,15 @@ export default function MessagingPage() {
                   {fmtFCFA(activeOrder.total)} · {STATUT_LABELS[activeOrder.statut] ?? activeOrder.statut}
                 </span>
               </div>
-              <Link
-                to="/commandes/suivi"
-                search={{ order: String(activeOrder.orderId) }}
-                className="text-primary-container font-bold text-label hover:underline"
-              >
-                {isFr ? tx("Suivre") : 'Track'}
-              </Link>
+              {activeOrder.statut !== 'annule' && (
+                <Link
+                  to="/commandes/suivi"
+                  search={{ order: String(activeOrder.orderId) }}
+                  className="text-primary-container font-bold text-label hover:underline"
+                >
+                  {isFr ? tx("Suivre") : 'Track'}
+                </Link>
+              )}
             </div>
           )}
 
