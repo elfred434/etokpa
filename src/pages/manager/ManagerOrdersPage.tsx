@@ -2,10 +2,9 @@ import { useEffect, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
 import PlatformOrdersPanel, { type PlatformOrder } from '../../components/orders/PlatformOrdersPanel';
-import { adminApi, managerApi } from '../../services/api';
+import { managerApi } from '../../services/api';
 import { listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
-import { isAdminRole } from '../../routes/authGuard';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
@@ -22,7 +21,6 @@ function livreurZoneId(l: any): number | null {
 
 export default function ManagerOrdersPage() {
   useLanguage();
-  const toutePlateforme = isAdminRole();
   const [reloadKey, setReloadKey] = useState(0);
   const [livreurs, setLivreurs] = useState<any[]>([]);
   const [err, setErr] = useState<string | null>(null);
@@ -32,22 +30,11 @@ export default function ManagerOrdersPage() {
 
   useEffect(() => {
     let alive = true;
-    const load = toutePlateforme
-      ? (async () => {
-          const acc: any[] = [];
-          for (let page = 1; page <= 20; page++) {
-            const res = await adminApi.getUsers({ role: 'livreur', page });
-            acc.push(...listOf(res));
-            if (page >= Number(res?.meta?.last_page ?? res?.last_page ?? 1)) break;
-          }
-          return acc;
-        })()
-      : managerApi.getLivreurs().then((r) => listOf(r));
-    load
-      .then((rows) => alive && setLivreurs(rows))
+    managerApi.getLivreurs()
+      .then((r) => alive && setLivreurs(listOf(r)))
       .catch(() => alive && setLivreurs([]));
     return () => { alive = false; };
-  }, [toutePlateforme]);
+  }, []);
 
   const zoneCommande = assignation ? zoneIdOf(assignation.landmark?.zone_id) : null;
   const livreursZone = zoneCommande ? livreurs.filter((l) => livreurZoneId(l) === zoneCommande) : [];
@@ -81,9 +68,9 @@ export default function ManagerOrdersPage() {
           <div className="rounded-lg border border-success bg-success-container p-4 text-label">{info}</div>
         )}
         <PlatformOrdersPanel
-          source={toutePlateforme ? 'admin' : 'zone'}
+          source="zone"
           reloadKey={reloadKey}
-          title={toutePlateforme ? tx("Toutes les commandes de la plateforme") : tx("Commandes de votre zone")}
+          title={tx("Commandes de votre zone")}
           renderActions={(o) => !o.livreur && (
             <button
               type="button"
