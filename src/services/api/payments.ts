@@ -36,4 +36,22 @@ export const paymentsApi = {
     const response = await apiClient.get(`/payments/${id}`);
     return response.data;
   },
+
+  // GET /api/payments -> paiements du compte connecté
+  listMine: async () => {
+    const response = await apiClient.get('/payments');
+    return response.data;
+  },
+
+  // GET /api/admin/payments -> tous les paiements
+  listAll: async () => {
+    const response = await apiClient.get('/admin/payments');
+    return response.data;
+  },
+
+  // GET /api/admin/clients/payments -> paiements du compte connecté, côté admin
+  listOwnAsAdmin: async () => {
+    const response = await apiClient.get('/admin/clients/payments');
+    return response.data;
+  },
 };

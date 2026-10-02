@@ -34,6 +34,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
   const onMarket = pathname === '/' || pathname.startsWith('/catalogue') || pathname.startsWith('/produit');
   const onNegociations = pathname.startsWith('/negociations');
   const onCommandes = pathname.startsWith('/commandes');
+  const onPaiements = pathname.startsWith('/paiements');
 
   const submitSearch = (e: FormEvent | React.KeyboardEvent) => {
     e.preventDefault();
@@ -87,6 +88,17 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
               )}
             >
               {t('nav.orders')}
+            </Link>
+            <Link
+              to="/paiements"
+              className={clsx(
+                'py-3 font-body text-body transition-colors',
+                onPaiements
+                  ? 'border-b-2 border-primary-shade font-bold text-primary-shade'
+                  : 'rounded px-2 text-on-surface-variant hover:bg-primary-lighter',
+              )}
+            >
+              {tx("Paiements")}
             </Link>
           </nav>
         </div>
