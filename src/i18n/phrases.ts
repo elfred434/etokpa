@@ -1,4 +1,12 @@
 export const EN: Record<string, string> = {
+  "Ajouter le pack au panier": "Add the pack to the cart",
+  "Impossible d’ajouter ce pack : un de ses produits est indisponible.": "Cannot add this pack: one of its products is unavailable.",
+  "produit(s) du pack ajoutés au panier": "pack product(s) added to the cart",
+  "Ce pack ne contient aucun produit : rien à ajouter au panier.": "This pack contains no product: nothing to add to the cart.",
+  "indisponible(s) : le pack ne peut pas être commandé.": "unavailable: the pack cannot be ordered.",
+  "produit(s) rejoindront le panier au prix catalogue, soit": "product(s) will be added to the cart at catalogue price, i.e.",
+  "au lieu des": "instead of the",
+  "du pack.": "of the pack.",
   "Impossible de charger le pack": "Unable to load the pack",
   "Pack introuvable": "Pack not found",
   "Ce pack n’existe pas ou n’est plus disponible au marché.": "This pack does not exist or is no longer available on the market.",

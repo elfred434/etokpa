@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from '@tanstack/react-router';
+import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
-import { catalogApi, type ApiBundle } from '../../../services/api';
+import { useAppDispatch } from '../../../hooks/useStore';
+import { add } from '../../../store/slices/cart/cartSlice';
+import type { Product } from '../../../types/models';
+import { catalogApi, type ApiBundle, type ApiProduct } from '../../../services/api';
+import { mapApiProduct } from '../../../utils/productMap';
 import { absImageUrl } from '../../../utils/imageUrl';
 import { alertApiError, apiErrorStatus } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -15,9 +20,8 @@ import { tx } from '../../../i18n/tx';
  * Le backend n'expose pas GET /bundles/{id} : la fiche lit la liste publique
  * GET /bundles et retrouve le pack par son identifiant.
  *
- * Un pack n'est pas commandable : le panier n'accepte que des produits, et le
- * prix du pack n'est pas la somme de ses produits. On affiche donc sa composition
- * et chaque produit renvoie vers sa propre fiche, où l'achat se fait.
+ * Le panier n'accepte que des produits : « Ajouter au panier » n'envoie pas le
+ * pack, mais chacun de ses produits avec la quantité du pack.
  */
 
 type PackLine = {
@@ -25,11 +29,33 @@ type PackLine = {
   nom: string;
   qte: number;
   prix: number | null;
+  prixMinimum: number | null;
+  stock: number;
+  disponible: boolean;
+  description: string | null;
+  imageUrl: string | null;
   image: string | null;
 };
 
+/** Produit du pack → modèle du panier. Mêmes règles que la fiche produit (mapApiProduct). */
+function toCartProduct(l: PackLine): Product {
+  const asApiProduct: ApiProduct = {
+    id: l.id,
+    nom: l.nom,
+    description: l.description ?? undefined,
+    prix: l.prix ?? 0,
+    prix_minimum: l.prixMinimum ?? l.prix ?? 0,
+    devise: 'XOF',
+    image_url: l.imageUrl,
+    stock: l.stock,
+    disponible: l.disponible,
+  };
+  return mapApiProduct(asApiProduct);
+}
+
 export default function PackPage() {
   useLanguage();
+  const dispatch = useAppDispatch();
   const { packId } = useParams({ from: '/pack/$packId' });
 
   const [pack, setPack] = useState<ApiBundle | null>(null);
@@ -132,10 +158,37 @@ export default function PackPage() {
   const lignes: PackLine[] = inclus.map((it) => ({
     id: Number(it.id),
     nom: it.nom,
-    qte: Number(it.pivot?.qte ?? 1),
+    qte: Math.max(1, Number(it.pivot?.qte ?? 1)),
     prix: it.prix == null || it.prix === '' ? null : Number(it.prix),
-    image: absImageUrl((it as { image_url?: string | null }).image_url),
+    prixMinimum: it.prix_minimum == null || it.prix_minimum === '' ? null : Number(it.prix_minimum),
+    stock: Number(it.stock ?? 0),
+    disponible: it.disponible !== false,
+    description: it.description ?? null,
+    imageUrl: it.image_url ?? it.img_url ?? null,
+    image: absImageUrl(it.image_url ?? it.img_url),
   }));
+
+  // Un produit indisponible bloque la commande entière (le backend refuse en 422).
+  const indisponibles = lignes.filter((l) => !l.disponible || l.stock <= 0);
+  const peutAjouter = lignes.length > 0 && indisponibles.length === 0;
+  const sommeProduits = lignes.reduce((s, l) => s + (l.prix ?? 0) * l.qte, 0);
+
+  /**
+   * Le panier ne connaît pas les packs : on y met les produits du pack,
+   * chacun avec la quantité définie par le pack.
+   */
+  const addPackToCart = () => {
+    if (!peutAjouter) {
+      toast.error(
+        tx("Impossible d’ajouter ce pack : un de ses produits est indisponible."),
+      );
+      return;
+    }
+    lignes.forEach((l) => dispatch(add({ product: toCartProduct(l), quantity: l.qte })));
+    toast.success(
+      `${lignes.length} ${tx("produit(s) du pack ajoutés au panier")}`,
+    );
+  };
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#fcfaf8] font-body text-ink">
@@ -208,10 +261,39 @@ export default function PackPage() {
                 </p>
               )}
 
-              <div className="rounded-lg border-l-[3px] border-[#F59E0B] bg-[#FFFBEB] p-4">
-                <p className="text-xs leading-relaxed text-[#92400E]">
-                  {tx("Un pack regroupe plusieurs produits à un prix unique. Ouvrez un produit ci-dessous pour l’ajouter au panier.")}
-                </p>
+              {/* Le panier enregistre des produits, pas des packs : le pack y entre par ses produits. */}
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={addPackToCart}
+                  disabled={!peutAjouter}
+                  className="flex w-full transform items-center justify-center gap-2 rounded-[10px] bg-primary py-3.5 font-bold text-white transition-all hover:bg-primary-hover active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <MIcon name="add_shopping_cart" />
+                  {tx("Ajouter le pack au panier")}
+                </button>
+
+                {lignes.length === 0 ? (
+                  <p className="text-[12px] italic text-ink-2">
+                    {tx("Ce pack ne contient aucun produit : rien à ajouter au panier.")}
+                  </p>
+                ) : indisponibles.length > 0 ? (
+                  <p className="text-[12px] font-semibold text-error">
+                    {indisponibles.map((l) => l.nom).join(', ')} —{' '}
+                    {tx("indisponible(s) : le pack ne peut pas être commandé.")}
+                  </p>
+                ) : (
+                  <p className="text-[12px] italic text-ink-2">
+                    {lignes.length} {tx("produit(s) rejoindront le panier au prix catalogue, soit")}{' '}
+                    {sommeProduits.toLocaleString('fr-FR')} FCFA
+                    {sommeProduits !== prixTotal && (
+                      <>
+                        {' '}
+                        {tx("au lieu des")} {prixTotal.toLocaleString('fr-FR')} FCFA {tx("du pack.")}
+                      </>
+                    )}
+                  </p>
+                )}
               </div>
             </div>
           </main>

@@ -42,10 +42,22 @@ export interface ApiCategory {
 }
 
 /** Produit inclus dans un pack — quantité dans `pivot.qte` (table produit_pack). */
+/**
+ * Produit inclus dans un pack (GET /bundles).
+ * `Pack::products()` est un belongsToMany sans restriction de colonnes : le backend
+ * renvoie donc des modèles `Product` complets, pas seulement id/nom/prix.
+ */
 export interface ApiBundleItem {
   id: number;
   nom: string;
   prix?: number | string;
+  description?: string | null;
+  prix_minimum?: number | string | null;
+  image_url?: string | null;
+  img_url?: string | null;
+  stock?: number | null;
+  disponible?: boolean | null;
+  categorie_id?: number | null;
   pivot?: { qte?: number | string };
 }
 
