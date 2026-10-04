@@ -32,6 +32,8 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
   const [localSearch, setLocalSearch] = useState('');
 
   const onMarket = pathname === '/' || pathname.startsWith('/catalogue') || pathname.startsWith('/produit');
+  // La recherche ne s'affiche que sur /catalogue (elle alimente les filtres de cette page).
+  const onCatalog = pathname.startsWith('/catalogue');
   const onNegociations = pathname.startsWith('/negociations');
   const onCommandes = pathname.startsWith('/commandes');
   const onPaiements = pathname.startsWith('/paiements');
@@ -103,19 +105,21 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
           </nav>
         </div>
 
-        {/* Recherche (pillule) */}
-        <form onSubmit={submitSearch} className="mx-8 hidden max-w-1xl flex-1 lg:block">
-          <div className="relative flex items-center rounded-full border border-line bg-warm-low px-4 py-1.5">
-            <MIcon name="search" className="mr-2 text-ink-3" />
-            <input
-              type="text"
-              value={search ?? localSearch}
-              onChange={(e) => (onSearch ? onSearch(e.target.value) : setLocalSearch(e.target.value))}
-              placeholder={searchPlaceholder ?? t('common.searchPlaceholder')}
-              className="w-full border-none bg-transparent p-0 text-ink-2 focus:outline-none focus:ring-0 text-xs sm:text-sm"
-            />
-          </div>
-        </form>
+        {/* Recherche (pillule) — visible uniquement sur /catalogue */}
+        {onCatalog && (
+          <form onSubmit={submitSearch} className="mx-8 hidden max-w-1xl flex-1 lg:block">
+            <div className="relative flex items-center rounded-full border border-line bg-warm-low px-4 py-1.5">
+              <MIcon name="search" className="mr-2 text-ink-3" />
+              <input
+                type="text"
+                value={search ?? localSearch}
+                onChange={(e) => (onSearch ? onSearch(e.target.value) : setLocalSearch(e.target.value))}
+                placeholder={searchPlaceholder ?? t('common.searchPlaceholder')}
+                className="w-full border-none bg-transparent p-0 text-ink-2 focus:outline-none focus:ring-0 text-xs sm:text-sm"
+              />
+            </div>
+          </form>
+        )}
 
         {/* Icônes & Sélecteur de langue */}
         <div className="flex items-center gap-3 sm:gap-md text-primary-shade">
