@@ -1,4 +1,12 @@
 export const EN: Record<string, string> = {
+  "Impossible de charger le pack": "Unable to load the pack",
+  "Pack introuvable": "Pack not found",
+  "Ce pack n’existe pas ou n’est plus disponible au marché.": "This pack does not exist or is no longer available on the market.",
+  "produit(s) inclus dans ce pack": "product(s) included in this pack",
+  "Un pack regroupe plusieurs produits à un prix unique. Ouvrez un produit ci-dessous pour l’ajouter au panier.": "A pack groups several products at a single price. Open a product below to add it to the cart.",
+  "Composition non renseignée": "Composition not provided",
+  "Les produits de ce pack ne sont pas encore renseignés.": "The products in this pack are not provided yet.",
+  "Aperçu uniquement : l’offre se propose depuis la fiche du produit.": "Preview only: offers are made from the product page.",
   "En stock": "In stock",
   "Livraison rapide": "Fast delivery",
   "Prix négociables": "Negotiable prices",

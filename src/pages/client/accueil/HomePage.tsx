@@ -10,10 +10,9 @@ import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
-import { submitOffer } from '../../../store/slices/negotiation/negotiationSlice';
 import type { Product } from '../../../types/models';
 import { useLanguage } from '../../../context/LanguageContext';
-import { catalogApi, negotiationApi, type ApiCategory, type ApiProduct } from '../../../services/api';
+import { catalogApi, type ApiCategory, type ApiProduct } from '../../../services/api';
 import { absImageUrl } from '../../../utils/imageUrl';
 import { categoryKind, type CategoryKind } from '../../../utils/categoryKind';
 import { alertApiError, apiErrorStatus } from '../../../utils/apiError';
@@ -58,7 +57,6 @@ export default function HomePage() {
   const [needsLogin, setNeedsLogin] = useState(false);
   // Bandeau « Propose ton prix » : un vrai produit négociable (prix minimum < prix) ; sinon masqué.
   const [negoProduct, setNegoProduct] = useState<SelectionItem | null>(null);
-  const [sendingOffer, setSendingOffer] = useState(false);
   // « Réessayer » : relance produits + catégories.
   const [reloadKey, setReloadKey] = useState(0);
   const retry = () => setReloadKey((k) => k + 1);
@@ -135,39 +133,22 @@ export default function HomePage() {
     };
   }, [reloadKey]);
 
-  // Bandeau « Propose ton prix » → vraie offre POST /budget-proposals (comme la fiche produit).
-  const sendOffer = async () => {
-    if (!negoProduct || sendingOffer) return;
+  // Bandeau « Propose ton prix » — démonstration : aucun envoi au serveur.
+  // La vraie offre se fait depuis la fiche du produit (module de négociation F-10).
+  const sendOffer = () => {
+    if (!negoProduct) return;
     const proposed = Number(offre.replace(/\D/g, ''));
     if (!proposed) {
       toast.error(isFr ? 'Veuillez entrer un montant valide en FCFA' : 'Please enter a valid amount in FCFA');
       return;
     }
-    if (proposed < negoProduct.prixMinimum) {
-      const min = negoProduct.prixMinimum.toLocaleString('fr-FR');
-      toast.error(isFr ? `Le prix minimum négociable est de ${min} FCFA` : `The minimum negotiable price is ${min} FCFA`);
-      return;
-    }
-    setSendingOffer(true);
-    try {
-      await negotiationApi.createProposal({ product_id: Number(negoProduct.id), prix_propose: proposed, quantite: 1 });
-      dispatch(
-        submitOffer({
-          productId: negoProduct.id,
-          productName: negoProduct.nom,
-          productImage: negoProduct.image ?? undefined,
-          originalPrice: negoProduct.prix,
-          proposedPrice: proposed,
-          minPrice: negoProduct.prixMinimum,
-        }),
-      );
-      toast.success(isFr ? tx("Offre envoyée au marché ! Vous serez notifié de sa réponse.") : 'Offer sent! You will be notified of the answer.');
-      navigate({ to: '/negociations' });
-    } catch (err) {
-      alertApiError(err, 'home-offer');
-    } finally {
-      setSendingOffer(false);
-    }
+    toast(
+      isFr
+        ? tx("Aperçu uniquement : l’offre se propose depuis la fiche du produit.")
+        : 'Preview only: offers are made from the product page.',
+      { icon: 'ℹ️' },
+    );
+    navigate({ to: '/produit/$productId', params: { productId: negoProduct.id } });
   };
 
   const atoutsList = [
@@ -408,11 +389,10 @@ export default function HomePage() {
               </div>
               <button
                 type="button"
-                disabled={sendingOffer}
                 onClick={sendOffer}
-                className="w-full bg-secondary text-white font-bold py-2 rounded-lg mt-2 text-xs sm:text-sm scale-interaction cursor-pointer disabled:cursor-wait disabled:opacity-60"
+                className="w-full bg-secondary text-white font-bold py-2 rounded-lg mt-2 text-xs sm:text-sm scale-interaction cursor-pointer"
               >
-                {sendingOffer ? (isFr ? tx("Envoi…") : 'Sending…') : t('home.sendOffer')}
+                {t('home.sendOffer')}
               </button>
             </div>
           </div>

@@ -61,8 +61,13 @@ interface CatalogProduct {
   catRawId?: number;
   /** Nom réel de la catégorie (affiché sous le produit dans le panier, à la place d'un faux marché). */
   catNom?: string;
-  /** Pack réel (GET /bundles) : pas de fiche produit ni d'ajout au panier (le panier n'accepte que des produits). */
+  /**
+   * Pack réel (GET /bundles) : il a sa propre fiche (/pack/$packId).
+   * Pas d'ajout au panier depuis la carte : le panier n'accepte que des produits.
+   */
   isPack?: boolean;
+  /** id réel du pack (Pack.id), distinct de `id` qui vaut « pack-{id} ». */
+  packId?: number;
   /** Image réelle = ProductResource.image_url résolue par absImageUrl (même source que l'admin) ; absente → dégradé + icône. */
   image?: string | null;
 }
@@ -149,6 +154,7 @@ export default function CatalogPage() {
               cat: 'pack',
               image: absImageUrl(b.img_url),
               isPack: true,
+              packId: Number(b.id),
             } satisfies CatalogProduct;
           }),
         );
@@ -300,6 +306,17 @@ export default function CatalogPage() {
 
   const openProduct = (id: string | number) =>
     navigate({ to: '/produit/$productId', params: { productId: String(id) } });
+
+  /** Un pack ouvre sa propre fiche, comme un produit ouvre la sienne. */
+  const openPack = (id: number) => navigate({ to: '/pack/$packId', params: { packId: String(id) } });
+
+  const openItem = (p: CatalogProduct) => {
+    if (p.isPack) {
+      if (p.packId && Number.isFinite(p.packId)) openPack(p.packId);
+      return;
+    }
+    openProduct(p.id);
+  };
 
   const badges = (p: CatalogProduct) => (
     <div className="absolute left-2 top-2 flex flex-col gap-1">
@@ -606,13 +623,8 @@ export default function CatalogPage() {
               {visible.map((p) => (
                 <div
                   key={p.id}
-                  onClick={() => {
-                    if (!p.isPack) openProduct(p.id);
-                  }}
-                  className={clsx(
-                    'group overflow-hidden rounded-xl border-[0.5px] border-line bg-white transition-all hover:shadow-md',
-                    p.isPack ? 'cursor-default' : 'cursor-pointer',
-                  )}
+                  onClick={() => openItem(p)}
+                  className="group cursor-pointer overflow-hidden rounded-xl border-[0.5px] border-line bg-white transition-all hover:shadow-md"
                 >
                   <div className="relative flex h-[110px] items-center justify-center bg-gradient-to-br from-primary-lighter to-primary-light">
                     {p.image ? (
@@ -656,13 +668,8 @@ export default function CatalogPage() {
               {visible.map((p) => (
                 <div
                   key={p.id}
-                  onClick={() => {
-                    if (!p.isPack) openProduct(p.id);
-                  }}
-                  className={clsx(
-                    'group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-md rounded-xl border-[0.5px] border-line bg-white p-3 sm:p-md transition-all hover:shadow-md',
-                    p.isPack ? 'cursor-default' : 'cursor-pointer',
-                  )}
+                  onClick={() => openItem(p)}
+                  className="group flex cursor-pointer flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-md rounded-xl border-[0.5px] border-line bg-white p-3 sm:p-md transition-all hover:shadow-md"
                 >
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className="relative flex h-[70px] w-[90px] sm:h-[80px] sm:w-[110px] shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary-lighter to-primary-light">

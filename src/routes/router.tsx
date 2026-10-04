@@ -9,6 +9,7 @@ import NotificationsPage from '../pages/client/notifications/NotificationsPage';
 import HomePage from '../pages/client/accueil/HomePage';
 import CatalogPage from '../pages/client/catalogue/CatalogPage';
 import ProductPage from '../pages/client/fiche-produit/ProductPage';
+import PackPage from '../pages/client/fiche-pack/PackPage';
 import CartPage from '../pages/client/panier/CartPage';
 import ConfirmationPage from '../pages/client/confirmation-commande/ConfirmationPage';
 import ProfilePage from '../pages/client/profil/ProfilePage';
@@ -110,6 +111,7 @@ const catalogueRoute = createRoute({
   }),
 });
 const produitRoute = createRoute({ getParentRoute: () => rootRoute, path: '/produit/$productId', component: ProductPage });
+const packRoute = createRoute({ getParentRoute: () => rootRoute, path: '/pack/$packId', component: PackPage });
 const panierRoute = createRoute({ getParentRoute: () => rootRoute, path: '/panier', component: CartPage });
 const confirmationRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -202,6 +204,7 @@ const routeTree = rootRoute.addChildren([
   notificationsRoute,
   catalogueRoute,
   produitRoute,
+  packRoute,
   panierRoute,
   confirmationRoute,
   profilRoute,
