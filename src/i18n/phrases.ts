@@ -1,4 +1,10 @@
 export const EN: Record<string, string> = {
+  "Calculé automatiquement à partir des produits du pack": "Calculated automatically from the pack products",
+  "Calcul automatique": "Automatic calculation",
+  "produit(s) · le prix suit les produits et leurs quantités": "product(s) · the price follows the products and their quantities",
+  "Ce pack était enregistré à": "This pack was saved at",
+  "Le prix est maintenant la somme de ses produits :": "The price is now the sum of its products:",
+  "Enregistrer appliquera ce nouveau prix.": "Saving will apply this new price.",
   "Ajouter le pack au panier": "Add the pack to the cart",
   "Impossible d’ajouter ce pack : un de ses produits est indisponible.": "Cannot add this pack: one of its products is unavailable.",
   "produit(s) du pack ajoutés au panier": "pack product(s) added to the cart",

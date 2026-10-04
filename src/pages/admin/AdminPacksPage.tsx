@@ -134,7 +134,6 @@ export default function AdminPacksPage() {
   const [supprime, setSupprime] = useState(false);
   const pageRef = useCanvasRef();
   const pressRef = useRef<Pression | null>(null);
-  const prixManuel = useRef(false);
   const hydrate = useRef('');
 
   const vue = search.edit || search.nouveau ? 'composer' : search.pack ? 'detail' : 'galerie';
@@ -170,7 +169,6 @@ export default function AdminPacksPage() {
     if (hydrate.current === cle) return;
     if (search.nouveau) {
       hydrate.current = cle;
-      prixManuel.current = false;
       setNom('');
       setDescription('');
       setPrixTotal('');
@@ -187,7 +185,6 @@ export default function AdminPacksPage() {
       return;
     }
     hydrate.current = cle;
-    prixManuel.current = true;
     const inclus = inclusDe(pack);
     const extra: Record<number, Produit> = {};
     inclus.forEach((p) => { extra[Number(p.id)] = p; });
@@ -215,10 +212,27 @@ export default function AdminPacksPage() {
 
   const somme = lignes.reduce((total, ligne) => total + prixDe(parId.get(ligne.id)) * ligne.qte, 0);
 
+  /**
+   * Le prix du pack n'est plus saisi : il est toujours la somme de ses produits.
+   * 0 produit → 0 · 1 produit à 100 → 100 · + un produit à 500 → 600.
+   * Le prix suit aussi les quantités (quantité 2 sur un produit à 100 = 200).
+   */
   useEffect(() => {
-    if (vue !== 'composer' || prixManuel.current || lignes.length === 0) return;
+    if (vue !== 'composer') return;
     setPrixTotal(String(Math.round(somme)));
-  }, [somme, vue, lignes.length]);
+  }, [somme, vue]);
+
+  /**
+   * Un pack enregistré avant ce changement peut porter un prix différent de la somme.
+   * L'enregistrement le remplacera : on le signale plutôt que de le faire en silence.
+   */
+  const prixEnregistre =
+    packEdite?.prix_total == null || packEdite.prix_total === '' ? null : Number(packEdite.prix_total);
+  const ecartPrix =
+    vue === 'composer' &&
+    Boolean(search.edit) &&
+    prixEnregistre !== null &&
+    Math.round(prixEnregistre) !== Math.round(somme);
 
   function aller(params: Recherche) {
     navigate({ to: '/admin/packs', search: { pack: undefined, edit: undefined, nouveau: undefined, ...params } });
@@ -604,6 +618,15 @@ export default function AdminPacksPage() {
                   })}
                 </div>
               </div>
+              {ecartPrix && (
+                <div className="shrink-0 border-t border-amber-text/30 bg-amber-light px-3 py-2 text-xs text-amber-text">
+                  {tx("Ce pack était enregistré à")} {fmtFcfa(prixEnregistre ?? 0)}
+                  {'. '}
+                  {tx("Le prix est maintenant la somme de ses produits :")} {fmtFcfa(somme)}
+                  {'. '}
+                  {tx("Enregistrer appliquera ce nouveau prix.")}
+                </div>
+              )}
               <footer className="grid shrink-0 gap-3 border-t border-black/5 bg-white/95 p-3 md:grid-cols-[1.4fr_160px_160px_180px]">
                 <label className="block text-xs text-text-secondary">
                   {tx("Description")}
@@ -611,18 +634,24 @@ export default function AdminPacksPage() {
                 </label>
                 <label className="block text-xs text-text-secondary">
                   {tx("Prix total")}
-                  <input value={prixTotal} onChange={(e) => { prixManuel.current = true; setPrixTotal(e.target.value); }} className="mt-1 w-full rounded-xl border border-border-default px-3 py-2 text-sm font-bold" />
+                  <input
+                    value={prixTotal}
+                    readOnly
+                    aria-readonly="true"
+                    title={tx("Calculé automatiquement à partir des produits du pack")}
+                    className="mt-1 w-full cursor-not-allowed rounded-xl border border-border-default bg-bg-secondary px-3 py-2 text-sm font-bold"
+                  />
                 </label>
                 <label className="block text-xs text-text-secondary">
                   {tx("Prix minimum")}
                   <input value={prixMinimum} onChange={(e) => setPrixMinimum(e.target.value)} className="mt-1 w-full rounded-xl border border-border-default px-3 py-2 text-sm" />
                 </label>
                 <div className="rounded-xl bg-primary-tint px-3 py-2">
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-primary-dark">{tx("Somme des produits")}</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-primary-dark">{tx("Calcul automatique")}</p>
                   <p className="text-lg font-black text-primary-dark">{fmtFcfa(somme)}</p>
-                  <button type="button" className="text-xs font-semibold text-primary underline" onClick={() => { prixManuel.current = true; setPrixTotal(String(Math.round(somme))); }}>
-                    {tx("Utiliser cette somme")}
-                  </button>
+                  <p className="text-[11px] leading-tight text-primary-dark">
+                    {lignes.length} {tx("produit(s) · le prix suit les produits et leurs quantités")}
+                  </p>
                 </div>
               </footer>
             </section>
