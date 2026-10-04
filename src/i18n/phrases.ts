@@ -23,6 +23,8 @@ export const EN: Record<string, string> = {
   "Mes paiements": "My payments",
   "Tous les paiements": "All payments",
   "Aucun paiement.": "No payment.",
+  "Aucun paiement enregistré": "No payment recorded",
+  "Vos paiements apparaîtront ici après votre première commande.": "Your payments will appear here after your first order.",
   "Payé le": "Paid on",
   "Propositions de budget": "Budget proposals",
   "Zones & configuration": "Zones & settings",

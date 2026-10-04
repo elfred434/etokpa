@@ -6,19 +6,14 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import { alertApiError } from '../../../utils/apiError';
-import { parseLandmarks } from '../../../utils/landmarks';
 import { useLanguage } from '../../../context/LanguageContext';
 import { currentRole, hasSession } from '../../../routes/authGuard';
-import { authApi, ordersApi, type UserProfile } from '../../../services/api';
+import { authApi, ordersApi, paymentsApi, type UserProfile } from '../../../services/api';
+import { dateCourte, fmtFcfa, listOf, unwrap } from '../../../services/api/unwrap';
 import { tx } from '../../../i18n/tx';
 
-
-/** Point de repère stocké dans `profil.point_repere` (JSON du backend). */
-interface Landmark {
-  key: string;
-  nom: string;
-  description: string;
-}
+/** Nombre de lignes montrées dans les aperçus du profil (commandes, paiements). */
+const PROFILE_LIST_LIMIT = 5;
 
 interface OrderItem {
   id: number;
@@ -30,6 +25,17 @@ interface OrderItem {
   active: boolean;
 }
 
+/** Ligne de l'aperçu « Mes paiements » du profil. */
+interface PaymentItem {
+  id: number;
+  orderId: number | null;
+  date: string;
+  totalLabel: string;
+  statusFr: string;
+  statusEn: string;
+  tone: string;
+}
+
 /** Mapping statut backend → affichage (machine à états TOKPa). */
 const STATUT_LABELS: Record<string, { fr: string; en: string; active: boolean }> = {
   en_attente: { fr: 'En attente', en: 'Pending', active: true },
@@ -39,14 +45,23 @@ const STATUT_LABELS: Record<string, { fr: string; en: string; active: boolean }>
   annule: { fr: 'Annulée', en: 'Cancelled', active: false },
 };
 
+/** Mapping statut de paiement → libellé + pastille (aligné sur PaymentsPanel). */
+const PAYMENT_LABELS: Record<string, { fr: string; en: string; tone: string }> = {
+  en_attente: { fr: 'Paiement en attente', en: 'Payment pending', tone: 'bg-bg-secondary text-text-secondary' },
+  reussi: { fr: 'Paiement réussi', en: 'Payment successful', tone: 'bg-success-light text-success' },
+  echoue: { fr: 'Paiement échoué', en: 'Payment failed', tone: 'bg-error-light text-error' },
+  rembourse: { fr: 'Paiement remboursé', en: 'Payment refunded', tone: 'bg-primary-tint text-primary-dark' },
+};
+
 /**
  * ProfilePage — données 100 % backend :
- *   - GET /api/profile            → infos utilisateur + profil.point_repere[]
- *   - PUT /api/profile            → modification identité + point_repere[]
+ *   - GET /api/profile            → infos utilisateur
+ *   - PUT /api/profile            → modification identité
  *   - POST /api/auth/change-password
- *   - GET /api/orders             → commandes récentes (statuts réels)
- * Les endpoints /landmarks du backend étant cassés (bug signalé au team backend),
- * les repères sont gérés via le profil (colonnes JSON).
+ *   - GET /api/orders             → 5 dernières commandes (statuts réels)
+ *   - GET /api/payments           → 5 derniers paiements du compte
+ * Les repères de livraison ne figurent plus sur le profil : le client choisit un
+ * point de repère de la zone au moment de la commande (page /panier).
  */
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -54,19 +69,14 @@ export default function ProfilePage() {
   const isAuthenticated = hasSession();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [landmarks, setLandmarks] = useState<Landmark[]>([]);
   const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
+  const [recentPayments, setRecentPayments] = useState<PaymentItem[]>([]);
   // Nombre total de commandes — GET /dashboard (GET /orders est paginé par 15)
   const [dashCount, setDashCount] = useState<number | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   // Modals
-  const [landmarkModalOpen, setLandmarkModalOpen] = useState(false);
-  const [editingLandmark, setEditingLandmark] = useState<Landmark | null>(null);
-  const [formNom, setFormNom] = useState('');
-  const [formDesc, setFormDescription] = useState('');
-
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [formPrenom, setFormPrenom] = useState('');
   const [formNomUser, setFormNomUser] = useState('');
@@ -84,7 +94,6 @@ export default function ProfilePage() {
       const p: UserProfile | undefined = res?.data ?? res;
       if (p) {
         setProfile(p);
-        setLandmarks(parseLandmarks(p.profil));
       }
     } catch (err) {
       alertApiError(err, 'profile-load');
@@ -134,7 +143,36 @@ export default function ProfilePage() {
       })
       .catch((err) => alertApiError(err, 'profile-dashboard'));
 
-    Promise.allSettled([p1, p2, p3]).then(() => setIsDataLoading(false));
+    // GET /payments renvoie la liste complète des paiements du compte : on la
+    // garde entière (pour le compteur) et l'aperçu en affiche les 5 premiers.
+    const p4 = paymentsApi
+      .listMine()
+      .then((res) => {
+        const rows = listOf(unwrap(res)) as Record<string, unknown>[];
+        const mapped: PaymentItem[] = rows
+          .map((raw) => {
+            const p = ((raw as { data?: unknown }).data ?? raw) as Record<string, unknown>;
+            const statut = String(p.statut ?? 'en_attente');
+            const label =
+              PAYMENT_LABELS[statut] ?? { fr: statut, en: statut, tone: 'bg-bg-secondary text-text-secondary' };
+            const iso = (p.paid_at ?? p.created_at ?? null) as string | null;
+            const orderId = p.order_id == null ? null : Number(p.order_id);
+            return {
+              id: Number(p.id),
+              orderId: Number.isFinite(orderId) ? orderId : null,
+              date: iso ? dateCourte(iso) : tx("Récemment"),
+              totalLabel: fmtFcfa(p.montant as number | string | null),
+              statusFr: label.fr,
+              statusEn: label.en,
+              tone: label.tone,
+            };
+          })
+          .filter((p) => p.id > 0);
+        setRecentPayments(mapped);
+      })
+      .catch((err) => alertApiError(err, 'profile-payments'));
+
+    Promise.allSettled([p1, p2, p3, p4]).then(() => setIsDataLoading(false));
   }, [isAuthenticated]);
 
   if (!isAuthenticated) {
@@ -168,54 +206,7 @@ export default function ProfilePage() {
   const userRole = typeof profile?.role === 'object' ? profile.role.nom : profile?.role || 'Client';
   const role = currentRole();
   const orderCount = !role || role === 'client' ? (dashCount ?? recentOrders.length) : recentOrders.length;
-  const landmarkCount = landmarks.length;
-
-  // ---- Points de repère (via PUT /profile, car GET /landmarks est cassé côté backend) ----
-  const persistLandmarks = async (next: Landmark[]) => {
-    setSaving(true);
-    try {
-      await authApi.updateProfile({
-        point_repere: next.map((l) => (l.description ? { nom: l.nom, landmark: l.description } : { nom: l.nom })),
-      } as Record<string, unknown>);
-      setLandmarks(next);
-      toast.success(isFr ? tx("Points de repère enregistrés") : 'Landmarks saved');
-      return true;
-    } catch (err) {
-      alertApiError(err, 'profile-landmarks');
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleOpenAdd = () => {
-    setEditingLandmark(null);
-    setFormNom('');
-    setFormDescription('');
-    setLandmarkModalOpen(true);
-  };
-
-  const handleOpenEdit = (lm: Landmark) => {
-    setEditingLandmark(lm);
-    setFormNom(lm.nom);
-    setFormDescription(lm.description);
-    setLandmarkModalOpen(true);
-  };
-
-  const handleDeleteLandmark = async (lm: Landmark) => {
-    if (!confirm(isFr ? `Supprimer « ${lm.nom} » ?` : `Delete « ${lm.nom} »?`)) return;
-    await persistLandmarks(landmarks.filter((l) => l.key !== lm.key));
-  };
-
-  const handleSaveLandmark = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!formNom.trim()) return;
-    const next = editingLandmark
-      ? landmarks.map((l) => (l.key === editingLandmark.key ? { ...l, nom: formNom.trim(), description: formDesc.trim() } : l))
-      : [...landmarks, { key: `lm-${Date.now()}`, nom: formNom.trim(), description: formDesc.trim() }];
-    const ok = await persistLandmarks(next);
-    if (ok) setLandmarkModalOpen(false);
-  };
+  const paymentCount = recentPayments.length;
 
   // ---- Modification du profil (PUT /profile) ----
   const handleOpenEditProfile = () => {
@@ -333,76 +324,11 @@ export default function ProfilePage() {
                 </span>
               </div>
               <div className="bg-bg-card p-md rounded-[10px] border border-border-default flex flex-col items-center justify-center text-center shadow-xs">
-                <span className="font-h2 text-h2 text-primary-container font-bold">{landmarkCount}</span>
+                <span className="font-h2 text-h2 text-primary-container font-bold">{paymentCount}</span>
                 <span className="text-micro text-text-tertiary uppercase mt-1">
-                  {isFr ? tx("Points de repère") : 'Landmarks'}
+                  {isFr ? tx("Paiements") : 'Payments'}
                 </span>
               </div>
-            </section>
-
-            {/* LANDMARKS SECTION */}
-            <section className="mb-md">
-              <div className="flex items-center justify-between mb-sm">
-                <h3 className="font-h3 text-h3 text-text-main font-bold">
-                  {isFr ? tx("Mes points de repère") : 'My landmarks'}
-                </h3>
-                <button
-                  type="button"
-                  onClick={handleOpenAdd}
-                  className="flex items-center gap-xs text-primary-container font-bold text-label cursor-pointer hover:underline"
-                >
-                  <MIcon name="add" className="text-lg" />
-                  {isFr ? tx("Ajouter") : 'Add'}
-                </button>
-              </div>
-
-              {landmarks.length === 0 ? (
-                <div className="bg-bg-card p-lg rounded-[10px] border border-border-default text-center text-text-secondary">
-                  <MIcon name="location_on" className="text-3xl text-text-tertiary mb-2" />
-                  <p className="text-sm font-semibold">
-                    {isFr ? tx("Aucun point de repère enregistré") : 'No landmarks saved'}
-                  </p>
-                  <p className="text-xs text-text-tertiary mt-1">
-                    {isFr
-                      ? tx("Ajoutez un repère (maison, bureau…) pour faciliter la livraison.")
-                      : 'Add a landmark (home, office…) to ease delivery.'}
-                  </p>
-                </div>
-              ) : (
-                <div className="bg-bg-card border border-border-default rounded-[14px] overflow-hidden">
-                  <div className="divide-y divide-border-default">
-                    {landmarks.map((lm) => (
-                      <div key={lm.key} className="p-md flex items-center gap-md">
-                        <div className="w-10 h-10 rounded-full bg-primary-tint flex items-center justify-center text-primary-dark flex-shrink-0">
-                          <MIcon name="location_on" />
-                        </div>
-                        <div className="flex-grow min-w-0">
-                          <p className="font-bold text-text-main truncate">{lm.nom}</p>
-                          <p className="text-secondary text-text-tertiary truncate">
-                            {lm.description || (isFr ? '—' : '—')}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEdit(lm)}
-                          className="w-9 h-9 flex items-center justify-center rounded-lg border border-border-default text-text-secondary hover:bg-bg-secondary transition-colors cursor-pointer"
-                          title={isFr ? tx("Modifier") : 'Edit'}
-                        >
-                          <MIcon name="edit" className="text-sm" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteLandmark(lm)}
-                          className="w-9 h-9 flex items-center justify-center rounded-lg border border-error/30 text-error hover:bg-error-light transition-colors cursor-pointer"
-                          title={isFr ? tx("Supprimer") : 'Delete'}
-                        >
-                          <MIcon name="delete" className="text-sm" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </section>
 
             {/* ORDERS SECTION */}
@@ -430,7 +356,7 @@ export default function ProfilePage() {
               ) : (
                 <div className="bg-bg-card border border-border-default rounded-[14px] overflow-hidden">
                   <div className="divide-y divide-border-default">
-                    {recentOrders.map((o) => (
+                    {recentOrders.slice(0, PROFILE_LIST_LIMIT).map((o) => (
                       <div key={o.id} className="p-md flex items-center justify-between hover:bg-bg-secondary transition-colors">
                         <div className="flex flex-col">
                           <span className="font-bold text-text-main">Commande #{o.id}</span>
@@ -453,6 +379,61 @@ export default function ProfilePage() {
                             className="text-primary-container font-label text-label flex items-center gap-xs font-bold"
                           >
                             {o.active ? (isFr ? tx("Suivre") : 'Track') : (isFr ? tx("Détails") : 'Details')}
+                            <MIcon name="chevron_right" className="text-sm" />
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* PAYMENTS SECTION — 5 derniers paiements du compte */}
+            <section className="mb-md">
+              <div className="flex items-center justify-between mb-sm">
+                <h3 className="font-h3 text-h3 text-text-main font-bold">
+                  {isFr ? tx("Mes paiements") : 'My payments'}
+                </h3>
+                <Link
+                  to="/paiements"
+                  className="text-primary-container font-label text-label hover:underline font-bold"
+                >
+                  {isFr ? tx("Voir tout") : 'See all'}
+                </Link>
+              </div>
+
+              {recentPayments.length === 0 ? (
+                <div className="bg-bg-card p-lg rounded-[10px] border border-border-default text-center text-text-secondary">
+                  <MIcon name="payments" className="text-3xl text-text-tertiary mb-2" />
+                  <p className="text-sm font-semibold">{tx("Aucun paiement enregistré")}</p>
+                  <p className="text-xs text-text-tertiary mt-1">
+                    {tx("Vos paiements apparaîtront ici après votre première commande.")}
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-bg-card border border-border-default rounded-[14px] overflow-hidden">
+                  <div className="divide-y divide-border-default">
+                    {recentPayments.slice(0, PROFILE_LIST_LIMIT).map((p) => (
+                      <div key={p.id} className="p-md flex items-center justify-between hover:bg-bg-secondary transition-colors">
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-bold text-text-main truncate">
+                            {p.orderId
+                              ? `${tx("Commande")} #${p.orderId}`
+                              : `${tx("Paiement")} #${p.id}`}
+                          </span>
+                          <span className="text-secondary text-text-tertiary">{p.date}</span>
+                        </div>
+                        <div className="font-bold text-primary-container">{p.totalLabel}</div>
+                        <div className="flex items-center gap-md">
+                          <span className={`px-sm py-1 text-micro rounded-full font-bold uppercase ${p.tone}`}>
+                            {isFr ? p.statusFr : p.statusEn}
+                          </span>
+                          <Link
+                            to="/paiements"
+                            className="text-primary-container font-label text-label flex items-center gap-xs font-bold"
+                          >
+                            {isFr ? tx("Détails") : 'Details'}
                             <MIcon name="chevron_right" className="text-sm" />
                           </Link>
                         </div>
@@ -522,78 +503,6 @@ export default function ProfilePage() {
           </>
         )}
       </main>
-
-      {/* Modal Landmark Add/Edit */}
-      {landmarkModalOpen && (
-        <div className="fixed inset-0 bg-on-surface/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4 animate-fade-in">
-          <div className="bg-white w-full max-w-[500px] rounded-xl shadow-2xl overflow-hidden p-lg">
-            <div className="flex justify-between items-center mb-md border-b border-border-default pb-3">
-              <h3 className="font-h2 text-h2 font-bold">
-                {editingLandmark
-                  ? isFr
-                    ? tx("Modifier le repère")
-                    : 'Edit landmark'
-                  : isFr
-                    ? tx("Nouveau point de repère")
-                    : 'New landmark'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setLandmarkModalOpen(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
-              >
-                <MIcon name="close" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveLandmark} className="space-y-md">
-              <div>
-                <label className="block text-label mb-1 text-text-secondary font-medium">
-                  {tx("Nom du point de repère")}
-                </label>
-                <input
-                  type="text"
-                  value={formNom}
-                  onChange={(e) => setFormNom(e.target.value)}
-                  placeholder="Ex : Maison Maman, Carrefour…"
-                  required
-                  className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-label mb-1 text-text-secondary font-medium">
-                  {tx("Description précise")}
-                </label>
-                <textarea
-                  rows={3}
-                  value={formDesc}
-                  onChange={(e) => setFormDescription(e.target.value)}
-                  placeholder={tx("Ex : Face à la pharmacie, portail bleu…")}
-                  className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none resize-none"
-                />
-              </div>
-
-              <div className="pt-md border-t border-border-default flex justify-end gap-md">
-                <button
-                  type="button"
-                  onClick={() => setLandmarkModalOpen(false)}
-                  className="px-md py-2 rounded-lg border border-border-default font-medium hover:bg-gray-50 transition-all cursor-pointer"
-                >
-                  {isFr ? tx("Annuler") : 'Cancel'}
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-lg py-2 rounded-lg bg-primary-container hover:bg-primary-hover text-white font-bold transition-all shadow-md cursor-pointer disabled:opacity-50"
-                >
-                  {isFr ? tx("Enregistrer") : 'Save'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Modal Edit Profile (PUT /api/profile) */}
       {editProfileOpen && (
