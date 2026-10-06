@@ -58,7 +58,7 @@ export default function ManagerLitigesPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-h2 font-h2 font-bold">{tx("Gestion des Litiges & Réclamations")}</h1>
-          <span className="rounded-full bg-bg-secondary px-2.5 py-1 text-overline font-semibold">MAQUETTE</span>
+          <span className="rounded-full bg-bg-secondary px-2.5 py-1 text-overline font-semibold">{tx("MAQUETTE")}</span>
         </div>
 
         <div className="flex flex-wrap gap-2">

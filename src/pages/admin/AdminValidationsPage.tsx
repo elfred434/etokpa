@@ -230,11 +230,11 @@ export default function AdminValidationsPage() {
                 <tr>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{tx("Client")}</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{tx("Produit")}</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Prix vendeur</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{tx("Prix vendeur")}</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{tx("Prix proposé")}</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{tx("Écart")}</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{tx("Date")}</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">{tx("Actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -368,11 +368,11 @@ export default function AdminValidationsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col">
                   <span className="text-xl font-bold">{histo?.total ?? '—'}</span>
-                  <span className="text-[10px] text-text-secondary">propositions faites</span>
+                  <span className="text-[10px] text-text-secondary">{tx("propositions faites")}</span>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col">
                   <span className="text-xl font-bold text-success-dark">{histo?.taux != null ? `${histo.taux}%` : '—'}</span>
-                  <span className="text-[10px] text-text-secondary">taux d'acceptation</span>
+                  <span className="text-[10px] text-text-secondary">{tx("taux d'acceptation")}</span>
                 </div>
               </div>
             </div>

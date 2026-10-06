@@ -10,7 +10,7 @@ import { fmtFcfa, listOf } from '../../../services/api/unwrap';
 import { alertApiError } from '../../../utils/apiError';
 import { currentUserName, initialsOf } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
-import { tx } from '../../../i18n/tx';
+import { tr, tx } from '../../../i18n/tx';
 
 import {
   articlesCount,
@@ -202,18 +202,18 @@ export default function LivreurDashboardPage() {
                     <span className="rounded bg-primary-tint px-sm py-1 text-xs font-bold text-primary">{tokRef(active.id)}</span>
                     <h4 className="mt-sm font-h3 text-h3">{active.landmark?.nom ?? tx("Point de repère non renseigné")}</h4>
                     <p className="text-sm text-secondary">
-                      {articlesCount(active)} article(s) · {statutLabel(active.statut)}
+                      {tr(`${articlesCount(active)} article(s)`, `${articlesCount(active)} item(s)`)} · {statutLabel(active.statut)}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="font-price text-primary">{fmtFcfa(active.montant_total)}</p>
-                    <p className="text-[11px] text-text-secondary">Livraison : {fmtFcfa(active.frais_livraison)}</p>
+                    <p className="text-[11px] text-text-secondary">{tr(`Livraison : ${fmtFcfa(active.frais_livraison)}`, `Delivery: ${fmtFcfa(active.frais_livraison)}`)}</p>
                   </div>
                 </div>
                 <div className="mb-lg flex items-center gap-md rounded-lg bg-bg-secondary p-md">
                   <MIcon name="location_on" className="text-text-secondary" />
                   <div className="flex-1">
-                    <p className="text-xs font-bold uppercase text-text-secondary">Destination</p>
+                    <p className="text-xs font-bold uppercase text-text-secondary">{tx("Destination")}</p>
                     <p className="text-sm">{destination(active)}</p>
                   </div>
                 </div>
@@ -261,7 +261,7 @@ export default function LivreurDashboardPage() {
                     <div>
                       <h4 className="font-h3 text-h3">{o.landmark?.nom ?? tx("Point de repère non renseigné")}</h4>
                       <p className="text-xs text-secondary">
-                        {tokRef(o.id)} • {articlesCount(o)} article(s) • {statutLabel(o.statut)}
+                        {tokRef(o.id)} • {tr(`${articlesCount(o)} article(s)`, `${articlesCount(o)} item(s)`)} • {statutLabel(o.statut)}
                       </p>
                     </div>
                   </div>
@@ -321,8 +321,8 @@ export default function LivreurDashboardPage() {
               <table className="w-full border-collapse text-left">
                 <thead className="bg-bg-secondary">
                   <tr>
-                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">ID Course</th>
-                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">Destination</th>
+                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">{tx("ID Course")}</th>
+                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">{tx("Destination")}</th>
                     <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">{tx("Commande du")}</th>
                     <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">{tx("Frais de livraison")}</th>
                     <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">{tx("Statut")}</th>
@@ -334,7 +334,7 @@ export default function LivreurDashboardPage() {
                       <td className="px-lg py-md font-bold text-primary">{tokRef(o.id)}</td>
                       <td className="px-lg py-md">
                         <p className="text-sm font-medium">{o.landmark?.nom ?? '—'}</p>
-                        <p className="text-xs text-text-secondary">{o.description_lieu || `${articlesCount(o)} article(s)`}</p>
+                        <p className="text-xs text-text-secondary">{o.description_lieu || `${tr(`${articlesCount(o)} article(s)`, `${articlesCount(o)} item(s)`)}`}</p>
                       </td>
                       <td className="px-lg py-md text-sm">{dateHeure(o.created_at)}</td>
                       <td className="px-lg py-md font-price text-sm">{fmtFcfa(o.frais_livraison)}</td>

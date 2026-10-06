@@ -14,7 +14,7 @@ import { alertApiError } from '../../../utils/apiError';
 import { currentUserName } from '../../../routes/authGuard';
 import { dateHeure, destination, fetchDeliveries, statutLabel, tokRef, type LivreurOrder } from '../livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
-import { tx } from '../../../i18n/tx';
+import { tr, tx } from '../../../i18n/tx';
 import { orderLineName } from '../../../utils/orderLine';
 
 
@@ -231,14 +231,14 @@ export default function LivreurCoursePage() {
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-on-surface">{tx("Client TOKPa")}</p>
-                  <p className="text-xs text-on-surface-variant">Commande du {dateHeure(order.created_at)}</p>
+                  <p className="text-xs text-on-surface-variant">{tr(`Commande du ${dateHeure(order.created_at)}`, `Order of ${dateHeure(order.created_at)}`)}</p>
                 </div>
               </div>
               <div className="space-y-md">
                 <div className="flex gap-md">
                   <MIcon name="storefront" className="shrink-0 text-on-surface-variant" />
                   <div className="text-sm">
-                    <p className="text-xs font-bold text-primary">Retrait</p>
+                    <p className="text-xs font-bold text-primary">{tx("Retrait")}</p>
                     <p className="text-on-surface">{tx("Marché Dantokpa")}</p>
                   </div>
                 </div>
@@ -267,7 +267,7 @@ export default function LivreurCoursePage() {
                   className="flex cursor-not-allowed items-center justify-center gap-sm rounded-lg border border-border-default bg-white py-sm opacity-50"
                 >
                   <MIcon name="chat_bubble" className="text-on-surface-variant" />
-                  <span className="text-sm font-medium">Chat</span>
+                  <span className="text-sm font-medium">{tx("Chat")}</span>
                 </button>
               </div>
               <p className="mt-sm text-[11px] text-on-surface-variant">
@@ -321,7 +321,7 @@ export default function LivreurCoursePage() {
                 type="button"
                 disabled={busy || order.statut !== 'en_preparation'}
                 onClick={() => changeStatus('en_livraison')}
-                title={order.statut === "en_attente" ? 'La commande doit d’abord être mise en préparation' : undefined}
+                title={order.statut === "en_attente" ? tx("La commande doit d’abord être mise en préparation") : undefined}
                 className={clsx(
                   'flex w-full items-center justify-center gap-md rounded-lg py-lg text-h3 font-bold text-white transition-all active:scale-[0.97]',
                   order.statut === 'en_preparation' ? 'bg-[#F97316] hover:bg-[#EA580C]' : 'cursor-not-allowed bg-text-tertiary',
@@ -329,7 +329,7 @@ export default function LivreurCoursePage() {
                 )}
               >
                 <MIcon name="two_wheeler" />
-                {order.statut === 'en_preparation' ? tx("Démarrer la livraison") : 'En attente de préparation'}
+                {order.statut === 'en_preparation' ? tx("Démarrer la livraison") : tx("En attente de préparation")}
               </button>
             )}
           </div>

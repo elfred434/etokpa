@@ -91,7 +91,7 @@ export default function AdminLogsPage() {
       }
       const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
       const lignes = [
-        ['Date', tx("Catégorie"), 'Titre', 'Action brute', 'Utilisateur', 'IP', tx("Détail")].map(cell).join(';'),
+        [tx("Date"), tx("Catégorie"), tx("Titre"), tx("Action brute"), tx("Utilisateur"), tx("IP"), tx("Détail")].map(cell).join(';'),
         ...acc
           .filter((l) => !type || categorie(l) === type)
           .map((l) => [l.created_at, categorie(l), titre(l), l.action, acteur(l).nom, l.ip_address, detail(l)].map(cell).join(';')),
@@ -149,7 +149,7 @@ export default function AdminLogsPage() {
               <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"></i>
               <input
                 className="w-full pl-10 pr-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none transition-all"
-                placeholder="Action (ex : users, DELETE, OrderStatusChanged)"
+                placeholder={tx("Action (ex : users, DELETE, OrderStatusChanged)")}
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -188,7 +188,7 @@ export default function AdminLogsPage() {
             <div className="flex flex-wrap items-center gap-2 rounded-[10px] border-[1.5px] border-border-default bg-white px-4 py-2">
               <i className="ti ti-calendar text-text-secondary"></i>
               <input type="date" className="flex-1 text-body text-text-main outline-none bg-transparent" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={tx("Date de début")} />
-              <span className="text-body text-text-secondary">→ Aujourd'hui</span>
+              <span className="text-body text-text-secondary">{tx("→ Aujourd'hui")}</span>
             </div>
           </div>
           <button type="button" onClick={appliquer} className="self-end px-xl py-2 bg-primary-container text-white font-bold rounded-[10px] hover:bg-primary-hover transition-all active:scale-95">

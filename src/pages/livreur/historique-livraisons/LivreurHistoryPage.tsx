@@ -8,7 +8,7 @@ import { fmtFcfa } from '../../../services/api/unwrap';
 import { alertApiError } from '../../../utils/apiError';
 import { articlesCount, dateHeure, fetchAllHistory, fetchZoneNames, statutLabel, tokRef, type LivreurOrder } from '../livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
-import { tx } from '../../../i18n/tx';
+import { tr, tx } from '../../../i18n/tx';
 import { orderLineName } from '../../../utils/orderLine';
 
 
@@ -163,11 +163,11 @@ export default function LivreurHistoryPage() {
                           <tr className="border-b border-border-default bg-bg-secondary text-[13px]">
                             <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">{tx("Commande du")}</th>
                             <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">{tx("N° Commande")}</th>
-                            <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">Destination</th>
-                            <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">Zone</th>
+                            <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">{tx("Destination")}</th>
+                            <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">{tx("Zone")}</th>
                             <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">{tx("Frais de livraison")}</th>
                             <th className="whitespace-nowrap px-md py-md font-label text-text-secondary">{tx("Statut")}</th>
-                            <th className="whitespace-nowrap px-md py-md text-right font-label text-text-secondary">Action</th>
+                            <th className="whitespace-nowrap px-md py-md text-right font-label text-text-secondary">{tx("Action")}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border-default text-[14px]">
@@ -321,13 +321,13 @@ export default function LivreurHistoryPage() {
             {/* Body */}
             <div className="space-y-lg p-lg">
               <div className="rounded-lg border border-border-default bg-bg-secondary p-md">
-                <span className="text-micro font-bold uppercase tracking-wider text-text-secondary">Destination</span>
+                <span className="text-micro font-bold uppercase tracking-wider text-text-secondary">{tx("Destination")}</span>
                 <div className="mt-sm flex items-start gap-sm">
                   <MIcon name="location_on" className="text-primary" />
                   <div>
                     <p className="font-semibold text-on-surface">{selected.landmark?.nom ?? '—'}</p>
                     <p className="text-label text-text-secondary">
-                      {[selected.description_lieu, zoneOf(selected) !== '—' ? `Zone ${zoneOf(selected)}` : null].filter(Boolean).join(' · ') || '—'}
+                      {[selected.description_lieu, zoneOf(selected) !== '—' ? tr(`Zone ${zoneOf(selected)}`, `Zone ${zoneOf(selected)}`) : null].filter(Boolean).join(' · ') || '—'}
                     </p>
                   </div>
                 </div>

@@ -142,7 +142,7 @@ export default function ConnexionPage() {
                     type="button"
                     onClick={async () => {
                       if (!email.trim()) {
-                        toast.error('Renseignez d\'abord votre adresse email.');
+                        toast.error(tx("Renseignez d'abord votre adresse email."));
                         return;
                       }
                       try {

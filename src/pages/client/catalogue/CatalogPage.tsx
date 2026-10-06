@@ -548,7 +548,7 @@ export default function CatalogPage() {
             <div>
               <h2 className="font-h1 text-h1 text-on-surface">{catTitle}</h2>
               <p className="mt-1 text-ink-2">
-                {listLoading ? tx("Chargement…") : listError ? '' : `${filtered.length} ${packMode ? tx("packs trouvés") : 'produits trouvés'}`}
+                {listLoading ? tx("Chargement…") : listError ? '' : `${filtered.length} ${packMode ? tx("packs trouvés") : tx("produits trouvés")}`}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4">

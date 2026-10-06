@@ -119,7 +119,7 @@ export default function ProfileHeader() {
               </div>
 
               <div>
-                <label className="label">Email</label>
+                <label className="label">{tx("Email")}</label>
                 <input
                   type="email"
                   value={form.email}

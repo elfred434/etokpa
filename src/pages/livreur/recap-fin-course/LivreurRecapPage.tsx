@@ -86,7 +86,7 @@ export default function LivreurRecapPage() {
                 <div className="border-b border-[#E5E7EB] bg-white p-6 text-center">
                   <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-[#6B7280]">{tx("Frais de livraison")}</p>
                   <h2 className="flex flex-wrap items-center justify-center gap-2 text-[32px] font-bold text-[#111827]">
-                    <span>Course :</span>
+                    <span>{tx("Course :")}</span>
                     <span className="font-bold text-[#F97316]">{fmtFcfa(order.frais_livraison)}</span>
                   </h2>
                   <div className="mt-5 flex items-center justify-center gap-10 border-t border-[#F3F4F6] pt-4">
@@ -112,7 +112,7 @@ export default function LivreurRecapPage() {
                     <span className="mt-0.5 text-sm font-medium text-[#111827]">{heure}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[#6B7280]">Destination</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[#6B7280]">{tx("Destination")}</span>
                     <span className="mt-0.5 text-sm font-medium text-[#111827]">{destination(order)}</span>
                   </div>
                 </div>

@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useLanguage } from '../../../context/LanguageContext';
-import { tx } from '../../../i18n/tx';
+import { tr, tx } from '../../../i18n/tx';
 
 
 // Coordonnées réelles du Bénin (Cotonou / Marché Dantokpa / Cadjehoun)
@@ -115,8 +115,8 @@ export default function RealBeninMap({
           <Marker position={riderCoords} icon={riderIcon}>
             <Popup>
               <div className="text-center font-sans p-1">
-                <strong className="block text-success-dark font-bold">{riderName ? `${riderName} (Livreur)` : 'Livreur TOKPa'}</strong>
-                <span className="text-xs text-gray-600">GPS : {riderCoords[0].toFixed(4)}, {riderCoords[1].toFixed(4)}</span>
+                <strong className="block text-success-dark font-bold">{riderName ? tr(`${riderName} (Livreur)`, `${riderName} (Rider)`) : tx("Livreur TOKPa")}</strong>
+                <span className="text-xs text-gray-600">{tr(`GPS : ${riderCoords[0].toFixed(4)}, ${riderCoords[1].toFixed(4)}`, `GPS: ${riderCoords[0].toFixed(4)}, ${riderCoords[1].toFixed(4)}`)}</span>
               </div>
             </Popup>
           </Marker>
@@ -127,7 +127,7 @@ export default function RealBeninMap({
           <Marker position={destinationCoords} icon={clientIcon}>
             <Popup>
               <div className="text-center font-sans p-1">
-                <strong className="block text-info-dark font-bold">{destinationLabel || 'Point de livraison'}</strong>
+                <strong className="block text-info-dark font-bold">{destinationLabel || tx("Point de livraison")}</strong>
                 <span className="text-xs text-gray-600">{tx("Destination de la commande")}</span>
               </div>
             </Popup>

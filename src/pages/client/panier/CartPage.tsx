@@ -259,7 +259,7 @@ export default function CartPage() {
       if (redirectUrl) {
         if (/fedapay\.com/i.test(redirectUrl)) {
           window.open(redirectUrl, '_blank', 'noopener');
-          toast.success('Redirection vers FedaPay…');
+          toast.success(tx("Redirection vers FedaPay…"));
         } else {
           toast.success(tx("Paiement FedaPay initialisé (mode sandbox dev)."));
         }
@@ -438,7 +438,7 @@ export default function CartPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border-default bg-bg-app font-bold text-text-tertiary transition-all duration-300 sm:h-9 sm:w-9 sm:text-h3">
                 4
               </div>
-              <span className="text-center text-[11px] font-medium leading-tight text-text-tertiary sm:text-label">Confirmation</span>
+              <span className="text-center text-[11px] font-medium leading-tight text-text-tertiary sm:text-label">{tx("Confirmation")}</span>
             </div>
           </div>
         </div>
@@ -754,7 +754,7 @@ export default function CartPage() {
               </div>
 
               <div className="py-lg flex justify-between items-center">
-                <span className="font-h2 text-h2 text-on-surface">Total</span>
+                <span className="font-h2 text-h2 text-on-surface">{tx("Total")}</span>
                 <span className="font-price text-[22px] text-primary-container font-bold">
                   {grandTotal.toLocaleString('fr-FR')} FCFA
                 </span>

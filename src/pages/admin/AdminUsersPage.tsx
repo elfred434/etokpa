@@ -168,9 +168,9 @@ export default function AdminUsersPage() {
   const exportCsv = () => {
     const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const lines = [
-      ['Nom', 'Email', tx("Téléphone"), 'Rôle', 'Zone', 'Statut'].map(cell).join(';'),
+      [tx("Nom"), tx("Email"), tx("Téléphone"), tx("Rôle"), tx("Zone"), tx("Statut")].map(cell).join(';'),
       ...filtered.map((u) =>
-        [nomOf(u), u?.email, u?.telephone, ROLE_UI[roleOf(u)]?.label ?? roleOf(u), zoneNom(u?.profil?.zone), STATUT_UI[statutOf(u)]?.label ?? u?.statut]
+        [nomOf(u), u?.email, u?.telephone, tx(ROLE_UI[roleOf(u)]?.label ?? roleOf(u)), zoneNom(u?.profil?.zone), tx(STATUT_UI[statutOf(u)]?.label ?? String(u?.statut ?? ""))]
           .map(cell)
           .join(';'),
       ),
@@ -224,10 +224,10 @@ export default function AdminUsersPage() {
 
   const toggleStatus = async (u: any) => {
     const suspendu = statutOf(u) === 'suspendu';
-    if (!confirm(`${suspendu ? tx("Réactiver") : 'Suspendre'} le compte de ${nomOf(u)} ?`)) return;
+    if (!confirm(tr(suspendu ? `Réactiver le compte de ${nomOf(u)} ?` : `Suspendre le compte de ${nomOf(u)} ?`, suspendu ? `Reactivate ${nomOf(u)}'s account?` : `Suspend ${nomOf(u)}'s account?`))) return;
     try {
       await adminApi.updateUser(Number(u.id), { statut: suspendu ? 'actif' : 'suspendu' });
-      toast.success(suspendu ? tx("Compte réactivé.") : 'Compte suspendu.');
+      toast.success(suspendu ? tx("Compte réactivé.") : tx("Compte suspendu."));
       if (selected?.id === u.id) setSelected(null);
       setReloadKey((k) => k + 1);
     } catch (e) {
@@ -534,8 +534,8 @@ export default function AdminUsersPage() {
                 >
                   <option value="all">{tx("Tous les statuts")}</option>
                   <option value="actif">{tx("Actifs")}</option>
-                  <option value="inactif">Inactifs</option>
-                  <option value="suspendu">Suspendus</option>
+                  <option value="inactif">{tx("Inactifs")}</option>
+                  <option value="suspendu">{tx("Suspendus")}</option>
                 </select>
               </div>
               <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
@@ -566,7 +566,7 @@ export default function AdminUsersPage() {
                   <th className="py-3 px-4">{tx("Zone Principale")}</th>
                   <th className="py-3 px-4">{tx("Statut")}</th>
                   <th className="py-3 px-4">{tx("Activité")}</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <th className="py-3 px-4 text-right">{tx("Actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-xs" id="tableBody">
@@ -629,7 +629,7 @@ export default function AdminUsersPage() {
                             type="button"
                             className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                             onClick={() => toggleStatus(u)}
-                            title={suspendu ? tx("Réactiver") : 'Suspendre'}
+                            title={suspendu ? tx("Réactiver") : tx("Suspendre")}
                           >
                             <i className={suspendu ? 'ti ti-lock-open text-sm' : 'ti ti-lock text-sm'}></i>
                           </button>
@@ -647,10 +647,10 @@ export default function AdminUsersPage() {
                 tx("Aucun utilisateur")
               ) : (
                 <>
-                  {tx("Affichage de")} <span className="font-semibold text-gray-800">{fmt((current - 1) * PER_PAGE + 1)}</span> à{' '}
-                  <span className="font-semibold text-gray-800">{fmt(Math.min(current * PER_PAGE, filtered.length))}</span> sur{' '}
-                  <span className="font-semibold text-gray-800">{fmt(filtered.length)}</span> utilisateurs
-                  {capped ? ' (500 premiers comptes)' : ''}
+                  {tr(
+                    `Affichage de ${fmt((current - 1) * PER_PAGE + 1)} à ${fmt(Math.min(current * PER_PAGE, filtered.length))} sur ${fmt(filtered.length)} utilisateurs${capped ? ' (500 premiers comptes)' : ''}`,
+                    `Showing ${fmt((current - 1) * PER_PAGE + 1)}–${fmt(Math.min(current * PER_PAGE, filtered.length))} of ${fmt(filtered.length)} users${capped ? ' (first 500 accounts)' : ''}`,
+                  )}
                 </>
               )}
             </p>
@@ -772,9 +772,9 @@ export default function AdminUsersPage() {
               </div>
               <div className="p-3.5 bg-orange-50/50 rounded-xl border border-orange-100 space-y-1">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-gray-600 font-medium">Statistiques &amp; Performance</span>
+                  <span className="text-gray-600 font-medium">{tx("Statistiques & Performance")}</span>
                   <span className="font-bold text-primary" id="modalStats">
-                    {commandesOf(selected) != null ? `${fmt(commandesOf(selected)!)} commande(s)` : '—'}
+                    {commandesOf(selected) != null ? tr(`${fmt(commandesOf(selected)!)} commande(s)`, `${fmt(commandesOf(selected)!)} order(s)`) : "—"}
                   </span>
                 </div>
                 {selRole === 'livreur' && (
@@ -785,7 +785,7 @@ export default function AdminUsersPage() {
                 )}
               </div>
               <div className="pt-2 flex flex-col gap-2">
-                <label className="font-medium text-gray-700 block">Actions administratives :</label>
+                <label className="font-medium text-gray-700 block">{tx("Actions administratives :")}</label>
                 {selRole === 'client' && (
                   <button
                     type="button"
@@ -811,7 +811,7 @@ export default function AdminUsersPage() {
                     onClick={() => toggleStatus(selected)}
                   >
                     <i className={statutOf(selected) === 'suspendu' ? 'ti ti-lock-open text-sm' : 'ti ti-lock text-sm'}></i>
-                    <span>{statutOf(selected) === 'suspendu' ? tx("Réactiver l'accès") : "Suspendre l'accès"}</span>
+                    <span>{statutOf(selected) === 'suspendu' ? tx("Réactiver l'accès") : tx("Suspendre l'accès")}</span>
                   </button>
                 </div>
               </div>
@@ -989,7 +989,7 @@ export default function AdminUsersPage() {
                   id="step1SubmitBtn"
                   onClick={onStep1Submit}
                 >
-                  <span>{newRole === 'livreur' ? tx("Continuer vers Documents (Étape 2) →") : creating ? 'Création…' : "Créer l'utilisateur"}</span>
+                  <span>{newRole === 'livreur' ? tx("Continuer vers Documents (Étape 2) →") : creating ? tx("Création…") : tx("Créer l'utilisateur")}</span>
                 </button>
               </div>
             </div>
@@ -1037,7 +1037,7 @@ export default function AdminUsersPage() {
                   </label>
                   <select className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900" id="livreurVehiculeType">
                     <option value="moto">{tx("Moto 2 roues (Zémidjan / Express)")}</option>
-                    <option value="tricycle">Tricycle fret Dantokpa</option>
+                    <option value="tricycle">{tx("Tricycle fret Dantokpa")}</option>
                     <option value="utilitaire">{tx("Utilitaire léger / Fourgonnette")}</option>
                   </select>
                 </div>
@@ -1079,10 +1079,10 @@ export default function AdminUsersPage() {
                     <p className="text-[11px] text-gray-400 mt-0.5">{tx("Formats acceptés : PDF, PNG, JPG (Max 5 Mo / fichier)")}</p>
                     <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-[11px] text-gray-500">
                       <span className="inline-flex items-center gap-1">
-                        <i className="ti ti-file-check text-emerald-600"></i> Carte CIP / NPI
+                        <i className="ti ti-file-check text-emerald-600"></i> {tx("Carte CIP / NPI")}
                       </span>
                       <span className="inline-flex items-center gap-1">
-                        <i className="ti ti-id text-emerald-600"></i> Permis A1/B
+                        <i className="ti ti-id text-emerald-600"></i> {tx("Permis A1/B")}
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <i className="ti ti-home-check text-emerald-600"></i> {tx("Certificat résidence")}
@@ -1102,7 +1102,7 @@ export default function AdminUsersPage() {
                   className="btn-press px-4 py-2.5 bg-primary hover:bg-primary-hover text-white font-semibold rounded-[10px] shadow-sm transition-all flex items-center gap-1.5 disabled:opacity-60"
                 >
                   <i className="ti ti-check text-sm"></i>
-                  <span>{creating ? tx("Création…") : 'Valider & Enregistrer le livreur'}</span>
+                  <span>{creating ? tx("Création…") : tx("Valider & Enregistrer le livreur")}</span>
                 </button>
               </div>
             </div>

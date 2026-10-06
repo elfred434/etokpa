@@ -163,7 +163,7 @@ export default function LivreurSettingsPage() {
                   </label>
                   <label className="flex flex-col gap-xs">
                     <span className="font-secondary text-secondary text-text-secondary">{tx("Adresse e-mail")}</span>
-                    <input className={`${inputCls} opacity-70`} type="email" value={profile.email ?? ''} readOnly title="Non modifiable depuis l'application" />
+                    <input className={`${inputCls} opacity-70`} type="email" value={profile.email ?? ''} readOnly title={tx("Non modifiable depuis l'application")} />
                   </label>
                   <label className="flex flex-col gap-xs sm:col-span-2">
                     <span className="font-secondary text-secondary text-text-secondary">{tx("Zone principale assignée")}</span>

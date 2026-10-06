@@ -48,7 +48,7 @@ export default function ManagerParametresPage() {
             <h1 className="text-h2 font-h2 font-bold">{tx("Paramètres de la Zone & Préférences")}</h1>
             <p className="text-label font-semibold text-success">{tx("Zone Ouverte & Opérationnelle")}</p>
           </div>
-          <span className="rounded-full bg-bg-secondary px-2.5 py-1 text-overline font-semibold">MAQUETTE</span>
+          <span className="rounded-full bg-bg-secondary px-2.5 py-1 text-overline font-semibold">{tx("MAQUETTE")}</span>
         </div>
 
         <div className="flex flex-wrap gap-2 border-b border-border-default pb-2">
@@ -80,10 +80,10 @@ export default function ManagerParametresPage() {
                   <Ligne label={tx("Nom officiel de la zone")}>
                     <input type="text" defaultValue={currentUserZone() ?? ''} className={inputCls} />
                   </Ligne>
-                  <Ligne label="Rayon de couverture maximal">
+                  <Ligne label={tx("Rayon de couverture maximal")}>
                     <select className={inputCls} defaultValue="12 km (Akpakpa)">
-                      <option>3 km (local)</option>
-                      <option>12 km (Akpakpa)</option>
+                      <option>{tx("3 km (local)")}</option>
+                      <option>{tx("12 km (Akpakpa)")}</option>
                       <option>{tx("25 km (Grand Cotonou)")}</option>
                     </select>
                   </Ligne>
@@ -122,15 +122,15 @@ export default function ManagerParametresPage() {
                 <Ligne label={tx("Attribution automatique au plus proche (Recommandé)")} aide={tx("Actif")}>
                   <input type="radio" name="dispatch" defaultChecked className="h-4 w-4 accent-primary" />
                 </Ligne>
-                <Ligne label={tx("Diffusion ouverte (Premier arrivé, premier servi)")} aide="Secondaire">
+                <Ligne label={tx("Diffusion ouverte (Premier arrivé, premier servi)")} aide={tx("Secondaire")}>
                   <input type="radio" name="dispatch" className="h-4 w-4 accent-primary" />
                 </Ligne>
                 <Ligne label={tx("Délai d’acceptation par livreur")}>
                   <select className={inputCls} defaultValue={tx("45 secondes (conseillé)")}>
-                    <option>30 secondes</option>
+                    <option>{tx("30 secondes")}</option>
                     <option>{tx("45 secondes (conseillé)")}</option>
-                    <option>60 secondes</option>
-                    <option>90 secondes</option>
+                    <option>{tx("60 secondes")}</option>
+                    <option>{tx("90 secondes")}</option>
                   </select>
                 </Ligne>
               </div>

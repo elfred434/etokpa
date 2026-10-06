@@ -99,7 +99,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
           <span className="font-h1 text-h1 font-bold text-primary">TOKPa</span>
           <div className="flex min-w-0 items-center gap-2 sm:gap-lg">
             <LangToggle />
-            <Link to="/notifications" aria-label="Notifications" className="text-text-secondary transition-colors hover:text-primary">
+            <Link to="/notifications" aria-label={tx("Notifications")} className="text-text-secondary transition-colors hover:text-primary">
               <MIcon name="notifications" />
             </Link>
             <div className="flex min-w-0 items-center gap-sm border-l border-border-default pl-2 sm:pl-lg">

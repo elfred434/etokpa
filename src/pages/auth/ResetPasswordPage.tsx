@@ -113,7 +113,7 @@ export default function ResetPasswordPage() {
               disabled={loading || password.length === 0}
               className="w-full bg-primary-container hover:bg-primary-hover text-white font-bold py-3 rounded-lg shadow-md transition-all cursor-pointer disabled:opacity-50"
             >
-              {loading ? tx("Réinitialisation…") : 'Réinitialiser le mot de passe'}
+              {loading ? tx("Réinitialisation…") : tx("Réinitialiser le mot de passe")}
             </button>
           </form>
         )}

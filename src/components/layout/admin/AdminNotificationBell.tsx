@@ -7,7 +7,7 @@ import { describeNotification, formatTime } from '../../../utils/notificationTex
 import { alertApiError } from '../../../utils/apiError';
 import type { AppNotification } from '../../../types/models';
 import { useLanguage } from '../../../context/LanguageContext';
-import { tx } from '../../../i18n/tx';
+import { tr, tx } from '../../../i18n/tx';
 
 
 interface AdminNotificationBellProps {
@@ -63,7 +63,7 @@ export default function AdminNotificationBell({ className, icon, dotClassName = 
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-label={`Notifications${unread ? ` (${unread} non lues)` : ''}`}
+        aria-label={unread ? tr(`Notifications (${unread} non lues)`, `Notifications (${unread} unread)`) : tx("Notifications")}
         className={`relative ${className}`}
       >
         {icon}
@@ -74,9 +74,9 @@ export default function AdminNotificationBell({ className, icon, dotClassName = 
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
           <div className="absolute right-0 z-50 mt-sm w-[340px] overflow-hidden rounded-[14px] border-0.5 border-line bg-card shadow-lg">
             <div className="flex items-center justify-between border-b-0.5 border-line p-md">
-              <span className="text-[13px] font-semibold text-ink">Notifications</span>
+              <span className="text-[13px] font-semibold text-ink">{tx("Notifications")}</span>
               <span className="text-[12px] text-ink-3">
-                {unread} non lue{unread > 1 ? 's' : ''}
+                {tr(unread > 1 ? `${unread} non lues` : `${unread} non lue`, `${unread} unread`)}
               </span>
             </div>
             <div className="max-h-[320px] overflow-y-auto">

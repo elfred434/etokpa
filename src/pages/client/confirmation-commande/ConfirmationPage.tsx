@@ -228,11 +228,11 @@ export default function ConfirmationPage() {
               </div>
               <div className="flex justify-between">
                 <span className="font-body text-text-secondary">{tx("Arrivée estimée")}</span>
-                <span className="font-body font-medium text-text-main">30–45 minutes</span>
+                <span className="font-body font-medium text-text-main">{tx("30–45 minutes")}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-body text-text-secondary">{tx("Livreur assigné")}</span>
-                <span className="font-body font-medium text-primary italic">En cours d'assignation...</span>
+                <span className="font-body font-medium text-primary italic">{tx("En cours d'assignation...")}</span>
               </div>
             </div>
           </div>

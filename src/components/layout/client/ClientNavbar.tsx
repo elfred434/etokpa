@@ -151,7 +151,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
             <span className="hidden uppercase min-[400px]:inline">{language}</span>
           </button>
 
-          <Link to="/notifications" className="scale-interaction" aria-label="Notifications">
+          <Link to="/notifications" className="scale-interaction" aria-label={tx("Notifications")}>
             <MIcon name="notifications" />
           </Link>
           <Link to="/panier" className="scale-interaction relative" aria-label={tx("Panier")}>
@@ -159,7 +159,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
             {cartCount > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />}
           </Link>
           {space && (
-            <Link to={space.to} className="scale-interaction" aria-label={space.label} title={space.label}>
+            <Link to={space.to} className="scale-interaction" aria-label={tx(space.label)} title={tx(space.label)}>
               <MIcon name={space.icon} />
             </Link>
           )}
@@ -224,7 +224,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
           {space && (
             <Link to={space.to} className="flex items-center gap-3 rounded-lg px-4 py-3 text-on-surface-variant hover:bg-primary-lighter/70" onClick={() => setMenu(false)}>
               <MIcon name={space.icon} />
-              <span className="text-body">{space.label}</span>
+              <span className="text-body">{tx(space.label)}</span>
             </Link>
           )}
           <Link to="/profil" className="flex items-center gap-3 py-4" onClick={() => setMenu(false)}>

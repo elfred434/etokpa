@@ -167,7 +167,7 @@ export default function ProductPage() {
           <div className="w-full max-w-[560px] bg-white rounded-xl border border-border-default p-xl">
             <EmptyState
               icon={<MIcon name="search_off" className="text-4xl text-primary" />}
-              title="Produit introuvable"
+              title={tx("Produit introuvable")}
               description={tx("Ce produit n’existe pas ou n’est plus disponible au marché.")}
               action={
                 <Link
@@ -272,7 +272,7 @@ export default function ProductPage() {
                 <div className="flex items-center rounded-lg border border-line">
                   <button
                     type="button"
-                    aria-label="Diminuer"
+                    aria-label={tx("Diminuer")}
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     className="border-r border-line p-2 text-ink transition-colors hover:bg-surface cursor-pointer"
                   >
@@ -281,7 +281,7 @@ export default function ProductPage() {
                   <span className="px-6 py-1 font-semibold text-ink">{quantity}</span>
                   <button
                     type="button"
-                    aria-label="Augmenter"
+                    aria-label={tx("Augmenter")}
                     onClick={() => setQuantity((q) => q + 1)}
                     className="border-l border-line p-2 text-ink transition-colors hover:bg-surface cursor-pointer"
                   >
@@ -510,7 +510,7 @@ export default function ProductPage() {
                     <span className="text-sm font-medium text-ink">{categoryNom}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-micro uppercase text-ink-3">Prix de base</span>
+                    <span className="text-micro uppercase text-ink-3">{tx("Prix de base")}</span>
                     <span className="text-sm font-medium text-ink">
                       {product.prix.toLocaleString('fr-FR')} FCFA
                     </span>

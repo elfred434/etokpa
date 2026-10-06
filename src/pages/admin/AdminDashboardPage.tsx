@@ -166,7 +166,7 @@ export default function AdminDashboardPage() {
     const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
     const top = sorted.slice(0, 3).map(([nom, n]) => ({ nom, n }));
     const autres = sorted.slice(3).reduce((sum, [, n]) => sum + n, 0);
-    return autres > 0 ? [...top, { nom: tx("Autres"), n: autres }] : top;
+    return autres > 0 ? [...top, { nom: "Autres", n: autres }] : top;
   }, [periodOrders, zoneNames]);
   const totalPeriode = periodOrders?.length ?? 0;
   const donut = (() => {
@@ -289,7 +289,7 @@ export default function AdminDashboardPage() {
             <div>
               <h3 className="font-h2 text-h2 text-on-surface">{tx("Croissance des ventes")}</h3>
               <p className="font-secondary text-label text-text-secondary">
-                Performances journalières du réseau (commandes non annulées){capped ? tx(" — calculé sur les 500 dernières commandes") : ''}
+                {tx("Performances journalières du réseau (commandes non annulées)")}{capped ? tx(" — calculé sur les 500 dernières commandes") : ''}
               </p>
             </div>
             <select
@@ -297,13 +297,13 @@ export default function AdminDashboardPage() {
               onChange={(e) => setRange(Number(e.target.value) === 30 ? 30 : 7)}
               className="bg-bg-app border-none text-label rounded-lg px-md py-sm font-secondary"
             >
-              <option value={7}>7 derniers jours</option>
-              <option value={30}>30 derniers jours</option>
+              <option value={7}>{tx("7 derniers jours")}</option>
+              <option value={30}>{tx("30 derniers jours")}</option>
             </select>
           </div>
           <div className="h-[280px] w-full flex items-end justify-between gap-2 px-4 relative overflow-hidden">
             {chartErr ? (
-              <p className="m-auto max-w-[420px] text-center font-secondary text-label text-error">Ventes indisponibles : {chartErr}</p>
+              <p className="m-auto max-w-[420px] text-center font-secondary text-label text-error">{tr(`Ventes indisponibles : ${chartErr}`, `Sales unavailable: ${chartErr}`)}</p>
             ) : !series ? (
               <p className="m-auto font-secondary text-label text-text-secondary">{tx("Chargement des ventes…")}</p>
             ) : (
@@ -331,7 +331,7 @@ export default function AdminDashboardPage() {
             <div className="w-40 h-40 rounded-full relative flex items-center justify-center" style={{ background: donut }}>
               <div className="absolute inset-[12px] rounded-full bg-bg-card" />
               <div className="relative text-center">
-                <span className="block font-h3 text-h3 text-on-surface">Total</span>
+                <span className="block font-h3 text-h3 text-on-surface">{tx("Total")}</span>
                 <span className="font-price text-price text-primary">{periodOrders ? totalPeriode : '—'}</span>
               </div>
             </div>
@@ -345,7 +345,7 @@ export default function AdminDashboardPage() {
               <div key={z.nom} className="flex items-center justify-between">
                 <div className="flex items-center gap-sm">
                   <span className={`w-3 h-3 rounded-full ${ZONE_COLORS[i].cls}`} />
-                  <span className="font-secondary text-label">{z.nom}</span>
+                  <span className="font-secondary text-label">{tx(z.nom)}</span>
                 </div>
                 <span className="font-secondary text-label font-bold">{Math.round((z.n / Math.max(1, totalPeriode)) * 100)} %</span>
               </div>
@@ -371,8 +371,8 @@ export default function AdminDashboardPage() {
             <table className="w-full text-left font-secondary" data-mobile-detail="native">
               <thead className="bg-bg-secondary text-text-tertiary text-micro uppercase tracking-widest border-b border-border-default">
                 <tr>
-                  <th className="px-lg py-md">Date</th>
-                  <th className="px-lg py-md">Type d'action</th>
+                  <th className="px-lg py-md">{tx("Date")}</th>
+                  <th className="px-lg py-md">{tx("Type d'action")}</th>
                   <th className="px-lg py-md">{tx("Utilisateur")}</th>
                   <th className="px-lg py-md">{tx("Détails")}</th>
                   <th className="px-lg py-md">{tx("Statut")}</th>
@@ -418,15 +418,15 @@ export default function AdminDashboardPage() {
               ) : (
                 <li className="flex flex-col gap-1 border-b border-border-default pb-md last:border-0 last:pb-0">
                   <span className="font-secondary text-label font-bold text-on-surface">
-                    Stocks Faibles ({lowStock.length})
+                    {tr(`Stocks faibles (${lowStock.length})`, `Low stock (${lowStock.length})`)}
                   </span>
                   {lowStock.slice(0, 4).map((p) => (
                     <p key={p.id} className="font-secondary text-secondary text-micro">
-                      {p.nom} — {p.stock <= 0 ? 'en rupture' : `plus que ${p.stock} en stock`}
+                      {p.nom} — {p.stock <= 0 ? tx("en rupture") : tr(`plus que ${p.stock} en stock`, `only ${p.stock} left`)}
                     </p>
                   ))}
                   {lowStock.length > 4 && (
-                    <p className="font-secondary text-secondary text-micro">+ {lowStock.length - 4} autre(s)</p>
+                    <p className="font-secondary text-secondary text-micro">{tr(`+ ${lowStock.length - 4} autre(s)`, `+ ${lowStock.length - 4} more`)}</p>
                   )}
                   <Link to="/admin/catalogue" className="mt-2 text-primary font-bold text-micro text-left hover:underline">
                     {tx("Gérer le catalogue")}

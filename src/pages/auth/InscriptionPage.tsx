@@ -354,7 +354,7 @@ export default function InscriptionPage() {
                 </div>
 
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-xs text-text-secondary">Force :</span>
+                  <span className="text-xs text-text-secondary">{tx("Force :")}</span>
                   <span className={clsx('text-xs font-bold', strength.text)}>{tx(strength.label)}</span>
                 </div>
                 <div className="mt-1 flex gap-1">
@@ -441,7 +441,7 @@ export default function InscriptionPage() {
                 disabled={loading}
                 className="w-full bg-primary-container hover:bg-primary-hover text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer mt-6 disabled:opacity-50"
               >
-                <span>{loading ? tx("Création...") : 'Créer mon compte'}</span>
+                <span>{loading ? tx("Création...") : tx("Créer mon compte")}</span>
                 <MIcon name="arrow_forward" />
               </button>
 

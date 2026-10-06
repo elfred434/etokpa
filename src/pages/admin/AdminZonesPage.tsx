@@ -246,11 +246,11 @@ export default function AdminZonesPage() {
       manager_id: f.manager ? Number(f.manager) : null,
     };
     if (!payload.nom) {
-      window.alert('Le nom de la zone est obligatoire.');
+      window.alert(tx("Le nom de la zone est obligatoire."));
       return;
     }
     if (!Number.isFinite(payload.km_prix)) {
-      window.alert('Les frais de livraison (nombre en FCFA) sont obligatoires.');
+      window.alert(tx("Les frais de livraison (nombre en FCFA) sont obligatoires."));
       return;
     }
     try {
@@ -305,11 +305,11 @@ export default function AdminZonesPage() {
   const saveZoneModal = async () => {
     const z = zoneForm;
     if (!z.nom.trim()) {
-      window.alert('Le nom de la zone est obligatoire.');
+      window.alert(tx("Le nom de la zone est obligatoire."));
       return;
     }
     if (!Number.isFinite(Number(z.km_prix))) {
-      window.alert('Les frais de livraison (nombre en FCFA) sont obligatoires.');
+      window.alert(tx("Les frais de livraison (nombre en FCFA) sont obligatoires."));
       return;
     }
     if (zonePts.length < 3) {
@@ -670,7 +670,7 @@ export default function AdminZonesPage() {
                       <button type="button" className="flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-[#1c130d]/80 text-white shadow-lg" onClick={() => mapRef.current?.zoomOut()} aria-label={tx("Zoom")}>
                         <MIcon name="remove" />
                       </button>
-                      <button type="button" className="flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-[#1c130d]/80 text-white shadow-lg" onClick={() => setTileIdx((i) => (i + 1) % TILE_URLS.length)} aria-label="Calques">
+                      <button type="button" className="flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-[#1c130d]/80 text-white shadow-lg" onClick={() => setTileIdx((i) => (i + 1) % TILE_URLS.length)} aria-label={tx("Calques")}>
                         <MIcon name="layers" />
                       </button>
                     </div>
@@ -699,8 +699,8 @@ export default function AdminZonesPage() {
                 )}
                 <div ref={mapElRef} className="w-full h-full relative" id="map-canvas"></div>
                 <div className="tokpa-map-quiet absolute bottom-3 right-3 z-[1000] flex max-w-[calc(100%-1rem)] flex-wrap justify-end gap-2"> <button className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md border border-border-default hover:bg-app text-text-main" onClick={() => mapRef.current?.zoomIn()}> <MIcon name="zoom_in" /> </button> <button className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md border border-border-default hover:bg-app text-text-main" onClick={() => mapRef.current?.zoomOut()}> <MIcon name="zoom_out" /> </button> <button className="flex h-10 items-center gap-2 rounded-full border border-border-default bg-white px-3 font-label text-text-main shadow-md hover:bg-app" onClick={() => setTileIdx((i) => (i + 1) % TILE_URLS.length)}> <MIcon name="layers" />
-                                <span className="hidden sm:inline">Calques</span>
-                            </button> </div> </div>  <div className="rounded-[14px] bg-bg-card p-4 card-shadow sm:p-lg"> <div className="mb-md flex flex-wrap items-start justify-between gap-2"> <h2 className="min-w-0 break-words font-h2 text-h2 text-text-main">Points de repère — Zone {sel ? sel.nom : '—'}</h2> <button className="text-primary hover:text-primary-hover font-label flex items-center gap-1 group" onClick={openLmModal}> <MIcon name="add_circle" className="text-[18px]" />
+                                <span className="hidden sm:inline">{tx("Calques")}</span>
+                            </button> </div> </div>  <div className="rounded-[14px] bg-bg-card p-4 card-shadow sm:p-lg"> <div className="mb-md flex flex-wrap items-start justify-between gap-2"> <h2 className="min-w-0 break-words font-h2 text-h2 text-text-main">{tr(`Points de repère — Zone ${sel ? sel.nom : "—"}`, `Landmarks — zone ${sel ? sel.nom : "—"}`)}</h2> <button className="text-primary hover:text-primary-hover font-label flex items-center gap-1 group" onClick={openLmModal}> <MIcon name="add_circle" className="text-[18px]" />
                                 {tx("Ajouter")}
                             </button> </div> <div className="flex flex-wrap gap-3">
                 {lmSel.length === 0 && <span className="text-secondary text-text-secondary">{tx("Aucun point de repère enregistré pour cette zone.")}</span>}
@@ -711,7 +711,7 @@ export default function AdminZonesPage() {
                     {managers.map((m: any) => (
                       <option key={m.id} value={String(m.id)}>{m.nom_complet ?? m.name ?? m.email ?? `Manager #${m.id}`}</option>
                     ))}
-                  </select> <MIcon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-tertiary" /> </div> </div> <div className="col-span-2 space-y-1"> <label className="text-secondary text-text-secondary">Description</label> <textarea className="w-full px-md py-2 rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })}></textarea> </div> {refus && (
+                  </select> <MIcon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-tertiary" /> </div> </div> <div className="col-span-2 space-y-1"> <label className="text-secondary text-text-secondary">{tx("Description")}</label> <textarea className="w-full px-md py-2 rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })}></textarea> </div> {refus && (
                 <div className="col-span-2 rounded-lg border border-error bg-error-container px-4 py-3 text-label text-on-error-container" role="alert">
                   <p className="font-bold">{tx("Suppression refusée")}</p>
                   <p>{refus}</p>
@@ -769,7 +769,7 @@ export default function AdminZonesPage() {
               </div>
               <div className="space-y-xs">
                 <label className="font-label text-label text-text-secondary">{tx("Points à la limite (recherche de lieu ou clic sur la carte)")}</label>
-                <PlaceSearch onPick={(p) => { addZonePoint(p.nom, p.lat, p.lng); mapRef.current?.flyTo([p.lat, p.lng], 14, { animate: true }); }} placeholder="Ex : Akpakpa, Cotonou…" />
+                <PlaceSearch onPick={(p) => { addZonePoint(p.nom, p.lat, p.lng); mapRef.current?.flyTo([p.lat, p.lng], 14, { animate: true }); }} placeholder={tx("Ex : Akpakpa, Cotonou…")} />
               </div>
               {zonePts.length > 0 && (
                 <ul className="space-y-1 max-h-[150px] overflow-y-auto design-modal-scroll">
@@ -808,7 +808,7 @@ export default function AdminZonesPage() {
                 </div>
               </div>
               <div className="space-y-xs">
-                <label className="font-label text-label text-text-secondary">Description</label>
+                <label className="font-label text-label text-text-secondary">{tx("Description")}</label>
                 <textarea className="w-full px-md py-2 rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" rows={2} value={zoneForm.description} onChange={(e) => setZoneForm({ ...zoneForm, description: e.target.value })}></textarea>
               </div>
               <div className="flex flex-wrap justify-end gap-2 pt-2">
@@ -825,7 +825,7 @@ export default function AdminZonesPage() {
         <div className={`fixed inset-0 z-[1200] flex justify-center bg-black/40 p-4 pointer-events-none ${jeu ? 'items-end' : 'items-center'}`}>
           <div className={`pointer-events-auto w-full max-w-[480px] overflow-y-auto rounded-[14px] bg-white p-4 shadow-xl design-modal-scroll sm:p-lg ${jeu ? 'max-h-[48vh]' : 'max-h-[90vh]'}`} onClick={(e) => e.stopPropagation()}>
             <div className="mb-lg flex items-start justify-between gap-3">
-              <h3 className="min-w-0 break-words font-h2 text-h2 text-on-surface">{lmEditId !== null ? tx("Modifier le point de repère") : 'Nouveau point de repère'}</h3>
+              <h3 className="min-w-0 break-words font-h2 text-h2 text-on-surface">{lmEditId !== null ? tx("Modifier le point de repère") : tx("Nouveau point de repère")}</h3>
               <button className="p-2 text-text-tertiary hover:text-on-surface transition-colors" onClick={() => setModal(null)}>
                 <MIcon name="close" />
               </button>
@@ -836,7 +836,7 @@ export default function AdminZonesPage() {
                 <PlaceSearch onPick={pickPlaceLm} placeholder={tx("Ex : Marché Dantokpa…")} />
               </div>
               <div className="space-y-xs">
-                <label className="font-label text-label text-text-secondary">Zone</label>
+                <label className="font-label text-label text-text-secondary">{tx("Zone")}</label>
                 <select className="w-full h-11 px-md rounded-lg border-border-default appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white" value={lmForm.zone_id} onChange={(e) => setLmForm({ ...lmForm, zone_id: e.target.value })}>
                   {zones.map((z: any) => (
                     <option key={z.id} value={String(z.id)}>{z.nom}</option>
@@ -848,7 +848,7 @@ export default function AdminZonesPage() {
                 <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" placeholder={tx("Ex : Marché Dantokpa")} value={lmForm.nom} onChange={(e) => setLmForm({ ...lmForm, nom: e.target.value })} />
               </div>
               <div className="space-y-xs">
-                <label className="font-label text-label text-text-secondary">Description</label>
+                <label className="font-label text-label text-text-secondary">{tx("Description")}</label>
                 <textarea className="w-full px-md py-2 rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" rows={2} placeholder={tx("Repère, accès, indication utile…")} value={lmForm.description} onChange={(e) => setLmForm({ ...lmForm, description: e.target.value })}></textarea>
               </div>
               <div className="p-3 bg-primary-tint/50 rounded-xl space-y-2">
@@ -856,15 +856,15 @@ export default function AdminZonesPage() {
                 <p className="text-micro text-text-secondary">{tx("Recherche ou clic sur la carte. Si le point est à la limite, il élargit la forme de la zone ; s'il est à l'intérieur, la forme ne change pas.")}</p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-xs">
-                    <label className="font-label text-micro text-text-secondary">Latitude</label>
+                    <label className="font-label text-micro text-text-secondary">{tx("Latitude")}</label>
                     <input className="w-full h-11 px-md rounded-lg border-border-default bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" readOnly value={lmForm.latitude} placeholder="—" />
                   </div>
                   <div className="space-y-xs">
-                    <label className="font-label text-micro text-text-secondary">Longitude</label>
+                    <label className="font-label text-micro text-text-secondary">{tx("Longitude")}</label>
                     <input className="w-full h-11 px-md rounded-lg border-border-default bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" readOnly value={lmForm.longitude} placeholder="—" />
                   </div>
                 </div>
-                <p className="text-micro text-text-tertiary">{lmForm.latitude && lmForm.longitude ? `Position choisie : ${lmForm.latitude}, ${lmForm.longitude}` : tx("Aucune position choisie pour le moment.")}</p>
+                <p className="text-micro text-text-tertiary">{lmForm.latitude && lmForm.longitude ? tr(`Position choisie : ${lmForm.latitude}, ${lmForm.longitude}`, `Chosen position: ${lmForm.latitude}, ${lmForm.longitude}`) : tx("Aucune position choisie pour le moment.")}</p>
               </div>
               <div className="flex flex-wrap justify-end gap-2 pt-2">
                 <button className="px-md py-2.5 text-text-secondary font-label hover:bg-app rounded-lg transition-colors" type="button" onClick={() => setModal(null)}>{tx("Annuler")}</button>

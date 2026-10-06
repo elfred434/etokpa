@@ -461,7 +461,7 @@ export default function ProfilePage() {
                 >
                   <div className="flex items-center gap-md">
                     <MIcon name="notifications_active" className="text-text-secondary" />
-                    <span className="text-body text-text-main">Notifications</span>
+                    <span className="text-body text-text-main">{tx("Notifications")}</span>
                   </div>
                   <MIcon name="chevron_right" className="text-text-tertiary" />
                 </Link>

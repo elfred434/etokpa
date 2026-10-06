@@ -193,10 +193,10 @@ export default function AdminLivreursPage() {
               <tr>
                 <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">{tx("Nom")}</th>
                 <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">ID</th>
-                <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">Zone</th>
+                <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">{tx("Zone")}</th>
                 <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">{tx("Statut")}</th>
                 <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">{tx("Succès (%)")}</th>
-                <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider text-right">Actions</th>
+                <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider text-right">{tx("Actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-default">
@@ -331,7 +331,7 @@ export default function AdminLivreursPage() {
           </div>
           <div className="space-y-lg flex-1">
             <div className="p-md bg-bg-secondary rounded-lg border border-border-default">
-              <p className="text-text-secondary text-micro uppercase mb-2">Performance Globale</p>
+              <p className="text-text-secondary text-micro uppercase mb-2">{tx("Performance Globale")}</p>
               <div className="flex justify-between items-end">
                 <span className="font-h1 text-h1 text-success" id="detailSuccess">
                   {selPerf != null ? `${selPerf}%` : '—'}
@@ -395,7 +395,7 @@ export default function AdminLivreursPage() {
                     {tx("Annuler")}
                   </button>
                   <button type="button" disabled={saving} className="flex-1 bg-primary-container text-white py-1.5 rounded-lg font-bold text-label disabled:opacity-60" onClick={save}>
-                    {saving ? 'Enregistrement…' : tx("Enregistrer")}
+                    {saving ? tx("Enregistrement…") : tx("Enregistrer")}
                   </button>
                 </div>
               </div>
