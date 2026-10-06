@@ -66,7 +66,7 @@ export default function AdminUserDetailPage() {
         {loading && <p className="text-label text-text-secondary">{tx("Chargement…")}</p>}
 
         {user && (
-          <div className="max-w-[600px] rounded-lg border border-border-default bg-white p-lg shadow-sm">
+          <div className="max-w-[600px] rounded-lg border border-border-default bg-white p-4 shadow-sm sm:p-lg">
             <div className="space-y-3 text-label">
               {[
                 [tx("Nom complet"), user.nom_complet ?? `${user.prenom ?? ''} ${user.nom ?? ''}`],
@@ -78,9 +78,9 @@ export default function AdminUserDetailPage() {
                 [tx("Commandes"), user.nombre_commandes ?? user.commandes_count ?? '—'],
                 ['Inscrit le', dateCourte(user.created_at)],
               ].map(([k, v]) => (
-                <div key={String(k)} className="flex justify-between border-t border-border-default pt-2 first:border-t-0 first:pt-0">
+                <div key={String(k)} className="flex flex-wrap justify-between gap-2 border-t border-border-default pt-2 first:border-t-0 first:pt-0">
                   <p className="text-text-secondary">{k}</p>
-                  <p className="font-semibold">{String(v ?? '—')}</p>
+                  <p className="break-all text-right font-semibold">{String(v ?? '—')}</p>
                 </div>
               ))}
             </div>

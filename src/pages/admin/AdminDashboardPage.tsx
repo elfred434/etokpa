@@ -358,7 +358,7 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-lg items-start">
         {/* RECENT ACTIVITIES TABLE */}
         <div className="xl:col-span-3 bg-bg-card rounded-lg border border-border-default overflow-hidden shadow-sm">
-          <div className="p-lg border-b border-border-default flex justify-between items-center">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-default p-4 sm:p-lg">
             <h3 className="font-h2 text-h2 text-on-surface">{tx("Activités Récentes de la Plateforme")}</h3>
             <button
               type="button"
@@ -368,7 +368,7 @@ export default function AdminDashboardPage() {
             </button>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left font-secondary">
+            <table className="w-full text-left font-secondary" data-mobile-detail="native">
               <thead className="bg-bg-secondary text-text-tertiary text-micro uppercase tracking-widest border-b border-border-default">
                 <tr>
                   <th className="px-lg py-md">Date</th>

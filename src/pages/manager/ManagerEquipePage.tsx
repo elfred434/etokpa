@@ -98,13 +98,13 @@ export default function ManagerEquipePage() {
             const st = String(l.statut ?? "hors ligne").toLowerCase();
             return (
               <div key={l.id} className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-tint text-h3 font-bold text-primary">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-tint text-h3 font-bold text-primary">
                     {init}
                   </span>
-                  <div className="flex-1">
-                    <p className="text-h3 font-h3 font-bold">{nom}</p>
-                    <p className="text-label text-text-secondary">{l.email ?? l.telephone ?? ''}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="break-words text-h3 font-h3 font-bold">{nom}</p>
+                    <p className="break-all text-label text-text-secondary">{l.email ?? l.telephone ?? ''}</p>
                   </div>
                   <span
                     className={`rounded-full px-2.5 py-1 text-overline font-semibold ${

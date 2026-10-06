@@ -112,7 +112,7 @@ export default function AdminLogsPage() {
   return (
     <AdminLayout currentPath="/admin/logs">
       <style>{DESIGN_CSS}</style>
-      <header className="flex justify-between items-end mb-xl">
+      <header className="mb-xl flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <i className="ti ti-clipboard-list text-primary text-3xl"></i>
@@ -122,7 +122,7 @@ export default function AdminLogsPage() {
             {loading ? tx("Chargement…") : tr(`${meta.total.toLocaleString('fr-FR')} événement${meta.total > 1 ? 's' : ''} enregistré${meta.total > 1 ? 's' : ''}`, `${meta.total.toLocaleString('en-GB')} event${meta.total > 1 ? 's' : ''} recorded`)}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button className="flex items-center gap-2 bg-white border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97">
             <i className="ti ti-download"></i> {tx("Exporter PDF")}
           </button>
@@ -182,10 +182,10 @@ export default function AdminLogsPage() {
             </select>
           </div>
         </div>
-        <div className="flex items-center gap-md">
+        <div className="flex flex-col gap-md sm:flex-row sm:items-end">
           <div className="flex-1">
             <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Période (à partir du)")}</label>
-            <div className="flex items-center gap-2 px-4 py-2 border-border-default border-[1.5px] rounded-[10px] bg-white">
+            <div className="flex flex-wrap items-center gap-2 rounded-[10px] border-[1.5px] border-border-default bg-white px-4 py-2">
               <i className="ti ti-calendar text-text-secondary"></i>
               <input type="date" className="flex-1 text-body text-text-main outline-none bg-transparent" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={tx("Date de début")} />
               <span className="text-body text-text-secondary">→ Aujourd'hui</span>
@@ -209,10 +209,10 @@ export default function AdminLogsPage() {
             const c = COULEUR[cat] ?? '#EF4444';
             const qui = acteur(log);
             return (
-              <div key={log.id} className="flex gap-lg items-start group">
+              <div key={log.id} className="flex items-start gap-3 group sm:gap-lg">
                 <div className="mt-4 w-2.5 h-2.5 rounded-full relative z-10 shrink-0" style={{ backgroundColor: c, boxShadow: `0 0 0 4px ${c}33` }}></div>
                 <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-2">
+                  <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className="text-micro px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: `${c}1A`, color: c }}>
                         {cat}

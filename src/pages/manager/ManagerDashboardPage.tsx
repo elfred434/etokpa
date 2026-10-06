@@ -89,7 +89,7 @@ export default function ManagerDashboardPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-h2 font-h2 font-bold">Tableau de bord — Zone {currentUserZone() ?? '—'}</h1>
+            <h1 className="break-words text-h2 font-h2 font-bold">Tableau de bord — Zone {currentUserZone() ?? '—'}</h1>
           </div>
         </div>
 
@@ -118,7 +118,7 @@ export default function ManagerDashboardPage() {
         </div>
 
         <div className="overflow-hidden rounded-lg border border-border-default bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-border-default px-lg py-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-default px-4 py-4 sm:px-lg">
             <h2 className="text-h3 font-h3 font-bold">{tx("Commandes Actives")}</h2>
             <Link to="/manager/commandes" className="text-label font-semibold text-primary hover:underline">
               {tx("Voir tout")}

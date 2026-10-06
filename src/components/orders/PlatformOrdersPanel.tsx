@@ -157,7 +157,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
         )}
         {!loading && orders.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full text-label">
+            <table className="w-full text-label" data-mobile-detail="native">
               <thead>
                 <tr className="bg-bg-secondary text-left text-text-secondary">
                   <th className="px-4 py-3 font-semibold">{tx("Commande")}</th>
@@ -173,7 +173,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
                 {orders.map((o) => {
                   const client = o.client ?? o.user;
                   return (
-                    <tr key={o.id} className="border-t border-border-default">
+                    <tr key={o.id} className="cursor-pointer border-t border-border-default" onClick={() => setSelected(o)}>
                       <td className="px-4 py-3">
                         <p className="font-semibold">#{o.id}</p>
                         <p className="text-text-secondary">{dateCourte(o.created_at)}</p>
@@ -194,7 +194,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
                           <button type="button" className="text-primary font-bold" onClick={() => setSelected(o)}>
                             {tx("Détail")}
                           </button>
@@ -223,7 +223,10 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
             </div>
             <div className="flex-1 space-y-3 overflow-y-auto p-4 text-label">
               <p>{dateCourte(selected.created_at)} · {selected.statut}</p>
+              <p>{tx("Client")} : <strong>{(selected.client ?? selected.user)?.nom_complet ?? '—'}</strong></p>
+              <p>{tx("Téléphone")} : {(selected.client ?? selected.user)?.telephone ?? '—'}</p>
               <p>{tx("Montant")} : <strong>{fmtFcfa(selected.montant_total)}</strong></p>
+              <p>{tx("Frais de livraison")} : {fmtFcfa(selected.frais_livraison)}</p>
               <p>{tx("Point de repère")} : {selected.landmark?.nom ?? selected.description_lieu ?? '—'}</p>
               <p>Zone : {zoneNom(selected.landmark?.zone_id)}</p>
               <p>{tx("Livreur")} : {selected.livreur?.nom_complet ?? tx("— Non affecté —")}</p>

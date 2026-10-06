@@ -192,14 +192,14 @@ export default function AdminValidationsPage() {
       )}
       {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
       <style>{DESIGN_CSS}</style>
-      <header className="px-8 pt-8 pb-4 flex flex-col gap-4 bg-bg-app">
+      <header className="flex flex-col gap-4 bg-bg-app px-4 pb-4 pt-4 sm:px-8 sm:pt-8">
         <div>
           <h1 className="text-2xl font-bold text-text-main">{tx("Validation des budgets")}</h1>
           <p className="text-text-secondary text-sm">
             {enAttente.length} proposition{enAttente.length > 1 ? 's' : ''} en attente de décision sur le marché TOKPa
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {(
             [
               ['all', 'Toutes'],
@@ -222,10 +222,10 @@ export default function AdminValidationsPage() {
           ))}
         </div>
       </header>
-      <div className="flex-1 flex overflow-hidden px-8 pb-8 gap-6">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-4 pb-4 lg:flex-row lg:gap-6 lg:px-8 lg:pb-8">
         <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
           <div className="overflow-x-auto flex-1 custom-scrollbar">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse" data-mobile-detail="native">
               <thead className="sticky top-0 bg-gray-50 z-10 border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{tx("Client")}</th>
@@ -309,9 +309,14 @@ export default function AdminValidationsPage() {
           </div>
         </div>
         {selected && (
-          <aside className="w-[320px] shrink-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 flex flex-col gap-4">
-              <h2 className="text-lg font-bold text-text-main">{tx("Détail de la proposition")}</h2>
+          <aside className="fixed inset-0 z-[60] flex w-full flex-col gap-4 overflow-y-auto bg-black/50 p-4 lg:static lg:z-auto lg:w-[320px] lg:shrink-0 lg:bg-transparent lg:p-0">
+            <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-lg font-bold text-text-main">{tx("Détail de la proposition")}</h2>
+                <button type="button" className="rounded-lg p-1 text-text-secondary lg:hidden" aria-label={tx("Fermer")} onClick={() => setSelectedId(null)}>
+                  <MIcon name="close" />
+                </button>
+              </div>
               <div className="rounded-xl overflow-hidden aspect-[4/3] bg-gray-100 flex items-center justify-center">
                 {selImage ? <img className="h-full w-full object-cover" src={selImage} alt={selected.product?.nom ?? 'Produit'} /> : <MIcon name="image" className="text-4xl text-gray-300" />}
               </div>

@@ -556,7 +556,7 @@ export default function AdminUsersPage() {
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse" id="usersTable">
+            <table className="w-full text-left border-collapse" id="usersTable" data-mobile-detail="native">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
                   <th className="py-3 px-4">{tx("Utilisateur")}</th>

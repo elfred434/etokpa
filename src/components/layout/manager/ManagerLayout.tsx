@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import MIcon from '../../shared/MIcon';
+import MobileTableBridge from '../../shared/MobileTableBridge';
 import ManagerSidebar from './ManagerSidebar';
 import LangToggle from '../../shared/LangToggle';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -100,7 +101,8 @@ export default function ManagerLayout({ children, currentPath }: Props) {
           </div>
         </div>
       </header>
-      <main className="ml-0 space-y-lg p-4 pt-[calc(52px+16px)] lg:ml-64 lg:p-lg">{children}</main>
+      <main id="manager-main" className="ml-0 space-y-lg p-4 pt-[calc(52px+16px)] lg:ml-64 lg:p-lg">{children}</main>
+      <MobileTableBridge rootId="manager-main" />
       {admin && open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>
           <div className="w-full max-w-[512px] rounded-2xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>

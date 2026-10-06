@@ -587,5 +587,21 @@
       flex-wrap: wrap;
       gap: 0.75rem;
     }
+    .tokpa-mobile-hide {
+      display: none !important;
+    }
+    main table {
+      width: 100%;
+      table-layout: fixed;
+    }
+    main table th,
+    main table td {
+      padding-left: 0.75rem !important;
+      padding-right: 0.75rem !important;
+      overflow-wrap: anywhere;
+    }
+    main tbody tr {
+      cursor: pointer;
+    }
   }
 }

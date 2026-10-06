@@ -188,7 +188,7 @@ export default function AdminLivreursPage() {
       <style>{DESIGN_CSS}</style>
       <div className="flex-1 bg-white rounded-lg border border-border-default overflow-hidden flex flex-col">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse" data-mobile-detail="native">
             <thead className="bg-bg-secondary border-b border-border-default">
               <tr>
                 <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">{tx("Nom")}</th>
@@ -300,7 +300,7 @@ export default function AdminLivreursPage() {
         </div>
       </div>
       {selected && (
-        <aside className="w-full max-w-full lg:w-80 bg-white rounded-lg border border-border-default flex flex-col p-4 lg:p-lg transition-all transform translate-x-0 overflow-y-auto" id="detailPanel">
+        <aside className="fixed inset-0 z-[60] flex w-full max-w-full flex-col overflow-y-auto bg-white p-4 lg:static lg:z-auto lg:w-80 lg:rounded-lg lg:border lg:border-border-default lg:p-lg" id="detailPanel">
           <div className="flex justify-between items-start mb-lg">
             <h3 className="font-h2 text-h2 text-primary">{tx("Détails du Livreur")}</h3>
             <button

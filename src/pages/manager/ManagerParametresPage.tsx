@@ -10,17 +10,17 @@ const ONGLETS = ['Zone & Tarification', 'Règles d’attribution', 'Alertes & No
 function Ligne({ label, aide, children }: { label: string; aide?: string; children: React.ReactNode }) {
   useLanguage();
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-default py-3 first:border-t-0">
-      <div>
+    <div className="flex flex-col gap-3 border-t border-border-default py-3 first:border-t-0 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className="min-w-0 flex-1">
         <p className="text-label font-semibold">{label}</p>
-        {aide && <p className="text-label text-text-secondary">{aide}</p>}
+        {aide && <p className="break-words text-label text-text-secondary">{aide}</p>}
       </div>
-      <div>{children}</div>
+      <div className="w-full sm:w-auto">{children}</div>
     </div>
   );
 }
 
-const inputCls = 'w-44 rounded-lg border border-border-default px-3 py-2 text-label';
+const inputCls = 'w-full max-w-full rounded-lg border border-border-default px-3 py-2 text-label sm:w-44';
 
 export default function ManagerParametresPage() {
   useLanguage();

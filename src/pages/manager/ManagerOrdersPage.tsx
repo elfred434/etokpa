@@ -90,8 +90,8 @@ export default function ManagerOrdersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setAssignation(null)}>
           <div className="flex max-h-[85vh] w-full max-w-[600px] flex-col rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border-default p-4">
-              <div>
-                <h3 className="text-h3 font-h3 font-bold">Assigner un livreur — #{assignation.id}</h3>
+              <div className="min-w-0">
+                <h3 className="break-words text-h3 font-h3 font-bold">Assigner un livreur — #{assignation.id}</h3>
                 {nomZone && <p className="text-label text-text-secondary">{tx("Zone :")} {nomZone}</p>}
               </div>
               <button type="button" onClick={() => setAssignation(null)} className="p-1 text-text-secondary">
@@ -115,12 +115,12 @@ export default function ManagerOrdersPage() {
                     onChange={() => setLivreurChoisi(String(l.id))}
                     className="accent-primary"
                   />
-                  <span className="flex-1 font-semibold">{l.nom_complet ?? `${l.prenom ?? ''} ${l.nom ?? ''}`}</span>
+                  <span className="min-w-0 flex-1 break-words font-semibold">{l.nom_complet ?? `${l.prenom ?? ''} ${l.nom ?? ''}`}</span>
                   <span className="text-text-secondary">{l.telephone ?? ''}</span>
                 </label>
               ))}
             </div>
-            <div className="flex justify-end gap-2 border-t border-border-default p-4">
+            <div className="flex flex-wrap justify-end gap-2 border-t border-border-default p-4">
               <button type="button" className="btn btn-ghost" onClick={() => setAssignation(null)}>{tx("Annuler")}</button>
               <button type="button" className="btn btn-primary" onClick={confirmerAssignation} disabled={!livreurChoisi}>
                 {tx("Assigner")}

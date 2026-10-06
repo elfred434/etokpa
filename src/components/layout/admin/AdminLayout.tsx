@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import AdminSidebar from './AdminSidebar';
+import MobileTableBridge from '../../shared/MobileTableBridge';
 import MIcon from '../../shared/MIcon';
 import AdminNotificationBell from './AdminNotificationBell';
 import LangToggle from '../../shared/LangToggle';
@@ -91,7 +92,8 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
       </header>
 
       {/* MAIN CONTENT CANVAS */}
-      <main className={responsiveMain(mainClassName)}>{children}</main>
+      <main id="admin-main" className={responsiveMain(mainClassName)}>{children}</main>
+      <MobileTableBridge rootId="admin-main" />
     </div>
   );
 }

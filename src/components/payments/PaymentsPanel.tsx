@@ -63,6 +63,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
   const [rows, setRows] = useState<PaymentRow[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<PaymentRow | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -103,7 +104,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
         )}
         {!loading && rows.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full text-label">
+            <table className="w-full text-label" data-mobile-detail="native">
               <thead>
                 <tr className="bg-bg-secondary text-left text-text-secondary">
                   <th className="px-4 py-3 font-semibold">{tx("Paiement")}</th>
@@ -120,7 +121,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                   const receipt = receiptHref(p.recu_url);
                   const orderId = p.order?.id ?? p.order_id;
                   return (
-                    <tr key={p.id} className="border-t border-border-default">
+                    <tr key={p.id} className="cursor-pointer border-t border-border-default" onClick={() => setSelected(p)}>
                       <td className="px-4 py-3">
                         <p className="font-semibold">#{p.id}</p>
                         <p className="text-text-secondary">{p.methode || '—'}</p>
@@ -156,6 +157,33 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
           </div>
         )}
       </div>
+      {selected && (
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setSelected(null)}>
+          <div className="max-h-[85vh] w-full max-w-[640px] overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl sm:rounded-2xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <h2 className="text-h3 font-h3 font-bold">{tx("Paiement")} #{selected.id}</h2>
+              <button type="button" className="rounded-lg p-1 text-text-secondary" aria-label={tx("Fermer")} onClick={() => setSelected(null)}>
+                <MIcon name="close" />
+              </button>
+            </div>
+            <dl className="space-y-3 text-label">
+              <div><dt className="text-micro uppercase text-text-secondary">{tx("Méthode")}</dt><dd className="font-semibold">{selected.methode || '—'}</dd></div>
+              <div><dt className="text-micro uppercase text-text-secondary">{tx("Commande")}</dt><dd className="font-semibold">{(selected.order?.id ?? selected.order_id) ? `#${selected.order?.id ?? selected.order_id}` : '—'} {selected.order?.statut ?? ''}</dd></div>
+              {source === 'all' && <div><dt className="text-micro uppercase text-text-secondary">{tx("Client")}</dt><dd className="font-semibold">{selected.client_id ? `#${selected.client_id}` : '—'}</dd></div>}
+              <div><dt className="text-micro uppercase text-text-secondary">{tx("Montant")}</dt><dd className="font-semibold">{fmtFcfa(selected.montant)}</dd></div>
+              <div><dt className="text-micro uppercase text-text-secondary">{tx("Statut")}</dt><dd className="font-semibold">{tx(STATUT_LABEL[selected.statut ?? ''] ?? (selected.statut || '—'))}</dd></div>
+              <div><dt className="text-micro uppercase text-text-secondary">{tx("Payé le")}</dt><dd className="font-semibold">{selected.paid_at ? dateCourte(selected.paid_at) : '—'}</dd></div>
+              <div><dt className="text-micro uppercase text-text-secondary">{tx("Référence")}</dt><dd className="break-all font-semibold">{selected.fedapay_ref || '—'}</dd></div>
+            </dl>
+            {receiptHref(selected.recu_url) && (
+              <a href={receiptHref(selected.recu_url) ?? undefined} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1 font-semibold text-primary">
+                <MIcon name="receipt" className="text-[16px]" />
+                {tx("Reçu")}
+              </a>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
