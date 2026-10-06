@@ -3340,4 +3340,11 @@ export const EN: Record<string, string> = {
   "Refuser cette course ?": "Decline this delivery?",
   "Elle sera remise en file pour une nouvelle attribution.": "It will go back in the queue for a new assignment.",
   "Confirmer le refus": "Confirm decline",
+  "Vous choisissez le point de livraison. L'administration ne le choisit pas.": "You choose the delivery landmark. The administration does not.",
+  "Ce choix reste sur cet appareil : l'API ne le garde pas encore sur la proposition.": "This choice stays on this device: the API does not keep it on the proposal yet.",
+  "Choisissez votre point de repère avant d'envoyer l'offre.": "Choose your landmark before sending the offer.",
+  "Impossible de charger les points de repère.": "Unable to load the landmarks.",
+  "Point de repère du client": "Client's landmark",
+  "Choisi par le client. Cette proposition ne contient pas encore de point de repère.": "Chosen by the client. This proposal does not include a landmark yet.",
+  "Ajoutez votre point de repère en modifiant l'offre.": "Add your landmark by editing the offer.",
 };

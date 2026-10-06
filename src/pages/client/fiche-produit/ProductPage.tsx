@@ -14,6 +14,8 @@ import type { Product } from '../../../types/models';
 import { catalogApi, negotiationApi, type ApiProduct } from '../../../services/api';
 import { mapApiProduct } from '../../../utils/productMap';
 import { alertApiError, apiErrorStatus } from '../../../utils/apiError';
+import NegotiationLandmarkField from '../../../components/client/NegotiationLandmarkField';
+import { readNegotiationLandmark, rememberNegotiationLandmark, type RememberedLandmark } from '../../../utils/negotiationLandmark';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
 
@@ -37,6 +39,7 @@ export default function ProductPage() {
 
   const [quantity, setQuantity] = useState(1);
   const [offerInput, setOfferInput] = useState('');
+  const [offerLandmark, setOfferLandmark] = useState<RememberedLandmark | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tab, setTab] = useState<TabId>('description');
 
@@ -81,15 +84,23 @@ export default function ProductPage() {
       toast.error(tr(`Le prix minimum négociable est de ${product.prixMinimum.toLocaleString('fr-FR')} FCFA`, `The minimum negotiable price is ${product.prixMinimum.toLocaleString('fr-FR')} FCFA`));
       return;
     }
+    if (!offerLandmark) {
+      toast.error(tx('Choisissez votre point de repère avant d\'envoyer l\'offre.'));
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       // POST /api/budget-proposals (le backend rejette aussi < prix_minimum en 422)
-      await negotiationApi.createProposal({
+      const created = await negotiationApi.createProposal({
         product_id: Number(product.id),
         prix_propose: numPrice,
         quantite: quantity,
+        landmark_id: offerLandmark.id,
       });
+      const proposalId = Number((created as { data?: { id?: number }; id?: number })?.data?.id ?? (created as { id?: number })?.id);
+      rememberNegotiationLandmark(`product-${product.id}`, offerLandmark);
+      if (Number.isFinite(proposalId) && proposalId > 0) rememberNegotiationLandmark(proposalId, offerLandmark);
       dispatch(
         submitOffer({
           productId: product.id,
@@ -333,6 +344,8 @@ export default function ProductPage() {
                       Budget min. accepté : {product.prixMinimum.toLocaleString('fr-FR')} FCFA
                     </p>
 
+                    <NegotiationLandmarkField value={offerLandmark} onChange={setOfferLandmark} />
+
                     <button
                       type="button"
                       disabled={isSubmitting}
@@ -357,6 +370,15 @@ export default function ProductPage() {
                         {activeNeg.proposedPrice.toLocaleString('fr-FR')} FCFA
                       </strong>{' '}
                       a été envoyée au marché. Suivez sa réponse dans « Mes Négociations ».
+                      {(() => {
+                        const lieu = offerLandmark ?? (product ? readNegotiationLandmark(`product-${product.id}`) : null);
+                        return lieu ? (
+                          <>
+                            {' '}
+                            {tx('Point de repère')} : {lieu.zoneNom ? `${lieu.zoneNom} — ` : ''}{lieu.nom}.
+                          </>
+                        ) : null;
+                      })()}
                     </p>
                   </div>
                 )}

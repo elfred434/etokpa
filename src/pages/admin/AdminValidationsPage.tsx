@@ -8,6 +8,7 @@ import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
+import { landmarkFromProposal } from '../../utils/negotiationLandmark';
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -123,31 +124,18 @@ export default function AdminValidationsPage() {
     return { total: siennes.length, taux: decidees.length ? Math.round((acceptees / decidees.length) * 100) : null };
   }, [proposals, selected]);
 
-  const [landmarks, setLandmarks] = useState<any[]>([]);
-  const [landmarkId, setLandmarkId] = useState('');
   const [actionErr, setActionErr] = useState('');
-  useEffect(() => {
-    adminApi.getLandmarks()
-      .then((r: any) => setLandmarks(listOf(unwrap(r))))
-      .catch(() => setLandmarks([]));
-  }, []);
 
   const [busy, setBusy] = useState(false);
   const decider = async (pr: any, decision: 'accepte' | 'refuse', admin_response?: string) => {
-    if (decision === 'accepte' && !landmarkId) {
-      setSelectedId(pr.id);
-      const msg = tx("Choisissez un point de livraison avant d'accepter.");
-      setActionErr(msg);
-      toast.error(msg);
-      return;
-    }
+    const clientLandmark = decision === 'accepte' ? landmarkFromProposal(pr) : null;
     setBusy(true);
     setActionErr('');
     try {
       const res = await adminApi.respondProposal(pr.id, {
         decision,
         ...(admin_response ? { admin_response } : {}),
-        ...(decision === 'accepte' ? { landmark_id: Number(landmarkId) } : {}),
+        ...(clientLandmark ? { landmark_id: clientLandmark.id } : {}),
       });
       const orderId = Number(res?.order?.id ?? 0);
       toast.success(
@@ -377,22 +365,18 @@ export default function AdminValidationsPage() {
               </div>
             </div>
             <div className="flex flex-col gap-2 mt-auto">
-              <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">
-                {tx("Point de livraison de la commande")}
-              </label>
-              <select
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm"
-                value={landmarkId}
-                onChange={(e) => setLandmarkId(e.target.value)}
-                disabled={!selEnAttente || busy}
-              >
-                <option value="">{tx("— Aucun —")}</option>
-                {landmarks.map((lm) => (
-                  <option key={lm.id} value={String(lm.id)}>
-                    {lm.zone?.nom ? `${lm.zone.nom} — ${lm.nom}` : lm.nom}
-                  </option>
-                ))}
-              </select>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">
+                  {tx("Point de repère du client")}
+                </p>
+                <p className="mt-1 text-sm text-text-main">
+                  {(() => {
+                    const lieu = landmarkFromProposal(selected);
+                    if (!lieu) return tx("Choisi par le client. Cette proposition ne contient pas encore de point de repère.");
+                    return lieu.zoneNom ? `${lieu.zoneNom} — ${lieu.nom}` : lieu.nom;
+                  })()}
+                </p>
+              </div>
               <button
                 type="button"
                 disabled={!selEnAttente || busy}

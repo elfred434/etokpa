@@ -19,6 +19,10 @@ export interface NegotiationItem {
   orderId?: number;
   /** Réponse/justification de l'admin (backend `admin_response`). */
   adminResponse?: string;
+  /** Point de repère choisi par le client (API si présent, sinon mémoire locale). */
+  landmarkId?: number;
+  landmarkNom?: string;
+  landmarkZone?: string;
   status: NegotiationStatus;
   createdAt: string;
 }

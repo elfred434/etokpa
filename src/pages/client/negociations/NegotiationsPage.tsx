@@ -13,6 +13,13 @@ import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { negotiationApi, ordersApi } from '../../../services/api';
 import { absImageUrl } from '../../../utils/imageUrl';
 import { alertApiError } from '../../../utils/apiError';
+import NegotiationLandmarkField from '../../../components/client/NegotiationLandmarkField';
+import {
+  landmarkFromProposal,
+  readNegotiationLandmark,
+  rememberNegotiationLandmark,
+  type RememberedLandmark,
+} from '../../../utils/negotiationLandmark';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import type { Product } from '../../../types/models';
 import { tx } from '../../../i18n/tx';
@@ -52,6 +59,12 @@ export default function NegotiationsPage() {
             quantite: Number(p.quantite) || 1,
             orderId: p.commande?.id ?? p.order_id,
             adminResponse: p.admin_response || undefined,
+            ...(() => {
+              const lieu = landmarkFromProposal(p) ?? readNegotiationLandmark(p.id) ?? readNegotiationLandmark(`product-${p.product_id ?? p.product?.id ?? ''}`);
+              return lieu
+                ? { landmarkId: lieu.id, landmarkNom: lieu.nom, landmarkZone: lieu.zoneNom }
+                : {};
+            })(),
             status:
               p.statut === 'accepte' ? 'accepted'
               : p.statut === 'refuse' ? 'rejected'
@@ -95,6 +108,7 @@ export default function NegotiationsPage() {
   // ---- Modal « Modifier mon offre » (PUT /api/budget-proposals/{id}) ----
   const [editModal, setEditModal] = useState<NegotiationItem | null>(null);
   const [editPrice, setEditPrice] = useState('');
+  const [editLandmark, setEditLandmark] = useState<RememberedLandmark | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [editSaving, setEditSaving] = useState(false);
 
@@ -172,6 +186,11 @@ export default function NegotiationsPage() {
   const openEditOffer = (neg: NegotiationItem) => {
     setEditModal(neg);
     setEditPrice(String(neg.proposedPrice));
+    setEditLandmark(
+      neg.landmarkId
+        ? { id: neg.landmarkId, nom: neg.landmarkNom ?? '', zoneNom: neg.landmarkZone ?? '' }
+        : readNegotiationLandmark(neg.id),
+    );
     setEditError(null);
   };
 
@@ -191,13 +210,22 @@ export default function NegotiationsPage() {
       );
       return;
     }
+    if (!editLandmark) {
+      setEditError(tx("Choisissez votre point de repère avant d'envoyer l'offre."));
+      return;
+    }
     setEditSaving(true);
     try {
-      await negotiationApi.updateProposal(editModal.id, {
+      const updated = await negotiationApi.updateProposal(editModal.id, {
         product_id: Number(editModal.productId),
         prix_propose: price,
         quantite: editModal.quantite,
+        landmark_id: editLandmark.id,
       });
+      const newId = Number((updated as { data?: { id?: number }; id?: number })?.data?.id ?? (updated as { id?: number })?.id);
+      rememberNegotiationLandmark(editModal.id, editLandmark);
+      rememberNegotiationLandmark(`product-${editModal.productId}`, editLandmark);
+      if (Number.isFinite(newId) && newId > 0) rememberNegotiationLandmark(newId, editLandmark);
       toast.success(isFr ? tx("Offre mise à jour et retransmise au marché.") : 'Offer updated and resubmitted.');
       setEditModal(null);
       loadProposals();
@@ -438,6 +466,17 @@ export default function NegotiationsPage() {
                         )}
                       </div>
 
+                      {(neg.landmarkNom || isPending) && (
+                        <p className="mb-md flex items-start gap-xs text-secondary text-text-secondary">
+                          <MIcon name="location_on" className="mt-0.5 text-[16px] text-primary" />
+                          <span>
+                            {neg.landmarkNom
+                              ? `${tx('Point de repère')} : ${neg.landmarkZone ? `${neg.landmarkZone} — ` : ''}${neg.landmarkNom}`
+                              : tx("Ajoutez votre point de repère en modifiant l'offre.")}
+                          </span>
+                        </p>
+                      )}
+
                       {/* Réponse de l'admin (backend admin_response) */}
                       {(isRejected || isExpired) && neg.adminResponse && (
                         <div className="mt-md p-sm bg-error-light/60 border border-error/20 rounded-lg">
@@ -596,7 +635,7 @@ export default function NegotiationsPage() {
       {/* Modal « Modifier mon offre » — PUT /api/budget-proposals/{id} */}
       {editModal && (
         <div className="fixed inset-0 bg-on-surface/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4 animate-fade-in">
-          <div className="bg-white w-full max-w-[480px] rounded-xl shadow-2xl overflow-hidden p-lg">
+          <div className="bg-white w-full max-w-[480px] max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl p-lg">
             <div className="flex justify-between items-center mb-md border-b border-border-default pb-3">
               <h3 className="font-h2 text-h2 font-bold">{isFr ? tx("Modifier mon offre") : 'Edit my offer'}</h3>
               <button
@@ -636,6 +675,8 @@ export default function NegotiationsPage() {
                   className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none font-price"
                 />
               </div>
+
+              <NegotiationLandmarkField value={editLandmark} onChange={setEditLandmark} />
 
               {editError && (
                 <div className="p-3 bg-error-light border border-error/20 rounded-lg text-xs font-semibold text-error-dark">

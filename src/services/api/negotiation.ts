@@ -4,6 +4,11 @@ export interface CreateProposalPayload {
   product_id: number;
   prix_propose: number;
   quantite?: number;
+  /**
+   * Choix du client. Le store actuel ne valide que product_id, prix_propose et quantite :
+   * le champ est ignoré tant que l'API ne le reprend pas. Ne pas le faire choisir par l'admin.
+   */
+  landmark_id?: number;
 }
 
 export const negotiationApi = {
