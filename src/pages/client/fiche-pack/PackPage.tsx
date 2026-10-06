@@ -3,7 +3,6 @@ import { Link, useParams } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import DarkFooter from '../../../components/layout/client/DarkFooter';
 import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
@@ -117,7 +116,6 @@ export default function PackPage() {
             />
           </div>
         </main>
-        <DarkFooter />
         <ClientBottomNav />
       </div>
     );
@@ -145,7 +143,6 @@ export default function PackPage() {
             />
           </div>
         </main>
-        <DarkFooter />
         <ClientBottomNav />
       </div>
     );
@@ -359,7 +356,6 @@ export default function PackPage() {
           </section>
         </div>
       </div>
-      <DarkFooter />
       <ClientBottomNav />
     </div>
   );

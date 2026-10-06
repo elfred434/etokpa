@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import DarkFooter from '../../../components/layout/client/DarkFooter';
 import MIcon from '../../../components/shared/MIcon';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
@@ -17,7 +16,6 @@ import { alertApiError } from '../../../utils/apiError';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import type { Product } from '../../../types/models';
 import { tx } from '../../../i18n/tx';
-
 
 type FilterTab = 'all' | 'pending' | 'accepted' | 'rejected' | 'expired';
 
@@ -671,7 +669,6 @@ export default function NegotiationsPage() {
       )}
 
       {/* BottomNavBar */}
-      <DarkFooter />
       <ClientBottomNav />
     </div>
   );

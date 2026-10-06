@@ -4,7 +4,6 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import DarkFooter from '../../../components/layout/client/DarkFooter';
 import MIcon from '../../../components/shared/MIcon';
 import { alertApiError } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -197,7 +196,6 @@ export default function ProfilePage() {
             <span className="rounded-lg bg-primary-container px-lg py-3 font-bold text-white">{tx("Se connecter")}</span>
           </Link>
         </main>
-        <DarkFooter />
         <ClientBottomNav />
       </div>
     );
@@ -654,7 +652,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <DarkFooter />
       <ClientBottomNav />
     </div>
   );

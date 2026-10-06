@@ -3,14 +3,12 @@ import { useRouterState, useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import { catalogApi, ordersApi, paymentsApi } from '../../../services/api';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
-import DarkFooter from '../../../components/layout/client/DarkFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import { alertApiError } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import { loadConfirmation, statutFromFedaPayReturn, type ConfirmationMemory } from './confirmationMemory';
-
 
 /**
  * Données passées par CartPage après POST /api/orders (vraies valeurs backend).
@@ -287,7 +285,6 @@ export default function ConfirmationPage() {
         </div>
       </main>
 
-      <DarkFooter />
       <ClientBottomNav />
     </div>
   );

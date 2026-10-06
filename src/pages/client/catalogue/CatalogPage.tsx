@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import DarkFooter from '../../../components/layout/client/DarkFooter';
 import MIcon from '../../../components/shared/MIcon';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
@@ -18,7 +17,6 @@ import { alertApiError } from '../../../utils/apiError';
 import { mapApiCategory } from '../../../utils/catalogMap';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
-
 
 /* ---- Catalogue : données UNIQUEMENT issues de l'API (plus aucun produit, catégorie ni marché de la maquette) ---- */
 
@@ -72,8 +70,6 @@ interface CatalogProduct {
   /** Image réelle = ProductResource.image_url résolue par absImageUrl (même source que l'admin) ; absente → dégradé + icône. */
   image?: string | null;
 }
-
-
 
 const PER_PAGE = 9;
 
@@ -285,7 +281,6 @@ export default function CatalogPage() {
     setPage(1);
     if (q || catParam) navigate({ to: '/catalogue', search: {} });
   };
-
 
   const addToCart = (p: CatalogProduct) => {
     if (p.stock === 'none') return; // rupture : pas d'ajout au panier
@@ -775,7 +770,6 @@ export default function CatalogPage() {
         </section>
       </main>
 
-      <DarkFooter />
       <ClientBottomNav />
     </div>
   );

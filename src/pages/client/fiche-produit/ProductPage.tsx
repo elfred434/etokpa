@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import DarkFooter from '../../../components/layout/client/DarkFooter';
 import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
@@ -17,7 +16,6 @@ import { mapApiProduct } from '../../../utils/productMap';
 import { alertApiError, apiErrorStatus } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
-
 
 /* ---- Fiche produit 100 % API : GET /api/products/{id} (route /produit/$productId) ---- */
 
@@ -156,7 +154,6 @@ export default function ProductPage() {
             />
           </div>
         </main>
-        <DarkFooter />
         <ClientBottomNav />
       </div>
     );
@@ -183,7 +180,6 @@ export default function ProductPage() {
             />
           </div>
         </main>
-        <DarkFooter />
         <ClientBottomNav />
       </div>
     );
@@ -557,7 +553,6 @@ export default function ProductPage() {
           </section>
         </div>
       </div>
-      <DarkFooter />
       <ClientBottomNav />
     </div>
   );

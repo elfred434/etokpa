@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import clsx from 'clsx';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
-import DarkFooter from '../../../components/layout/client/DarkFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import Pagination from '../../../components/shared/Pagination';
@@ -16,7 +15,6 @@ import { notificationsApi, type ApiNotification } from '../../../services/api';
 import type { NotificationType } from '../../../types/models';
 import { describeNotification, formatTime } from '../../../utils/notificationText';
 import { tx } from '../../../i18n/tx';
-
 
 type FilterKey = 'all' | NotificationType;
 
@@ -292,7 +290,6 @@ export default function NotificationsPage() {
         </section>
       </div>
 
-      <DarkFooter />
       <ClientBottomNav />
     </div>
   );
