@@ -3,17 +3,18 @@ import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
-import { isAdminRole } from '../../../routes/authGuard';
+import { hasSession, isAdminRole, useAuthRevision } from '../../../routes/authGuard';
 
 
 const soon = (label: string) => () => toast(tr(`${label} — bientôt disponible`, `${tx(label)} — coming soon`));
 
-/** Footer sombre de l'accueil — copie conforme du code.html Stitch. */
+/** Pied de page des pages client. L'espace admin n'apparaît qu'avec une session admin. */
 export default function DarkFooter() {
   const { isFr } = useLanguage();
+  useAuthRevision();
 
   return (
-    <footer className="mt-xl bg-on-surface py-xl text-warm">
+    <footer className="mt-xl mb-20 bg-on-surface py-xl text-warm lg:mb-0">
       <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-xl px-4 md:grid-cols-4">
         <div className="col-span-1">
           <h2 className="mb-md font-h2 text-h2 text-primary-light">TOKPa</h2>
@@ -37,7 +38,7 @@ export default function DarkFooter() {
                 {isFr ? tx("Mes Négociations") : 'My Negotiations'}
               </Link>
             </li>
-            {isAdminRole() && (
+            {hasSession() && isAdminRole() && (
               <li>
                 <Link to="/admin" className="hover:text-white">
                   {isFr ? 'Espace Administration' : 'Admin Area'}

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
-import ClientFooter from '../../../components/layout/client/ClientFooter';
+import DarkFooter from '../../../components/layout/client/DarkFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import { alertApiError, extractApiError } from '../../../utils/apiError';
@@ -785,7 +785,7 @@ export default function CartPage() {
         </div>
       </main>
 
-      <ClientFooter />
+      <DarkFooter />
       <ClientBottomNav />
     </div>
   );

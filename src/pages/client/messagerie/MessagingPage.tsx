@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import clsx from 'clsx';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
+import DarkFooter from '../../../components/layout/client/DarkFooter';
 import MIcon from '../../../components/shared/MIcon';
 import { alertApiError } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -464,6 +465,7 @@ export default function MessagingPage() {
       </main>
 
       {/* BottomNavBar */}
+      <DarkFooter />
       <ClientBottomNav />
     </div>
   );

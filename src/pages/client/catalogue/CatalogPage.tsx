@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
+import DarkFooter from '../../../components/layout/client/DarkFooter';
 import MIcon from '../../../components/shared/MIcon';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
@@ -774,26 +775,7 @@ export default function CatalogPage() {
         </section>
       </main>
 
-      {/* ---- Footer catalogue ---- */}
-      <footer className="mt-xl border-t border-line bg-white py-lg">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 text-ink-2">
-          <div className="flex items-center gap-2">
-            <span className="font-h3 text-primary">TOKPa</span>
-            <span className="text-micro">{tx("© 2026 - Le Marché Béninois en ligne")}</span>
-          </div>
-          <div className="hidden gap-lg sm:flex">
-            <Link to="/profil" className="text-label transition-colors hover:text-primary">
-              {tx("Aide & Support")}
-            </Link>
-            <Link to="/negociations" className="text-label transition-colors hover:text-primary">
-              {tx("Négocier sur TOKPa")}
-            </Link>
-            <Link to="/commandes/suivi" className="text-label transition-colors hover:text-primary">
-              {tx("Suivi Livraison")}
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <DarkFooter />
       <ClientBottomNav />
     </div>
   );

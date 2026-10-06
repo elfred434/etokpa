@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import clsx from 'clsx';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
-import ClientFooter from '../../../components/layout/client/ClientFooter';
+import DarkFooter from '../../../components/layout/client/DarkFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import Pagination from '../../../components/shared/Pagination';
@@ -292,7 +292,7 @@ export default function NotificationsPage() {
         </section>
       </div>
 
-      <ClientFooter />
+      <DarkFooter />
       <ClientBottomNav />
     </div>
   );

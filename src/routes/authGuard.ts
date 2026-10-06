@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { redirect, type AnyRouter } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import { tr, tx } from '../i18n/tx';
@@ -42,6 +43,24 @@ export function hasSession(): boolean {
   return !!localStorage.getItem('tokpa_token');
 }
 
+/** Re-rend la barre et le pied de page quand la session change, sans recharger la page. */
+export function useAuthRevision(): number {
+  const [rev, setRev] = useState(0);
+  useEffect(() => {
+    if (!hasSession() && localStorage.getItem('tokpa_user')) {
+      localStorage.removeItem('tokpa_user');
+    }
+    const bump = () => setRev((n) => n + 1);
+    window.addEventListener('tokpa:auth-changed', bump);
+    window.addEventListener('storage', bump);
+    return () => {
+      window.removeEventListener('tokpa:auth-changed', bump);
+      window.removeEventListener('storage', bump);
+    };
+  }, []);
+  return rev;
+}
+
 type StoredUser = {
   id?: number;
   nom_complet?: string;
@@ -61,6 +80,8 @@ function storedUser(): StoredUser | null {
 
 /** Rôle de l'utilisateur connecté (tokpa_user.role = chaîne ou objet { nom } selon la réponse 2FA). */
 export function currentRole(): string | null {
+  // Sans jeton, un ancien tokpa_user ne doit pas faire croire qu'on est admin.
+  if (!hasSession()) return null;
   const u = storedUser();
   const role = typeof u?.role === 'string' ? u.role : u?.role?.nom;
   return role || null;

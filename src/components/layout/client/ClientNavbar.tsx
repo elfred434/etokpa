@@ -5,7 +5,7 @@ import MIcon from '../../shared/MIcon';
 import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
 import { useLanguage } from '../../../context/LanguageContext';
-import { currentRole, hasSession, staffSpace } from '../../../routes/authGuard';
+import { currentRole, hasSession, staffSpace, useAuthRevision } from '../../../routes/authGuard';
 import { tx } from '../../../i18n/tx';
 
 
@@ -29,6 +29,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { language, toggleLanguage, t } = useLanguage();
+  useAuthRevision();
   const [localSearch, setLocalSearch] = useState('');
 
   const onMarket = pathname === '/' || pathname.startsWith('/catalogue') || pathname.startsWith('/produit');
@@ -150,9 +151,9 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
             <MIcon name="shopping_cart" />
             {cartCount > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />}
           </Link>
-          {/* Bascule vers l'espace de travail (admin / manager) — invisible pour un client */}
+          {/* Bascule vers l'espace de travail — seulement avec une session et le bon rôle */}
           {(() => {
-            const space = staffSpace(currentRole());
+            const space = hasSession() ? staffSpace(currentRole()) : null;
             return space ? (
               <Link to={space.to} className="scale-interaction" aria-label={space.label} title={space.label}>
                 <MIcon name={space.icon} />

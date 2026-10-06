@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
+import DarkFooter from '../../../components/layout/client/DarkFooter';
 import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
 import RealBeninMap from '../../../components/client/commandes/RealBeninMap';
@@ -508,6 +509,7 @@ export default function OrderTrackingPage() {
         </section>
       </main>
 
+      <DarkFooter />
       <ClientBottomNav />
     </div>
   );

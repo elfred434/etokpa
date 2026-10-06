@@ -1,5 +1,6 @@
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
+import DarkFooter from '../../../components/layout/client/DarkFooter';
 import PaymentsPanel from '../../../components/payments/PaymentsPanel';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -15,6 +16,7 @@ export default function PaymentsPage() {
       <main className="mx-auto w-full max-w-[1200px] px-4 pt-[calc(52px+24px)]">
         <PaymentsPanel source="mine" title={tx("Mes paiements")} />
       </main>
+      <DarkFooter />
       <ClientBottomNav />
     </div>
   );
