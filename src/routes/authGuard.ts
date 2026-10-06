@@ -66,6 +66,8 @@ type StoredUser = {
   nom_complet?: string;
   prenom?: string;
   nom?: string;
+  email?: string;
+  image_profil?: string | null;
   role?: string | { nom?: string } | null;
   profil?: { zone_id?: number; zone?: { id?: number; nom?: string } | null } | null;
 };
@@ -124,6 +126,18 @@ export function rememberUserZone(zoneId: number, nom?: string) {
     localStorage.setItem('tokpa_user', JSON.stringify(u));
   } catch {
     /* l'affichage reprendra la zone au prochain profil */
+  }
+}
+
+/** Fusionne la fiche renvoyée par PUT /profile dans la session affichée. */
+export function rememberSessionUser(patch: Record<string, unknown>) {
+  try {
+    const current = storedUser() ?? {};
+    const next = { ...current, ...patch };
+    localStorage.setItem('tokpa_user', JSON.stringify(next));
+    window.dispatchEvent(new Event('tokpa:auth-changed'));
+  } catch {
+    /* session illisible */
   }
 }
 

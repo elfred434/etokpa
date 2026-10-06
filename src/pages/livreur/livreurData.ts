@@ -32,7 +32,10 @@ export interface LivreurOrder {
 }
 
 /** OrderResource enveloppe chaque commande dans { success, message, data } (même en liste). */
-export const unwrapOrder = (r: any): LivreurOrder => (r?.data ?? r) as LivreurOrder;
+export const unwrapOrder = (r: any): LivreurOrder => {
+  const order = (r?.data && typeof r.data === 'object' && 'id' in r.data ? r.data : r) as LivreurOrder;
+  return { ...order, id: Number(order?.id) };
+};
 
 export const tokRef = (id: number | string) => `#TOK-${id}`;
 
@@ -103,6 +106,7 @@ export interface LivreurProfile {
   nom_complet?: string;
   email?: string;
   telephone?: string | null;
+  image_profil?: string | null;
   disponible: boolean | null;
   zone: string | null;
 }
@@ -120,6 +124,7 @@ export async function fetchLivreurProfile(force = false): Promise<LivreurProfile
     nom_complet: u?.nom_complet,
     email: u?.email,
     telephone: u?.telephone ?? null,
+    image_profil: u?.image_profil ?? null,
     disponible: profil?.disponibilite == null ? null : Boolean(profil.disponibilite),
     zone: profil?.zone?.nom ?? null,
   };

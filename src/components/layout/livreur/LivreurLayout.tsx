@@ -5,7 +5,8 @@ import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import LangToggle from '../../shared/LangToggle';
 import { authApi } from '../../../services/api';
-import { currentUserName, initialsOf } from '../../../routes/authGuard';
+import { currentUserName } from '../../../routes/authGuard';
+import UserAvatar from '../../shared/UserAvatar';
 import { fetchLivreurProfile } from '../../../pages/livreur/livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
@@ -111,12 +112,11 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
                   </p>
                 )}
               </div>
-              <div
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-tint text-xs font-bold text-primary ring-2 ring-primary-container"
-                title={`${nom ?? tx("Livreur")}${disponible === null ? '' : disponible ? ` — ${tx("Disponible")}` : ` — ${tx("Indisponible")}`}`}
-              >
-                {initialsOf(nom, 'LV')}
-              </div>
+              <UserAvatar
+                name={nom}
+                fallback="LV"
+                className="h-8 w-8 bg-primary-tint text-xs text-primary ring-2 ring-primary-container"
+              />
             </div>
           </div>
         </header>

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import toast from 'react-hot-toast';
 import LivreurLayout from '../../../components/layout/livreur/LivreurLayout';
 import MIcon from '../../../components/shared/MIcon';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
@@ -12,6 +11,7 @@ import { currentUserName, initialsOf } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
 
+import LivreurDecisionButtons from '../LivreurDecisionButtons';
 import {
   articlesCount,
   dateHeure,
@@ -42,7 +42,6 @@ export default function LivreurDashboardPage() {
   const [histTotal, setHistTotal] = useState<number | null>(null);
   const [histErr, setHistErr] = useState<string | null>(null);
   const [profile, setProfile] = useState<LivreurProfile | null>(null);
-  const [busy, setBusy] = useState<number | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const retry = () => setReloadKey((k) => k + 1);
 
@@ -80,32 +79,7 @@ export default function LivreurDashboardPage() {
   const terminees = dash ? dash.commandes - dash.en_cours : null;
   const succes = terminees && terminees > 0 && histTotal != null ? Math.round((histTotal / terminees) * 100) : null;
 
-  const accept = async (o: LivreurOrder) => {
-    setBusy(o.id);
-    try {
-      const r = await livreurApi.acceptDelivery(o.id);
-      toast.success(r?.message ?? tx("Course acceptée."));
-      navigate({ to: '/livreur/course', search: { commande: o.id } });
-    } catch (e) {
-      alertApiError(e, 'livreur-accept');
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const refuse = async (o: LivreurOrder) => {
-    if (!confirm(`Refuser la course ${tokRef(o.id)} ? Elle sera remise en file.`)) return;
-    setBusy(o.id);
-    try {
-      const r = await livreurApi.refuseDelivery(o.id);
-      toast.success(r?.message ?? tx("Course refusée."));
-      setDeliveries((l) => (l ?? []).filter((x) => x.id !== o.id));
-    } catch (e) {
-      alertApiError(e, 'livreur-refuse');
-    } finally {
-      setBusy(null);
-    }
-  };
+  const drop = (id: number) => setDeliveries((l) => (l ?? []).filter((x) => x.id !== id));
 
   return (
     <LivreurLayout>
@@ -224,6 +198,14 @@ export default function LivreurDashboardPage() {
                 >
                   {tx("Voir la course active")}
                 </Link>
+                <div className="mt-3">
+                  <LivreurDecisionButtons
+                    orderId={active.id}
+                    layout="stack"
+                    onAccepted={() => navigate({ to: '/livreur/course', search: { commande: active.id } })}
+                    onRefused={() => drop(active.id)}
+                  />
+                </div>
               </div>
             ) : (
               <div className="rounded-lg border border-border-default bg-bg-card p-lg text-center text-secondary text-text-secondary shadow-sm">
@@ -269,27 +251,11 @@ export default function LivreurDashboardPage() {
                     <div className="mr-sm text-right">
                       <p className="font-price text-lg text-on-surface">{fmtFcfa(o.montant_total)}</p>
                     </div>
-                    <div className="flex gap-xs">
-                      <button
-                        type="button"
-                        title={tx("Refuser")}
-                        aria-label={`Refuser la course ${tokRef(o.id)}`}
-                        disabled={busy === o.id}
-                        onClick={() => refuse(o)}
-                        className="flex items-center justify-center rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] p-3 text-[#991B1B] transition-all hover:bg-[#FEE2E2] active:scale-90 disabled:opacity-50"
-                      >
-                        <MIcon name="close" className="text-[20px]" />
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy === o.id}
-                        onClick={() => accept(o)}
-                        className="flex items-center gap-xs rounded-lg bg-success px-lg py-md font-bold text-white transition-all hover:bg-success-dark active:scale-95 disabled:opacity-50"
-                      >
-                        <MIcon name="check" />
-                        {tx("Accepter")}
-                      </button>
-                    </div>
+                    <LivreurDecisionButtons
+                      orderId={o.id}
+                      onAccepted={() => navigate({ to: '/livreur/course', search: { commande: o.id } })}
+                      onRefused={() => drop(o.id)}
+                    />
                   </div>
                 </div>
               ))}

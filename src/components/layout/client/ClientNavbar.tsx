@@ -6,7 +6,8 @@ import MIcon from '../../shared/MIcon';
 import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
 import { useLanguage } from '../../../context/LanguageContext';
-import { currentRole, currentUserName, hasSession, initialsOf, staffSpace, useAuthRevision } from '../../../routes/authGuard';
+import { currentRole, currentUserName, hasSession, staffSpace, useAuthRevision } from '../../../routes/authGuard';
+import UserAvatar from '../../shared/UserAvatar';
 import { tx } from '../../../i18n/tx';
 
 
@@ -228,9 +229,13 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
             </Link>
           )}
           <Link to="/profil" className="flex items-center gap-3 py-4" onClick={() => setMenu(false)}>
-            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-primary-lighter text-label font-bold text-primary-shade">
-              {hasSession() ? initialsOf(currentUserName(), 'CL') : <MIcon name="login" />}
-            </span>
+            {hasSession() ? (
+              <UserAvatar name={currentUserName()} fallback="CL" className="h-10 w-10 border border-line bg-primary-lighter text-label text-primary-shade" />
+            ) : (
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-primary-lighter text-label font-bold text-primary-shade">
+                <MIcon name="login" />
+              </span>
+            )}
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-label font-bold text-primary-shade">
                 {hasSession() ? (currentUserName() ?? tx("Profil")) : tx("Se connecter")}

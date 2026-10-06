@@ -9,6 +9,6 @@ const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/
 
 export function absImageUrl(u?: string | null): string | null {
   if (!u) return null;
-  if (/^https?:/i.test(u)) return u;
+  if (/^(https?:|data:|blob:)/i.test(u)) return u;
   return `${API_ORIGIN}${u.startsWith('/') ? '' : '/'}${u}`;
 }

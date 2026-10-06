@@ -16,6 +16,7 @@ import { dateHeure, destination, fetchDeliveries, statutLabel, tokRef, type Livr
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
 import { orderLineName } from '../../../utils/orderLine';
+import LivreurDecisionButtons from '../LivreurDecisionButtons';
 
 
 /** Envoi de la position au plus toutes les 20 s (POST /livreur/position) pendant la livraison. */
@@ -58,7 +59,7 @@ export default function LivreurCoursePage() {
 
   // Course affichée : celle demandée (?commande=), sinon celle en livraison, sinon la première assignée.
   const order: LivreurOrder | null = deliveries
-    ? (commande ? deliveries.find((o) => o.id === commande) : (deliveries.find((o) => o.statut === 'en_livraison') ?? deliveries[0])) ?? null
+    ? (commande ? deliveries.find((o) => Number(o.id) === Number(commande)) : (deliveries.find((o) => o.statut === 'en_livraison') ?? deliveries[0])) ?? null
     : null;
   const enLivraison = order?.statut === 'en_livraison';
 
@@ -304,8 +305,15 @@ export default function LivreurCoursePage() {
             </div>
           </div>
 
-          {/* Footer Actions (selon le vrai statut) */}
+          {/* Footer Actions : accepter / refuser, puis le statut réel */}
           <div className="space-y-md bg-white p-lg shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+            <LivreurDecisionButtons
+              orderId={order.id}
+              layout="stack"
+              disabled={busy}
+              onAccepted={() => setReloadKey((k) => k + 1)}
+              onRefused={() => navigate({ to: '/livreur' })}
+            />
             {order.statut === 'en_livraison' ? (
               <button
                 type="button"

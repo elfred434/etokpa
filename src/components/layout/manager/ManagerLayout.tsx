@@ -5,7 +5,8 @@ import ManagerSidebar from './ManagerSidebar';
 import LangToggle from '../../shared/LangToggle';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
-import { currentRole, currentUserId, currentUserName, currentUserZone, initialsOf, isAdminRole, rememberUserZone } from '../../../routes/authGuard';
+import { currentRole, currentUserId, currentUserName, currentUserZone, isAdminRole, rememberUserZone } from '../../../routes/authGuard';
+import UserAvatar from '../../shared/UserAvatar';
 import { adminApi, catalogApi } from '../../../services/api';
 import { listOf } from '../../../services/api/unwrap';
 import { alertApiError } from '../../../utils/apiError';
@@ -94,9 +95,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
             <MIcon name="notifications" className="text-[18px]" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-tint text-overline font-bold text-primary">
-              {initialsOf(nom, 'MG')}
-            </div>
+            <UserAvatar name={nom} fallback="MG" className="h-8 w-8 bg-primary-tint text-overline text-primary" />
             <p className="hidden max-w-[140px] truncate text-label font-semibold sm:block">{nom ?? (admin ? tx("Administrateur") : 'Manager')}</p>
           </div>
         </div>

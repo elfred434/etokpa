@@ -8,7 +8,9 @@ import LoadingState from '../../../components/shared/LoadingState';
 import { authApi } from '../../../services/api';
 import { unwrap } from '../../../services/api/unwrap';
 import { alertApiError } from '../../../utils/apiError';
-import { initialsOf } from '../../../routes/authGuard';
+import { rememberSessionUser } from '../../../routes/authGuard';
+import ProfilePhotoField from '../../../components/shared/ProfilePhotoField';
+import { displayPhoto, writeLocalPhoto } from '../../../utils/profilePhoto';
 import { fetchLivreurProfile, forgetLivreurProfile, type LivreurProfile } from '../livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
@@ -16,9 +18,9 @@ import { tx } from '../../../i18n/tx';
 
 /**
  * Paramètres livreur — design Stitch « param_tres_livreur_tokpa », données réelles : GET /profile
- * (identité, disponibilité, zone), PUT /profile (prénom, nom, téléphone). L'email et la zone ne sont
- * pas modifiables par l'API (zone attribuée par l'administration). Retirés (aucune route) : photo,
- * véhicule & documents, reversement des gains, interrupteur de service (B-26).
+ * (identité, disponibilité, zone), PUT /profile (prénom, nom, téléphone, photo si lien court).
+ * La zone reste attribuée par l'administration. L'e-mail est envoyé ; le serveur peut l'ignorer.
+ * Retirés (aucune route) : véhicule & documents, reversement des gains, interrupteur de service (B-26).
  */
 export default function LivreurSettingsPage() {
   useLanguage();
@@ -28,7 +30,9 @@ export default function LivreurSettingsPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
+  const [email, setEmail] = useState('');
   const [telephone, setTelephone] = useState('');
+  const [photo, setPhoto] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -40,7 +44,9 @@ export default function LivreurSettingsPage() {
         setProfile(p);
         setPrenom(p.prenom ?? '');
         setNom(p.nom ?? '');
+        setEmail(p.email ?? '');
         setTelephone(p.telephone ?? '');
+        setPhoto(displayPhoto(p.image_profil));
       })
       .catch((e) => alive && setErr(alertApiError(e, 'livreur-load')));
     return () => {
@@ -52,18 +58,40 @@ export default function LivreurSettingsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const nomComplet = [prenom.trim(), nom.trim()].filter(Boolean).join(' ');
-      const res = await authApi.updateProfile({ prenom: prenom.trim(), nom: nom.trim(), nom_complet: nomComplet, telephone: telephone.trim() });
-      // Session à jour → le nom affiché dans les barres suit immédiatement
-      const updated = unwrap(res);
-      try {
-        const stored = JSON.parse(localStorage.getItem('tokpa_user') ?? '{}');
-        localStorage.setItem('tokpa_user', JSON.stringify({ ...stored, ...(updated && typeof updated === 'object' ? updated : {}) }));
-      } catch {
-        /* session illisible : ignorée */
+      const mail = email.trim();
+      if (mail && !/^\S+@\S+\.\S+$/.test(mail)) {
+        toast.error(tx("Adresse e-mail invalide."));
+        return;
       }
+      const nomComplet = [prenom.trim(), nom.trim()].filter(Boolean).join(' ');
+      const serverPhoto = photo && !photo.startsWith('data:') && photo.length <= 500 ? photo : undefined;
+      const res = await authApi.updateProfile({
+        prenom: prenom.trim(),
+        nom: nom.trim(),
+        nom_complet: nomComplet,
+        email: mail,
+        telephone: telephone.trim() || undefined,
+        ...(photo ? (serverPhoto ? { image_profil: serverPhoto } : {}) : { image_profil: null }),
+      });
+      const updated = unwrap(res) as { email?: string; image_profil?: string | null };
+      if (photo?.startsWith('data:')) writeLocalPhoto(photo);
+      else if (!photo) writeLocalPhoto(null);
+      rememberSessionUser({
+        ...(updated && typeof updated === 'object' ? updated : {}),
+        prenom: prenom.trim(),
+        nom: nom.trim(),
+        nom_complet: nomComplet,
+        email: updated?.email || mail,
+        image_profil: updated?.image_profil ?? serverPhoto ?? null,
+      });
       forgetLivreurProfile();
       toast.success(res?.message ?? tx("Profil mis à jour avec succès."));
+      if (mail && updated?.email && updated.email !== mail) {
+        toast.error(tx("L’adresse e-mail saisie n’a pas été conservée par le serveur."));
+      }
+      if (photo?.startsWith('data:')) {
+        toast(tx("Cette photo reste affichée sur cet appareil : le serveur ne garde qu’un lien court."));
+      }
       setReloadKey((k) => k + 1);
     } catch (error) {
       alertApiError(error, 'livreur-profile');
@@ -136,10 +164,13 @@ export default function LivreurSettingsPage() {
                     </div>
                   </div>
                 </div>
+                <ProfilePhotoField
+                  name={nomAffiche}
+                  photo={photo}
+                  onChange={setPhoto}
+                  onClear={() => setPhoto(null)}
+                />
                 <div className="flex items-center gap-md rounded-xl bg-bg-secondary p-md">
-                  <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-primary-light text-xl font-bold text-primary-dark">
-                    {initialsOf(nomAffiche, 'LV')}
-                  </div>
                   <div className="flex flex-1 flex-col gap-xs">
                     <div className="flex items-center gap-xs">
                       <span className="font-h3 text-h3 font-bold text-text-main">{nomAffiche}</span>
@@ -163,7 +194,7 @@ export default function LivreurSettingsPage() {
                   </label>
                   <label className="flex flex-col gap-xs">
                     <span className="font-secondary text-secondary text-text-secondary">{tx("Adresse e-mail")}</span>
-                    <input className={`${inputCls} opacity-70`} type="email" value={profile.email ?? ''} readOnly title={tx("Non modifiable depuis l'application")} />
+                    <input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" maxLength={150} />
                   </label>
                   <label className="flex flex-col gap-xs sm:col-span-2">
                     <span className="font-secondary text-secondary text-text-secondary">{tx("Zone principale assignée")}</span>

@@ -11,6 +11,10 @@ import { currentRole, hasSession } from '../../../routes/authGuard';
 import { authApi, ordersApi, paymentsApi, type UserProfile } from '../../../services/api';
 import { dateCourte, fmtFcfa, listOf, unwrap } from '../../../services/api/unwrap';
 import { tx } from '../../../i18n/tx';
+import { rememberSessionUser } from '../../../routes/authGuard';
+import ProfilePhotoField from '../../../components/shared/ProfilePhotoField';
+import UserAvatar from '../../../components/shared/UserAvatar';
+import { displayPhoto, writeLocalPhoto } from '../../../utils/profilePhoto';
 
 /** Nombre de lignes montrées dans les aperçus du profil (commandes, paiements). */
 const PROFILE_LIST_LIMIT = 5;
@@ -82,7 +86,9 @@ export default function ProfilePage() {
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [formPrenom, setFormPrenom] = useState('');
   const [formNomUser, setFormNomUser] = useState('');
+  const [formEmail, setFormEmail] = useState('');
   const [formTelephone, setFormTelephone] = useState('');
+  const [formPhoto, setFormPhoto] = useState<string | null>(null);
 
   const [pwModalOpen, setPwModalOpen] = useState(false);
   const [pwCurrent, setPwCurrent] = useState('');
@@ -214,20 +220,50 @@ export default function ProfilePage() {
   const handleOpenEditProfile = () => {
     setFormPrenom(profile?.prenom ?? '');
     setFormNomUser(profile?.nom ?? '');
+    setFormEmail(profile?.email ?? '');
     setFormTelephone(profile?.telephone ?? '');
+    setFormPhoto(displayPhoto(profile?.image_profil));
     setEditProfileOpen(true);
   };
 
   const handleSaveProfile = async (e: FormEvent) => {
     e.preventDefault();
+    const email = formEmail.trim();
+    if (email && !/^\S+@\S+\.\S+$/.test(email)) {
+      toast.error(tx("Adresse e-mail invalide."));
+      return;
+    }
     setSaving(true);
     try {
-      await authApi.updateProfile({
-        prenom: formPrenom.trim(),
-        nom: formNomUser.trim(),
+      const prenom = formPrenom.trim();
+      const nom = formNomUser.trim();
+      const serverPhoto = formPhoto && !formPhoto.startsWith('data:') && formPhoto.length <= 500 ? formPhoto : undefined;
+      const res = await authApi.updateProfile({
+        prenom,
+        nom,
+        nom_complet: [prenom, nom].filter(Boolean).join(' '),
+        email,
         telephone: formTelephone.trim() || undefined,
+        ...(formPhoto ? (serverPhoto ? { image_profil: serverPhoto } : {}) : { image_profil: null }),
+      });
+      const updated = unwrap(res) as UserProfile | undefined;
+      if (formPhoto?.startsWith('data:')) writeLocalPhoto(formPhoto);
+      else if (!formPhoto) writeLocalPhoto(null);
+      rememberSessionUser({
+        ...(updated && typeof updated === 'object' ? updated : {}),
+        prenom,
+        nom,
+        nom_complet: [prenom, nom].filter(Boolean).join(' '),
+        email: updated?.email || email,
+        image_profil: updated?.image_profil ?? serverPhoto ?? null,
       });
       toast.success(isFr ? tx("Profil mis à jour") : 'Profile updated');
+      if (email && updated?.email && updated.email !== email) {
+        toast.error(tx("L’adresse e-mail saisie n’a pas été conservée par le serveur."));
+      }
+      if (formPhoto?.startsWith('data:')) {
+        toast(tx("Cette photo reste affichée sur cet appareil : le serveur ne garde qu’un lien court."));
+      }
       setEditProfileOpen(false);
       await loadProfile();
     } catch (err: unknown) {
@@ -290,9 +326,12 @@ export default function ProfilePage() {
             {/* PROFILE HEADER */}
             <section className="bg-bg-card rounded-[14px] p-lg border border-border-default flex flex-col sm:flex-row items-start sm:items-center justify-between gap-md mb-md shadow-xs">
               <div className="flex items-center gap-md">
-                <div className="w-16 h-16 rounded-full bg-primary-tint flex items-center justify-center text-[22px] font-bold text-primary-dark shrink-0 border border-primary-light">
-                  {userFullName.substring(0, 2).toUpperCase()}
-                </div>
+                <UserAvatar
+                  name={userFullName}
+                  photo={displayPhoto(profile?.image_profil)}
+                  fallback="CL"
+                  className="h-16 w-16 shrink-0 border border-primary-light bg-primary-tint text-[22px] text-primary-dark"
+                />
                 <div>
                   <div className="flex flex-wrap items-center gap-sm">
                     <h2 className="font-h2 text-h2 text-text-main font-bold">{userFullName}</h2>
@@ -510,7 +549,13 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveProfile} className="space-y-md">
+            <form onSubmit={handleSaveProfile} className="max-h-[70vh] space-y-md overflow-y-auto pr-1">
+              <ProfilePhotoField
+                name={[formPrenom, formNomUser].filter(Boolean).join(' ') || userFullName}
+                photo={formPhoto}
+                onChange={setFormPhoto}
+                onClear={() => setFormPhoto(null)}
+              />
               <div>
                 <label className="block text-label mb-1 text-text-secondary font-medium">{tx("Prénom")}</label>
                 <input
@@ -528,6 +573,16 @@ export default function ProfilePage() {
                   value={formNomUser}
                   onChange={(e) => setFormNomUser(e.target.value)}
                   required
+                  className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-label mb-1 text-text-secondary font-medium">{tx("Adresse e-mail")}</label>
+                <input
+                  type="email"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                  autoComplete="email"
                   className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none"
                 />
               </div>

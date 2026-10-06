@@ -7,16 +7,20 @@ export const livreurApi = {
     return response.data;
   },
 
-  // PATCH /api/livreur/deliveries/{order}/accept -> accepter une course
+  // PATCH /api/livreur/deliveries/{order}/accept
+  // Corps vide. Réponse { message: "Course acceptée.", data: commande }.
+  // Le statut ne change pas : la course reste assignée à ce livreur.
   acceptDelivery: async (orderId: number) => {
     const response = await apiClient.patch(`/livreur/deliveries/${orderId}/accept`);
-    return response.data;
+    return response.data as { message?: string; data?: { id?: number; statut?: string; livreur_id?: number | null } };
   },
 
-  // PATCH /api/livreur/deliveries/{order}/refuse -> refuser une course
+  // PATCH /api/livreur/deliveries/{order}/refuse
+  // Corps vide. Le backend met livreur_id à null.
+  // Réponse { message: "Course refusée, remise en file." }.
   refuseDelivery: async (orderId: number) => {
     const response = await apiClient.patch(`/livreur/deliveries/${orderId}/refuse`);
-    return response.data;
+    return response.data as { message?: string };
   },
 
   // POST /api/livreur/position -> transmission GPS
