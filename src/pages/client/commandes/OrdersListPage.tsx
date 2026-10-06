@@ -264,12 +264,12 @@ export default function OrdersListPage() {
                   <thead>
                     <tr className="border-b border-border-default bg-bg-secondary text-micro font-bold text-text-secondary uppercase">
                       <th className="px-md py-sm">{tx("Réf")}</th>
-                      <th className="hidden lg:table-cell px-md py-sm">{isFr ? 'Date' : 'Date'}</th>
-                      <th className="hidden sm:table-cell px-md py-sm">{isFr ? tx("Articles") : 'Items'}</th>
-                      <th className="px-md py-sm">{isFr ? 'Total' : 'Total'}</th>
+                      <th className="hidden px-md py-sm md:table-cell">{isFr ? 'Date' : 'Date'}</th>
+                      <th className="hidden px-md py-sm md:table-cell">{isFr ? tx("Articles") : 'Items'}</th>
+                      <th className="hidden px-md py-sm md:table-cell">{isFr ? 'Total' : 'Total'}</th>
                       <th className="px-md py-sm">{isFr ? 'Statut' : 'Status'}</th>
-                      <th className="hidden lg:table-cell px-md py-sm">{isFr ? tx("Livreur") : 'Rider'}</th>
-                      <th className="px-md py-sm text-right">{isFr ? 'Actions' : 'Actions'}</th>
+                      <th className="hidden px-md py-sm lg:table-cell">{isFr ? tx("Livreur") : 'Rider'}</th>
+                      <th className="hidden px-md py-sm text-right md:table-cell">{isFr ? 'Actions' : 'Actions'}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -292,11 +292,11 @@ export default function OrdersListPage() {
                           className="border-b border-border-default/60 last:border-0 hover:bg-bg-secondary cursor-pointer transition-colors"
                         >
                           <td className="px-md py-sm font-bold text-text-main">#{o.id}</td>
-                          <td className="hidden lg:table-cell px-md py-sm text-text-secondary">
+                          <td className="hidden px-md py-sm text-text-secondary md:table-cell">
                             {fmtDate(o.created_at)}
                           </td>
-                          <td className="hidden sm:table-cell px-md py-sm text-text-secondary">{articlesCount(o)}</td>
-                          <td className="px-md py-sm font-price text-text-main whitespace-nowrap">
+                          <td className="hidden px-md py-sm text-text-secondary md:table-cell">{articlesCount(o)}</td>
+                          <td className="hidden px-md py-sm font-price text-text-main whitespace-nowrap md:table-cell">
                             {Number(o.montant_total ?? 0).toLocaleString('fr-FR')} FCFA
                           </td>
                           <td className="px-md py-sm">
@@ -311,7 +311,7 @@ export default function OrdersListPage() {
                           <td className="hidden lg:table-cell px-md py-sm text-text-secondary">
                             {o.livreur?.nom_complet ?? '—'}
                           </td>
-                          <td className="px-md py-sm text-right">
+                          <td className="hidden px-md py-sm text-right md:table-cell">
                             {!isCancelledStatut(o.statut) && (
                               <button
                                 type="button"
@@ -351,7 +351,7 @@ export default function OrdersListPage() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* En-tête modale */}
-            <div className="flex items-start justify-between gap-md p-lg border-b border-line bg-warm">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line bg-warm p-4 sm:p-lg">
               <div>
                 <h2 className="font-h2 text-h2 text-on-surface">
                   {isFr ? tx("Commande") : 'Order'} #{selected.id}
@@ -376,7 +376,7 @@ export default function OrdersListPage() {
             </div>
 
             {/* Corps scrollable */}
-            <div className="p-lg space-y-lg overflow-y-auto">
+            <div className="space-y-lg overflow-y-auto p-4 sm:p-lg">
               {/* Articles */}
               <section>
                 <h3 className="label text-text-main mb-sm flex items-center gap-xs">
@@ -385,29 +385,22 @@ export default function OrdersListPage() {
                   </span>
                   {isFr ? tx("Articles") : 'Items'}
                 </h3>
-                <table className="w-full text-body">
-                  <tbody>
-                    {(selected.items ?? []).map((it) => (
-                      <tr key={it.id} className="border-b border-line/60 last:border-0">
-                        <td className="py-xs pr-sm text-text-main">{tx(orderLineName(it))}</td>
-                        <td className="py-xs px-sm text-text-secondary whitespace-nowrap">× {it.quantite}</td>
-                        <td className="py-xs px-sm text-text-secondary whitespace-nowrap">
-                          {Number(it.prix_unitaire).toLocaleString('fr-FR')} FCFA
-                        </td>
-                        <td className="py-xs pl-sm text-right font-bold text-text-main whitespace-nowrap">
+                <div className="space-y-2">
+                  {(selected.items ?? []).map((it) => (
+                    <div key={it.id} className="flex flex-col gap-1 border-b border-line/60 py-2 last:border-0 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="min-w-0 break-words font-semibold text-text-main">{tx(orderLineName(it))}</p>
+                      <p className="break-words text-text-secondary">
+                        × {it.quantite} · {Number(it.prix_unitaire).toLocaleString('fr-FR')} FCFA ·{' '}
+                        <strong className="text-text-main">
                           {(Number(it.prix_unitaire) * Number(it.quantite)).toLocaleString('fr-FR')} FCFA
-                        </td>
-                      </tr>
-                    ))}
-                    {(selected.items ?? []).length === 0 && (
-                      <tr>
-                        <td className="py-xs text-text-tertiary">—</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                        </strong>
+                      </p>
+                    </div>
+                  ))}
+                  {(selected.items ?? []).length === 0 && <p className="py-xs text-text-tertiary">—</p>}
+                </div>
                 <div className="mt-sm space-y-xs text-body border-t border-line pt-sm">
-                  <div className="flex justify-between text-text-secondary">
+                  <div className="flex flex-wrap justify-between gap-2 text-text-secondary">
                     <span>{isFr ? tx("Sous-total produits") : 'Items subtotal'}</span>
                     <span>
                       {(selected.items ?? [])
@@ -416,11 +409,11 @@ export default function OrdersListPage() {
                       FCFA
                     </span>
                   </div>
-                  <div className="flex justify-between text-text-secondary">
+                  <div className="flex flex-wrap justify-between gap-2 text-text-secondary">
                     <span>{isFr ? tx("Frais de livraison") : 'Delivery fee'}</span>
                     <span>{Number(selected.frais_livraison ?? 0).toLocaleString('fr-FR')} FCFA</span>
                   </div>
-                  <div className="flex justify-between font-bold text-text-main">
+                  <div className="flex flex-wrap justify-between gap-2 font-bold text-text-main">
                     <span>{isFr ? 'Total' : 'Total'}</span>
                     <span className="price">{money(selected.montant_total)}</span>
                   </div>
@@ -473,7 +466,7 @@ export default function OrdersListPage() {
                 </h3>
                 <div className="bg-warm rounded-card p-md text-body text-text-secondary">
                   {selected.payment ? (
-                    <div className="flex justify-between">
+                    <div className="flex flex-wrap justify-between gap-2">
                       <span>
                         {selected.payment.methode} · {selected.payment.statut}
                       </span>
@@ -488,7 +481,7 @@ export default function OrdersListPage() {
               </section>
 
               {/* Actions modale */}
-              <div className="flex gap-sm">
+              <div className="flex flex-wrap gap-2">
                 {!selected.payment && selected.statut !== 'annule' && (
                   <button type="button" onClick={() => handlePayer(selected)} disabled={paying} className="btn btn-primary flex-1 disabled:opacity-60">
                     <MIcon name={paying ? 'sync' : 'payments'} className={paying ? 'animate-spin' : undefined} />

@@ -71,6 +71,8 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
   const [recentPayments, setRecentPayments] = useState<PaymentItem[]>([]);
+  const [orderSheet, setOrderSheet] = useState<OrderItem | null>(null);
+  const [paymentSheet, setPaymentSheet] = useState<PaymentItem | null>(null);
   // Nombre total de commandes — GET /dashboard (GET /orders est paginé par 15)
   const [dashCount, setDashCount] = useState<number | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
@@ -357,32 +359,27 @@ export default function ProfilePage() {
                 <div className="bg-bg-card border border-border-default rounded-[14px] overflow-hidden">
                   <div className="divide-y divide-border-default">
                     {recentOrders.slice(0, PROFILE_LIST_LIMIT).map((o) => (
-                      <div key={o.id} className="p-md flex items-center justify-between hover:bg-bg-secondary transition-colors">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-text-main">Commande #{o.id}</span>
-                          <span className="text-secondary text-text-tertiary">{o.date}</span>
-                        </div>
-                        <div className="font-bold text-primary-container">{o.totalLabel}</div>
-                        <div className="flex items-center gap-md">
-                          <span
-                            className={
-                              o.active
-                                ? 'px-sm py-1 bg-primary-tint border border-primary-light text-primary-dark text-micro rounded-full font-bold uppercase'
-                                : 'px-sm py-1 bg-success-light text-success text-micro rounded-full font-bold uppercase'
-                            }
-                          >
-                            {isFr ? o.statusFr : o.statusEn}
-                          </span>
-                          <Link
-                            to={o.active ? '/commandes/suivi' : '/commandes'}
-                            search={o.active ? { order: String(o.id) } : { detail: String(o.id) }}
-                            className="text-primary-container font-label text-label flex items-center gap-xs font-bold"
-                          >
-                            {o.active ? (isFr ? tx("Suivre") : 'Track') : (isFr ? tx("Détails") : 'Details')}
-                            <MIcon name="chevron_right" className="text-sm" />
-                          </Link>
-                        </div>
-                      </div>
+                      <button
+                        key={o.id}
+                        type="button"
+                        onClick={() => setOrderSheet(o)}
+                        className="flex w-full items-center justify-between gap-3 p-md text-left transition-colors hover:bg-bg-secondary"
+                      >
+                        <span className="min-w-0">
+                          <span className="block font-bold text-text-main">Commande #{o.id}</span>
+                          <span className="hidden text-secondary text-text-tertiary md:block">{o.date}</span>
+                        </span>
+                        <span className="hidden font-bold text-primary-container md:block">{o.totalLabel}</span>
+                        <span
+                          className={
+                            o.active
+                              ? 'shrink-0 rounded-full border border-primary-light bg-primary-tint px-sm py-1 text-micro font-bold uppercase text-primary-dark'
+                              : 'shrink-0 rounded-full bg-success-light px-sm py-1 text-micro font-bold uppercase text-success'
+                          }
+                        >
+                          {isFr ? o.statusFr : o.statusEn}
+                        </span>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -415,29 +412,23 @@ export default function ProfilePage() {
                 <div className="bg-bg-card border border-border-default rounded-[14px] overflow-hidden">
                   <div className="divide-y divide-border-default">
                     {recentPayments.slice(0, PROFILE_LIST_LIMIT).map((p) => (
-                      <div key={p.id} className="p-md flex items-center justify-between hover:bg-bg-secondary transition-colors">
-                        <div className="flex flex-col min-w-0">
-                          <span className="font-bold text-text-main truncate">
-                            {p.orderId
-                              ? `${tx("Commande")} #${p.orderId}`
-                              : `${tx("Paiement")} #${p.id}`}
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setPaymentSheet(p)}
+                        className="flex w-full items-center justify-between gap-3 p-md text-left transition-colors hover:bg-bg-secondary"
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-bold text-text-main">
+                            {p.orderId ? `${tx("Commande")} #${p.orderId}` : `${tx("Paiement")} #${p.id}`}
                           </span>
-                          <span className="text-secondary text-text-tertiary">{p.date}</span>
-                        </div>
-                        <div className="font-bold text-primary-container">{p.totalLabel}</div>
-                        <div className="flex items-center gap-md">
-                          <span className={`px-sm py-1 text-micro rounded-full font-bold uppercase ${p.tone}`}>
-                            {isFr ? p.statusFr : p.statusEn}
-                          </span>
-                          <Link
-                            to="/paiements"
-                            className="text-primary-container font-label text-label flex items-center gap-xs font-bold"
-                          >
-                            {isFr ? tx("Détails") : 'Details'}
-                            <MIcon name="chevron_right" className="text-sm" />
-                          </Link>
-                        </div>
-                      </div>
+                          <span className="hidden text-secondary text-text-tertiary md:block">{p.date}</span>
+                        </span>
+                        <span className="hidden font-bold text-primary-container md:block">{p.totalLabel}</span>
+                        <span className={`shrink-0 rounded-full px-sm py-1 text-micro font-bold uppercase ${p.tone}`}>
+                          {isFr ? p.statusFr : p.statusEn}
+                        </span>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -648,6 +639,56 @@ export default function ProfilePage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {orderSheet && (
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setOrderSheet(null)}>
+          <div className="max-h-[85vh] w-full max-w-[640px] overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl sm:rounded-2xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <h2 className="text-h3 font-h3 font-bold">{tx("Commande")} #{orderSheet.id}</h2>
+              <button type="button" className="rounded-lg p-1 text-text-secondary" aria-label={tx("Fermer")} onClick={() => setOrderSheet(null)}>
+                <MIcon name="close" />
+              </button>
+            </div>
+            <dl className="space-y-3 text-label">
+              <div><dt className="text-micro uppercase text-text-secondary">{tx("Date")}</dt><dd className="font-semibold">{orderSheet.date}</dd></div>
+              <div><dt className="text-micro uppercase text-text-secondary">{tx("Montant")}</dt><dd className="font-semibold">{orderSheet.totalLabel}</dd></div>
+              <div><dt className="text-micro uppercase text-text-secondary">{tx("Statut")}</dt><dd className="font-semibold">{isFr ? orderSheet.statusFr : orderSheet.statusEn}</dd></div>
+            </dl>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link
+                to={orderSheet.active ? '/commandes/suivi' : '/commandes'}
+                search={orderSheet.active ? { order: String(orderSheet.id) } : { detail: String(orderSheet.id) }}
+                className="btn btn-primary"
+              >
+                {orderSheet.active ? tx("Suivre") : tx("Détails")}
+              </Link>
+              <button type="button" className="btn btn-ghost" onClick={() => setOrderSheet(null)}>{tx("Fermer")}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {paymentSheet && (
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setPaymentSheet(null)}>
+          <div className="max-h-[85vh] w-full max-w-[640px] overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl sm:rounded-2xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <h2 className="text-h3 font-h3 font-bold">{tx("Paiement")} #{paymentSheet.id}</h2>
+              <button type="button" className="rounded-lg p-1 text-text-secondary" aria-label={tx("Fermer")} onClick={() => setPaymentSheet(null)}>
+                <MIcon name="close" />
+              </button>
+            </div>
+            <dl className="space-y-3 text-label">
+              <div><dt className="text-micro uppercase text-text-secondary">{tx("Commande")}</dt><dd className="font-semibold">{paymentSheet.orderId ? `#${paymentSheet.orderId}` : '—'}</dd></div>
+              <div><dt className="text-micro uppercase text-text-secondary">{tx("Date")}</dt><dd className="font-semibold">{paymentSheet.date}</dd></div>
+              <div><dt className="text-micro uppercase text-text-secondary">{tx("Montant")}</dt><dd className="font-semibold">{paymentSheet.totalLabel}</dd></div>
+              <div><dt className="text-micro uppercase text-text-secondary">{tx("Statut")}</dt><dd className="font-semibold">{isFr ? paymentSheet.statusFr : paymentSheet.statusEn}</dd></div>
+            </dl>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link to="/paiements" className="btn btn-primary">{tx("Voir tout")}</Link>
+              <button type="button" className="btn btn-ghost" onClick={() => setPaymentSheet(null)}>{tx("Fermer")}</button>
+            </div>
           </div>
         </div>
       )}
