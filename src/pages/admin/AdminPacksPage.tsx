@@ -132,6 +132,8 @@ export default function AdminPacksPage() {
   const [sauve, setSauve] = useState(false);
   const [aSupprimer, setASupprimer] = useState<Pack | null>(null);
   const [supprime, setSupprime] = useState(false);
+  const [couverture, setCouverture] = useState('');
+  const [large, setLarge] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
   const pageRef = useCanvasRef();
   const pressRef = useRef<Pression | null>(null);
   const hydrate = useRef('');
@@ -161,6 +163,14 @@ export default function AdminPacksPage() {
   }, []);
 
   useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const sync = () => setLarge(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  useEffect(() => {
     const cle = search.edit ? `e${search.edit}` : search.nouveau ? 'n' : '';
     if (!cle) {
       hydrate.current = '';
@@ -176,6 +186,7 @@ export default function AdminPacksPage() {
       setDisponible(true);
       setLignes([]);
       setExtras({});
+      setCouverture('');
       return;
     }
     if (!pret) return;
@@ -199,6 +210,9 @@ export default function AdminPacksPage() {
       qte: Math.max(1, Number(p.pivot?.qte ?? 1)),
       ...slot(i),
     })));
+    const photoPack = absImageUrl(pack.img_url);
+    const photoProduit = inclus.map((p) => absImageUrl(p.image_url)).find(Boolean) ?? '';
+    setCouverture(photoPack || photoProduit || '');
   }, [search.edit, search.nouveau, pret, packs]);
 
   const parId = useMemo(() => {
@@ -250,6 +264,10 @@ export default function AdminPacksPage() {
     return parId.get(id);
   }
 
+  function imageDe(id: number) {
+    return absImageUrl(produitDe(id)?.image_url);
+  }
+
   function poser(id: number, pos: { x: number; y: number } | 'suivant') {
     setLignes((prev) => {
       const deja = prev.find((l) => l.id === id);
@@ -259,6 +277,7 @@ export default function AdminPacksPage() {
       const place = pos === 'suivant' ? slot(prev.length) : pos;
       return [...prev, { id, qte: 1, ...place }];
     });
+    setCouverture((cur) => cur || imageDe(id) || '');
     setPulse(id);
     window.setTimeout(() => setPulse((cur) => (cur === id ? null : cur)), 450);
   }
@@ -278,6 +297,7 @@ export default function AdminPacksPage() {
   function dragProps(mode: 'new' | 'move', id: number) {
     return {
       onPointerDown: (e: ReactPointerEvent<HTMLElement>) => {
+        if (!large) return;
         if (e.button !== 0) return;
         if ((e.target as HTMLElement).closest('button, input, a, textarea, select')) return;
         e.preventDefault();
@@ -324,6 +344,11 @@ export default function AdminPacksPage() {
         setGhost(null);
         setSurPage(false);
       },
+      onClick: (e: { target: EventTarget | null }) => {
+        if (large || mode !== 'new') return;
+        if ((e.target as HTMLElement | null)?.closest('button, input, a, textarea, select')) return;
+        poser(id, 'suivant');
+      },
     };
   }
 
@@ -350,6 +375,7 @@ export default function AdminPacksPage() {
       prix_total: Number(prixTotal),
       prix_minimum: prixMinimum.trim() === '' ? null : Number(prixMinimum),
       disponible,
+      img_url: couverture || null,
       products: lignes.map((l) => ({ id: l.id, qte: l.qte })),
     };
     setSauve(true);
@@ -429,12 +455,13 @@ export default function AdminPacksPage() {
 
       {vue === 'galerie' && (
         <div className="space-y-6">
-          <section className="flex min-h-[148px] flex-col items-start justify-between gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-[#3c2415] via-[#7c2d12] to-[#f97316] px-4 py-5 text-white shadow-xl sm:h-[168px] sm:flex-row sm:items-center sm:px-6">
-            <div className="min-w-0 flex-1">
+          <section className="grid items-center gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-[#3c2415] via-[#7c2d12] to-[#f97316] p-5 text-white shadow-xl sm:grid-cols-[minmax(0,1fr)_auto] sm:p-6">
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-orange-100">{tx("Gestion des packs")}</p>
-              <h1 className="mt-1 text-2xl font-black tracking-tight sm:truncate sm:text-3xl">{tx("Atelier des packs")}</h1>
+              <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">{tx("Atelier des packs")}</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-5 text-orange-50/90">{tx("Sur grand écran, glissez les produits sur la page blanche. Sur téléphone, touchez un produit pour l'ajouter.")}</p>
             </div>
-            <button type="button" className="w-full shrink-0 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-primary-dark shadow-lg transition hover:-translate-y-0.5 sm:w-auto" onClick={() => aller({ nouveau: 1 })}>
+            <button type="button" className="w-full rounded-2xl bg-white px-5 py-3 text-sm font-bold text-primary-dark shadow-lg transition hover:-translate-y-0.5 sm:w-auto" onClick={() => aller({ nouveau: 1 })}>
               {tx("Composer un pack")}
             </button>
           </section>
@@ -458,11 +485,16 @@ export default function AdminPacksPage() {
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {packsFiltres.map((pack) => {
               const inclus = inclusDe(pack);
+              const cover = absImageUrl(pack.img_url) || inclus.map((p) => absImageUrl(p.image_url)).find(Boolean) || '';
               return (
                 <article key={pack.id} className="group cursor-pointer overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/5 transition hover:-translate-y-1 hover:shadow-xl" onClick={() => aller({ pack: Number(pack.id) })}>
                   <div className="relative h-44 overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
-                    {inclus.length === 0 && <div className="flex h-full items-center justify-center text-primary/70"><MIcon name="package_2" className="text-5xl" /></div>}
-                    {inclus.slice(0, 3).map((p, i) => (
+                    {cover ? (
+                      <img src={cover} alt="" className="h-full w-full object-cover" />
+                    ) : inclus.length === 0 ? (
+                      <div className="flex h-full items-center justify-center text-primary/70"><MIcon name="package_2" className="text-5xl" /></div>
+                    ) : null}
+                    {!cover && inclus.slice(0, 3).map((p, i) => (
                       <div key={p.id ?? i} className="absolute h-24 w-24 overflow-hidden rounded-2xl shadow-lg ring-4 ring-white" style={{ left: 28 + i * 46, top: 32 + (i % 2) * 12, transform: `rotate(${i * 7 - 8}deg)` }}>
                         <Vignette produit={p} className="h-full w-full" />
                       </div>
@@ -506,20 +538,20 @@ export default function AdminPacksPage() {
           <button type="button" className="btn btn-primary mt-4" onClick={() => aller({})}>{tx("Retour aux packs")}</button>
         </div>
       ) : vue === 'composer' && (
-        <div className="flex h-[calc(100vh-52px)] min-h-[640px] flex-col">
-          <header className="flex shrink-0 items-center gap-3 border-b border-black/5 bg-white px-4 py-3">
+        <div className="flex min-h-[70vh] flex-col lg:h-[calc(100vh-52px)] lg:min-h-[640px]">
+          <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-black/5 bg-white px-3 py-3 sm:gap-3 sm:px-4">
             <button type="button" className="rounded-xl p-2 hover:bg-bg-secondary" onClick={retour} aria-label={tx("Retour aux packs")}>
               <MIcon name="arrow_back" />
             </button>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 basis-40">
               <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{search.edit ? tx("Modifier le pack") : tx("Nouveau pack")}</p>
               <input value={nom} onChange={(e) => setNom(e.target.value)} placeholder={tx("Nom du pack — obligatoire")} className="w-full bg-transparent text-lg font-bold outline-none placeholder:font-medium placeholder:text-text-tertiary" />
             </div>
-            <label className="flex items-center gap-2 text-sm font-semibold">
+            <label className="order-3 flex w-full items-center gap-2 text-sm font-semibold sm:order-none sm:w-auto">
               <input type="checkbox" checked={disponible} onChange={(e) => setDisponible(e.target.checked)} className="accent-primary" />
               {tx("Disponible à la vente")}
             </label>
-            <button type="button" className="btn btn-primary" disabled={sauve} onClick={() => void enregistrer()}>
+            <button type="button" className="btn btn-primary order-2 sm:order-none" disabled={sauve} onClick={() => void enregistrer()}>
               {sauve ? tx("Enregistrement…") : tx("Enregistrer le pack")}
             </button>
           </header>
@@ -539,7 +571,7 @@ export default function AdminPacksPage() {
                   <option value="">{tx("Toutes les catégories")}</option>
                   {categories.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
                 </select>
-                <p className="text-xs text-text-secondary">{tx("Glissez un produit sur la page")}. {tx("Cliquer ajoute aussi le produit.")}</p>
+                <p className="text-xs text-text-secondary">{large ? tx("Glissez un produit sur la page") : tx("Touchez un produit pour l'ajouter.")} {large ? tx("Cliquer ajoute aussi le produit.") : ''}</p>
               </div>
               <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
                 {rayon.map((p) => {
@@ -556,7 +588,9 @@ export default function AdminPacksPage() {
                         <p className="text-xs font-bold text-primary">{fmtFcfa(prixDe(p))}</p>
                         {deja && <p className="text-[11px] font-semibold text-primary">{tx("Déjà dans le pack")} · {deja.qte}</p>}
                       </div>
-                      <MIcon name="drag_indicator" className="text-text-tertiary" />
+                      {large ? <MIcon name="drag_indicator" className="text-text-tertiary" /> : (
+                        <span className="shrink-0 rounded-lg bg-primary-tint px-2 py-1 text-xs font-bold text-primary-dark">{tx("Ajouter")}</span>
+                      )}
                     </div>
                   );
                 })}
@@ -566,9 +600,46 @@ export default function AdminPacksPage() {
 
             <section className="flex min-w-0 flex-1 flex-col">
               <div className="min-h-0 flex-1 overflow-auto p-4 md:p-6">
+                {!large && (
+                  <div className="space-y-3">
+                    {lignes.length === 0 && (
+                      <div className="rounded-3xl border border-dashed border-primary/30 bg-white px-4 py-10 text-center">
+                        <MIcon name="touch_app" className="text-4xl text-primary" />
+                        <p className="mt-3 text-lg font-bold">{tx("Touchez un produit pour l'ajouter.")}</p>
+                        <p className="mt-1 text-sm text-text-secondary">{tx("La page du pack est encore vide.")}</p>
+                      </div>
+                    )}
+                    {lignes.map((ligne) => {
+                      const produit = produitDe(ligne.id);
+                      const photo = imageDe(ligne.id);
+                      return (
+                        <div key={ligne.id} className={`flex items-center gap-3 rounded-2xl bg-white p-2 shadow-sm ring-1 ring-black/5 ${pulse === ligne.id ? 'ring-2 ring-primary' : ''}`}>
+                          <Vignette produit={produit} className="h-16 w-16 shrink-0 rounded-xl" />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-bold">{produit?.nom || tx("Produit retiré")}</p>
+                            <p className="text-xs font-bold text-primary">{fmtFcfa(prixDe(produit))}</p>
+                            <div className="mt-1 flex items-center gap-1">
+                              <button type="button" className="h-8 w-8 rounded-lg border border-border-default" onClick={() => changerQte(ligne.id, -1)}>-</button>
+                              <span className="w-6 text-center text-sm font-bold">{ligne.qte}</span>
+                              <button type="button" className="h-8 w-8 rounded-lg border border-border-default" onClick={() => changerQte(ligne.id, 1)}>+</button>
+                            </div>
+                          </div>
+                          {photo && (
+                            <button type="button" className={`shrink-0 rounded-lg px-2 py-1 text-[11px] font-bold ${couverture === photo ? 'bg-primary text-white' : 'bg-primary-tint text-primary-dark'}`} onClick={() => setCouverture(photo)}>
+                              {tx("Photo")}
+                            </button>
+                          )}
+                          <button type="button" aria-label={tx("Retirer")} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-secondary hover:text-error" onClick={() => retirer(ligne.id)}>
+                            <MIcon name="close" className="text-[18px]" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
                 <div
                   ref={pageRef}
-                  className={`pack-page-grid relative w-full rounded-[28px] shadow-2xl ring-1 transition ${surPage ? 'ring-4 ring-primary' : 'ring-black/5'}`}
+                  className={`${large ? '' : 'hidden'} pack-page-grid relative w-full rounded-[28px] shadow-2xl ring-1 transition ${surPage ? 'ring-4 ring-primary' : 'ring-black/5'}`}
                   style={{ minHeight: '100%', height: hauteurPage }}
                 >
                   <p className="pointer-events-none absolute bottom-6 right-7 text-5xl font-black tracking-tight text-primary/10">TOKPa</p>
@@ -627,6 +698,27 @@ export default function AdminPacksPage() {
                   {tx("Enregistrer appliquera ce nouveau prix.")}
                 </div>
               )}
+              <div className="shrink-0 border-t border-black/5 bg-white px-3 py-2">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-bold text-text-secondary">{tx("Photo du pack")}</p>
+                  {couverture && (
+                    <button type="button" className="text-xs font-semibold text-text-tertiary" onClick={() => setCouverture('')}>{tx("Retirer")}</button>
+                  )}
+                </div>
+                <div className="mt-2 flex items-center gap-2 overflow-x-auto">
+                  {couverture && <img src={couverture} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover ring-2 ring-primary" />}
+                  {lignes.map((ligne) => {
+                    const photo = imageDe(ligne.id);
+                    if (!photo || photo === couverture) return null;
+                    return (
+                      <button key={ligne.id} type="button" className="shrink-0" title={tx("Choisir comme photo du pack")} onClick={() => setCouverture(photo)}>
+                        <Vignette produit={produitDe(ligne.id)} className="h-12 w-12 rounded-xl" />
+                      </button>
+                    );
+                  })}
+                  {!couverture && <p className="text-xs text-text-secondary">{tx("Aucune photo pour l'instant. Ajoutez un produit qui en a une.")}</p>}
+                </div>
+              </div>
               <footer className="grid shrink-0 gap-3 border-t border-black/5 bg-white/95 p-3 md:grid-cols-[1.4fr_160px_160px_180px]">
                 <label className="block text-xs text-text-secondary">
                   {tx("Description")}
@@ -706,12 +798,12 @@ function DetailPack({
   const inclus = inclusDe(pack);
   const somme = inclus.reduce((total, p) => total + prixDe(p) * Math.max(1, Number(p.pivot?.qte ?? 1)), 0);
   return (
-    <div className="flex h-[calc(100vh-52px)] min-h-[640px] flex-col">
-      <header className="flex shrink-0 items-center gap-3 border-b border-black/5 bg-white px-4 py-3">
+    <div className="flex min-h-[70vh] flex-col lg:h-[calc(100vh-52px)] lg:min-h-[640px]">
+      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-black/5 bg-white px-3 py-3 sm:gap-3 sm:px-4">
         <button type="button" className="rounded-xl p-2 hover:bg-bg-secondary" onClick={onBack} aria-label={tx("Retour aux packs")}>
           <MIcon name="arrow_back" />
         </button>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-40">
           <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{tx("Détails du pack")}</p>
           <h1 className="truncate text-lg font-bold">{pack?.nom || (pret ? tx("Pack introuvable.") : tx("Chargement des données réelles…"))}</h1>
         </div>
@@ -730,6 +822,9 @@ function DetailPack({
       {pack && (
         <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[320px_1fr]">
           <aside className="space-y-4 overflow-y-auto border-b border-black/5 bg-white p-5 lg:border-b-0 lg:border-r">
+            {absImageUrl(pack.img_url) && (
+              <img src={absImageUrl(pack.img_url) ?? ''} alt="" className="h-40 w-full rounded-2xl object-cover" />
+            )}
             <p className="text-3xl font-black text-primary">{fmtFcfa(Number(pack.prix_total ?? 0))}</p>
             <p className="text-sm text-text-secondary">{pack.description || tx("Aucune description.")}</p>
             <dl className="space-y-2 text-sm">

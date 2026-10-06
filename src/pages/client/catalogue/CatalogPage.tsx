@@ -149,7 +149,7 @@ export default function CatalogPage() {
               stock: b.disponible === false ? 'none' : 'available',
               icon: 'shopping_basket',
               cat: 'pack',
-              image: absImageUrl(b.img_url),
+              image: absImageUrl(b.img_url) || absImageUrl(inclus.map((it) => it.image_url).find(Boolean) ?? null),
               isPack: true,
               packId: Number(b.id),
             } satisfies CatalogProduct;

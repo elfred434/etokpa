@@ -152,7 +152,9 @@ export default function PackPage() {
   const prixTotal = Number(pack.prix_total ?? 0);
   const prixMinimum = pack.prix_minimum == null ? null : Number(pack.prix_minimum);
   const disponible = pack.disponible !== false;
-  const image = absImageUrl(pack.img_url);
+  const image =
+    absImageUrl(pack.img_url) ||
+    absImageUrl(inclus.map((it) => it.image_url).find(Boolean) ?? null);
 
   // Somme des produits au prix catalogue : sert de repère, jamais de prix de vente.
   const lignes: PackLine[] = inclus.map((it) => ({
