@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
 import MIcon from '../../shared/MIcon';
@@ -172,16 +173,16 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
           </Link>
         </div>
       </div>
-      {menu && (
+      {menu && createPortal(
+        <>
         <button
           type="button"
           aria-label={tx("Fermer")}
-          className="fixed inset-0 z-[60] bg-black/50 md:hidden"
+          className="fixed inset-0 z-[80] bg-black/50 md:hidden"
           onClick={() => setMenu(false)}
         />
-      )}
       <aside
-        className={`fixed left-0 top-0 z-[70] h-full w-64 flex-col overflow-y-auto border-r border-line bg-warm p-md md:hidden ${menu ? 'flex' : 'hidden'}`}
+        className="fixed left-0 top-0 z-[90] flex h-full w-64 flex-col overflow-y-auto border-r border-line bg-warm p-md md:hidden"
       >
         <div className="mb-3 flex items-center justify-end">
           <button type="button" className="rounded-lg p-2 text-primary-shade" aria-label={tx("Fermer")} onClick={() => setMenu(false)}>
@@ -239,6 +240,9 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
           </Link>
         </div>
       </aside>
+        </>,
+        document.body,
+      )}
     </header>
   );
 }
