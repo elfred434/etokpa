@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
 import MIcon from '../../shared/MIcon';
@@ -31,6 +31,11 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
   const { language, toggleLanguage, t } = useLanguage();
   useAuthRevision();
   const [localSearch, setLocalSearch] = useState('');
+  const [menu, setMenu] = useState(false);
+
+  useEffect(() => {
+    setMenu(false);
+  }, [pathname]);
 
   const onMarket = pathname === '/' || pathname.startsWith('/catalogue') || pathname.startsWith('/produit');
   // La recherche ne s'affiche que sur /catalogue (elle alimente les filtres de cette page).
@@ -48,9 +53,18 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
 
   return (
     <header className="fixed top-0 z-50 w-full border-b border-line bg-warm">
-      <div className="mx-auto flex h-[52px] w-full max-w-[1200px] items-center justify-between px-4">
+      <div className="mx-auto flex h-[52px] w-full max-w-[1200px] items-center justify-between gap-2 px-3 sm:px-4">
         {/* Logo + liens */}
-        <div className="flex items-center gap-lg">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-lg">
+          <button
+            type="button"
+            className="rounded-lg p-1 text-primary-shade md:hidden"
+            aria-label={tx("Menu")}
+            aria-expanded={menu}
+            onClick={() => setMenu((v) => !v)}
+          >
+            <MIcon name={menu ? 'close' : 'menu'} />
+          </button>
           <Link to="/" className="font-h2 text-h2 tracking-tight text-primary-shade">
             TOKPa
           </Link>
@@ -124,7 +138,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
         )}
 
         {/* Icônes & Sélecteur de langue */}
-        <div className="flex items-center gap-3 sm:gap-md text-primary-shade">
+        <div className="flex shrink-0 items-center gap-1 text-primary-shade sm:gap-md">
           {/* Bouton de bascule de langue FR / EN */}
           <button
             type="button"
@@ -133,17 +147,8 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
             className="flex items-center gap-1 rounded-full border border-primary-light bg-primary-lighter px-2.5 py-1 text-xs font-bold text-primary-shade transition-transform active:scale-95"
           >
             <MIcon name="language" className="text-[16px]" />
-            <span className="uppercase">{language}</span>
+            <span className="hidden uppercase min-[400px]:inline">{language}</span>
           </button>
-
-          <Link
-            to="/negociations"
-            className="scale-interaction relative md:hidden"
-            title={t('nav.negotiations')}
-          >
-            <MIcon name="handshake" />
-            {activeNegoCount > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />}
-          </Link>
 
           <Link to="/notifications" className="scale-interaction" aria-label="Notifications">
             <MIcon name="notifications" />
@@ -167,6 +172,23 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
           </Link>
         </div>
       </div>
+      {menu && (
+        <nav className="border-t border-line bg-warm px-4 py-2 shadow-lg md:hidden">
+          <Link to="/catalogue" className="block border-b border-line/70 py-3 text-body" onClick={() => setMenu(false)}>
+            {t('nav.market')}
+          </Link>
+          <Link to="/negociations" className="block border-b border-line/70 py-3 text-body" onClick={() => setMenu(false)}>
+            {t('nav.negotiations')}
+            {activeNegoCount > 0 ? ` (${activeNegoCount})` : ''}
+          </Link>
+          <Link to="/commandes" className="block border-b border-line/70 py-3 text-body" onClick={() => setMenu(false)}>
+            {t('nav.orders')}
+          </Link>
+          <Link to="/paiements" className="block py-3 text-body" onClick={() => setMenu(false)}>
+            {tx("Paiements")}
+          </Link>
+        </nav>
+      )}
     </header>
   );
 }

@@ -476,7 +476,7 @@ export default function ProductPage() {
 
           {/* ---- Bottom Section: Tabs ---- */}
           <section className="mx-auto mt-8 mb-20 w-full max-w-[1200px] overflow-hidden rounded-xl bg-white shadow-sm">
-            <div className="flex border-b border-line">
+            <div className="flex overflow-x-auto border-b border-line">
               {(
                 [
                   ['description', 'Description'],
@@ -489,7 +489,7 @@ export default function ProductPage() {
                   type="button"
                   onClick={() => setTab(id)}
                   className={clsx(
-                    'px-8 py-4 text-sm cursor-pointer',
+                    'cursor-pointer whitespace-nowrap px-4 py-3 text-sm sm:px-8 sm:py-4',
                     tab === id ? 'active-tab font-semibold' : 'font-medium text-ink-2 hover:text-ink',
                   )}
                 >
@@ -499,12 +499,12 @@ export default function ProductPage() {
             </div>
 
             {tab === 'description' && (
-              <div className="flex flex-col gap-4 p-8">
+              <div className="flex flex-col gap-4 p-4 sm:p-8">
                 <h3 className="text-h3 text-ink">{tx("Détails du produit")}</h3>
                 <p className="max-w-3xl text-body leading-relaxed text-ink-2">
                   {product.description || tx("Aucune description pour ce produit.")}
                 </p>
-                <div className="mt-4 grid grid-cols-2 gap-6 md:grid-cols-4">
+                <div className="mt-4 grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 md:grid-cols-4">
                   <div className="flex flex-col">
                     <span className="text-micro uppercase text-ink-3">{tx("Catégorie")}</span>
                     <span className="text-sm font-medium text-ink">{categoryNom}</span>

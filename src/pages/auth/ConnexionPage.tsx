@@ -91,7 +91,7 @@ export default function ConnexionPage() {
         </section>
 
         {/* Right Column: Login Form */}
-        <section className="flex-1 flex flex-col justify-center items-center bg-white p-lg md:p-[48px]">
+        <section className="flex flex-1 flex-col items-center justify-center bg-white p-4 sm:p-lg md:p-[48px]">
           <div className="w-full max-w-[440px]">
             {/* Header */}
             <header className="mb-xl">

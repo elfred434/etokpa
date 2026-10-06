@@ -16,15 +16,23 @@ const ITEMS: Item[] = [
   { label: 'Paramètres', path: '/manager/parametres', icon: 'settings' },
 ];
 
-type Props = { currentPath: string };
+type Props = { currentPath: string; open?: boolean; onClose?: () => void };
 
-export default function ManagerSidebar({ currentPath }: Props) {
+export default function ManagerSidebar({ currentPath, open = false, onClose }: Props) {
   useLanguage();
   return (
     <aside
-      className="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-white/10"
+      className={`fixed left-0 top-0 z-50 h-screen w-64 flex-col overflow-y-auto border-r border-white/10 ${open ? 'flex' : 'hidden'} lg:flex`}
       style={{ backgroundColor: 'rgb(31,19,11)' }}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest('a')) onClose?.();
+      }}
     >
+      <div className="flex items-center justify-end px-3 pt-3 lg:hidden">
+        <button type="button" className="rounded-lg p-2 text-white" aria-label={tx("Fermer")} onClick={onClose}>
+          <MIcon name="close" />
+        </button>
+      </div>
       <div className="flex items-center gap-2 p-lg pb-4">
         <MIcon name="local_shipping" className="text-primary-tint text-[22px]" />
         <p className="text-lg font-bold text-white">

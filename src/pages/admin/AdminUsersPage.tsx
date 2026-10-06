@@ -713,8 +713,8 @@ export default function AdminUsersPage() {
                 <i className="ti ti-x text-lg"></i>
               </button>
             </div>
-            <div className="p-6 space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 space-y-4 text-xs sm:p-6">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
                   <span className="text-gray-400 block font-medium">{tx("Adresse Email")}</span>
                   <span className="font-semibold text-gray-800 text-sm mt-0.5 block truncate" id="modalEmail">
@@ -728,7 +728,7 @@ export default function AdminUsersPage() {
                   </span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
                   <span className="text-gray-400 block font-medium">{tx("Zone d'assignation")}</span>
                   {hasZone ? (

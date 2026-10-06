@@ -146,14 +146,14 @@ export default function LivreurRecapPage() {
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               to="/livreur"
-              className="flex min-w-[220px] items-center justify-center gap-2.5 rounded-[10px] bg-[#F97316] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-[#EA580C] active:scale-95"
+              className="flex w-full max-w-full items-center justify-center gap-2.5 rounded-[10px] bg-[#F97316] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-[#EA580C] active:scale-95 sm:w-auto sm:min-w-[220px]"
             >
               <MIcon name="dashboard" className="text-[20px]" />
               <span>{tx("Retour au tableau de bord")}</span>
             </Link>
             <Link
               to="/livreur/historique"
-              className="flex min-w-[220px] items-center justify-center gap-2.5 rounded-[10px] border-[1.5px] border-[#FED7AA] bg-[#FFF7ED] px-6 py-3.5 text-sm font-semibold text-[#C2410C] transition-all duration-150 hover:bg-[#FED7AA] active:scale-95"
+              className="flex w-full max-w-full items-center justify-center gap-2.5 rounded-[10px] border-[1.5px] border-[#FED7AA] bg-[#FFF7ED] px-6 py-3.5 text-center text-sm font-semibold text-[#C2410C] transition-all duration-150 hover:bg-[#FED7AA] active:scale-95 sm:w-auto sm:min-w-[220px]"
             >
               <MIcon name="receipt_long" className="text-[20px]" />
               <span>{tx("Voir l'historique complet")}</span>

@@ -19,6 +19,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
   const nom = currentUserName();
   const admin = isAdminRole(currentRole());
   const [open, setOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const [zones, setZones] = useState<{ id: number; nom: string }[]>([]);
   const [zoneId, setZoneId] = useState('');
   const [saving, setSaving] = useState(false);
@@ -55,22 +56,39 @@ export default function ManagerLayout({ children, currentPath }: Props) {
 
   return (
     <div className="min-h-screen bg-bg-primary text-on-surface">
-      <ManagerSidebar currentPath={currentPath} />
-      <header className="fixed left-64 right-0 top-0 z-40 flex h-[52px] items-center justify-between border-b border-border-default bg-bg-primary px-lg">
-        <div className="flex items-center gap-2">
-          <MIcon name="location_on" className="text-primary text-[18px]" />
-          <p className="text-label font-semibold">{zone ? `Zone ${zone}` : tx("Zone non attribuée")}</p>
+      {navOpen && (
+        <button
+          type="button"
+          aria-label={tx("Fermer")}
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setNavOpen(false)}
+        />
+      )}
+      <ManagerSidebar currentPath={currentPath} open={navOpen} onClose={() => setNavOpen(false)} />
+      <header className="fixed left-0 right-0 top-0 z-30 flex h-[52px] items-center justify-between gap-2 border-b border-border-default bg-bg-primary px-3 sm:px-lg lg:left-64">
+        <div className="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            className="rounded-lg p-2 text-text-secondary hover:bg-bg-secondary lg:hidden"
+            aria-label={tx("Menu")}
+            onClick={() => setNavOpen(true)}
+          >
+            <MIcon name="menu" />
+          </button>
+          <MIcon name="location_on" className="shrink-0 text-primary text-[18px]" />
+          <p className="truncate text-label font-semibold">{zone ? `Zone ${zone}` : tx("Zone non attribuée")}</p>
           {admin && (
-            <button type="button" className="text-label font-semibold text-primary hover:underline" onClick={() => setOpen(true)}>
-              {tx("Changer de zone")}
+            <button type="button" className="shrink-0 text-xs font-semibold text-primary hover:underline sm:text-label" aria-label={tx("Changer de zone")} onClick={() => setOpen(true)}>
+              <MIcon name="edit" className="text-[16px] sm:hidden" />
+              <span className="hidden sm:inline">{tx("Changer de zone")}</span>
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <LangToggle />
           <button
             type="button"
-            className="rounded-lg p-2 text-text-secondary hover:bg-bg-secondary hover:text-on-surface"
+            className="hidden rounded-lg p-2 text-text-secondary hover:bg-bg-secondary hover:text-on-surface sm:block"
           >
             <MIcon name="notifications" className="text-[18px]" />
           </button>
@@ -78,11 +96,11 @@ export default function ManagerLayout({ children, currentPath }: Props) {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-tint text-overline font-bold text-primary">
               {initialsOf(nom, 'MG')}
             </div>
-            <p className="text-label font-semibold">{nom ?? (admin ? tx("Administrateur") : 'Manager')}</p>
+            <p className="hidden max-w-[140px] truncate text-label font-semibold sm:block">{nom ?? (admin ? tx("Administrateur") : 'Manager')}</p>
           </div>
         </div>
       </header>
-      <main className="ml-64 space-y-lg p-lg pt-[calc(52px+16px)]">{children}</main>
+      <main className="ml-0 space-y-lg p-4 pt-[calc(52px+16px)] lg:ml-64 lg:p-lg">{children}</main>
       {admin && open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>
           <div className="w-full max-w-[512px] rounded-2xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>

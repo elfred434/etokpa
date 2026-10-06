@@ -7,6 +7,8 @@ import { tx } from '../../../i18n/tx';
 
 interface AdminSidebarProps {
   currentPath?: string;
+  open?: boolean;
+  onClose?: () => void;
 }
 
 interface NavItem {
@@ -48,7 +50,7 @@ const IDLE_CLASS =
  * AdminSidebar — chrome latéral admin (design Stitch) : groupe Gestion Métier
  * + groupe DevOps & Core Engine (super-admin) + bloc profil.
  */
-export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
+export default function AdminSidebar({ currentPath, open = false, onClose }: AdminSidebarProps) {
   useLanguage();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const activePath = currentPath || pathname;
@@ -64,6 +66,7 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
         to={item.to}
         aria-current={active ? 'page' : undefined}
         className={active ? ACTIVE_CLASS : IDLE_CLASS}
+        onClick={onClose}
       >
         <MIcon name={item.icon} />
         <span className="font-secondary text-body">{tx(item.label)}</span>
@@ -79,9 +82,14 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
 
   return (
     <aside
-      className="fixed left-0 top-0 h-full w-64 bg-inverse-surface border-r border-outline-variant flex flex-col p-md z-50"
+      className={`fixed left-0 top-0 z-50 h-full w-64 flex-col overflow-y-auto border-r border-outline-variant bg-inverse-surface p-md ${open ? 'flex' : 'hidden'} lg:flex`}
       style={{ backgroundColor: 'rgb(31, 19, 11)', borderColor: 'rgba(249, 115, 22, 0.15)' }}
     >
+      <div className="mb-3 flex items-center justify-end lg:hidden">
+        <button type="button" className="rounded-lg p-2 text-white" aria-label={tx("Fermer")} onClick={onClose}>
+          <MIcon name="close" />
+        </button>
+      </div>
       <div className="mb-lg px-4">
         <h1 className="text-h2 font-h2 font-bold text-primary-container tracking-tight">
           <span style={{ color: 'rgb(255, 255, 255)' }}>TOK</span>
@@ -102,11 +110,11 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
         style={{ borderColor: 'rgba(249, 115, 22, 0.15)' }}
       >
         {/* Bascule vers l'espace client (l'admin y a accès) */}
-        <Link to="/manager" className={IDLE_CLASS}>
+        <Link to="/manager" className={IDLE_CLASS} onClick={onClose}>
           <MIcon name="supervisor_account" />
           <span className="font-secondary text-body">{tx("Espace manager")}</span>
         </Link>
-        <Link to="/" className={IDLE_CLASS}>
+        <Link to="/" className={IDLE_CLASS} onClick={onClose}>
           <MIcon name="storefront" />
           <span className="font-secondary text-body">{tx("Espace client")}</span>
         </Link>

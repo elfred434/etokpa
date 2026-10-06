@@ -177,7 +177,7 @@ export default function AdminLivreursPage() {
   const selPhoto = absImageUrl(selected?.image_profil);
 
   return (
-    <AdminLayout currentPath="/admin/livreurs" mainClassName="ml-64 h-screen pt-[52px] p-lg flex gap-lg overflow-hidden">
+    <AdminLayout currentPath="/admin/livreurs" mainClassName="ml-64 h-screen pt-[52px] p-lg flex flex-col lg:flex-row gap-lg overflow-hidden">
       {err && (
         <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
           <p className="font-bold">{tx("Erreur API")}</p>
@@ -300,7 +300,7 @@ export default function AdminLivreursPage() {
         </div>
       </div>
       {selected && (
-        <aside className="w-80 bg-white rounded-lg border border-border-default flex flex-col p-lg transition-all transform translate-x-0 overflow-y-auto" id="detailPanel">
+        <aside className="w-full max-w-full lg:w-80 bg-white rounded-lg border border-border-default flex flex-col p-4 lg:p-lg transition-all transform translate-x-0 overflow-y-auto" id="detailPanel">
           <div className="flex justify-between items-start mb-lg">
             <h3 className="font-h2 text-h2 text-primary">{tx("Détails du Livreur")}</h3>
             <button

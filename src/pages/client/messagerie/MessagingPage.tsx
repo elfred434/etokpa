@@ -253,14 +253,14 @@ export default function MessagingPage() {
   const riderInitials = activeOrder?.riderInitials ?? 'LK';
 
   return (
-    <div className="bg-bg-app font-body text-text-main h-screen overflow-hidden flex flex-col">
+    <div className="bg-bg-app font-body text-text-main flex h-[100dvh] flex-col overflow-hidden pb-20 lg:pb-0">
       {/* TopNavBar */}
       <ClientNavbar />
 
       {/* Main Layout */}
-      <main className="mt-[52px] flex flex-1 h-[calc(100vh-52px)]">
+      <main className="mt-[52px] flex min-h-0 flex-1">
         {/* Sidebar - Conversations List */}
-        <aside className="hidden lg:flex flex-col w-[320px] bg-bg-card border-r border-border-default h-full">
+        <aside className={`${activeConvId ? 'hidden lg:flex' : 'flex'} h-full w-full flex-col border-r border-border-default bg-bg-card lg:w-[320px]`}>
           {/* Header */}
           <div className="p-md flex justify-between items-center">
             <h2 className="font-h2 text-h2 text-text-main font-bold">{isFr ? 'Messages' : 'Messages'}</h2>
@@ -323,15 +323,23 @@ export default function MessagingPage() {
         </aside>
 
         {/* Main Chat Area */}
-        <section className="flex-1 flex flex-col h-full relative bg-bg-app">
+        <section className={`${activeConvId ? 'flex' : 'hidden lg:flex'} relative h-full min-w-0 flex-1 flex-col bg-bg-app`}>
           {/* Chat Header */}
-          <header className="bg-bg-card h-[64px] px-lg flex items-center justify-between border-b border-border-default z-10">
-            <div className="flex items-center gap-md">
+          <header className="z-10 flex h-[64px] items-center justify-between gap-2 border-b border-border-default bg-bg-card px-3 sm:px-lg">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-md">
+              <button
+                type="button"
+                className="shrink-0 rounded-lg p-1 text-text-secondary lg:hidden"
+                aria-label={tx("Retour")}
+                onClick={() => setActiveConvId(null)}
+              >
+                <MIcon name="arrow_back" />
+              </button>
               <div className="w-10 h-10 rounded-full bg-success-dark flex items-center justify-center text-white font-bold">
                 {riderInitials}
               </div>
-              <div>
-                <h2 className="font-h3 text-h3 text-text-main leading-none font-bold">{riderName}</h2>
+              <div className="min-w-0">
+                <h2 className="truncate font-h3 text-h3 font-bold leading-none text-text-main">{riderName}</h2>
                 <div className="flex items-center gap-xs mt-1">
                   <span className="w-2 h-2 bg-success rounded-full inline-block" />
                   <span className="text-secondary text-success font-label text-xs font-semibold">
@@ -364,10 +372,10 @@ export default function MessagingPage() {
 
           {/* Order Context Banner */}
           {activeOrder && (
-            <div className="m-md px-md py-sm bg-primary-tint border border-primary-light rounded-lg flex justify-between items-center">
-              <div className="flex items-center gap-sm">
-                <MIcon name="shopping_bag" className="text-primary-container" />
-                <span className="font-label text-label text-text-main">
+            <div className="m-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary-light bg-primary-tint px-3 py-2 sm:m-md sm:px-md">
+              <div className="flex min-w-0 items-center gap-sm">
+                <MIcon name="shopping_bag" className="shrink-0 text-primary-container" />
+                <span className="font-label text-label text-text-main break-words">
                   {isFr ? tx("Commande") : 'Order'}{' '}
                   <strong className="text-primary-container">#TOK-{activeOrder.orderId}</strong> ·{' '}
                   {fmtFCFA(activeOrder.total)} · {STATUT_LABELS[activeOrder.statut] ?? activeOrder.statut}
@@ -386,7 +394,7 @@ export default function MessagingPage() {
           )}
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto px-lg pb-xl flex flex-col gap-md">
+          <div className="flex flex-1 flex-col gap-md overflow-y-auto px-3 pb-xl sm:px-lg">
             {messages.length === 0 ? (
               <div className="m-auto text-center">
                 <MIcon name="chat" className="text-5xl text-text-tertiary mb-3" />
@@ -431,11 +439,11 @@ export default function MessagingPage() {
           </div>
 
           {/* Input Area */}
-          <footer className="bg-bg-card border-t border-border-default p-md md:px-lg flex items-center gap-md">
+          <footer className="flex items-center gap-2 border-t border-border-default bg-bg-card p-3 sm:gap-md sm:px-lg">
             <button type="button" className="text-text-tertiary hover:text-text-secondary transition-colors cursor-pointer">
               <MIcon name="attach_file" />
             </button>
-            <form onSubmit={handleSendMessage} className="flex-1 bg-bg-app rounded-full px-md flex items-center">
+            <form onSubmit={handleSendMessage} className="flex min-w-0 flex-1 items-center rounded-full bg-bg-app px-3 sm:px-md">
               <input
                 type="text"
                 value={inputText}

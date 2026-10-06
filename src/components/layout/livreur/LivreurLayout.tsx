@@ -95,23 +95,26 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
 
       <main className="min-h-screen pb-20 lg:ml-64 lg:pb-0">
         {/* TopAppBar */}
-        <header className="sticky top-0 z-40 flex h-[52px] w-full items-center justify-between border-b border-border-default bg-bg-card px-lg">
+        <header className="sticky top-0 z-40 flex h-[52px] w-full items-center justify-between gap-2 border-b border-border-default bg-bg-card px-3 sm:px-lg">
           <span className="font-h1 text-h1 font-bold text-primary">TOKPa</span>
-          <div className="flex items-center gap-lg">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-lg">
             <LangToggle />
             <Link to="/notifications" aria-label="Notifications" className="text-text-secondary transition-colors hover:text-primary">
               <MIcon name="notifications" />
             </Link>
-            <div className="flex items-center gap-sm border-l border-border-default pl-lg">
-              <div className="text-right">
-                <p className="font-label text-label leading-none text-text-main">{nom ?? tx("Livreur")}</p>
+            <div className="flex min-w-0 items-center gap-sm border-l border-border-default pl-2 sm:pl-lg">
+              <div className="hidden min-w-0 text-right sm:block">
+                <p className="truncate font-label text-label leading-none text-text-main">{nom ?? tx("Livreur")}</p>
                 {disponible !== null && (
                   <p className={clsx('text-xs font-medium', disponible ? 'text-success' : 'text-text-secondary')}>
                     {disponible ? tx("Disponible") : tx("Indisponible")}
                   </p>
                 )}
               </div>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-tint text-xs font-bold text-primary ring-2 ring-primary-container">
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-tint text-xs font-bold text-primary ring-2 ring-primary-container"
+                title={`${nom ?? tx("Livreur")}${disponible === null ? '' : disponible ? ` — ${tx("Disponible")}` : ` — ${tx("Indisponible")}`}`}
+              >
                 {initialsOf(nom, 'LV')}
               </div>
             </div>

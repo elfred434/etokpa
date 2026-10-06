@@ -301,7 +301,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex items-center text-text-secondary mt-1">
                     <MIcon name="mail" className="text-sm mr-1" />
-                    <span className="text-secondary">{profile?.email || tx("Non renseigné")}</span>
+                    <span className="break-all text-secondary">{profile?.email || tx("Non renseigné")}</span>
                   </div>
                 </div>
               </div>

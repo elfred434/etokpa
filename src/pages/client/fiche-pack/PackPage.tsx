@@ -300,7 +300,7 @@ export default function PackPage() {
 
           {/* ---- Composition du pack ---- */}
           <section className="mx-auto mt-8 mb-20 w-full max-w-[1200px] overflow-hidden rounded-xl bg-white shadow-sm">
-            <div className="border-b border-line px-8 py-4">
+            <div className="border-b border-line px-4 py-4 sm:px-8">
               <h3 className="text-h3 text-ink">{tx("Produits inclus")}</h3>
             </div>
 

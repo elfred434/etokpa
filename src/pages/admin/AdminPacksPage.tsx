@@ -429,18 +429,18 @@ export default function AdminPacksPage() {
 
       {vue === 'galerie' && (
         <div className="space-y-6">
-          <section className="flex h-[168px] max-h-[188px] items-center justify-between gap-6 overflow-hidden rounded-3xl bg-gradient-to-br from-[#3c2415] via-[#7c2d12] to-[#f97316] px-6 text-white shadow-xl">
+          <section className="flex min-h-[148px] flex-col items-start justify-between gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-[#3c2415] via-[#7c2d12] to-[#f97316] px-4 py-5 text-white shadow-xl sm:h-[168px] sm:flex-row sm:items-center sm:px-6">
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-orange-100">{tx("Gestion des packs")}</p>
-              <h1 className="mt-1 truncate text-2xl font-black tracking-tight sm:text-3xl">{tx("Atelier des packs")}</h1>
+              <h1 className="mt-1 text-2xl font-black tracking-tight sm:truncate sm:text-3xl">{tx("Atelier des packs")}</h1>
             </div>
-            <button type="button" className="shrink-0 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-primary-dark shadow-lg transition hover:-translate-y-0.5" onClick={() => aller({ nouveau: 1 })}>
+            <button type="button" className="w-full shrink-0 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-primary-dark shadow-lg transition hover:-translate-y-0.5 sm:w-auto" onClick={() => aller({ nouveau: 1 })}>
               {tx("Composer un pack")}
             </button>
           </section>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="relative min-w-[240px] flex-1">
+            <div className="relative min-w-0 w-full flex-1 sm:min-w-[240px]">
               <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
               <input value={qPack} onChange={(e) => setQPack(e.target.value)} placeholder={tx("Rechercher un pack...")} className="w-full rounded-2xl border border-border-default bg-white py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary" />
             </div>

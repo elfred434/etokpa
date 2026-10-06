@@ -402,43 +402,43 @@ export default function CartPage() {
       {/* Main Content Container */}
       <main className="mt-[52px] md:mt-[64px] flex-grow w-full max-w-[1200px] mx-auto px-md md:px-lg py-xl pb-24">
         {/* Progress Bar Stepper */}
-        <div className="w-full mb-xl overflow-x-auto">
-          <div className="flex items-center justify-between min-w-[600px] md:w-full relative px-xl py-2">
+        <div className="mb-xl w-full">
+          <div className="relative flex items-start justify-between gap-1 px-1 py-2 sm:px-xl">
             {/* Line Background */}
-            <div className="absolute top-[22px] left-[60px] right-[60px] h-[3px] bg-border-default -z-10 rounded-full" />
+            <div className="absolute top-[22px] left-[12%] right-[12%] h-[3px] bg-border-default -z-10 rounded-full" />
             {/* Active Line Fill */}
-            <div className="absolute top-[22px] left-[60px] w-[33%] h-[3px] bg-primary-container -z-10 rounded-full" />
+            <div className="absolute top-[22px] left-[12%] w-[25%] h-[3px] bg-primary-container -z-10 rounded-full" />
 
             {/* Step 1: Panier (Completed) */}
-            <div className="flex flex-col items-center gap-sm text-primary-container">
-              <div className="w-9 h-9 rounded-full border-2 border-primary-container bg-white text-primary-container flex items-center justify-center font-bold text-h3 transition-all duration-300">
-                <MIcon name="check" style={{ fontSize: 20 }} />
+            <div className="flex w-[23%] flex-col items-center gap-1 text-primary-container sm:gap-sm">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary-container bg-white font-bold text-primary-container transition-all duration-300 sm:h-9 sm:w-9 sm:text-h3">
+                <MIcon name="check" style={{ fontSize: 18 }} />
               </div>
-              <span className="font-label text-label font-medium text-primary-container">{tx("Panier")}</span>
+              <span className="text-center text-[11px] font-medium leading-tight text-primary-container sm:text-label">{tx("Panier")}</span>
             </div>
 
             {/* Step 2: Livraison (Active) */}
-            <div className="flex flex-col items-center gap-sm text-primary-container">
-              <div className="w-9 h-9 rounded-full border-2 border-primary-container bg-primary-container text-white flex items-center justify-center font-bold text-h3 shadow-md transition-all duration-300">
+            <div className="flex w-[23%] flex-col items-center gap-1 text-primary-container sm:gap-sm">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary-container bg-primary-container font-bold text-white shadow-md transition-all duration-300 sm:h-9 sm:w-9 sm:text-h3">
                 2
               </div>
-              <span className="font-label text-label font-bold text-primary-container">{tx("Livraison")}</span>
+              <span className="text-center text-[11px] font-bold leading-tight text-primary-container sm:text-label">{tx("Livraison")}</span>
             </div>
 
             {/* Step 3: Paiement */}
-            <div className="flex flex-col items-center gap-sm text-text-tertiary">
-              <div className="w-9 h-9 rounded-full border-2 border-border-default bg-bg-app text-text-tertiary flex items-center justify-center font-bold text-h3 transition-all duration-300">
+            <div className="flex w-[23%] flex-col items-center gap-1 text-text-tertiary sm:gap-sm">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border-default bg-bg-app font-bold text-text-tertiary transition-all duration-300 sm:h-9 sm:w-9 sm:text-h3">
                 3
               </div>
-              <span className="font-label text-label font-medium text-text-tertiary">{tx("Paiement")}</span>
+              <span className="text-center text-[11px] font-medium leading-tight text-text-tertiary sm:text-label">{tx("Paiement")}</span>
             </div>
 
             {/* Step 4: Confirmation */}
-            <div className="flex flex-col items-center gap-sm text-text-tertiary">
-              <div className="w-9 h-9 rounded-full border-2 border-border-default bg-bg-app text-text-tertiary flex items-center justify-center font-bold text-h3 transition-all duration-300">
+            <div className="flex w-[23%] flex-col items-center gap-1 text-text-tertiary sm:gap-sm">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border-default bg-bg-app font-bold text-text-tertiary transition-all duration-300 sm:h-9 sm:w-9 sm:text-h3">
                 4
               </div>
-              <span className="font-label text-label font-medium text-text-tertiary">Confirmation</span>
+              <span className="text-center text-[11px] font-medium leading-tight text-text-tertiary sm:text-label">Confirmation</span>
             </div>
           </div>
         </div>
@@ -448,7 +448,7 @@ export default function CartPage() {
           <div className="lg:w-[60%] flex flex-col gap-lg">
             {/* Articles Section */}
             <div className="bg-white rounded-lg p-lg shadow-sm border border-border-default/50">
-              <div className="flex items-center gap-sm mb-lg border-b border-border-default pb-md">
+              <div className="mb-lg flex flex-wrap items-center gap-sm border-b border-border-default pb-md">
                 <MIcon name="shopping_cart" className="text-primary-container" />
                 <h2 className="font-h2 text-h2 text-on-surface">Votre panier ({count} articles)</h2>
                 {count > 0 && (
@@ -496,7 +496,7 @@ export default function CartPage() {
                     return (
                       <div
                         key={item.product.id}
-                        className="flex items-center gap-md py-md border-b border-border-default last:border-0 group"
+                        className="flex flex-wrap items-center gap-md border-b border-border-default py-md last:border-0 group sm:flex-nowrap"
                       >
                         {/* Thumbnail */}
                         <div className="w-20 h-20 rounded-lg flex-shrink-0 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center relative overflow-hidden">
@@ -538,7 +538,7 @@ export default function CartPage() {
                         </div>
 
                         {/* Quantity & Delete */}
-                        <div className="flex flex-col items-end gap-md">
+                        <div className="ml-auto flex w-full flex-row items-center justify-end gap-md sm:w-auto sm:flex-col sm:items-end">
                           <div className="flex items-center bg-bg-app rounded-[6px] p-0.5 border border-border-default">
                             <button
                               type="button"

@@ -567,3 +567,25 @@
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
   }
 }
+
+/* Téléphone et tablette : le texte reste dans l'écran, les tableaux défilent dans leur carte. */
+@layer base {
+  @media (max-width: 1023px) {
+    img, video, canvas {
+      max-width: 100%;
+      height: auto;
+    }
+    p, h1, h2, h3, h4, li, td, th, label, figcaption {
+      overflow-wrap: break-word;
+    }
+    main :where(div):has(> table) {
+      max-width: 100%;
+      overflow-x: auto !important;
+    }
+    main .flex.justify-between.items-end,
+    main .flex.items-end.justify-between {
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+  }
+}

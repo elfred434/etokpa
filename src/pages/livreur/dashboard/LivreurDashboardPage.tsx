@@ -109,7 +109,7 @@ export default function LivreurDashboardPage() {
 
   return (
     <LivreurLayout>
-      <div className="mx-auto max-w-[1280px] space-y-lg p-lg">
+      <div className="mx-auto max-w-[1280px] space-y-lg p-4 sm:p-lg">
         {/* Top Section: Profile & Stats */}
         <div className="grid grid-cols-1 gap-md lg:grid-cols-4">
           {/* Profile Card */}

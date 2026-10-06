@@ -145,7 +145,7 @@ export default function LivreurCoursePage() {
   if (err || deliveries === null || !order) {
     return (
       <LivreurLayout>
-        <div className="mx-auto max-w-[640px] p-lg">
+        <div className="mx-auto max-w-[640px] p-4 sm:p-lg">
           {err ? (
             <ApiErrorState
               title={tx("Impossible de charger vos courses")}

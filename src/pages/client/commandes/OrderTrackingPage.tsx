@@ -396,7 +396,7 @@ export default function OrderTrackingPage() {
                   const done = i < stepIndex || isDelivered;
                   const active = i === stepIndex && !isDelivered;
                   return (
-                    <div key={step.labelFr} className="relative z-10 flex flex-col items-center">
+                    <div key={step.labelFr} className="relative z-10 flex w-[23%] flex-col items-center">
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm ${
                           done
@@ -409,7 +409,7 @@ export default function OrderTrackingPage() {
                         <MIcon name={done ? 'check' : (step.icon as string)} className="text-[16px]" />
                       </div>
                       <span
-                        className={`text-micro mt-sm ${
+                        className={`mt-sm max-w-[76px] text-center text-[10px] leading-tight sm:max-w-none sm:text-micro ${
                           active ? 'text-primary-container font-bold' : 'text-text-secondary'
                         }`}
                       >
@@ -423,7 +423,7 @@ export default function OrderTrackingPage() {
 
               {/* Rider Info Card — pas de suivi livreur si la commande est annulée */}
               {!isCancelled && (
-              <div className="bg-bg-secondary rounded-lg p-md mb-lg flex items-center justify-between">
+              <div className="mb-lg flex flex-wrap items-center justify-between gap-3 rounded-lg bg-bg-secondary p-md">
                 <div className="flex items-center gap-md">
                   <div className="w-12 h-12 bg-success rounded-full flex items-center justify-center text-white font-bold text-h3">
                     {rider

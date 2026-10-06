@@ -152,7 +152,7 @@ export default function ConfirmationPage() {
       <ClientNavbar />
 
       <main className="flex-grow flex items-center justify-center px-md py-xl mt-[52px] md:mt-[64px] pb-24">
-        <div className="w-full max-w-[520px] bg-bg-card rounded-xl p-lg md:p-xl shadow-sm flex flex-col items-center text-center border border-border-default/50">
+        <div className="flex w-full max-w-[520px] flex-col items-center rounded-xl border border-border-default/50 bg-bg-card p-4 text-center shadow-sm sm:p-lg md:p-xl">
           {/* Success Animation Container */}
           <div className="relative mb-lg">
             <div className="w-20 h-20 bg-success-light rounded-full flex items-center justify-center z-10 relative">
