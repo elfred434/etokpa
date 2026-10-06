@@ -24,16 +24,25 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Intercepteur pour intercepter les erreurs 401
+function messageOf(error: { response?: { data?: { message?: string } } }): string {
+  return String(error.response?.data?.message ?? '');
+}
+
+function sessionRejected(error: { response?: { status?: number; data?: { message?: string } } }): boolean {
+  const status = error.response?.status;
+  if (status === 401) return true;
+  // Le backend renvoie parfois 500 avec le message « Unauthenticated. »
+  return /unauthenticated/i.test(messageOf(error));
+}
+
+// Intercepteur pour intercepter une session refusée (401, ou 500 « Unauthenticated »)
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (sessionRejected(error)) {
       const hadSession = !!localStorage.getItem('tokpa_token');
       localStorage.removeItem('tokpa_token');
       localStorage.removeItem('tokpa_user');
-      // Session expirée ou révoquée (et pas un simple visiteur) : le panier et le temps réel se
-      // débranchent (SystemBridge), et la garde du router renvoie vers /connexion (routes/router.tsx).
       if (hadSession) {
         window.dispatchEvent(new Event('tokpa:auth-changed'));
         window.dispatchEvent(new Event('tokpa:session-expired'));

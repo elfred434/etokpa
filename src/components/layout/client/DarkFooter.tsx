@@ -3,15 +3,13 @@ import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
-import { hasSession, isAdminRole, useAuthRevision } from '../../../routes/authGuard';
 
 
 const soon = (label: string) => () => toast(tr(`${label} — bientôt disponible`, `${tx(label)} — coming soon`));
 
-/** Pied de page des pages client. L'espace admin n'apparaît qu'avec une session admin. */
+/** Pied de page des pages client. Pas de lien vers l'administration. */
 export default function DarkFooter() {
   const { isFr } = useLanguage();
-  useAuthRevision();
 
   return (
     <footer className="mt-xl mb-20 bg-on-surface py-xl text-warm lg:mb-0">
@@ -38,13 +36,6 @@ export default function DarkFooter() {
                 {isFr ? tx("Mes Négociations") : 'My Negotiations'}
               </Link>
             </li>
-            {hasSession() && isAdminRole() && (
-              <li>
-                <Link to="/admin" className="hover:text-white">
-                  {isFr ? 'Espace Administration' : 'Admin Area'}
-                </Link>
-              </li>
-            )}
           </ul>
         </div>
 

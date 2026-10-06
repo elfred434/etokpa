@@ -38,6 +38,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
   const onNegociations = pathname.startsWith('/negociations');
   const onCommandes = pathname.startsWith('/commandes');
   const onPaiements = pathname.startsWith('/paiements');
+  const space = hasSession() ? staffSpace(currentRole()) : null;
 
   const submitSearch = (e: FormEvent | React.KeyboardEvent) => {
     e.preventDefault();
@@ -151,15 +152,11 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
             <MIcon name="shopping_cart" />
             {cartCount > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />}
           </Link>
-          {/* Bascule vers l'espace de travail — seulement avec une session et le bon rôle */}
-          {(() => {
-            const space = hasSession() ? staffSpace(currentRole()) : null;
-            return space ? (
-              <Link to={space.to} className="scale-interaction" aria-label={space.label} title={space.label}>
-                <MIcon name={space.icon} />
-              </Link>
-            ) : null;
-          })()}
+          {space && (
+            <Link to={space.to} className="scale-interaction" aria-label={space.label} title={space.label}>
+              <MIcon name={space.icon} />
+            </Link>
+          )}
           <Link
             to="/profil"
             className="scale-interaction"
