@@ -5,7 +5,7 @@ import MIcon from '../../shared/MIcon';
 import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
 import { useLanguage } from '../../../context/LanguageContext';
-import { currentRole, hasSession, staffSpace, useAuthRevision } from '../../../routes/authGuard';
+import { currentRole, currentUserName, hasSession, initialsOf, staffSpace, useAuthRevision } from '../../../routes/authGuard';
 import { tx } from '../../../i18n/tx';
 
 
@@ -173,22 +173,72 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
         </div>
       </div>
       {menu && (
-        <nav className="border-t border-line bg-warm px-4 py-2 shadow-lg md:hidden">
-          <Link to="/catalogue" className="block border-b border-line/70 py-3 text-body" onClick={() => setMenu(false)}>
-            {t('nav.market')}
-          </Link>
-          <Link to="/negociations" className="block border-b border-line/70 py-3 text-body" onClick={() => setMenu(false)}>
-            {t('nav.negotiations')}
-            {activeNegoCount > 0 ? ` (${activeNegoCount})` : ''}
-          </Link>
-          <Link to="/commandes" className="block border-b border-line/70 py-3 text-body" onClick={() => setMenu(false)}>
-            {t('nav.orders')}
-          </Link>
-          <Link to="/paiements" className="block py-3 text-body" onClick={() => setMenu(false)}>
-            {tx("Paiements")}
-          </Link>
-        </nav>
+        <button
+          type="button"
+          aria-label={tx("Fermer")}
+          className="fixed inset-0 z-[60] bg-black/50 md:hidden"
+          onClick={() => setMenu(false)}
+        />
       )}
+      <aside
+        className={`fixed left-0 top-0 z-[70] h-full w-64 flex-col overflow-y-auto border-r border-line bg-warm p-md md:hidden ${menu ? 'flex' : 'hidden'}`}
+      >
+        <div className="mb-3 flex items-center justify-end">
+          <button type="button" className="rounded-lg p-2 text-primary-shade" aria-label={tx("Fermer")} onClick={() => setMenu(false)}>
+            <MIcon name="close" />
+          </button>
+        </div>
+        <div className="mb-lg px-4">
+          <p className="text-h2 font-h2 font-bold tracking-tight text-primary-shade">TOKPa</p>
+          <p className="text-label text-on-surface-variant opacity-70">{tx("Ton marché, ta façon")}</p>
+        </div>
+        <nav className="flex-1 space-y-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <p className="px-4 pb-1 pt-3 text-micro uppercase tracking-widest text-on-surface-variant opacity-50">{tx("Menu")}</p>
+          {([
+            { to: '/catalogue', icon: 'storefront', label: t('nav.market'), active: onMarket },
+            { to: '/negociations', icon: 'handshake', label: t('nav.negotiations'), active: onNegociations, badge: activeNegoCount },
+            { to: '/commandes', icon: 'receipt_long', label: t('nav.orders'), active: onCommandes },
+            { to: '/paiements', icon: 'payments', label: tx("Paiements"), active: onPaiements },
+          ] as const).map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              aria-current={item.active ? 'page' : undefined}
+              className={
+                item.active
+                  ? 'flex items-center gap-3 rounded-lg bg-primary-lighter px-4 py-3 font-bold text-primary-shade'
+                  : 'flex items-center gap-3 rounded-lg px-4 py-3 text-on-surface-variant hover:bg-primary-lighter/70'
+              }
+              onClick={() => setMenu(false)}
+            >
+              <MIcon name={item.icon} />
+              <span className="text-body">
+                {item.label}
+                {'badge' in item && item.badge > 0 ? ` (${item.badge})` : ''}
+              </span>
+            </Link>
+          ))}
+        </nav>
+        <div className="mt-auto border-t border-line px-2 pt-md">
+          {space && (
+            <Link to={space.to} className="flex items-center gap-3 rounded-lg px-4 py-3 text-on-surface-variant hover:bg-primary-lighter/70" onClick={() => setMenu(false)}>
+              <MIcon name={space.icon} />
+              <span className="text-body">{space.label}</span>
+            </Link>
+          )}
+          <Link to="/profil" className="flex items-center gap-3 py-4" onClick={() => setMenu(false)}>
+            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-primary-lighter text-label font-bold text-primary-shade">
+              {hasSession() ? initialsOf(currentUserName(), 'CL') : <MIcon name="login" />}
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-label font-bold text-primary-shade">
+                {hasSession() ? (currentUserName() ?? tx("Profil")) : tx("Se connecter")}
+              </span>
+              <span className="text-micro text-on-surface-variant opacity-70">{tx("Espace client")}</span>
+            </span>
+          </Link>
+        </div>
+      </aside>
     </header>
   );
 }
