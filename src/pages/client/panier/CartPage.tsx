@@ -26,6 +26,43 @@ import {
   type CartLine,
 } from '../../../utils/idempotence';
 
+const LIEU_KEY = 'tokpa_cart_lieu';
+
+type LieuDraft = {
+  zoneId: number | null;
+  landmarkId: number | null;
+  landmarkSel: string;
+  landmarkNomSel: string | null;
+  descriptionLieu: string;
+};
+
+function readLieuDraft(): LieuDraft | null {
+  try {
+    const raw = sessionStorage.getItem(LIEU_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as Partial<LieuDraft>;
+    const zoneId = Number(data.zoneId);
+    const landmarkId = Number(data.landmarkId);
+    return {
+      zoneId: Number.isFinite(zoneId) && zoneId > 0 ? zoneId : null,
+      landmarkId: Number.isFinite(landmarkId) && landmarkId > 0 ? landmarkId : null,
+      landmarkSel: typeof data.landmarkSel === 'string' ? data.landmarkSel : '',
+      landmarkNomSel: typeof data.landmarkNomSel === 'string' ? data.landmarkNomSel : null,
+      descriptionLieu: typeof data.descriptionLieu === 'string' ? data.descriptionLieu : '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveLieuDraft(draft: LieuDraft) {
+  sessionStorage.setItem(LIEU_KEY, JSON.stringify(draft));
+}
+
+function clearLieuDraft() {
+  sessionStorage.removeItem(LIEU_KEY);
+}
+
 interface ApiLandmark {
   id: number;
   nom: string;
@@ -118,15 +155,16 @@ export default function CartPage() {
   const subtotal = useAppSelector((s) => selectSubtotal(s.cart.items));
   const savings = useAppSelector((s) => selectSavings(s.cart.items));
 
-  // Zones + points de repère (backend)
+  // Zones + points de repère (backend). Le lieu saisi survit à « Continuer les achats ».
+  const lieuInitial = readLieuDraft();
   const [zones, setZones] = useState<ApiZone[]>([]);
   const [zonesLoading, setZonesLoading] = useState(true);
-  const [zoneId, setZoneId] = useState<number | null>(null);
-  const [landmarkId, setLandmarkId] = useState<number | null>(null);
-  const [landmarkSel, setLandmarkSel] = useState<string>('');
-  const [landmarkNomSel, setLandmarkNomSel] = useState<string | null>(null);
+  const [zoneId, setZoneId] = useState<number | null>(lieuInitial?.zoneId ?? null);
+  const [landmarkId, setLandmarkId] = useState<number | null>(lieuInitial?.landmarkId ?? null);
+  const [landmarkSel, setLandmarkSel] = useState<string>(lieuInitial?.landmarkSel ?? '');
+  const [landmarkNomSel, setLandmarkNomSel] = useState<string | null>(lieuInitial?.landmarkNomSel ?? null);
   const [myLandmarks, setMyLandmarks] = useState<MyLandmark[]>([]);
-  const [descriptionLieu, setDescriptionLieu] = useState('');
+  const [descriptionLieu, setDescriptionLieu] = useState(lieuInitial?.descriptionLieu ?? '');
   const [landmarkError, setLandmarkError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [offres, setOffres] = useState<Map<number, number>>(new Map());
@@ -215,6 +253,10 @@ export default function CartPage() {
     };
   }, []);
 
+  useEffect(() => {
+    saveLieuDraft({ zoneId, landmarkId, landmarkSel, landmarkNomSel, descriptionLieu });
+  }, [zoneId, landmarkId, landmarkSel, landmarkNomSel, descriptionLieu]);
+
   const handleZoneChange = (id: number) => {
     setZoneId(id);
     setLandmarkId(null);
@@ -266,6 +308,7 @@ export default function CartPage() {
       }
       dispatch(clear());
       clearCheckoutIntent();
+      clearLieuDraft();
       toast.success(tx("Commande enregistrée avec succès !"));
       navigate({ to: '/confirmation', state: payload as unknown as Record<string, unknown> });
     };

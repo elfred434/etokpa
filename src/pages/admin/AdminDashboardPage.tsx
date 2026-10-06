@@ -8,7 +8,8 @@ import { extractApiError, formatApiError } from '../../utils/apiError';
 import MIcon from '../../components/shared/MIcon';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
-import { orderLineName } from '../../utils/orderLine';
+import { lookupProductName } from '../../utils/lookupProductName';
+import { orderLineGivenName, orderLineName, orderLineProductId } from '../../utils/orderLine';
 
 
 /** Activité récente — données statiques du design Stitch (copie conforme). */
@@ -29,6 +30,7 @@ interface Activity {
   fee: string;
   deliveryFee: string;
   items: string;
+  lineItems?: any[];
   audit: string;
   cta: string;
 }
@@ -87,6 +89,7 @@ export default function AdminDashboardPage() {
     fee: fmtFcfa(o.commission_plateforme ?? o.commission),
     deliveryFee: fmtFcfa(o.frais_livraison),
     items: (o.items ?? []).map((i: any) => `${tx(orderLineName(i))}${i.quantite ? ` ×${i.quantite}` : ''}`).join(', ') || '—',
+    lineItems: Array.isArray(o.items) ? o.items : [],
     audit: `Commande n°${o.id}`,
     cta: tx("Voir la commande"),
   }));
@@ -197,6 +200,36 @@ export default function AdminDashboardPage() {
       .catch((e) => setLowStockErr(formatApiError(extractApiError(e))));
   }, []);
   const [selected, setSelected] = useState<Activity | null>(null);
+
+  useEffect(() => {
+    const lines = selected?.lineItems;
+    if (!lines?.length) return;
+    const activityId = selected.id;
+    const missing = [...new Set(
+      lines
+        .filter((line) => !orderLineGivenName(line))
+        .map((line) => orderLineProductId(line))
+        .filter((id): id is number => id != null),
+    )];
+    if (missing.length === 0) return;
+    let alive = true;
+    void Promise.all(missing.map(async (id) => [id, await lookupProductName(id)] as const)).then((rows) => {
+      if (!alive) return;
+      const names = new Map(rows.filter((row): row is readonly [number, string] => row[1].length > 0));
+      if (names.size === 0) return;
+      setSelected((cur) => {
+        if (!cur || cur.id !== activityId || !cur.lineItems) return cur;
+        const items = cur.lineItems.map((line) => {
+          const given = orderLineGivenName(line);
+          const id = orderLineProductId(line);
+          const nom = given || (id != null ? names.get(id) ?? '' : '') || orderLineName(line);
+          return `${tx(nom)}${line.quantite ? ` ×${line.quantite}` : ''}`;
+        }).join(', ') || '—';
+        return items === cur.items ? cur : { ...cur, items };
+      });
+    });
+    return () => { alive = false; };
+  }, [selected]);
 
   return (
     <AdminLayout currentPath="/admin">

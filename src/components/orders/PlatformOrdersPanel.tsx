@@ -4,7 +4,8 @@ import Pagination from '../shared/Pagination';
 import { adminApi, catalogApi, managerApi } from '../../services/api';
 import { dateCourte, fmtFcfa, listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
-import { orderLineName } from '../../utils/orderLine';
+import { lookupProductName } from '../../utils/lookupProductName';
+import { orderLineGivenName, orderLineName, orderLineProductId } from '../../utils/orderLine';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
@@ -67,6 +68,38 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<PlatformOrder | null>(null);
+
+  useEffect(() => {
+    if (!selected?.items?.length) return;
+    const orderId = selected.id;
+    const missing = [...new Set(
+      selected.items
+        .filter((it) => !orderLineGivenName(it))
+        .map((it) => orderLineProductId(it))
+        .filter((id): id is number => id != null),
+    )];
+    if (missing.length === 0) return;
+    let alive = true;
+    void Promise.all(missing.map(async (id) => [id, await lookupProductName(id)] as const)).then((rows) => {
+      if (!alive) return;
+      const found = new Map(rows.filter((row): row is readonly [number, string] => row[1].length > 0));
+      if (found.size === 0) return;
+      setSelected((cur) => {
+        if (!cur || cur.id !== orderId || !cur.items) return cur;
+        let changed = false;
+        const items = cur.items.map((it) => {
+          if (orderLineGivenName(it)) return it;
+          const id = orderLineProductId(it);
+          const nom = id != null ? found.get(id) : undefined;
+          if (!nom) return it;
+          changed = true;
+          return { ...it, nom };
+        });
+        return changed ? { ...cur, items } : cur;
+      });
+    });
+    return () => { alive = false; };
+  }, [selected]);
 
   useEffect(() => {
     catalogApi.getZones()
