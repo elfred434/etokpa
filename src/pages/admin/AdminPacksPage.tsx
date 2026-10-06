@@ -133,6 +133,7 @@ export default function AdminPacksPage() {
   const [aSupprimer, setASupprimer] = useState<Pack | null>(null);
   const [supprime, setSupprime] = useState(false);
   const [couverture, setCouverture] = useState('');
+  const [choixOuvert, setChoixOuvert] = useState(false);
   const [large, setLarge] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
   const pageRef = useCanvasRef();
   const pressRef = useRef<Pression | null>(null);
@@ -164,7 +165,10 @@ export default function AdminPacksPage() {
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
-    const sync = () => setLarge(mq.matches);
+    const sync = () => {
+      setLarge(mq.matches);
+      if (mq.matches) setChoixOuvert(false);
+    };
     sync();
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
@@ -459,7 +463,7 @@ export default function AdminPacksPage() {
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-orange-100">{tx("Gestion des packs")}</p>
               <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">{tx("Atelier des packs")}</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-5 text-orange-50/90">{tx("Sur grand écran, glissez les produits sur la page blanche. Sur téléphone, touchez un produit pour l'ajouter.")}</p>
+              <p className="mt-2 max-w-2xl text-sm leading-5 text-orange-50/90">{tx("Sur grand écran, glissez les produits sur la page blanche. Sur téléphone, choisissez-les dans la fenêtre, puis fermez-la pour voir le pack.")}</p>
             </div>
             <button type="button" className="w-full rounded-2xl bg-white px-5 py-3 text-sm font-bold text-primary-dark shadow-lg transition hover:-translate-y-0.5 sm:w-auto" onClick={() => aller({ nouveau: 1 })}>
               {tx("Composer un pack")}
@@ -557,7 +561,7 @@ export default function AdminPacksPage() {
           </header>
 
           <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-            <aside className="flex max-h-[42vh] w-full shrink-0 flex-col border-b border-black/5 bg-white lg:max-h-none lg:w-[320px] lg:border-b-0 lg:border-r">
+            <aside className="hidden w-full shrink-0 flex-col border-b border-black/5 bg-white lg:flex lg:max-h-none lg:w-[320px] lg:border-b-0 lg:border-r">
               <div className="space-y-2 border-b border-border-default p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-bold">{tx("Rayon produits")}</p>
@@ -571,7 +575,7 @@ export default function AdminPacksPage() {
                   <option value="">{tx("Toutes les catégories")}</option>
                   {categories.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
                 </select>
-                <p className="text-xs text-text-secondary">{large ? tx("Glissez un produit sur la page") : tx("Touchez un produit pour l'ajouter.")} {large ? tx("Cliquer ajoute aussi le produit.") : ''}</p>
+                <p className="text-xs text-text-secondary">{tx("Glissez un produit sur la page")}. {tx("Cliquer ajoute aussi le produit.")}</p>
               </div>
               <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
                 {rayon.map((p) => {
@@ -588,9 +592,7 @@ export default function AdminPacksPage() {
                         <p className="text-xs font-bold text-primary">{fmtFcfa(prixDe(p))}</p>
                         {deja && <p className="text-[11px] font-semibold text-primary">{tx("Déjà dans le pack")} · {deja.qte}</p>}
                       </div>
-                      {large ? <MIcon name="drag_indicator" className="text-text-tertiary" /> : (
-                        <span className="shrink-0 rounded-lg bg-primary-tint px-2 py-1 text-xs font-bold text-primary-dark">{tx("Ajouter")}</span>
-                      )}
+                      <MIcon name="drag_indicator" className="text-text-tertiary" />
                     </div>
                   );
                 })}
@@ -601,40 +603,50 @@ export default function AdminPacksPage() {
             <section className="flex min-w-0 flex-1 flex-col">
               <div className="min-h-0 flex-1 overflow-auto p-4 md:p-6">
                 {!large && (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
+                    <button type="button" className="btn btn-primary w-full" onClick={() => setChoixOuvert(true)}>
+                      {tx("Choisir des produits")}
+                    </button>
                     {lignes.length === 0 && (
-                      <div className="rounded-3xl border border-dashed border-primary/30 bg-white px-4 py-10 text-center">
-                        <MIcon name="touch_app" className="text-4xl text-primary" />
-                        <p className="mt-3 text-lg font-bold">{tx("Touchez un produit pour l'ajouter.")}</p>
-                        <p className="mt-1 text-sm text-text-secondary">{tx("La page du pack est encore vide.")}</p>
+                      <div className="rounded-3xl border border-dashed border-primary/30 bg-white px-4 py-12 text-center">
+                        <MIcon name="package_2" className="text-4xl text-primary" />
+                        <p className="mt-3 text-lg font-bold">{tx("La page du pack est encore vide.")}</p>
+                        <p className="mt-1 text-sm text-text-secondary">{tx("Choisissez les produits, puis fermez la fenêtre pour les voir ici.")}</p>
                       </div>
                     )}
-                    {lignes.map((ligne) => {
-                      const produit = produitDe(ligne.id);
-                      const photo = imageDe(ligne.id);
-                      return (
-                        <div key={ligne.id} className={`flex items-center gap-3 rounded-2xl bg-white p-2 shadow-sm ring-1 ring-black/5 ${pulse === ligne.id ? 'ring-2 ring-primary' : ''}`}>
-                          <Vignette produit={produit} className="h-16 w-16 shrink-0 rounded-xl" />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-bold">{produit?.nom || tx("Produit retiré")}</p>
-                            <p className="text-xs font-bold text-primary">{fmtFcfa(prixDe(produit))}</p>
-                            <div className="mt-1 flex items-center gap-1">
-                              <button type="button" className="h-8 w-8 rounded-lg border border-border-default" onClick={() => changerQte(ligne.id, -1)}>-</button>
-                              <span className="w-6 text-center text-sm font-bold">{ligne.qte}</span>
-                              <button type="button" className="h-8 w-8 rounded-lg border border-border-default" onClick={() => changerQte(ligne.id, 1)}>+</button>
+                    <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2">
+                      {lignes.map((ligne) => {
+                        const produit = produitDe(ligne.id);
+                        const photo = imageDe(ligne.id);
+                        return (
+                          <article key={ligne.id} className={`overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/5 ${pulse === ligne.id ? 'ring-2 ring-primary' : ''}`}>
+                            <div className="relative">
+                              <Vignette produit={produit} className="h-36 w-full" />
+                              <button type="button" aria-label={tx("Retirer")} className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-text-secondary shadow hover:text-error" onClick={() => retirer(ligne.id)}>
+                                <MIcon name="close" className="text-[18px]" />
+                              </button>
                             </div>
-                          </div>
-                          {photo && (
-                            <button type="button" className={`shrink-0 rounded-lg px-2 py-1 text-[11px] font-bold ${couverture === photo ? 'bg-primary text-white' : 'bg-primary-tint text-primary-dark'}`} onClick={() => setCouverture(photo)}>
-                              {tx("Photo")}
-                            </button>
-                          )}
-                          <button type="button" aria-label={tx("Retirer")} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-secondary hover:text-error" onClick={() => retirer(ligne.id)}>
-                            <MIcon name="close" className="text-[18px]" />
-                          </button>
-                        </div>
-                      );
-                    })}
+                            <div className="space-y-2 p-3">
+                              <p className="line-clamp-2 min-h-10 text-sm font-bold leading-5">{produit?.nom || tx("Produit retiré")}</p>
+                              <p className="text-sm font-bold text-primary">{fmtFcfa(prixDe(produit))}</p>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-text-tertiary">{tx("Quantité")}</span>
+                                <div className="flex items-center gap-1">
+                                  <button type="button" className="h-9 w-9 rounded-lg border border-border-default" onClick={() => changerQte(ligne.id, -1)}>-</button>
+                                  <span className="w-6 text-center text-sm font-bold">{ligne.qte}</span>
+                                  <button type="button" className="h-9 w-9 rounded-lg border border-border-default" onClick={() => changerQte(ligne.id, 1)}>+</button>
+                                </div>
+                              </div>
+                              {photo && (
+                                <button type="button" className={`w-full rounded-lg px-2 py-1.5 text-xs font-bold ${couverture === photo ? 'bg-primary text-white' : 'bg-primary-tint text-primary-dark'}`} onClick={() => setCouverture(photo)}>
+                                  {couverture === photo ? tx("Photo du pack") : tx("Choisir comme photo du pack")}
+                                </button>
+                              )}
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
                 <div
@@ -747,6 +759,58 @@ export default function AdminPacksPage() {
                 </div>
               </footer>
             </section>
+          </div>
+        </div>
+      )}
+
+      {choixOuvert && !large && (
+        <div className="fixed inset-0 z-[75] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setChoixOuvert(false)}>
+          <div className="flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-3xl bg-[#efe8e2] shadow-2xl sm:rounded-3xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3 bg-white px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{tx("Rayon produits")}</p>
+                <h2 className="text-lg font-bold">{tx("Choisir des produits")}</h2>
+              </div>
+              <button type="button" className="rounded-lg p-1 text-text-secondary" aria-label={tx("Fermer")} onClick={() => setChoixOuvert(false)}>
+                <MIcon name="close" />
+              </button>
+            </div>
+            <div className="space-y-2 border-b border-black/5 bg-white px-4 pb-3">
+              <div className="relative">
+                <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-tertiary" />
+                <input value={qProduit} onChange={(e) => setQProduit(e.target.value)} placeholder={tx("Rechercher un produit...")} className="w-full rounded-xl border border-border-default py-2 pl-9 pr-3 text-sm outline-none focus:border-primary" />
+              </div>
+              <select value={catRail} onChange={(e) => setCatRail(e.target.value)} className="w-full rounded-xl border border-border-default bg-white px-3 py-2 text-sm">
+                <option value="">{tx("Toutes les catégories")}</option>
+                {categories.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+              </select>
+              <p className="text-xs text-text-secondary">{tx("Touchez un produit pour l'ajouter. Fermez ensuite pour le voir dans le pack.")}</p>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              <div className="grid grid-cols-2 gap-3">
+                {rayon.map((p) => {
+                  const deja = lignes.find((l) => l.id === Number(p.id));
+                  return (
+                    <button key={p.id} type="button" className={`overflow-hidden rounded-2xl bg-white text-left shadow-sm ring-1 ${deja ? 'ring-2 ring-primary' : 'ring-black/5'}`} onClick={() => poser(Number(p.id), 'suivant')}>
+                      <Vignette produit={p} className="h-28 w-full" />
+                      <div className="space-y-1 p-2.5">
+                        <p className="line-clamp-2 min-h-10 text-sm font-bold leading-5">{p.nom}</p>
+                        <p className="text-xs font-bold text-primary">{fmtFcfa(prixDe(p))}</p>
+                        <p className={`text-[11px] font-semibold ${deja ? 'text-primary' : 'text-text-tertiary'}`}>
+                          {deja ? `${tx("Déjà dans le pack")} · ${deja.qte}` : tx("Ajouter")}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {pret && rayon.length === 0 && <p className="py-8 text-center text-sm text-text-secondary">{tx("Aucun résultat pour ces filtres.")}</p>}
+            </div>
+            <div className="border-t border-black/5 bg-white p-3">
+              <button type="button" className="btn btn-primary w-full" onClick={() => setChoixOuvert(false)}>
+                {tx("Voir le pack")} · {lignes.length}
+              </button>
+            </div>
           </div>
         </div>
       )}
