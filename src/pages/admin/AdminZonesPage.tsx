@@ -23,6 +23,9 @@ const DESIGN_CSS = `
         }
         .sidebar-dark { background-color: #111827; }
         .map-container { background-color: #E8F4FD; position: relative; overflow: hidden; border-radius: 14px; isolation: isolate; z-index: 0; }
+        .map-container.jeu-carte { position: fixed; inset: 0; z-index: 1100; width: 100vw; height: 100dvh; border-radius: 0; }
+        .jeu-carte .tokpa-map-quiet { display: none; }
+        .jeu-carte::after { content: ''; position: absolute; inset: 0; z-index: 500; pointer-events: none; box-shadow: inset 0 0 90px rgba(28, 19, 13, 0.5); }
         .map-container .leaflet-container { background: #E8F4FD; font: inherit; }
         .map-container .leaflet-tile-pane { filter: grayscale(0.65) contrast(0.95); }
         .map-container .leaflet-tooltip { border: 1px solid #E5E7EB; border-radius: 8px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); font-size: 12px; }
@@ -191,6 +194,8 @@ export default function AdminZonesPage() {
   const [f, setF] = useState({ nom: '', km_prix: '', description: '', manager: '' });
   const [tileIdx, setTileIdx] = useState(0);
   const [modal, setModal] = useState<null | 'zone' | 'lm'>(null);
+  const [choix, setChoix] = useState<any | null>(null);
+  const [jeu, setJeu] = useState(false);
   const [lmForm, setLmForm] = useState(LM_INIT);
   const [lmEditId, setLmEditId] = useState<number | null>(null); // null = création, sinon PUT /admin/landmarks/{id}
   const [zoneForm, setZoneForm] = useState(ZONE_INIT);
@@ -210,6 +215,24 @@ export default function AdminZonesPage() {
       description: String(z.description ?? ''),
       manager: String(z.manager_id ?? z.manager?.id ?? ''),
     });
+  };
+  const ouvrirChoix = (z: any) => {
+    selectZone(z);
+    setJeu(false);
+    setChoix(z);
+  };
+  const voirCarte = (z: any) => {
+    selectZone(z);
+    setChoix(null);
+    setJeu(true);
+  };
+  const ajouterRepere = (z: any) => {
+    selectZone(z);
+    setChoix(null);
+    setJeu(true);
+    setLmEditId(null);
+    setLmForm({ ...LM_INIT, zone_id: String(z.id) });
+    setModal('lm');
   };
   const resetForm = () => {
     if (sel) selectZone(sel);
@@ -465,6 +488,41 @@ export default function AdminZonesPage() {
   }, []);
 
   useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const timer = window.setTimeout(() => {
+      map.invalidateSize();
+      if (!jeu || selId == null) return;
+      const zone = zones.find((item: any) => item.id === selId);
+      const pts: L.LatLngExpression[] = [];
+      if (zone) pts.push(...polyPoints(zone.polygone_geo).map((p) => [p.lat, p.lng] as L.LatLngExpression));
+      for (const lm of landmarks) {
+        if (String(lm.zone_id) !== String(selId)) continue;
+        const lat = Number(lm.latitude);
+        const lng = Number(lm.longitude);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) pts.push([lat, lng]);
+      }
+      if (pts.length >= 2) map.fitBounds(L.latLngBounds(pts), { padding: [80, 80], maxZoom: 16, animate: true });
+      else if (pts.length === 1) map.setView(pts[0], 15, { animate: true });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [jeu, selId, zones, landmarks]);
+
+  useEffect(() => {
+    if (!jeu) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !modal) setJeu(false);
+    };
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [jeu, modal]);
+
+  useEffect(() => {
     const t = tileRef.current;
     const map = mapRef.current;
     if (!t || !map) return;
@@ -591,17 +649,56 @@ export default function AdminZonesPage() {
                   const isSel = z.id === selId;
                   const lmCount = landmarks.filter((l: any) => String(l.zone_id) === String(z.id)).length;
                   return (
-                    <div key={z.id} onClick={() => selectZone(z)} className={isSel ? 'bg-primary-tint border-2 border-primary rounded-[14px] p-5 card-shadow cursor-pointer transition-all' : 'bg-bg-card border-[0.5px] border-border-default rounded-[14px] p-5 card-shadow hover:border-primary-light cursor-pointer group transition-all'}> <div className="mb-4 flex items-start justify-between gap-2"> <div className="min-w-0"> <h3 className="mb-1 break-words font-h3 text-h3 text-text-main">{z.nom}</h3> <div className="flex items-center gap-2"> <span className={`w-2 h-2 rounded-full ${z.open_zone ? 'bg-success' : 'bg-error'}`}></span> <span className={`text-secondary font-medium ${z.open_zone ? 'text-success' : 'text-error'}`}>{z.open_zone ? 'Active' : tx("Fermée")}</span> </div> </div> <div className={`flex gap-2 ${isSel ? '' : 'opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100'}`}> <button className={isSel ? 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-primary-light/20 text-primary transition-colors border border-primary-light/50' : 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default'} onClick={(e) => { e.stopPropagation(); selectZone(z); }}> <MIcon name="edit" className="text-[18px]" /> </button> <button className={isSel ? 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-primary-light/20 text-primary transition-colors border border-primary-light/50' : 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default'} onClick={(e) => { e.stopPropagation(); selectZone(z); }}> <MIcon name="visibility" className="text-[18px]" /> </button> </div> </div> <p className="mb-4 break-words text-secondary text-text-secondary">{countRole(managers, z.id)} managers · {countRole(livreurs, z.id)} livreurs · {lmCount} points de repère</p> <div className={`flex flex-wrap items-center justify-between gap-2 pt-4 ${isSel ? 'border-t border-primary-light/30' : 'border-t border-border-default'}`}> <span className="text-secondary text-text-tertiary">{tx("Frais de livraison")}</span> <span className="font-price text-price text-primary">{fmtFcfa(Number(z.km_prix ?? z.tarif_km ?? 0))}</span> </div> </div>
+                    <div key={z.id} onClick={() => ouvrirChoix(z)} className={isSel ? 'bg-primary-tint border-2 border-primary rounded-[14px] p-5 card-shadow cursor-pointer transition-all' : 'bg-bg-card border-[0.5px] border-border-default rounded-[14px] p-5 card-shadow hover:border-primary-light cursor-pointer group transition-all'}> <div className="mb-4 flex items-start justify-between gap-2"> <div className="min-w-0"> <h3 className="mb-1 break-words font-h3 text-h3 text-text-main">{z.nom}</h3> <div className="flex items-center gap-2"> <span className={`w-2 h-2 rounded-full ${z.open_zone ? 'bg-success' : 'bg-error'}`}></span> <span className={`text-secondary font-medium ${z.open_zone ? 'text-success' : 'text-error'}`}>{z.open_zone ? 'Active' : tx("Fermée")}</span> </div> </div> <div className={`flex gap-2 ${isSel ? '' : 'opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100'}`}> <button className={isSel ? 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-primary-light/20 text-primary transition-colors border border-primary-light/50' : 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default'} onClick={(e) => { e.stopPropagation(); ouvrirChoix(z); }}> <MIcon name="edit" className="text-[18px]" /> </button> <button className={isSel ? 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-primary-light/20 text-primary transition-colors border border-primary-light/50' : 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default'} onClick={(e) => { e.stopPropagation(); voirCarte(z); }}> <MIcon name="visibility" className="text-[18px]" /> </button> </div> </div> <p className="mb-4 break-words text-secondary text-text-secondary">{countRole(managers, z.id)} managers · {countRole(livreurs, z.id)} livreurs · {lmCount} points de repère</p> <div className={`flex flex-wrap items-center justify-between gap-2 pt-4 ${isSel ? 'border-t border-primary-light/30' : 'border-t border-border-default'}`}> <span className="text-secondary text-text-tertiary">{tx("Frais de livraison")}</span> <span className="font-price text-price text-primary">{fmtFcfa(Number(z.km_prix ?? z.tarif_km ?? 0))}</span> </div> </div>
                   );
                 })}
-                </div>  <div className="col-span-10 lg:col-span-6 space-y-lg">  <div className="map-container relative flex h-64 flex-col card-shadow sm:h-[360px] lg:h-[420px]"> <div className="absolute left-3 top-3 z-[1000] max-w-[calc(100%-5.5rem)] rounded-lg border border-border-default bg-white/90 p-2 shadow-sm backdrop-blur-sm sm:p-3"> <p className="text-micro font-bold text-text-main uppercase">{tx("Visualisation Géo")}</p> <p className="text-secondary text-text-secondary">{sel ? sel.nom : tx("Bénin")}</p> </div>
-                {sel && !selHasGeo && (
+                </div>  <div className="col-span-10 lg:col-span-6 space-y-lg">  <div className={`map-container relative flex flex-col card-shadow ${jeu ? 'jeu-carte' : 'h-64 sm:h-[360px] lg:h-[420px]'}`}>{jeu && sel && (
+                  <div className="pointer-events-none absolute inset-0 z-[1000]">
+                    <div className="pointer-events-auto absolute left-3 right-3 top-3 flex items-center gap-2">
+                      <button type="button" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/40 bg-[#1c130d]/80 text-white shadow-lg" onClick={() => setJeu(false)} aria-label={tx("Quitter la carte")}>
+                        <MIcon name="arrow_back" />
+                      </button>
+                      <div className="min-w-0 flex-1 rounded-2xl border border-white/30 bg-[#1c130d]/80 px-4 py-2 text-white shadow-lg">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-orange-200">{tx("Territoire")}</p>
+                        <p className="truncate text-base font-black">{sel.nom}</p>
+                      </div>
+                    </div>
+                    <div className="pointer-events-auto absolute bottom-28 right-3 flex flex-col gap-2">
+                      <button type="button" className="flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-[#1c130d]/80 text-white shadow-lg" onClick={() => mapRef.current?.zoomIn()} aria-label={tx("Zoom")}>
+                        <MIcon name="add" />
+                      </button>
+                      <button type="button" className="flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-[#1c130d]/80 text-white shadow-lg" onClick={() => mapRef.current?.zoomOut()} aria-label={tx("Zoom")}>
+                        <MIcon name="remove" />
+                      </button>
+                      <button type="button" className="flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-[#1c130d]/80 text-white shadow-lg" onClick={() => setTileIdx((i) => (i + 1) % TILE_URLS.length)} aria-label="Calques">
+                        <MIcon name="layers" />
+                      </button>
+                    </div>
+                    {!modal && <div className="pointer-events-auto absolute inset-x-3 bottom-3 rounded-3xl border border-white/30 bg-[#1c130d]/85 p-3 text-white shadow-2xl">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <p className="text-xs font-bold uppercase tracking-wide text-orange-200">{lmSel.length} {tx("Point de repère")}</p>
+                        <button type="button" className="rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white" onClick={() => ajouterRepere(sel)}>
+                          {tx("Ajouter un point de repère")}
+                        </button>
+                      </div>
+                      <div className="flex gap-2 overflow-x-auto">
+                        {lmSel.length === 0 && <p className="text-xs text-orange-100">{tx("Aucun point de repère enregistré pour cette zone.")}</p>}
+                        {lmSel.map((lm: any) => (
+                          <button key={lm.id} type="button" className="shrink-0 rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold" onClick={() => openLmEdit(lm)}>
+                            {lm.nom}
+                          </button>
+                        ))}
+                      </div>
+                    </div>}
+                  </div>
+                )} <div className="tokpa-map-quiet absolute left-3 top-3 z-[1000] max-w-[calc(100%-5.5rem)] rounded-lg border border-border-default bg-white/90 p-2 shadow-sm backdrop-blur-sm sm:p-3"> <p className="text-micro font-bold text-text-main uppercase">{tx("Visualisation Géo")}</p> <p className="text-secondary text-text-secondary">{sel ? sel.nom : tx("Bénin")}</p> </div>
+                {sel && !selHasGeo && !jeu && (
                   <div className="absolute inset-0 z-[1000] flex items-center justify-center pointer-events-none">
                     <span className="mx-3 max-w-md rounded-lg border border-border-default bg-white/95 px-3 py-2 text-center text-label leading-snug text-text-secondary shadow-sm">{tx("Pas encore 3 points de repère géolocalisés — la forme de la zone naît de ses points à la limite (3 = triangle, 6 = hexagone).")}</span>
                   </div>
                 )}
                 <div ref={mapElRef} className="w-full h-full relative" id="map-canvas"></div>
-                <div className="absolute bottom-3 right-3 z-[1000] flex max-w-[calc(100%-1rem)] flex-wrap justify-end gap-2"> <button className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md border border-border-default hover:bg-app text-text-main" onClick={() => mapRef.current?.zoomIn()}> <MIcon name="zoom_in" /> </button> <button className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md border border-border-default hover:bg-app text-text-main" onClick={() => mapRef.current?.zoomOut()}> <MIcon name="zoom_out" /> </button> <button className="flex h-10 items-center gap-2 rounded-full border border-border-default bg-white px-3 font-label text-text-main shadow-md hover:bg-app" onClick={() => setTileIdx((i) => (i + 1) % TILE_URLS.length)}> <MIcon name="layers" />
+                <div className="tokpa-map-quiet absolute bottom-3 right-3 z-[1000] flex max-w-[calc(100%-1rem)] flex-wrap justify-end gap-2"> <button className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md border border-border-default hover:bg-app text-text-main" onClick={() => mapRef.current?.zoomIn()}> <MIcon name="zoom_in" /> </button> <button className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md border border-border-default hover:bg-app text-text-main" onClick={() => mapRef.current?.zoomOut()}> <MIcon name="zoom_out" /> </button> <button className="flex h-10 items-center gap-2 rounded-full border border-border-default bg-white px-3 font-label text-text-main shadow-md hover:bg-app" onClick={() => setTileIdx((i) => (i + 1) % TILE_URLS.length)}> <MIcon name="layers" />
                                 <span className="hidden sm:inline">Calques</span>
                             </button> </div> </div>  <div className="rounded-[14px] bg-bg-card p-4 card-shadow sm:p-lg"> <div className="mb-md flex flex-wrap items-start justify-between gap-2"> <h2 className="min-w-0 break-words font-h2 text-h2 text-text-main">Points de repère — Zone {sel ? sel.nom : '—'}</h2> <button className="text-primary hover:text-primary-hover font-label flex items-center gap-1 group" onClick={openLmModal}> <MIcon name="add_circle" className="text-[18px]" />
                                 {tx("Ajouter")}
@@ -627,6 +724,33 @@ export default function AdminZonesPage() {
                 <button className="px-md py-2.5 text-text-secondary font-label hover:bg-app rounded-lg transition-colors" type="button" onClick={resetForm}>{tx("Réinitialiser")}</button>
                 <button className="bg-primary text-on-primary px-lg py-2.5 rounded-lg hover:bg-primary-hover active:scale-97 transition-all font-label" type="button" onClick={() => void saveZone()}>{tx("Enregistrer les modifications")}</button>
               </div> </form> </div> </div> </div>
+
+      {choix && (
+        <div className="fixed inset-0 z-[1300] flex items-end justify-center bg-black/50 p-4 sm:items-center" onClick={() => setChoix(null)}>
+          <div className="w-full max-w-[480px] rounded-3xl bg-white p-5 shadow-2xl" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{tx("Gestion des zones")}</p>
+            <h3 className="mt-1 break-words text-xl font-black">{choix.nom}</h3>
+            <p className="mt-1 text-sm text-text-secondary">{tx("Que voulez-vous faire ?")}</p>
+            <div className="mt-4 grid gap-3">
+              <button type="button" className="flex items-center gap-3 rounded-2xl bg-primary px-4 py-4 text-left text-white" onClick={() => voirCarte(choix)}>
+                <MIcon name="map" />
+                <span>
+                  <span className="block font-bold">{tx("Voir la carte")}</span>
+                  <span className="block text-xs text-orange-100">{tx("La carte s'ouvre en plein écran, comme une carte de jeu.")}</span>
+                </span>
+              </button>
+              <button type="button" className="flex items-center gap-3 rounded-2xl border border-border-default bg-white px-4 py-4 text-left" onClick={() => ajouterRepere(choix)}>
+                <MIcon name="add_location" />
+                <span>
+                  <span className="block font-bold">{tx("Ajouter un point de repère")}</span>
+                  <span className="block text-xs text-text-secondary">{tx("Touchez la carte pour placer le point.")}</span>
+                </span>
+              </button>
+            </div>
+            <button type="button" className="btn btn-ghost mt-3 w-full" onClick={() => setChoix(null)}>{tx("Annuler")}</button>
+          </div>
+        </div>
+      )}
 
       {/* Modale « Nouvelle zone » : la zone = la délimitation de ses points */}
       {modal === 'zone' && (
@@ -698,8 +822,8 @@ export default function AdminZonesPage() {
 
       {/* Modale « Nouveau / Modifier le point de repère » (intérieur ou à la limite) */}
       {modal === 'lm' && (
-        <div className="fixed inset-0 z-[1200] bg-black/40 flex items-center justify-center p-4 pointer-events-none">
-          <div className="bg-white rounded-[14px] shadow-xl w-full max-w-[480px] max-h-[90vh] overflow-y-auto design-modal-scroll p-4 sm:p-lg pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+        <div className={`fixed inset-0 z-[1200] flex justify-center bg-black/40 p-4 pointer-events-none ${jeu ? 'items-end' : 'items-center'}`}>
+          <div className={`pointer-events-auto w-full max-w-[480px] overflow-y-auto rounded-[14px] bg-white p-4 shadow-xl design-modal-scroll sm:p-lg ${jeu ? 'max-h-[48vh]' : 'max-h-[90vh]'}`} onClick={(e) => e.stopPropagation()}>
             <div className="mb-lg flex items-start justify-between gap-3">
               <h3 className="min-w-0 break-words font-h2 text-h2 text-on-surface">{lmEditId !== null ? tx("Modifier le point de repère") : 'Nouveau point de repère'}</h3>
               <button className="p-2 text-text-tertiary hover:text-on-surface transition-colors" onClick={() => setModal(null)}>
