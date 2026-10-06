@@ -10,7 +10,7 @@ import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { clear, remove, setQuantity, selectCount, selectSubtotal, selectSavings } from '../../../store/slices/cart/cartSlice';
 import { authApi, catalogApi, landmarksApi, negotiationApi, ordersApi, paymentsApi, readCreatedOrder } from '../../../services/api';
 import { useLanguage } from '../../../context/LanguageContext';
-import { tx } from '../../../i18n/tx';
+import { tr, tx } from '../../../i18n/tx';
 import { saveConfirmation } from '../confirmation-commande/confirmationMemory';
 import {
   attemptStillPending,
@@ -451,6 +451,21 @@ export default function CartPage() {
               <div className="flex items-center gap-sm mb-lg border-b border-border-default pb-md">
                 <MIcon name="shopping_cart" className="text-primary-container" />
                 <h2 className="font-h2 text-h2 text-on-surface">Votre panier ({count} articles)</h2>
+                {count > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!window.confirm(tr("Vider tout le panier ?", "Empty the whole cart?"))) return;
+                      dispatch(clear());
+                      clearCheckoutIntent();
+                      toast.success(tr("Panier vidé", "Cart emptied"));
+                    }}
+                    className="ml-auto inline-flex items-center gap-1 rounded-lg px-3 py-2 text-label font-semibold text-error hover:bg-error-light cursor-pointer"
+                  >
+                    <MIcon name="delete" className="text-[18px]" />
+                    {tx("Vider le panier")}
+                  </button>
+                )}
               </div>
 
               {/* Article List */}
