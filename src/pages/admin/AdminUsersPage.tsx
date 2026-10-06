@@ -393,17 +393,17 @@ export default function AdminUsersPage() {
       )}
       {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
       <style>{DESIGN_CSS}</style>
-      <header className="h-14 bg-white border-b border-gray-200 px-6 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500 font-medium">{tx("Administration Centrale")}</span>
-          <span className="text-gray-300">/</span>
-          <span className="text-xs text-primary font-semibold">{tx("Gestion des Utilisateurs")}</span>
+      <header className="flex flex-col gap-3 border-b border-gray-200 bg-white px-4 py-3 sm:px-6">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
+          <span className="hidden font-medium text-gray-500 sm:inline">{tx("Administration Centrale")}</span>
+          <span className="hidden text-gray-300 sm:inline">/</span>
+          <span className="font-semibold text-primary">{tx("Gestion des Utilisateurs")}</span>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="relative w-64">
-            <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="relative w-full sm:w-64">
+            <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400"></i>
             <input
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-xs transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
               id="searchInput"
               placeholder={tx("Rechercher nom, email, tél...")}
               type="text"
@@ -411,37 +411,38 @@ export default function AdminUsersPage() {
               onChange={(e) => choose(() => setSearch(e.target.value))}
             />
           </div>
-          <div className="h-4 w-px bg-gray-200"></div>
-          <AdminNotificationBell
-            className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            icon={<i className="ti ti-bell text-lg"></i>}
-          />
-          <button
-            className="btn-press bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 text-xs font-medium px-3.5 py-2 rounded-[10px] flex items-center gap-1.5 shadow-sm transition-all"
-            type="button"
-            onClick={openSelfManager}
-          >
-            <i className="ti ti-shield-check text-sm"></i>
-            <span>{tx(currentUserZone() ? "Changer de zone" : "Créer mon compte manager")}</span>
-          </button>
-          <button
-            className="btn-press bg-primary hover:bg-primary-hover text-white text-xs font-medium px-3.5 py-2 rounded-[10px] flex items-center gap-1.5 shadow-sm transition-all"
-            type="button"
-            onClick={openAdd}
-          >
-            <i className="ti ti-user-plus text-sm"></i>
-            <span>{tx("Ajouter un utilisateur")}</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <AdminNotificationBell
+              className="hidden rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 sm:inline-flex"
+              icon={<i className="ti ti-bell text-lg"></i>}
+            />
+            <button
+              className="btn-press flex items-center gap-1.5 rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-800 shadow-sm transition-all hover:bg-gray-50"
+              type="button"
+              onClick={openSelfManager}
+            >
+              <i className="ti ti-shield-check text-sm"></i>
+              <span>{tx(currentUserZone() ? "Changer de zone" : "Créer mon compte manager")}</span>
+            </button>
+            <button
+              className="btn-press flex items-center gap-1.5 rounded-[10px] bg-primary px-3 py-2 text-xs font-medium text-white shadow-sm transition-all hover:bg-primary-hover"
+              type="button"
+              onClick={openAdd}
+            >
+              <i className="ti ti-user-plus text-sm"></i>
+              <span>{tx("Ajouter un utilisateur")}</span>
+            </button>
+          </div>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{tx("Gestion des Utilisateurs")}</h1>
+            <h1 className="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">{tx("Gestion des Utilisateurs")}</h1>
             <p className="text-sm text-gray-500 mt-0.5">{tx("Supervisez, modifiez les rôles et gérez les comptes des clients, coursiers, managers et administrateurs.")}</p>
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             <button className="btn-press px-3 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-[10px] flex items-center gap-1.5 transition-all" type="button" onClick={exportCsv}>
               <i className="ti ti-download text-sm"></i>
               <span>{tx("Exporter CSV")}</span>
@@ -522,11 +523,11 @@ export default function AdminUsersPage() {
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2.5">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 font-medium">{tx("Statut :")}</span>
+            <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
+              <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
+                <span className="shrink-0 text-xs font-medium text-gray-400">{tx("Statut :")}</span>
                 <select
-                  className="text-xs bg-white border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary"
+                  className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 focus:border-primary focus:outline-none sm:flex-none"
                   id="statusFilter"
                   value={statusF}
                   onChange={(e) => choose(() => setStatusF(e.target.value))}
@@ -537,10 +538,10 @@ export default function AdminUsersPage() {
                   <option value="suspendu">Suspendus</option>
                 </select>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 font-medium">{tx("Zone :")}</span>
+              <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
+                <span className="shrink-0 text-xs font-medium text-gray-400">{tx("Zone :")}</span>
                 <select
-                  className="text-xs bg-white border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary"
+                  className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 focus:border-primary focus:outline-none sm:flex-none"
                   id="zoneFilter"
                   value={zoneF}
                   onChange={(e) => choose(() => setZoneF(e.target.value))}
@@ -589,10 +590,10 @@ export default function AdminUsersPage() {
                         <div className="flex items-center gap-3">
                           <div className={`w-9 h-9 rounded-full font-bold flex items-center justify-center text-xs shrink-0 ${rui.av}`}>{initials(nom)}</div>
                           <div>
-                            <Link to="/admin/utilisateurs/detail" search={{ id: u.id }} onClick={(e) => e.stopPropagation()} className="font-semibold text-gray-900 hover:text-primary">
+                            <Link to="/admin/utilisateurs/detail" search={{ id: u.id }} onClick={(e) => e.stopPropagation()} className="break-words font-semibold text-gray-900 hover:text-primary">
                               {nom}
                             </Link>
-                            <p className="text-gray-500">{u.email ?? '—'}</p>
+                            <p className="break-all text-gray-500">{u.email ?? '—'}</p>
                           </div>
                         </div>
                       </td>
@@ -653,7 +654,7 @@ export default function AdminUsersPage() {
                 </>
               )}
             </p>
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center justify-center gap-1">
               <button
                 type="button"
                 className="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-40"
@@ -694,14 +695,14 @@ export default function AdminUsersPage() {
         onClick={() => setSelected(null)}
       >
         {selected && (
-          <div className="bg-white rounded-[16px] shadow-2xl max-w-[512px] w-full overflow-hidden border border-gray-200 animate-in fade-in zoom-in duration-150" onClick={(e) => e.stopPropagation()}>
-            <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-orange-100 text-primary font-bold flex items-center justify-center text-sm" id="modalAvatar">
+          <div className="w-full max-w-[512px] max-h-[90vh] overflow-y-auto rounded-[16px] border border-gray-200 bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 p-4 sm:p-5">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-primary" id="modalAvatar">
                   {initials(nomOf(selected))}
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-gray-900" id="modalName">
+                <div className="min-w-0">
+                  <h3 className="break-words text-base font-bold text-gray-900" id="modalName">
                     {nomOf(selected)}
                   </h3>
                   <p className="text-xs font-medium text-amber-700" id="modalRoleBadge">
@@ -717,7 +718,7 @@ export default function AdminUsersPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
                   <span className="text-gray-400 block font-medium">{tx("Adresse Email")}</span>
-                  <span className="font-semibold text-gray-800 text-sm mt-0.5 block truncate" id="modalEmail">
+                  <span className="mt-0.5 block break-all text-sm font-semibold text-gray-800" id="modalEmail">
                     {selected.email ?? '—'}
                   </span>
                 </div>
@@ -770,7 +771,7 @@ export default function AdminUsersPage() {
                 </div>
               </div>
               <div className="p-3.5 bg-orange-50/50 rounded-xl border border-orange-100 space-y-1">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-gray-600 font-medium">Statistiques &amp; Performance</span>
                   <span className="font-bold text-primary" id="modalStats">
                     {commandesOf(selected) != null ? `${fmt(commandesOf(selected)!)} commande(s)` : '—'}
@@ -795,10 +796,10 @@ export default function AdminUsersPage() {
                     <span>{tx("Promouvoir en manager")}</span>
                   </button>
                 )}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     type="button"
-                    className="btn-press flex-1 py-2 px-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-[10px] flex items-center justify-center gap-1.5 transition-all"
+                    className="btn-press flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-gray-300 bg-white px-3 py-2 font-medium text-gray-700 transition-all hover:bg-gray-50"
                     onClick={() => resetPassword(selected)}
                   >
                     <i className="ti ti-key text-sm"></i>
@@ -815,7 +816,7 @@ export default function AdminUsersPage() {
                 </div>
               </div>
             </div>
-            <div className="p-4 border-t border-gray-200 bg-gray-50 flex items-center justify-end gap-2.5">
+            <div className="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 p-4">
               <button type="button" className="btn-press px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all" onClick={() => setSelected(null)}>
                 {tx("Fermer")}
               </button>
@@ -838,13 +839,13 @@ export default function AdminUsersPage() {
         id="addUserModal"
         onClick={() => setAddOpen(false)}
       >
-        <div className="bg-white rounded-[16px] shadow-2xl max-w-[576px] w-full overflow-hidden border border-gray-200 animate-in fade-in zoom-in duration-150 my-8" onClick={(e) => e.stopPropagation()}>
-          <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50/80">
-            <div className="flex items-center gap-3">
+        <div className="my-4 w-full max-w-[576px] overflow-hidden rounded-[16px] border border-gray-200 bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50/80 p-4 sm:p-5">
+            <div className="flex min-w-0 items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-orange-50 text-primary flex items-center justify-center text-lg border border-orange-200">
                 <i className="ti ti-user-plus"></i>
               </div>
-              <div>
+              <div className="min-w-0">
                 <h3 className="text-base font-bold text-gray-900">{tx("Ajouter un nouvel utilisateur")}</h3>
                 <p className="text-xs text-gray-500">{tx("Créez un compte pour un client, un manager ou un livreur")}</p>
               </div>
@@ -853,8 +854,8 @@ export default function AdminUsersPage() {
               <i className="ti ti-x text-lg"></i>
             </button>
           </div>
-          <div className="px-6 pt-4 pb-3 border-b border-gray-100 bg-white">
-            <div className="flex items-center">
+          <div className="border-b border-gray-100 bg-white px-4 pb-3 pt-4 sm:px-6">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2 cursor-pointer" id="stepperStep1" onClick={() => setStep(1)}>
                 <div
                   className={
@@ -873,7 +874,7 @@ export default function AdminUsersPage() {
                   <span className="text-[10px] text-gray-400 block leading-tight">{tx("Identité &amp; profil")}</span>
                 </div>
               </div>
-              <div className={`${newRole === 'livreur' ? '' : 'hidden'} flex-1 mx-4 h-0.5 bg-gray-200 transition-all`} id="stepperDivider"></div>
+              <div className={`${newRole === 'livreur' ? '' : 'hidden'} h-0.5 w-8 bg-gray-200`} id="stepperDivider"></div>
               <div className={`${newRole === 'livreur' ? 'flex' : 'hidden'} items-center gap-2 transition-all`} id="stepperStep2">
                 <div
                   className={
@@ -895,7 +896,7 @@ export default function AdminUsersPage() {
             </div>
           </div>
           <form id="addUserForm" onSubmit={createUser}>
-            <div className={`${step === 1 ? '' : 'hidden'} p-6 space-y-4 text-xs`} id="step1Container">
+            <div className={`${step === 1 ? '' : 'hidden'} space-y-4 p-4 text-xs sm:p-6`} id="step1Container">
               <div>
                 <label className="block text-gray-700 font-semibold mb-1">
                   {tx("Nom complet")} <span className="text-red-500">*</span>
@@ -964,10 +965,10 @@ export default function AdminUsersPage() {
                 <label className="block text-gray-700 font-semibold mb-1">
                   {tx("Numéro de Téléphone / WhatsApp béninois")} <span className="text-red-500">*</span>
                 </label>
-                <div className="flex shadow-xs rounded-[10px]">
-                  <span className="inline-flex items-center px-3 rounded-l-[10px] border border-r-0 border-gray-200 bg-gray-50 text-gray-700 font-mono font-medium text-xs">🇧🇯 +229</span>
+                <div className="flex min-w-0 rounded-[10px] shadow-xs">
+                  <span className="inline-flex shrink-0 items-center rounded-l-[10px] border border-r-0 border-gray-200 bg-gray-50 px-2 font-mono text-xs font-medium text-gray-700 sm:px-3">🇧🇯 +229</span>
                   <input
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-r-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 transition-all placeholder:text-gray-400"
+                    className="min-w-0 w-full rounded-r-[10px] border border-gray-200 px-3 py-2.5 font-mono text-gray-900 transition-all placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
                     id="newUserPhone"
                     placeholder="97 12 34 56"
                     type="tel"
@@ -977,14 +978,14 @@ export default function AdminUsersPage() {
                 </div>
                 <p className="text-[11px] text-gray-400 mt-1">{tx("Un lien pour définir son mot de passe sera envoyé à l'adresse email.")}</p>
               </div>
-              <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3">
-                <button type="button" className="btn-press px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all" onClick={() => setAddOpen(false)}>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3">
+                <button type="button" className="btn-press rounded-[10px] border border-gray-200 bg-white px-4 py-2 font-medium text-gray-700 transition-all hover:bg-gray-100" onClick={() => setAddOpen(false)}>
                   {tx("Annuler")}
                 </button>
                 <button
                   type="button"
                   disabled={creating}
-                  className="btn-press px-4 py-2.5 bg-primary hover:bg-primary-hover text-white font-semibold rounded-[10px] shadow-sm transition-all flex items-center gap-1.5 disabled:opacity-60"
+                  className="btn-press flex items-center gap-1.5 rounded-[10px] bg-primary px-4 py-2.5 font-semibold text-white shadow-sm transition-all hover:bg-primary-hover disabled:opacity-60"
                   id="step1SubmitBtn"
                   onClick={onStep1Submit}
                 >
@@ -994,7 +995,7 @@ export default function AdminUsersPage() {
             </div>
 
             {/* Étape 2 « Dossier & Conformité » — aucun champ côté backend : laissée telle quelle (P3), non transmise. */}
-            <div className={`${step === 2 ? '' : 'hidden'} p-6 space-y-4 text-xs`} id="step2Container">
+            <div className={`${step === 2 ? '' : 'hidden'} space-y-4 p-4 text-xs sm:p-6`} id="step2Container">
               <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-800 flex items-center justify-center shrink-0 text-base mt-0.5">
                   <i className="ti ti-shield-alert"></i>
@@ -1076,7 +1077,7 @@ export default function AdminUsersPage() {
                       {uploadLabel}
                     </p>
                     <p className="text-[11px] text-gray-400 mt-0.5">{tx("Formats acceptés : PDF, PNG, JPG (Max 5 Mo / fichier)")}</p>
-                    <div className="flex items-center justify-center gap-3 mt-2 text-[11px] text-gray-500">
+                    <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-[11px] text-gray-500">
                       <span className="inline-flex items-center gap-1">
                         <i className="ti ti-file-check text-emerald-600"></i> Carte CIP / NPI
                       </span>
@@ -1090,7 +1091,7 @@ export default function AdminUsersPage() {
                   </label>
                 </div>
               </div>
-              <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3">
                 <button type="button" className="btn-press px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all flex items-center gap-1.5" onClick={() => setStep(1)}>
                   <i className="ti ti-arrow-left text-xs"></i>
                   <span>{tx("Retour aux informations")}</span>
@@ -1115,9 +1116,9 @@ export default function AdminUsersPage() {
         onClick={() => setManagerTarget(null)}
       >
         <div className="bg-white rounded-[16px] shadow-2xl max-w-[512px] w-full max-h-[90vh] overflow-y-auto border border-gray-200 animate-in fade-in zoom-in duration-150" onClick={(e) => e.stopPropagation()}>
-          <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50/80">
-            <div>
-              <h3 className="text-base font-bold text-gray-900">
+          <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50/80 p-4 sm:p-5">
+            <div className="min-w-0">
+              <h3 className="break-words text-base font-bold text-gray-900">
                 {managerTarget?.kind === 'self' ? tx(currentUserZone() ? "Changer de zone" : "Créer mon compte manager") : tx("Promouvoir en manager")}
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">{managerTarget?.nom}</p>
@@ -1148,7 +1149,7 @@ export default function AdminUsersPage() {
                 ))}
               </select>
             </label>
-            <div className="flex items-center justify-end gap-2 pt-1">
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
               <button type="button" className="btn-press px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all" onClick={() => setManagerTarget(null)}>
                 {tx("Annuler")}
               </button>
