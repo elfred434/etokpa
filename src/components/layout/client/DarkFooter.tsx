@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
+import { isAdminRole } from '../../../routes/authGuard';
 
 
 const soon = (label: string) => () => toast(tr(`${label} — bientôt disponible`, `${tx(label)} — coming soon`));
@@ -36,11 +37,13 @@ export default function DarkFooter() {
                 {isFr ? tx("Mes Négociations") : 'My Negotiations'}
               </Link>
             </li>
-            <li>
-              <Link to="/admin/catalogue" className="hover:text-white">
-                {isFr ? 'Espace Administration' : 'Admin Area'}
-              </Link>
-            </li>
+            {isAdminRole() && (
+              <li>
+                <Link to="/admin" className="hover:text-white">
+                  {isFr ? 'Espace Administration' : 'Admin Area'}
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
 
