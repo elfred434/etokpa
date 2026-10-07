@@ -9,6 +9,7 @@ import LangToggle from '../../components/shared/LangToggle';
 import { authApi } from '../../services/api';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { passwordScore } from '../../utils/passwordScore';
+import { generatePassword } from '../../utils/passwordGenerator';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
@@ -149,6 +150,19 @@ export default function InscriptionPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGeneratePassword = () => {
+    const generated = generatePassword();
+    setSecurity((s) => ({ ...s, password: generated, confirm: generated }));
+    setShowPassword(true);
+    setSecurityErrors((prev) => {
+      const next = { ...prev };
+      delete next.password;
+      delete next.confirm;
+      return next;
+    });
+    toast.success(tx('Mot de passe fort généré.'));
   };
 
   const score = passwordScore(security.password);
@@ -332,7 +346,18 @@ export default function InscriptionPage() {
           {step === 2 && (
             <form className="space-y-4" onSubmit={handleSecuritySubmit}>
               <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Mot de passe")}</label>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <label className="text-xs font-medium text-text-secondary">{tx("Mot de passe")}</label>
+                  <button
+                    type="button"
+                    onClick={handleGeneratePassword}
+                    title={tx("Générer un mot de passe fort avec le module crypto")}
+                    className="flex items-center gap-1 text-xs font-bold text-primary-container hover:underline cursor-pointer"
+                  >
+                    <MIcon name="dice_5" className="text-sm" />
+                    <span>{tx("Générer un mot de passe")}</span>
+                  </button>
+                </div>
                 <div className="relative">
                   <MIcon name="lock" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                   <input
