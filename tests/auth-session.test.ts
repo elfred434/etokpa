@@ -33,6 +33,9 @@ describe('session and public paths', () => {
   });
 
   it('reads a role stored as a string or as an object', () => {
+    // currentRole() exige une session ouverte (b4979d7) : sans jeton, un ancien
+    // tokpa_user ne doit pas faire croire qu'on est connecté → token d'abord.
+    localStorage.setItem('tokpa_token', 'tok');
     localStorage.setItem('tokpa_user', JSON.stringify({ role: 'livreur', prenom: 'Jean', nom: 'Kouassi' }));
     expect(currentRole()).toBe('livreur');
     expect(currentUserName()).toBe('Jean Kouassi');
