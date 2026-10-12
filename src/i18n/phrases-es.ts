@@ -1,6 +1,6 @@
 /**
  * Dictionnaire FR → espagnol (es) des phrases passées à tx()/useTx().
- * Couverture complète des phrases statiques du code (1295 entrées).
+ * Couverture complète des phrases statiques du code (1310 entrées (1295 + 15 « Mes packs » client)).
  * Repli restant : anglais (EN) puis français — voir src/i18n/tx.ts.
  * Généré le 12/10/2026.
  */
@@ -1300,4 +1300,19 @@ export const ES: Record<string, string> = {
   "Modification": "Modificación",
   "Système TOKPa": "Sistema TOKPa",
   "Automatique": "Automático",
+  "Aucun pack créé pour l'instant.": "Aún no has creado ningún pack.",
+  "Brouillon — enregistré sur cet appareil": "Borrador — guardado en este dispositivo",
+  "Choisissez vos produits, le prix se calcule tout seul.": "Elige tus productos, el precio se calcula solo.",
+  "Composer mon pack": "Crear mi pack",
+  "Composez vos propres packs : choisissez vos produits, le prix se calcule automatiquement.": "Crea tus propios packs: elige tus productos, el precio se calcula automáticamente.",
+  "Fermer la fenêtre": "Cerrar la ventana",
+  "La création de packs par les clients n'est pas encore ouverte côté serveur : votre pack est enregistré sur cet appareil et peut être ajouté au panier.": "La creación de packs por clientes aún no está abierta en el servidor: tu pack se guarda en este dispositivo y puede añadirse al carrito.",
+  "Le prix minimum est invalide.": "El precio mínimo no es válido.",
+  "Mes packs": "Mis packs",
+  "Mes packs créés": "Mis packs creados",
+  "Pack enregistré sur cet appareil.": "Pack guardado en este dispositivo.",
+  "Supprimer ce pack ? Il disparaîtra de cet appareil.": "¿Eliminar este pack? Desaparecerá de este dispositivo.",
+  "Vos packs apparaîtront ici.": "Tus packs aparecerán aquí.",
+  "Vos packs sont enregistrés sur cet appareil en attendant l'ouverture de la création côté serveur.": "Tus packs se guardan en este dispositivo mientras el servidor no abra la creación.",
+  "produits": "productos",
 };

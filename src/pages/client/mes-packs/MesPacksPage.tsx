@@ -1,0 +1,876 @@
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { Link } from '@tanstack/react-router';
+import toast from 'react-hot-toast';
+import ClientNavbar from '../../../components/layout/client/ClientNavbar';
+import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
+import MIcon from '../../../components/shared/MIcon';
+import { useAppDispatch } from '../../../hooks/useStore';
+import { add } from '../../../store/slices/cart/cartSlice';
+import type { Product } from '../../../types/models';
+import { catalogApi, packsApi, type ApiBundle, type ApiProduct, type PackPayload } from '../../../services/api';
+import { fmtFcfa, listOf } from '../../../services/api/unwrap';
+import { extractApiError, formatApiError, apiErrorStatus } from '../../../utils/apiError';
+import { absImageUrl } from '../../../utils/imageUrl';
+import { mapApiProduct } from '../../../utils/productMap';
+import { useLanguage } from '../../../context/LanguageContext';
+import { tx } from '../../../i18n/tx';
+import {
+  deletePackDraft,
+  listPackDrafts,
+  savePackDraft,
+  type PackDraft,
+  type PackDraftProduit,
+} from '../../../utils/packDrafts';
+
+/* ---- Mes packs (client) — route /mes-packs ----
+ * Même atelier que l'admin (AdminPacksPage) : page blanche où l'on glisse les
+ * produits (grand écran) ou fenêtre « Choisir des produits » (téléphone), prix
+ * total = somme automatique des produits × quantités, prix minimum négociable,
+ * photo de pack choisie parmi les produits.
+ *
+ * Différences client :
+ * - le rayon produits vient de l'API PUBLIQUE (GET /products), pas de l'API admin ;
+ * - la création serveur passe par POST /admin/bundles (seule route existante,
+ *   aujourd'hui `role:admin`) : si le serveur refuse (403/404/405), le pack est
+ *   conservé sur l'appareil (utils/packDrafts) et reste ajoutable au panier —
+ *   aucun travail perdu. Demande d'ouverture : A_FAIRE_BACKEND.txt note 19 ;
+ * - « Ajouter au panier » décompose le pack en produits (le panier ne connaît
+ *   que des produits — même règle que la fiche pack /pack/$packId).
+ */
+
+const CARD_W = 176;
+const CARD_H = 208;
+
+type Produit = {
+  id: number;
+  nom?: string;
+  prix?: number | string;
+  image_url?: string | null;
+  stock?: number;
+  disponible?: boolean | null;
+  description?: string | null;
+  categorie?: { id?: number; nom?: string } | null;
+};
+
+type PackLigne = {
+  id: number;
+  qte: number;
+  x: number;
+  y: number;
+};
+
+type Pression = {
+  mode: 'new' | 'move';
+  id: number;
+  startX: number;
+  startY: number;
+  offsetX: number;
+  offsetY: number;
+  moved: boolean;
+};
+
+function prixDe(p?: Produit | PackDraftProduit | null) {
+  const n = Number(p?.prix ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function slot(index: number) {
+  const cols = 3;
+  return {
+    x: 28 + (index % cols) * (CARD_W + 18),
+    y: 28 + Math.floor(index / cols) * (CARD_H + 18),
+  };
+}
+
+function dansLaPage(el: HTMLElement | null, x: number, y: number) {
+  if (!el) return false;
+  const r = el.getBoundingClientRect();
+  return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+}
+
+function positionDans(el: HTMLElement, clientX: number, clientY: number, offsetX: number, offsetY: number) {
+  const r = el.getBoundingClientRect();
+  const x = clientX - r.left - offsetX;
+  const y = clientY - r.top - offsetY;
+  return {
+    x: Math.min(Math.max(16, x), Math.max(16, el.clientWidth - CARD_W - 16)),
+    y: Math.min(Math.max(16, y), Math.max(16, el.clientHeight - CARD_H - 16)),
+  };
+}
+
+/** Rayon produits via l'API PUBLIQUE GET /products (paginé, comme l'admin). */
+async function chargerProduits() {
+  const acc: Produit[] = [];
+  for (let page = 1; page <= 10; page++) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res: any = await catalogApi.getProducts({ per_page: 100, page });
+    acc.push(...listOf(res));
+    if (page >= Number(res?.meta?.last_page ?? 1)) break;
+  }
+  return acc;
+}
+
+function mediaGrandEcran(): MediaQueryList | null {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
+  return window.matchMedia('(min-width: 1024px)');
+}
+
+function Vignette({ produit, className }: { produit?: Produit | PackDraftProduit | null; className?: string }) {
+  const src = absImageUrl(produit?.image_url);
+  if (!src) {
+    return (
+      <div className={`flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-200 text-primary ${className ?? ''}`}>
+        <MIcon name="inventory_2" />
+      </div>
+    );
+  }
+  return <img src={src} alt="" className={`object-cover ${className ?? ''}`} />;
+}
+
+/** Ligne de pack → modèle du panier (mêmes règles que la fiche pack). */
+function toCartProduct(l: PackDraftProduit): Product {
+  const asApiProduct: ApiProduct = {
+    id: l.id,
+    nom: l.nom,
+    description: l.description ?? undefined,
+    prix: l.prix ?? 0,
+    prix_minimum: l.prix ?? 0,
+    devise: 'XOF',
+    image_url: l.image_url,
+    stock: l.stock,
+    disponible: l.disponible,
+  };
+  return mapApiProduct(asApiProduct);
+}
+
+export default function MesPacksPage() {
+  useLanguage();
+  const dispatch = useAppDispatch();
+
+  const [vue, setVue] = useState<'galerie' | 'atelier'>('galerie');
+  const [drafts, setDrafts] = useState<PackDraft[]>(() => listPackDrafts());
+  const [publics, setPublics] = useState<ApiBundle[]>([]);
+  const [produits, setProduits] = useState<Produit[]>([]);
+  const [pret, setPret] = useState(false);
+  const [err, setErr] = useState('');
+  const [infoSync, setInfoSync] = useState('');
+
+  // ---- État atelier (calqué sur AdminPacksPage) ----
+  const [enEdition, setEnEdition] = useState<PackDraft | null>(null);
+  const [qProduit, setQProduit] = useState('');
+  const [catRail, setCatRail] = useState('');
+  const [nom, setNom] = useState('');
+  const [description, setDescription] = useState('');
+  const [prixMinimum, setPrixMinimum] = useState('');
+  const [disponible, setDisponible] = useState(true);
+  const [lignes, setLignes] = useState<PackLigne[]>([]);
+  const [extras, setExtras] = useState<Record<number, Produit>>({});
+  const [ghost, setGhost] = useState<Pression & { x: number; y: number } | null>(null);
+  const [surPage, setSurPage] = useState(false);
+  const [pulse, setPulse] = useState<number | null>(null);
+  const [sauve, setSauve] = useState(false);
+  const [erreurForm, setErreurForm] = useState('');
+  const [couverture, setCouverture] = useState('');
+  const [choixOuvert, setChoixOuvert] = useState(false);
+  const [large, setLarge] = useState(() => mediaGrandEcran()?.matches ?? false);
+  const pageRef = useRef<HTMLDivElement>(null);
+  const pressRef = useRef<Pression | null>(null);
+
+  useEffect(() => {
+    let stop = false;
+    (async () => {
+      try {
+        const [shelf, liste] = await Promise.all([
+          chargerProduits(),
+          packsApi.getBundles().then((r) => listOf(r?.data ?? r) as ApiBundle[]).catch(() => [] as ApiBundle[]),
+        ]);
+        if (stop) return;
+        setProduits(shelf);
+        setPublics(liste);
+      } catch (e) {
+        if (!stop) setErr(formatApiError(extractApiError(e)));
+      } finally {
+        if (!stop) setPret(true);
+      }
+    })();
+    return () => { stop = true; };
+  }, []);
+
+  useEffect(() => {
+    const mq = mediaGrandEcran();
+    if (!mq) return;
+    const sync = () => {
+      setLarge(mq.matches);
+      if (mq.matches) setChoixOuvert(false);
+    };
+    sync();
+    mq.addEventListener?.('change', sync);
+    return () => mq.removeEventListener?.('change', sync);
+  }, []);
+
+  const parId = useMemo(() => {
+    const map = new Map<number, Produit>();
+    produits.forEach((p) => map.set(Number(p.id), p));
+    Object.values(extras).forEach((p) => {
+      if (!map.has(Number(p.id))) map.set(Number(p.id), p);
+    });
+    return map;
+  }, [produits, extras]);
+
+  /** Prix total = somme des produits × quantités (jamais saisi, comme l'admin). */
+  const somme = lignes.reduce((total, ligne) => total + prixDe(parId.get(ligne.id)) * ligne.qte, 0);
+
+  function produitDe(id: number) {
+    return parId.get(id);
+  }
+
+  function imageDe(id: number) {
+    return absImageUrl(produitDe(id)?.image_url);
+  }
+
+  function ouvrirAtelier(draft?: PackDraft | null) {
+    setErreurForm('');
+    if (draft) {
+      setEnEdition(draft);
+      setNom(draft.nom);
+      setDescription(draft.description ?? '');
+      setPrixMinimum(draft.prix_minimum == null ? '' : String(draft.prix_minimum));
+      setDisponible(draft.disponible !== false);
+      setCouverture(draft.img_url ?? '');
+      const extra: Record<number, Produit> = {};
+      draft.produits.forEach((p) => { extra[p.id] = p; });
+      setExtras(extra);
+      setLignes(draft.produits.map((p, i) => ({ id: p.id, qte: Math.max(1, p.qte), ...slot(i) })));
+    } else {
+      setEnEdition(null);
+      setNom('');
+      setDescription('');
+      setPrixMinimum('');
+      setDisponible(true);
+      setCouverture('');
+      setExtras({});
+      setLignes([]);
+    }
+    setQProduit('');
+    setCatRail('');
+    setVue('atelier');
+  }
+
+  function retourGalerie() {
+    if (nom.trim() || lignes.length > 0) {
+      if (!window.confirm(tx("Quitter sans enregistrer ?"))) return;
+    }
+    setGhost(null);
+    setVue('galerie');
+  }
+
+  function poser(id: number, pos: { x: number; y: number } | 'suivant') {
+    setLignes((prev) => {
+      const deja = prev.find((l) => l.id === id);
+      if (deja) {
+        return prev.map((l) => (l.id === id ? { ...l, qte: l.qte + 1, ...(pos === 'suivant' ? {} : pos) } : l));
+      }
+      const place = pos === 'suivant' ? slot(prev.length) : pos;
+      return [...prev, { id, qte: 1, ...place }];
+    });
+    setCouverture((cur) => cur || imageDe(id) || '');
+    setPulse(id);
+    window.setTimeout(() => setPulse((cur) => (cur === id ? null : cur)), 450);
+  }
+
+  function retirer(id: number) {
+    setLignes((prev) => prev.filter((l) => l.id !== id));
+  }
+
+  function changerQte(id: number, delta: number) {
+    setLignes((prev) => prev.flatMap((l) => {
+      if (l.id !== id) return [l];
+      const qte = l.qte + delta;
+      return qte < 1 ? [] : [{ ...l, qte }];
+    }));
+  }
+
+  function dragProps(mode: 'new' | 'move', id: number) {
+    return {
+      onPointerDown: (e: ReactPointerEvent<HTMLElement>) => {
+        if (!large) return;
+        if (e.button !== 0) return;
+        if ((e.target as HTMLElement).closest('button, input, a, textarea, select')) return;
+        e.preventDefault();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        const rect = e.currentTarget.getBoundingClientRect();
+        pressRef.current = {
+          mode,
+          id,
+          startX: e.clientX,
+          startY: e.clientY,
+          offsetX: mode === 'move' ? e.clientX - rect.left : 88,
+          offsetY: mode === 'move' ? e.clientY - rect.top : 28,
+          moved: false,
+        };
+      },
+      onPointerMove: (e: ReactPointerEvent<HTMLElement>) => {
+        const press = pressRef.current;
+        if (!press || press.id !== id || press.mode !== mode) return;
+        const dist = Math.hypot(e.clientX - press.startX, e.clientY - press.startY);
+        if (!press.moved && dist < 6) return;
+        press.moved = true;
+        setSurPage(dansLaPage(pageRef.current, e.clientX, e.clientY));
+        setGhost({ ...press, x: e.clientX, y: e.clientY });
+      },
+      onPointerUp: (e: ReactPointerEvent<HTMLElement>) => {
+        const press = pressRef.current;
+        pressRef.current = null;
+        setGhost(null);
+        setSurPage(false);
+        if (!press || press.id !== id) return;
+        const page = pageRef.current;
+        const dedans = dansLaPage(page, e.clientX, e.clientY);
+        if (!press.moved && mode === 'new') {
+          poser(id, 'suivant');
+          return;
+        }
+        if (!(press.moved && dedans && page)) return;
+        const pos = positionDans(page, e.clientX, e.clientY, press.offsetX, press.offsetY);
+        if (mode === 'move') setLignes((prev) => prev.map((l) => (l.id === id ? { ...l, ...pos } : l)));
+        else poser(id, pos);
+      },
+      onPointerCancel: () => {
+        pressRef.current = null;
+        setGhost(null);
+        setSurPage(false);
+      },
+      onClick: (e: { target: EventTarget | null }) => {
+        if (large || mode !== 'new') return;
+        if ((e.target as HTMLElement | null)?.closest('button, input, a, textarea, select')) return;
+        poser(id, 'suivant');
+      },
+    };
+  }
+
+  async function enregistrer() {
+    setErreurForm('');
+    if (!nom.trim()) {
+      setErreurForm(tx("Le nom du pack est obligatoire."));
+      return;
+    }
+    if (lignes.length === 0) {
+      setErreurForm(tx("Ajoutez au moins un produit sur la page."));
+      return;
+    }
+    if (prixMinimum.trim() !== '' && (!Number.isFinite(Number(prixMinimum)) || Number(prixMinimum) < 0)) {
+      setErreurForm(tx("Le prix minimum est invalide."));
+      return;
+    }
+    if (prixMinimum.trim() !== '' && Number(prixMinimum) > somme) {
+      setErreurForm(tx("Le prix minimum ne peut pas dépasser le prix total."));
+      return;
+    }
+    // Payload EXACT de AdminBundleController@store (validation backend connue).
+    const payload: PackPayload = {
+      nom: nom.trim(),
+      description: description.trim() || null,
+      prix_total: Math.round(somme),
+      prix_minimum: prixMinimum.trim() === '' ? null : Number(prixMinimum),
+      disponible,
+      img_url: couverture || null,
+      products: lignes.map((l) => ({ id: l.id, qte: l.qte })),
+    };
+    const draft: PackDraft = {
+      localId: enEdition?.localId ?? `d${Date.now()}${Math.round(Math.random() * 1000)}`,
+      serverId: enEdition?.serverId ?? null,
+      nom: payload.nom,
+      description: payload.description,
+      prix_total: payload.prix_total,
+      prix_minimum: payload.prix_minimum,
+      img_url: payload.img_url,
+      disponible: payload.disponible,
+      produits: lignes.map((l) => {
+        const p = produitDe(l.id);
+        return {
+          id: l.id,
+          qte: l.qte,
+          nom: p?.nom ?? tx("Produit retiré"),
+          prix: prixDe(p),
+          description: p?.description ?? null,
+          image_url: p?.image_url ?? null,
+          stock: Number(p?.stock ?? 0),
+          disponible: p?.disponible !== false,
+        };
+      }),
+      createdAt: enEdition?.createdAt ?? new Date().toISOString(),
+      syncedAt: enEdition?.syncedAt ?? null,
+    };
+    setSauve(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const res: any = draft.serverId
+        ? await packsApi.updateBundle(draft.serverId, payload)
+        : await packsApi.createBundle(payload);
+      const serverId = Number(res?.data?.id ?? res?.id ?? 0) || draft.serverId;
+      savePackDraft({ ...draft, serverId, syncedAt: new Date().toISOString() });
+      setDrafts(listPackDrafts());
+      // Recharge la liste publique : un pack accepté devient visible (fiche /pack/$id).
+      packsApi.getBundles()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .then((r: any) => setPublics(listOf(r?.data ?? r) as ApiBundle[]))
+        .catch(() => {});
+      toast.success(tx("Pack enregistré."));
+      setVue('galerie');
+    } catch (e) {
+      const statut = apiErrorStatus(e);
+      if (statut === 403 || statut === 404 || statut === 405) {
+        // Le serveur n'a pas encore de route de création pour les clients
+        // (POST /admin/bundles = role:admin). On ne perd rien : brouillon local.
+        savePackDraft(draft);
+        setDrafts(listPackDrafts());
+        setInfoSync(tx("La création de packs par les clients n'est pas encore ouverte côté serveur : votre pack est enregistré sur cet appareil et peut être ajouté au panier."));
+        toast.success(tx("Pack enregistré sur cet appareil."));
+        setVue('galerie');
+      } else {
+        setErreurForm(formatApiError(extractApiError(e)));
+      }
+    } finally {
+      setSauve(false);
+    }
+  }
+
+  function supprimerDraft(draft: PackDraft) {
+    if (!window.confirm(tx("Supprimer ce pack ? Il disparaîtra de cet appareil."))) return;
+    setDrafts(deletePackDraft(draft.localId));
+    toast.success(tx("Pack supprimé."));
+  }
+
+  /** Le panier ne connaît pas les packs : on y met les produits, avec leurs quantités. */
+  function ajouterAuPanier(draft: PackDraft) {
+    if (draft.produits.length === 0) return;
+    const indisponibles = draft.produits.filter((p) => !p.disponible || p.stock <= 0);
+    if (indisponibles.length > 0) {
+      toast.error(tx("Impossible d’ajouter ce pack : un de ses produits est indisponible."));
+      return;
+    }
+    draft.produits.forEach((p) => dispatch(add({ product: toCartProduct(p), quantity: p.qte })));
+    toast.success(`${draft.produits.length} ${tx("produit(s) du pack ajoutés au panier")}`);
+  }
+
+  const rayon = produits.filter((p) => {
+    const q = qProduit.trim().toLowerCase();
+    const hit = !q || String(p.nom ?? '').toLowerCase().includes(q) || String(p.id).includes(q);
+    const cok = !catRail || String(p.categorie?.id ?? '') === catRail;
+    return hit && cok;
+  });
+  const categories = useMemo(() => {
+    const map = new Map<string, string>();
+    produits.forEach((p) => {
+      if (p.categorie?.id && p.categorie.nom) map.set(String(p.categorie.id), p.categorie.nom);
+    });
+    return [...map.entries()];
+  }, [produits]);
+
+  const idPublics = useMemo(() => new Set(publics.map((p) => Number(p.id))), [publics]);
+  const aDesBrouillons = drafts.some((d) => !d.serverId);
+  const hauteurPage = Math.max(560, ...lignes.map((l) => l.y + CARD_H + 36));
+  const ghostProduit = ghost ? produitDe(ghost.id) : null;
+
+  const RayonListe = (
+    <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
+      {rayon.map((p) => {
+        const deja = lignes.find((l) => l.id === Number(p.id));
+        return (
+          <div
+            key={p.id}
+            {...dragProps('new', Number(p.id))}
+            className={`flex cursor-grab touch-none items-center gap-3 rounded-2xl border bg-white p-2 shadow-sm active:cursor-grabbing ${deja ? 'border-primary/50 ring-2 ring-primary/20' : 'border-border-default'}`}
+          >
+            <Vignette produit={p} className="h-14 w-14 shrink-0 rounded-xl" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{p.nom}</p>
+              <p className="text-xs font-bold text-primary">{fmtFcfa(prixDe(p))}</p>
+              {deja && <p className="text-[11px] font-semibold text-primary">{tx("Déjà dans le pack")} · {deja.qte}</p>}
+            </div>
+            <MIcon name="drag_indicator" className="text-text-tertiary" />
+          </div>
+        );
+      })}
+      {pret && rayon.length === 0 && <p className="px-2 py-6 text-sm text-text-secondary">{tx("Aucun résultat pour ces filtres.")}</p>}
+    </div>
+  );
+
+  return (
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#fcfaf8] font-body text-ink">
+      <ClientNavbar />
+      <style>{`
+        .pack-page-grid {
+          background-color: #fff;
+          background-image: radial-gradient(circle, rgba(249,115,22,0.16) 1.1px, transparent 1.2px);
+          background-size: 22px 22px;
+        }
+        .pack-pop { animation: pack-pop 180ms ease-out; }
+        @keyframes pack-pop { from { transform: scale(.94); opacity: .4; } to { transform: none; opacity: 1; } }
+      `}</style>
+      <div className="flex flex-1 justify-center px-3 pb-[80px] pt-[64px] sm:px-6 md:px-12 md:pb-8 md:pt-[72px] lg:px-20 xl:px-40">
+        <div className="flex w-full max-w-[1200px] flex-1 flex-col">
+          {/* ---- Breadcrumbs ---- */}
+          <div className="flex flex-wrap gap-2 py-3 md:px-1">
+            <Link to="/" className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">
+              {tx("Accueil")}
+            </Link>
+            <span className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">/</span>
+            <Link to="/catalogue" search={{ cat: 'pack' }} className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">
+              {tx("Packs & Bundles")}
+            </Link>
+            <span className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">/</span>
+            <span className="text-xs font-medium leading-normal text-[#1c130d] sm:text-sm">{tx("Mes packs")}</span>
+          </div>
+
+          {err && (
+            <div className="mb-md rounded-xl border border-error bg-error-container px-4 py-3 text-label text-on-error-container">{err}</div>
+          )}
+
+          {vue === 'galerie' && (
+            <div className="space-y-6">
+              <section className="grid items-center gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-[#fff7ed] via-[#ffedd5] to-[#fed7aa] p-5 shadow-sm ring-1 ring-black/5 sm:grid-cols-[minmax(0,1fr)_auto] sm:p-6">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary-dark">{tx("Packs & Bundles")}</p>
+                  <h1 className="mt-1 text-2xl font-black tracking-tight text-on-surface sm:text-3xl">{tx("Mes packs")}</h1>
+                  <p className="mt-2 max-w-2xl text-sm leading-5 text-ink-2">
+                    {tx("Composez vos propres packs : choisissez vos produits, le prix se calcule automatiquement.")}
+                  </p>
+                </div>
+                <button type="button" className="btn btn-primary w-full rounded-2xl px-5 py-3 shadow-lg transition hover:-translate-y-0.5 sm:w-auto" onClick={() => ouvrirAtelier(null)}>
+                  {tx("Composer un pack")}
+                </button>
+              </section>
+
+              {infoSync && (
+                <div className="rounded-xl border border-amber-text/30 bg-amber-light px-4 py-3 text-sm text-amber-text" role="status">
+                  {infoSync}
+                </div>
+              )}
+              {!infoSync && aDesBrouillons && (
+                <div className="rounded-xl border border-amber-text/30 bg-amber-light px-4 py-3 text-xs text-amber-text">
+                  {tx("Vos packs sont enregistrés sur cet appareil en attendant l'ouverture de la création côté serveur.")}
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-h1 text-h1 text-on-surface">{tx("Mes packs créés")}</h2>
+                <span className="text-sm text-ink-2">{drafts.length}</span>
+              </div>
+
+              {!pret && <p className="text-sm text-ink-2">{tx("Chargement…")}</p>}
+              {drafts.length === 0 && (
+                <div className="rounded-3xl border border-dashed border-primary/30 bg-white px-6 py-16 text-center">
+                  <MIcon name="package_2" className="text-5xl text-primary" />
+                  <p className="mt-3 text-lg font-bold text-on-surface">{tx("Aucun pack créé pour l'instant.")}</p>
+                  <p className="mt-1 text-sm text-ink-2">{tx("Vos packs apparaîtront ici.")}</p>
+                  <button type="button" className="btn btn-primary mt-4" onClick={() => ouvrirAtelier(null)}>{tx("Composer un pack")}</button>
+                </div>
+              )}
+
+              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {drafts.map((draft) => {
+                  // « Publié » = accepté par le serveur (serverId) ; la fiche publique
+                  // n'est liée que si le pack apparaît dans GET /bundles (disponible).
+                  const publie = Boolean(draft.serverId);
+                  const fichePublique = publie && idPublics.has(Number(draft.serverId));
+                  const cover = absImageUrl(draft.img_url) || draft.produits.map((p) => absImageUrl(p.image_url)).find(Boolean) || '';
+                  return (
+                    <article key={draft.localId} className="overflow-hidden rounded-xl border-[0.5px] border-line bg-white shadow-sm transition hover:shadow-md">
+                      <div className="relative h-40 overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
+                        {cover ? (
+                          <img src={cover} alt="" className="h-full w-full object-cover" />
+                        ) : draft.produits.length === 0 ? (
+                          <div className="flex h-full items-center justify-center text-primary/70"><MIcon name="package_2" className="text-5xl" /></div>
+                        ) : null}
+                        {!cover && draft.produits.slice(0, 3).map((p, i) => (
+                          <div key={p.id ?? i} className="absolute h-24 w-24 overflow-hidden rounded-2xl shadow-lg ring-4 ring-white" style={{ left: 28 + i * 46, top: 24 + (i % 2) * 12, transform: `rotate(${i * 7 - 8}deg)` }}>
+                            <Vignette produit={p} className="h-full w-full" />
+                          </div>
+                        ))}
+                        <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold ${publie ? 'bg-white text-success-dark' : 'bg-white/90 text-amber-text'}`}>
+                          {publie ? tx("Publié") : tx("Brouillon — enregistré sur cet appareil")}
+                        </span>
+                      </div>
+                      <div className="space-y-2 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <h3 className="text-lg font-bold leading-tight text-on-surface">{draft.nom}</h3>
+                          <span className="shrink-0 font-bold text-primary">{fmtFcfa(draft.prix_total)}</span>
+                        </div>
+                        <p className="line-clamp-2 text-sm text-ink-2">{draft.description || tx("Aucune description.")}</p>
+                        <p className="text-xs font-semibold text-ink-3">
+                          {draft.produits.length} {draft.produits.length > 1 ? tx("produits") : tx("produit")}
+                        </p>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <button type="button" className="btn btn-primary flex-1" onClick={() => ajouterAuPanier(draft)}>
+                            <MIcon name="add_shopping_cart" className="text-[18px]" />
+                            {tx("Ajouter au panier")}
+                          </button>
+                          {fichePublique && draft.serverId && (
+                            <Link to="/pack/$packId" params={{ packId: String(draft.serverId) }} className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-primary">
+                              {tx("Voir la fiche")}
+                            </Link>
+                          )}
+                        </div>
+                        <div className="flex justify-end gap-3 border-t border-line pt-2">
+                          <button type="button" className="text-sm font-semibold text-primary" onClick={() => ouvrirAtelier(draft)}>{tx("Modifier")}</button>
+                          <button type="button" className="text-sm font-semibold text-error" onClick={() => supprimerDraft(draft)}>{tx("Supprimer")}</button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {vue === 'atelier' && (
+            <div className="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border-[0.5px] border-line bg-white shadow-sm lg:h-[calc(100vh-160px)] lg:min-h-[640px]">
+              <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-black/5 bg-white px-3 py-3 sm:gap-3 sm:px-4">
+                <button type="button" className="rounded-xl p-2 hover:bg-bg-secondary" onClick={retourGalerie} aria-label={tx("Retour aux packs")}>
+                  <MIcon name="arrow_back" />
+                </button>
+                <div className="min-w-0 flex-1 basis-40">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{enEdition ? tx("Modifier le pack") : tx("Nouveau pack")}</p>
+                  <input value={nom} onChange={(e) => setNom(e.target.value)} placeholder={tx("Nom du pack — obligatoire")} className="w-full bg-transparent text-lg font-bold outline-none placeholder:font-medium placeholder:text-text-tertiary" />
+                </div>
+                <label className="order-3 flex w-full items-center gap-2 text-sm font-semibold sm:order-none sm:w-auto">
+                  <input type="checkbox" checked={disponible} onChange={(e) => setDisponible(e.target.checked)} className="accent-primary" />
+                  {tx("Disponible à la vente")}
+                </label>
+                <button type="button" className="btn btn-primary order-2 sm:order-none" disabled={sauve} onClick={() => void enregistrer()}>
+                  {sauve ? tx("Enregistrement…") : tx("Enregistrer le pack")}
+                </button>
+              </header>
+
+              {erreurForm && (
+                <div className="shrink-0 border-b border-error/30 bg-error-container px-3 py-2 text-sm text-on-error-container" role="alert">
+                  {erreurForm}
+                </div>
+              )}
+
+              <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+                <aside className="hidden w-full shrink-0 flex-col border-b border-black/5 bg-white lg:flex lg:max-h-none lg:w-[320px] lg:border-b-0 lg:border-r">
+                  <div className="space-y-2 border-b border-border-default p-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold">{tx("Rayon produits")}</p>
+                      <span className="text-xs text-text-tertiary">{rayon.length}</span>
+                    </div>
+                    <div className="relative">
+                      <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-tertiary" />
+                      <input value={qProduit} onChange={(e) => setQProduit(e.target.value)} placeholder={tx("Rechercher un produit...")} className="w-full rounded-xl border border-border-default py-2 pl-9 pr-3 text-sm outline-none focus:border-primary" />
+                    </div>
+                    <select value={catRail} onChange={(e) => setCatRail(e.target.value)} className="w-full rounded-xl border border-border-default bg-white px-3 py-2 text-sm">
+                      <option value="">{tx("Toutes les catégories")}</option>
+                      {categories.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                    </select>
+                    <p className="text-xs text-text-secondary">{tx("Glissez un produit sur la page")}. {tx("Cliquer ajoute aussi le produit.")}</p>
+                  </div>
+                  {RayonListe}
+                </aside>
+
+                <section className="flex min-w-0 flex-1 flex-col">
+                  <div className="min-h-0 flex-1 overflow-auto p-4 md:p-6">
+                    {!large && (
+                      <div className="space-y-4">
+                        <button type="button" className="btn btn-primary w-full" onClick={() => setChoixOuvert(true)}>
+                          {tx("Choisir des produits")}
+                        </button>
+                        {lignes.length === 0 && (
+                          <div className="rounded-3xl border border-dashed border-primary/30 bg-white px-4 py-12 text-center">
+                            <MIcon name="package_2" className="text-4xl text-primary" />
+                            <p className="mt-3 text-lg font-bold">{tx("La page du pack est encore vide.")}</p>
+                            <p className="mt-1 text-sm text-text-secondary">{tx("Choisissez les produits, puis fermez la fenêtre pour les voir ici.")}</p>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2">
+                          {lignes.map((ligne) => {
+                            const produit = produitDe(ligne.id);
+                            const photo = imageDe(ligne.id);
+                            return (
+                              <article key={ligne.id} className={`overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/5 ${pulse === ligne.id ? 'ring-2 ring-primary' : ''}`}>
+                                <div className="relative">
+                                  <Vignette produit={produit} className="h-36 w-full" />
+                                  <button type="button" aria-label={tx("Retirer")} className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-text-secondary shadow hover:text-error" onClick={() => retirer(ligne.id)}>
+                                    <MIcon name="close" className="text-[18px]" />
+                                  </button>
+                                </div>
+                                <div className="space-y-2 p-3">
+                                  <p className="line-clamp-2 min-h-10 text-sm font-bold leading-5">{produit?.nom || tx("Produit retiré")}</p>
+                                  <p className="text-sm font-bold text-primary">{fmtFcfa(prixDe(produit))}</p>
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs text-text-tertiary">{tx("Quantité")}</span>
+                                    <div className="flex items-center gap-1">
+                                      <button type="button" aria-label={`${tx("Quantité")} -`} className="h-9 w-9 rounded-lg border border-border-default" onClick={() => changerQte(ligne.id, -1)}>-</button>
+                                      <span className="w-6 text-center text-sm font-bold">{ligne.qte}</span>
+                                      <button type="button" aria-label={`${tx("Quantité")} +`} className="h-9 w-9 rounded-lg border border-border-default" onClick={() => changerQte(ligne.id, 1)}>+</button>
+                                    </div>
+                                  </div>
+                                  {photo && (
+                                    <button type="button" className={`w-full rounded-lg px-2 py-1.5 text-xs font-bold ${couverture === photo ? 'bg-primary text-white' : 'bg-primary-tint text-primary-dark'}`} onClick={() => setCouverture(photo)}>
+                                      {couverture === photo ? tx("Photo du pack") : tx("Choisir comme photo du pack")}
+                                    </button>
+                                  )}
+                                </div>
+                              </article>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    <div
+                      ref={pageRef}
+                      className={`${large ? '' : 'hidden'} pack-page-grid relative w-full rounded-[28px] shadow-2xl ring-1 transition ${surPage ? 'ring-4 ring-primary' : 'ring-black/5'}`}
+                      style={{ minHeight: '100%', height: hauteurPage }}
+                    >
+                      <p className="pointer-events-none absolute bottom-6 right-7 text-5xl font-black tracking-tight text-primary/10">TOKPa</p>
+                      {lignes.length === 0 && (
+                        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                          <div className={`flex h-36 w-36 items-center justify-center rounded-full border-2 border-dashed ${surPage ? 'border-primary bg-primary/10' : 'border-primary/30 bg-white/70'}`}>
+                            <MIcon name="swipe_right" className="text-4xl text-primary" />
+                          </div>
+                          <p className="mt-4 text-xl font-bold">{surPage ? tx("Déposer ici") : tx("Déposez les produits ici")}</p>
+                          <p className="mt-1 max-w-sm text-sm text-text-secondary">{tx("La page du pack est encore vide.")}</p>
+                        </div>
+                      )}
+                      {surPage && lignes.length > 0 && (
+                        <div className="pointer-events-none absolute inset-3 rounded-3xl border-2 border-dashed border-primary/70 bg-primary/5" />
+                      )}
+                      {lignes.map((ligne) => {
+                        const produit = produitDe(ligne.id);
+                        const bouge = ghost?.mode === 'move' && ghost.id === ligne.id;
+                        return (
+                          <div
+                            key={ligne.id}
+                            {...dragProps('move', ligne.id)}
+                            className={`pack-pop absolute cursor-grab touch-none rounded-2xl bg-white shadow-xl ring-1 ring-black/5 active:cursor-grabbing ${pulse === ligne.id ? 'ring-2 ring-primary' : ''} ${bouge ? 'opacity-30' : ''}`}
+                            style={{ left: ligne.x, top: ligne.y, width: CARD_W }}
+                          >
+                            {ligne.qte > 1 && <div className="absolute -bottom-1.5 -right-1.5 -z-10 h-full w-full rounded-2xl bg-primary-lighter ring-1 ring-primary/20" />}
+                            <div className="relative">
+                              <Vignette produit={produit} className="h-24 w-full rounded-t-2xl" />
+                              <button type="button" aria-label={tx("Retirer")} className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-text-secondary shadow hover:text-error" onClick={() => retirer(ligne.id)}>
+                                <MIcon name="close" className="text-[16px]" />
+                              </button>
+                            </div>
+                            <div className="space-y-1 p-2.5">
+                              <p className="line-clamp-2 min-h-10 text-sm font-bold leading-5">{produit?.nom || tx("Produit retiré")}</p>
+                              <p className="text-xs font-bold text-primary">{fmtFcfa(prixDe(produit))}</p>
+                              <div className="flex items-center justify-between pt-1">
+                                <span className="text-[11px] text-text-tertiary">{tx("Quantité")}</span>
+                                <div className="flex items-center gap-1">
+                                  <button type="button" aria-label={`${tx("Quantité")} -`} className="h-7 w-7 rounded-lg border border-border-default" onClick={() => changerQte(ligne.id, -1)}>-</button>
+                                  <span className="w-6 text-center text-sm font-bold">{ligne.qte}</span>
+                                  <button type="button" aria-label={`${tx("Quantité")} +`} className="h-7 w-7 rounded-lg border border-border-default" onClick={() => changerQte(ligne.id, 1)}>+</button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 border-t border-black/5 bg-white px-3 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-bold text-text-secondary">{tx("Photo du pack")}</p>
+                      {couverture && (
+                        <button type="button" className="text-xs font-semibold text-text-tertiary" onClick={() => setCouverture('')}>{tx("Retirer")}</button>
+                      )}
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 overflow-x-auto">
+                      {couverture && <img src={couverture} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover ring-2 ring-primary" />}
+                      {lignes.map((ligne) => {
+                        const photo = imageDe(ligne.id);
+                        if (!photo || photo === couverture) return null;
+                        return (
+                          <button key={ligne.id} type="button" className="shrink-0" title={tx("Choisir comme photo du pack")} onClick={() => setCouverture(photo)}>
+                            <Vignette produit={produitDe(ligne.id)} className="h-12 w-12 rounded-xl" />
+                          </button>
+                        );
+                      })}
+                      {!couverture && <p className="text-xs text-text-secondary">{tx("Aucune photo pour l'instant. Ajoutez un produit qui en a une.")}</p>}
+                    </div>
+                  </div>
+
+                  <footer className="grid shrink-0 gap-3 border-t border-black/5 bg-white/95 p-3 md:grid-cols-[1.4fr_160px_160px_180px]">
+                    <label className="block text-xs text-text-secondary">
+                      {tx("Description")}
+                      <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 w-full rounded-xl border border-border-default px-3 py-2 text-sm" />
+                    </label>
+                    <label className="block text-xs text-text-secondary">
+                      {tx("Prix total")}
+                      <input
+                        value={String(Math.round(somme))}
+                        readOnly
+                        aria-readonly="true"
+                        title={tx("Calculé automatiquement à partir des produits du pack")}
+                        className="mt-1 w-full cursor-not-allowed rounded-xl border border-border-default bg-bg-secondary px-3 py-2 text-sm font-bold"
+                      />
+                    </label>
+                    <label className="block text-xs text-text-secondary">
+                      {tx("Prix minimum")}
+                      <input value={prixMinimum} onChange={(e) => setPrixMinimum(e.target.value)} className="mt-1 w-full rounded-xl border border-border-default px-3 py-2 text-sm" />
+                    </label>
+                    <div className="rounded-xl bg-primary-tint px-3 py-2">
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-primary-dark">{tx("Calcul automatique")}</p>
+                      <p className="text-lg font-black text-primary-dark">{fmtFcfa(somme)}</p>
+                      <p className="text-[11px] leading-tight text-primary-dark">
+                        {lignes.length} {tx("produit(s) · le prix suit les produits et leurs quantités")}
+                      </p>
+                    </div>
+                  </footer>
+                </section>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ---- Fenêtre produits (téléphone) : choisir, puis fermer pour voir le pack ---- */}
+      {choixOuvert && !large && (
+        <div className="fixed inset-0 z-[75] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setChoixOuvert(false)}>
+          <div className="flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-3xl bg-[#efe8e2] shadow-2xl sm:rounded-3xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3 bg-white px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{tx("Rayon produits")}</p>
+                <h2 className="text-lg font-bold">{tx("Choisir des produits")}</h2>
+              </div>
+              <button type="button" className="rounded-lg p-1 text-text-secondary" aria-label={tx("Fermer")} onClick={() => setChoixOuvert(false)}>
+                <MIcon name="close" />
+              </button>
+            </div>
+            <div className="space-y-2 border-b border-black/5 bg-white px-4 pb-3">
+              <div className="relative">
+                <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-tertiary" />
+                <input value={qProduit} onChange={(e) => setQProduit(e.target.value)} placeholder={tx("Rechercher un produit...")} className="w-full rounded-xl border border-border-default py-2 pl-9 pr-3 text-sm outline-none focus:border-primary" />
+              </div>
+              <select value={catRail} onChange={(e) => setCatRail(e.target.value)} className="w-full rounded-xl border border-border-default bg-white px-3 py-2 text-sm">
+                <option value="">{tx("Toutes les catégories")}</option>
+                {categories.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+              </select>
+            </div>
+            {RayonListe}
+            <div className="shrink-0 bg-white p-3">
+              <button type="button" className="btn btn-primary w-full" onClick={() => setChoixOuvert(false)}>
+                {tx("Fermer la fenêtre")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- Fantôme de glisser-déposer (grand écran) ---- */}
+      {ghost && ghostProduit && (
+        <div className="pointer-events-none fixed z-[90]" style={{ left: ghost.x - 88, top: ghost.y - 28, width: CARD_W }}>
+          <div className={`rounded-2xl bg-white shadow-2xl ring-2 ${surPage ? 'ring-primary' : 'ring-black/10'}`}>
+            <Vignette produit={ghostProduit} className="h-24 w-full rounded-t-2xl" />
+            <p className="line-clamp-2 p-2.5 text-sm font-bold">{ghostProduit.nom}</p>
+          </div>
+        </div>
+      )}
+
+      <ClientBottomNav />
+    </div>
+  );
+}

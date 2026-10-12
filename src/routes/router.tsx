@@ -10,6 +10,7 @@ import HomePage from '../pages/client/accueil/HomePage';
 import CatalogPage from '../pages/client/catalogue/CatalogPage';
 import ProductPage from '../pages/client/fiche-produit/ProductPage';
 import PackPage from '../pages/client/fiche-pack/PackPage';
+import MesPacksPage from '../pages/client/mes-packs/MesPacksPage';
 import CartPage from '../pages/client/panier/CartPage';
 import ConfirmationPage from '../pages/client/confirmation-commande/ConfirmationPage';
 import ProfilePage from '../pages/client/profil/ProfilePage';
@@ -112,6 +113,9 @@ const catalogueRoute = createRoute({
 });
 const produitRoute = createRoute({ getParentRoute: () => rootRoute, path: '/produit/$productId', component: ProductPage });
 const packRoute = createRoute({ getParentRoute: () => rootRoute, path: '/pack/$packId', component: PackPage });
+// Mes packs (client) : atelier de création inspiré de l'admin (/admin/packs) —
+// repli local si le serveur n'a pas encore ouvert la création aux clients (note B-19).
+const mesPacksRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mes-packs', component: MesPacksPage });
 const panierRoute = createRoute({ getParentRoute: () => rootRoute, path: '/panier', component: CartPage });
 const confirmationRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -205,6 +209,7 @@ const routeTree = rootRoute.addChildren([
   catalogueRoute,
   produitRoute,
   packRoute,
+  mesPacksRoute,
   panierRoute,
   confirmationRoute,
   profilRoute,

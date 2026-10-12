@@ -1,6 +1,6 @@
 /**
  * Dictionnaire FR → allemand (de) des phrases passées à tx()/useTx().
- * Couverture complète des phrases statiques du code (1295 entrées).
+ * Couverture complète des phrases statiques du code (1310 entrées (1295 + 15 « Mes packs » client)).
  * Repli restant : anglais (EN) puis français — voir src/i18n/tx.ts.
  * Généré le 12/10/2026.
  */
@@ -1300,4 +1300,19 @@ export const DE: Record<string, string> = {
   "Modification": "Änderung",
   "Système TOKPa": "TOKPa-System",
   "Automatique": "Automatisch",
+  "Aucun pack créé pour l'instant.": "Noch keine Packs erstellt.",
+  "Brouillon — enregistré sur cet appareil": "Entwurf — auf diesem Gerät gespeichert",
+  "Choisissez vos produits, le prix se calcule tout seul.": "Wählen Sie Ihre Produkte, der Preis wird automatisch berechnet.",
+  "Composer mon pack": "Mein Pack zusammenstellen",
+  "Composez vos propres packs : choisissez vos produits, le prix se calcule automatiquement.": "Stellen Sie eigene Packs zusammen: Produkte wählen, der Preis wird automatisch berechnet.",
+  "Fermer la fenêtre": "Fenster schließen",
+  "La création de packs par les clients n'est pas encore ouverte côté serveur : votre pack est enregistré sur cet appareil et peut être ajouté au panier.": "Die Pack-Erstellung durch Kunden ist serverseitig noch nicht freigegeben: Ihr Pack wird auf diesem Gerät gespeichert und kann in den Warenkorb gelegt werden.",
+  "Le prix minimum est invalide.": "Der Mindestpreis ist ungültig.",
+  "Mes packs": "Meine Packs",
+  "Mes packs créés": "Meine erstellten Packs",
+  "Pack enregistré sur cet appareil.": "Pack auf diesem Gerät gespeichert.",
+  "Supprimer ce pack ? Il disparaîtra de cet appareil.": "Dieses Pack löschen? Es verschwindet von diesem Gerät.",
+  "Vos packs apparaîtront ici.": "Ihre Packs erscheinen hier.",
+  "Vos packs sont enregistrés sur cet appareil en attendant l'ouverture de la création côté serveur.": "Ihre Packs werden auf diesem Gerät gespeichert, bis die Erstellung serverseitig freigegeben ist.",
+  "produits": "Produkte",
 };

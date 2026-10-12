@@ -598,6 +598,23 @@ export default function CatalogPage() {
             </div>
           </div>
 
+          {/* Vue Packs : accès direct à l'atelier client « Mes packs » (/mes-packs). */}
+          {packMode && (
+            <Link
+              to="/mes-packs"
+              className="mb-md flex items-center justify-between gap-3 rounded-xl border-[0.5px] border-line bg-gradient-to-r from-primary-lighter to-primary-light px-md py-4 transition hover:shadow-md"
+            >
+              <span className="flex items-center gap-3">
+                <MIcon name="shopping_basket" className="text-[22px] text-primary" />
+                <span>
+                  <span className="block text-sm font-bold text-on-surface">{tx("Composer mon pack")}</span>
+                  <span className="block text-xs text-ink-2">{tx("Choisissez vos produits, le prix se calcule tout seul.")}</span>
+                </span>
+              </span>
+              <MIcon name="arrow_forward" className="text-[20px] text-primary" />
+            </Link>
+          )}
+
           {listLoading ? (
             <LoadingState
               label={packMode ? tx("Chargement des packs…") : 'Chargement des produits…'}

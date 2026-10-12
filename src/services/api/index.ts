@@ -1,6 +1,7 @@
 export * from './client';
 export * from './auth';
 export * from './catalog';
+export * from './packs';
 export * from './orders';
 export * from './negotiation';
 export * from './landmarks';
