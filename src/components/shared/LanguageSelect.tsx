@@ -10,8 +10,8 @@ interface LanguageSelectProps {
 }
 
 /**
- * Sélecteur de langue en liste déroulante (native `<select>`) : affiche les 5 langues
- * avec leur nom natif et enregistre le choix via `setLanguage` (persisté dans `tokpa_lang`).
+ * Sélecteur de langue en liste déroulante stylisée : affiche le code de la langue
+ * (FR, EN, ES, DE, PT) et enregistre le choix via `setLanguage` (persisté dans `tokpa_lang`).
  */
 export default function LanguageSelect({ className = '', onChange }: LanguageSelectProps) {
   const { language, setLanguage } = useLanguage();
@@ -24,21 +24,23 @@ export default function LanguageSelect({ className = '', onChange }: LanguageSel
 
   return (
     <div
-      className={`inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary focus-within:ring-2 focus-within:ring-primary/40 ${className}`}
+      className={`relative inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 py-1 pl-2.5 pr-2 text-xs font-bold text-primary transition-colors hover:bg-primary/15 focus-within:ring-2 focus-within:ring-primary/40 ${className}`}
     >
       <MIcon name="language" className="pointer-events-none text-[16px]" />
       <select
         value={language}
         onChange={(e) => handleChange(e.target.value)}
         aria-label={tx('Langue')}
-        className="cursor-pointer bg-transparent pr-1 text-xs font-bold text-current outline-none"
+        title={tx('Langue')}
+        className="cursor-pointer appearance-none bg-transparent pr-4 text-xs font-bold uppercase tracking-wide text-current outline-none"
       >
         {LANGUAGES.map((l) => (
-          <option key={l.code} value={l.code} className="text-ink">
-            {l.label}
+          <option key={l.code} value={l.code} className="bg-surface font-semibold text-ink">
+            {l.code.toUpperCase()}
           </option>
         ))}
       </select>
+      <MIcon name="expand_more" className="pointer-events-none absolute right-2 text-[14px]" />
     </div>
   );
 }

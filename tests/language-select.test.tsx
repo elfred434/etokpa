@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
  * Sélecteur de langue en liste déroulante (LanguageSelect) :
- * - les 5 langues sont proposées avec leur nom natif ;
+ * - les 5 langues sont proposées par leur code (FR, EN, ES, DE, PT) ;
  * - le choix met à jour le contexte, localStorage (tokpa_lang) et <html lang> ;
  * - la valeur affichée suit la langue active ;
  * - le composant LangToggle (admin, manager, livreur, auth) délègue à ce même sélecteur.
@@ -32,11 +32,11 @@ beforeEach(() => {
 });
 
 describe('LanguageSelect — liste déroulante', () => {
-  it('propose les 5 langues avec leur nom natif, dans l’ordre du cycle', () => {
+  it('propose les 5 langues par leur code (FR, EN, ES, DE, PT), dans l’ordre', () => {
     renderSelect();
     const select = screen.getByRole('combobox') as HTMLSelectElement;
     const options = Array.from(select.options).map((o) => [o.value, o.textContent]);
-    expect(options).toEqual(LANGUAGES.map((l) => [l.code, l.label]));
+    expect(options).toEqual(LANGUAGES.map((l) => [l.code, l.code.toUpperCase()]));
     expect(options.map(([code]) => code)).toEqual(['fr', 'en', 'es', 'de', 'pt']);
   });
 
