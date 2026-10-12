@@ -9,9 +9,10 @@ import { add } from '../../../store/slices/cart/cartSlice';
 import type { Product } from '../../../types/models';
 import { catalogApi, packsApi, type ApiBundle, type ApiProduct, type PackPayload } from '../../../services/api';
 import { fmtFcfa, listOf } from '../../../services/api/unwrap';
-import { extractApiError, formatApiError, apiErrorStatus } from '../../../utils/apiError';
+import { extractApiError, formatApiError } from '../../../utils/apiError';
 import { absImageUrl } from '../../../utils/imageUrl';
 import { mapApiProduct } from '../../../utils/productMap';
+import { currentUserId } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import {
@@ -30,10 +31,13 @@ import {
  *
  * Différences client :
  * - le rayon produits vient de l'API PUBLIQUE (GET /products), pas de l'API admin ;
- * - la création serveur passe par POST /admin/bundles (seule route existante,
- *   aujourd'hui `role:admin`) : si le serveur refuse (403/404/405), le pack est
- *   conservé sur l'appareil (utils/packDrafts) et reste ajoutable au panier —
- *   aucun travail perdu. Demande d'ouverture : A_FAIRE_BACKEND.txt note 19 ;
+ * - la création serveur vise POST /api/bundles (route client ajoutée par le
+ *   backend `d8996cf` « packs privés ») avec SON contrat exact — mais elle est
+ *   aujourd'hui cassée côté serveur (500 « relation "produits" does not exist »,
+ *   bugs détaillés : A_FAIRE_BACKEND.txt note 20). À la première erreur, quelle
+ *   qu'elle soit, le pack est conservé sur l'appareil (utils/packDrafts) et
+ *   reste ajoutable au panier — aucun travail perdu. Dès que le backend est
+ *   corrigé, l'enregistrement serveur passe tout seul (201 → badge « Publié ») ;
  * - « Ajouter au panier » décompose le pack en produits (le panier ne connaît
  *   que des produits — même règle que la fiche pack /pack/$packId).
  */
@@ -366,24 +370,25 @@ export default function MesPacksPage() {
       setErreurForm(tx("Le prix minimum ne peut pas dépasser le prix total."));
       return;
     }
-    // Payload EXACT de AdminBundleController@store (validation backend connue).
+    // Payload EXACT de BundleController@store (backend d8996cf) — voir
+    // services/api/packs.ts. prix_minimum et img_url ne sont pas (encore)
+    // acceptés par le serveur : ils restent dans le brouillon local.
     const payload: PackPayload = {
       nom: nom.trim(),
       description: description.trim() || null,
-      prix_total: Math.round(somme),
-      prix_minimum: prixMinimum.trim() === '' ? null : Number(prixMinimum),
+      prix_totale: Math.round(somme),
       disponible,
-      img_url: couverture || null,
-      products: lignes.map((l) => ({ id: l.id, qte: l.qte })),
+      user_id: currentUserId(),
+      products: lignes.map((l) => ({ id: l.id, quantite: l.qte })),
     };
     const draft: PackDraft = {
       localId: enEdition?.localId ?? `d${Date.now()}${Math.round(Math.random() * 1000)}`,
       serverId: enEdition?.serverId ?? null,
       nom: payload.nom,
       description: payload.description,
-      prix_total: payload.prix_total,
-      prix_minimum: payload.prix_minimum,
-      img_url: payload.img_url,
+      prix_total: payload.prix_totale,
+      prix_minimum: prixMinimum.trim() === '' ? null : Number(prixMinimum),
+      img_url: couverture || null,
       disponible: payload.disponible,
       produits: lignes.map((l) => {
         const p = produitDe(l.id);
@@ -417,19 +422,17 @@ export default function MesPacksPage() {
         .catch(() => {});
       toast.success(tx("Pack enregistré."));
       setVue('galerie');
-    } catch (e) {
-      const statut = apiErrorStatus(e);
-      if (statut === 403 || statut === 404 || statut === 405) {
-        // Le serveur n'a pas encore de route de création pour les clients
-        // (POST /admin/bundles = role:admin). On ne perd rien : brouillon local.
-        savePackDraft(draft);
-        setDrafts(listPackDrafts());
-        setInfoSync(tx("La création de packs par les clients n'est pas encore ouverte côté serveur : votre pack est enregistré sur cet appareil et peut être ajouté au panier."));
-        toast.success(tx("Pack enregistré sur cet appareil."));
-        setVue('galerie');
-      } else {
-        setErreurForm(formatApiError(extractApiError(e)));
-      }
+    } catch {
+      // Le serveur n'accepte pas (encore) la création/mise à jour client :
+      // POST /bundles → 500 « relation "produits" does not exist »,
+      // PUT /bundles/{id} → 500 « Method …::update does not exist »
+      // (bugs amont documentés, A_FAIRE_BACKEND.txt note 20). On ne perd rien :
+      // le pack part en brouillon local, ajoutable au panier.
+      savePackDraft(draft);
+      setDrafts(listPackDrafts());
+      setInfoSync(tx("Le serveur n'a pas pu enregistrer ce pack : il est conservé sur cet appareil et peut être ajouté au panier."));
+      toast.success(tx("Pack enregistré sur cet appareil."));
+      setVue('galerie');
     } finally {
       setSauve(false);
     }
@@ -549,7 +552,7 @@ export default function MesPacksPage() {
               )}
               {!infoSync && aDesBrouillons && (
                 <div className="rounded-xl border border-amber-text/30 bg-amber-light px-4 py-3 text-xs text-amber-text">
-                  {tx("Vos packs sont enregistrés sur cet appareil en attendant l'ouverture de la création côté serveur.")}
+                  {tx("Vos packs sont conservés sur cet appareil tant que le serveur ne les accepte pas.")}
                 </div>
               )}
 

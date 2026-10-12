@@ -7,10 +7,11 @@
  *  2. atelier : un clic sur un produit du rayon l'ajoute à la page (qte 1) ;
  *  3. prix total = somme automatique produits × quantités (jamais saisi) ;
  *  4. validation : nom obligatoire → erreur en ligne, AUCUN appel réseau ;
- *  5. contrat backend : POST /admin/bundles avec le payload EXACT de
- *     AdminBundleController@store (nom, description, prix_total, prix_minimum,
- *     img_url, disponible, products[{id,qte}]) ;
- *  6. repli 403 (route aujourd'hui `role:admin`) : le pack est conservé sur
+ *  5. contrat backend (d8996cf « packs privés ») : POST /bundles avec le payload
+ *     EXACT de BundleController@store (nom, description, prix_totale, disponible,
+ *     user_id, products[{id, quantite}]) ;
+ *  6. repli TOUTE erreur serveur (réalité vérifiée en direct : 500 « relation
+ *     "produits" does not exist », note backend 20) : le pack est conservé sur
  *     l'appareil (localStorage), badge « Brouillon », message clair, zéro perte ;
  *  7. succès 201 : badge « Publié » + toast ;
  *  8. panier : « Ajouter au panier » décompose le pack en produits (le panier
@@ -58,7 +59,9 @@ function httpError(status: number, message: string) {
 const TOMATE = { id: 1, nom: 'Tomate', prix: 600, stock: 50, disponible: true, image_url: null, description: null, categorie: { id: 2, nom: 'Légumes' } };
 const PIMENT = { id: 2, nom: 'Piment', prix: 300, stock: 20, disponible: true, image_url: null, description: null, categorie: { id: 2, nom: 'Légumes' } };
 
-/** GET publics (produits paginés + bundles) ; POST = refus 403 par défaut. */
+/** GET publics (produits paginés + bundles) ; POST = le 500 RÉEL du backend
+ *  d8996cf (validation `exists:produits,id` alors que la table s'appelle
+ *  `products`) — vérifié en direct contre /opt/etokpa_back le 12/10/2026. */
 function mockHttp(opts: { bundles?: unknown[]; postImpl?: () => Promise<unknown> } = {}) {
   get.mockImplementation((url: string) => {
     if (String(url).includes('/products')) {
@@ -72,7 +75,9 @@ function mockHttp(opts: { bundles?: unknown[]; postImpl?: () => Promise<unknown>
   post.mockImplementation(() =>
     opts.postImpl
       ? opts.postImpl()
-      : Promise.reject(httpError(403, 'This action is unauthorized.')),
+      : Promise.reject(
+          httpError(500, 'SQLSTATE[42P01]: Undefined table: 7 ERROR:  relation "produits" does not exist'),
+        ),
   );
 }
 
@@ -105,7 +110,8 @@ beforeEach(() => {
   localStorage.clear();
   store.dispatch(clearCart());
   localStorage.setItem('tokpa_token', 'jeton-test');
-  localStorage.setItem('tokpa_user', JSON.stringify({ nom_complet: 'Client Test', role: 'client' }));
+  // id 5 → user_id du payload (BundleController@store attend le propriétaire).
+  localStorage.setItem('tokpa_user', JSON.stringify({ id: 5, nom_complet: 'Client Test', role: 'client' }));
   mockHttp();
 });
 
@@ -170,7 +176,7 @@ describe('Mes packs (client) — atelier de création', () => {
     expect(post).not.toHaveBeenCalled();
   });
 
-  it('contrat backend : POST /admin/bundles avec le payload exact ; 403 → brouillon local sans perte', async () => {
+  it('contrat backend : POST /bundles avec le payload exact ; erreur serveur → brouillon local sans perte', async () => {
     const success = vi.spyOn(toast, 'success');
     renderMesPacks();
     await ouvrirAtelier();
@@ -182,26 +188,26 @@ describe('Mes packs (client) — atelier de création', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le pack' }));
 
-    // Payload EXACT de AdminBundleController@store (validation backend connue).
+    // Payload EXACT de BundleController@store (backend d8996cf « packs privés »).
     await waitFor(() => expect(post).toHaveBeenCalled());
-    expect(post.mock.calls[0][0]).toBe('/admin/bundles');
+    expect(post.mock.calls[0][0]).toBe('/bundles');
     expect(post.mock.calls[0][1]).toEqual({
       nom: 'Mon pack',
       description: null,
-      prix_total: 900,
-      prix_minimum: null,
+      prix_totale: 900,
       disponible: true,
-      img_url: null,
+      user_id: 5,
       products: [
-        { id: 1, qte: 1 },
-        { id: 2, qte: 1 },
+        { id: 1, quantite: 1 },
+        { id: 2, quantite: 1 },
       ],
     });
 
-    // Refus 403 (route role:admin) → retour galerie, pack conservé sur l'appareil.
+    // 500 amont (table « produits » inexistante) → retour galerie, pack conservé
+    // sur l'appareil avec son prix minimum et sa photo (champs locaux).
     expect(await screen.findByText('Brouillon — enregistré sur cet appareil')).toBeTruthy();
     expect(screen.getByRole('status').textContent).toContain(
-      "La création de packs par les clients n'est pas encore ouverte côté serveur",
+      "Le serveur n'a pas pu enregistrer ce pack",
     );
     expect(success).toHaveBeenCalledWith('Pack enregistré sur cet appareil.');
     const drafts = listPackDrafts();

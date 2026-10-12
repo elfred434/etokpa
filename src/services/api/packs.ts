@@ -3,51 +3,63 @@ import { apiClient } from './client';
 /**
  * Création de packs côté CLIENT.
  *
- * État du backend (LECTURE SEULE pour nous — interdiction de le modifier) :
- * - GET  /api/bundles            : liste PUBLIQUE des packs disponibles (+ produits) ;
- * - POST /api/admin/bundles      : seule route de création, derrière `role:admin`
- *                                  → un token client y reçoit 403 ;
- * - aucune route client (POST /packs, /bundles) et pas de colonne propriétaire
- *   (user_id) sur le modèle Pack.
+ * Backend `3531cc8` (commit amont `d8996cf` « Ajout de la possibilité de créé
+ * des packs privé ») : la route client existe —
+ * `Route::apiResource('bundles')->except(['show'])` dans routes/api.php :
+ *   - GET  /api/bundles       : packs PUBLICS (disponible=true + user_id null) ;
+ *   - POST /api/bundles       : création « privée » (user_id passé par le client) ;
+ *   - PUT/DELETE              : routes déclarées mais MÉTHODES ABSENTES du
+ *                               contrôleur (BundleController n'a que index/store).
  *
- * Ce service vise quand même POST /admin/bundles avec le payload EXACT validé
- * par AdminBundleController@store (nom, description, prix_total, prix_minimum,
- * img_url, disponible, products[{id,qte}]) : le jour où le backend ouvre une
- * route client, il suffira de changer ENDPOINT_PACKS ci-dessous — la page
- * « Mes packs » fonctionne déjà en repli local (utils/packDrafts.ts) et affiche
- * un message clair au lieu de casser. Demande backend documentée :
- * extrait/A_FAIRE_BACKEND.txt, note 19.
+ * État vérifié EN DIRECT le 12/10/2026 (copie /opt/etokpa_back, PostgreSQL 17) :
+ *   POST /api/bundles avec le contrat exact de BundleController@store →
+ *   500 « SQLSTATE[42P01]: Undefined table: relation "produits" does not exist »
+ *   (la validation dit `exists:produits,id` alors que la table s'appelle
+ *   `products`) ; PUT /api/bundles/{id} → 500 « Method …::update does not
+ *   exist ». Aucun orphelin en base (la validation plante avant l'INSERT).
+ *   Bugs détaillés + correctifs proposés : A_FAIRE_BACKEND.txt note 20.
+ *
+ * Le front envoie donc le contrat amont EXACT (nom, description, prix_totale,
+ * disponible, user_id, products[{id, quantite}]) — prêt pour le jour où le
+ * backend est corrigé — et MesPacksPage retombe sur le brouillon local
+ * (utils/packDrafts.ts) à la PREMIÈRE erreur serveur, quelle qu'elle soit :
+ * le client ne perd jamais son pack et peut l'ajouter au panier.
  */
-export const ENDPOINT_PACKS = '/admin/bundles';
+export const ENDPOINT_PACKS = '/bundles';
 
-/** Ligne produit du payload — `qte` comme dans AdminBundleController@store. */
-export type PackProduitPayload = { id: number; qte: number };
+/** Ligne produit du payload — `quantite` comme dans BundleController@store (d8996cf). */
+export type PackProduitPayload = { id: number; quantite: number };
 
-/** Payload de création/mise à jour — calqué sur la validation backend. */
+/** Payload de création — calqué sur la validation de BundleController@store. */
 export type PackPayload = {
   nom: string;
   description: string | null;
-  prix_total: number;
-  prix_minimum: number | null;
-  img_url: string | null;
+  /** Faute de frappe figée dans la validation amont (`prix_totale`) — voir note 20. */
+  prix_totale: number;
   disponible: boolean;
+  /** Propriétaire du pack privé (compte connecté) — lu côté front, voir note 20 (sécurité). */
+  user_id: number | null;
   products: PackProduitPayload[];
 };
 
 export const packsApi = {
-  /** GET /api/bundles — packs publics (disponibles + produits). */
+  /** GET /api/bundles — packs publics (disponibles, user_id null, + produits). */
   getBundles: async () => {
     const response = await apiClient.get('/bundles');
     return response.data;
   },
 
-  /** POST — création (aujourd'hui `role:admin` ; voir commentaire en tête). */
+  /** POST /api/bundles — création (aujourd'hui 500 : bugs amont, note 20). */
   createBundle: async (payload: PackPayload) => {
     const response = await apiClient.post(ENDPOINT_PACKS, payload);
     return response.data;
   },
 
-  /** PUT /{id} — mise à jour d'un pack déjà enregistré côté serveur. */
+  /**
+   * PUT /api/bundles/{id} — mise à jour d'un pack déjà enregistré côté serveur.
+   * La route existe mais BundleController@update est absent (500 « Method does
+   * not exist ») — la page retombe sur le brouillon local en attendant.
+   */
   updateBundle: async (id: number, payload: PackPayload) => {
     const response = await apiClient.put(`${ENDPOINT_PACKS}/${id}`, payload);
     return response.data;
