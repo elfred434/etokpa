@@ -3,7 +3,8 @@
  * Intégration des langues es / de / pt au système i18n existant :
  * - parité stricte des clés TRANSLATIONS entre fr, en, es, de, pt ;
  * - cycle du sélecteur fr → en → es → de → pt → fr (contexte + localStorage + <html lang>) ;
- * - couche tx()/tr() : dictionnaires ES/DE/PT puis repli anglais, puis français.
+ * - couche tx()/tr() : dictionnaires ES/DE/PT (couverture complète des phrases
+ *   statiques) puis repli anglais, puis français.
  */
 import { describe, expect, it, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -227,7 +228,8 @@ describe('Couche tx()/tr() — es, de, pt', () => {
       ['PT', PT],
     ];
     const reference = Object.keys(ES).sort();
-    expect(reference.length).toBe(240);
+    // 240 phrases initiales + 1055 de la longue traîne = couverture complète des tx() statiques.
+    expect(reference.length).toBe(1295);
     for (const [name, dict] of dicts) {
       expect(Object.keys(dict).sort(), `clés ${name}`).toEqual(reference);
       for (const [k, v] of Object.entries(dict)) {
