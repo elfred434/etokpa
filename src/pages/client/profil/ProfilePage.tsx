@@ -7,7 +7,6 @@ import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import { alertApiError } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
-import LanguageSelect from '../../../components/shared/LanguageSelect';
 import { currentRole, hasSession } from '../../../routes/authGuard';
 import { authApi, ordersApi, paymentsApi, type UserProfile } from '../../../services/api';
 import { dateCourte, fmtFcfa, listOf, unwrap } from '../../../services/api/unwrap';
@@ -70,7 +69,7 @@ const PAYMENT_LABELS: Record<string, { fr: string; en: string; tone: string }> =
  */
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { isFr } = useLanguage();
+  const { language, toggleLanguage, isFr } = useLanguage();
   const isAuthenticated = hasSession();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -506,13 +505,20 @@ export default function ProfilePage() {
                   <MIcon name="chevron_right" className="text-text-tertiary" />
                 </Link>
 
-                <div className="w-full p-md flex items-center justify-between border-t border-border-default">
+                <button
+                  type="button"
+                  onClick={toggleLanguage}
+                  className="w-full p-md flex items-center justify-between border-t border-border-default hover:bg-bg-secondary transition-colors text-left cursor-pointer"
+                >
                   <div className="flex items-center gap-md">
                     <MIcon name="language" className="text-text-secondary" />
                     <span className="text-body text-text-main">{isFr ? tx("Langue") : 'Language'}</span>
                   </div>
-                  <LanguageSelect className="border-0 bg-transparent px-0 text-primary" />
-                </div>
+                  <div className="flex items-center gap-sm">
+                    <span className="text-secondary text-text-tertiary font-bold uppercase">{language}</span>
+                    <MIcon name="chevron_right" className="text-text-tertiary" />
+                  </div>
+                </button>
 
                 <button
                   type="button"
