@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
-import { useLanguage } from '../../../context/LanguageContext';
+import { LANGUAGES, useLanguage } from '../../../context/LanguageContext';
+import LanguageSelect from '../../shared/LanguageSelect';
 import { tx } from '../../../i18n/tx';
 
 
@@ -11,7 +12,7 @@ import { tx } from '../../../i18n/tx';
  */
 export default function ProfileSettings() {
   const navigate = useNavigate();
-  const { language, toggleLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [pwForm, setPwForm] = useState({ oldPw: '', newPw: '', confirmPw: '' });
 
@@ -63,24 +64,17 @@ export default function ProfileSettings() {
             <span className="text-xs font-semibold text-success">{tx("Activées")}</span>
           </button>
 
-          {/* Langue (Interrupteur FR / EN) */}
-          <button
-            type="button"
-            onClick={() => {
-              toggleLanguage();
-              toast.success(language === 'fr' ? 'Language switched to English' : tx("Langue passée en Français"));
-            }}
-            className="scale-interaction flex w-full items-center justify-between border-t border-line p-md text-left transition-colors hover:bg-surface"
-          >
+          {/* Langue : liste déroulante FR / EN / ES / DE / PT */}
+          <div className="flex w-full items-center justify-between border-t border-line p-md">
             <div className="flex items-center gap-md">
               <MIcon name="language" className="text-ink-2" />
               <span className="text-body font-medium text-ink">{t('profile.language')}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-primary font-bold">
-              <span className="text-xs">{language === 'fr' ? tx("Français (FR)") : 'English (EN)'}</span>
-              <MIcon name="sync" className="text-xs" />
-            </div>
-          </button>
+            <LanguageSelect
+              className="border-0 bg-transparent px-0 text-primary"
+              onChange={(lang) => toast.success(LANGUAGES.find((l) => l.code === lang)?.label ?? lang)}
+            />
+          </div>
 
           {/* Déconnexion */}
           <button
