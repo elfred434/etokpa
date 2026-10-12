@@ -5,7 +5,7 @@ import clsx from 'clsx';
 import MIcon from '../../shared/MIcon';
 import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
-import { useLanguage } from '../../../context/LanguageContext';
+import { LANGUAGES, useLanguage } from '../../../context/LanguageContext';
 import { currentRole, currentUserName, hasSession, staffSpace, useAuthRevision } from '../../../routes/authGuard';
 import UserAvatar from '../../shared/UserAvatar';
 import { tx } from '../../../i18n/tx';
@@ -31,6 +31,8 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { language, toggleLanguage, t } = useLanguage();
+  const langIdx = LANGUAGES.findIndex((l) => l.code === language);
+  const langTitle = `${LANGUAGES[langIdx]?.label ?? language} → ${LANGUAGES[(langIdx + 1) % LANGUAGES.length].label}`;
   useAuthRevision();
   const [localSearch, setLocalSearch] = useState('');
   const [menu, setMenu] = useState(false);
@@ -141,11 +143,12 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
 
         {/* Icônes & Sélecteur de langue */}
         <div className="flex shrink-0 items-center gap-1 text-primary-shade sm:gap-md">
-          {/* Bouton de bascule de langue FR / EN */}
+          {/* Sélecteur de langue : cycle fr → en → es → de → pt */}
           <button
             type="button"
             onClick={toggleLanguage}
-            title={language === 'fr' ? 'Switch to English' : tx("Passer en Français")}
+            title={langTitle}
+            aria-label={`Langue : ${langTitle}`}
             className="flex items-center gap-1 rounded-full border border-primary-light bg-primary-lighter px-2.5 py-1 text-xs font-bold text-primary-shade transition-transform active:scale-95"
           >
             <MIcon name="language" className="text-[16px]" />

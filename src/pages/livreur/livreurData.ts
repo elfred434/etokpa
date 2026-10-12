@@ -56,12 +56,12 @@ const STATUT_LABEL_EN: Record<string, string> = {
 };
 
 export const statutLabel = (s: string) =>
-  (uiLang() === 'en' ? STATUT_LABEL_EN[s] : STATUT_LABEL[s]) ?? STATUT_LABEL[s] ?? s;
+  (uiLang() !== 'fr' ? STATUT_LABEL_EN[s] : STATUT_LABEL[s]) ?? STATUT_LABEL[s] ?? s;
 
 /** Destination lisible : nom du point de repère + précision saisie par le client. */
 export const destination = (o: LivreurOrder) =>
   [o.landmark?.nom, o.description_lieu].filter(Boolean).join(' — ') ||
-  (uiLang() === 'en' ? 'Destination not provided' : 'Destination non renseignée');
+  (uiLang() !== 'fr' ? 'Destination not provided' : 'Destination non renseignée');
 
 export const articlesCount = (o: LivreurOrder) => (o.items ?? []).reduce((s, it) => s + Number(it.quantite ?? 0), 0);
 

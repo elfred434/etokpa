@@ -83,7 +83,8 @@ export function quand(iso?: string | null, now = new Date()): string {
   hier.setDate(now.getDate() - 1);
   if (d.toDateString() === now.toDateString()) return tr(`Aujourd'hui à ${hm}`, `Today at ${hm}`);
   if (d.toDateString() === hier.toDateString()) return tr(`Hier à ${hm}`, `Yesterday at ${hm}`);
-  return d.toLocaleDateString(uiLang() === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const LOCALE_DATE: Record<string, string> = { fr: 'fr-FR', en: 'en-GB', es: 'es-ES', de: 'de-DE', pt: 'pt-PT' };
+  return d.toLocaleDateString(LOCALE_DATE[uiLang()] ?? 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 export function acteur(log: {
