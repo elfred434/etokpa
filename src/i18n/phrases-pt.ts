@@ -5,6 +5,7 @@
  * Généré le 12/10/2026.
  */
 export const PT: Record<string, string> = {
+  "Adresse de livraison": "Endereço de entrega",
   "Commande associée": "Pedido associado",
   "Document généré par TokPa — justificatif de paiement.": "Documento gerado pela TokPa — comprovativo de pagamento.",
   "Désignation": "Designação",

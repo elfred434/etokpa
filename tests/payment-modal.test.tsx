@@ -57,7 +57,19 @@ beforeEach(() => {
   vi.clearAllMocks();
   listAll.mockResolvedValue({ success: true, data: [paiement] });
   listMine.mockResolvedValue({ success: true, data: [paiement] });
-  getOrder.mockResolvedValue({ data: { id: 31, items: [] } });
+  getOrder.mockResolvedValue({
+    data: {
+      id: 31,
+      statut: 'en_preparation',
+      montant_total: 950,
+      frais_livraison: 250,
+      description_lieu: 'Près de la pharmacie',
+      items: [{ nom: 'Feuilles de gboma (botte)', quantite: 1, prix_unitaire: 700 }],
+      landmark: { nom: 'Dantokpa — Marché central' },
+      client: { nom_complet: 'Awa Client', telephone: '+229 97 00 00 01' },
+      livreur: { nom_complet: 'Koffi Livreur', telephone: '+229 97 00 00 02' },
+    },
+  });
 });
 
 async function ouvrirModal(source: 'mine' | 'all' = 'all') {
@@ -125,6 +137,51 @@ describe('modale de paiement — disposition', () => {
       to: '/commandes/suivi',
       search: { order: '31' },
     });
+  });
+
+  it('affiche le nom du client, le livreur et l’adresse de livraison', async () => {
+    const dialog = await ouvrirModal('all');
+
+    // Chargés à l'ouverture via GET /orders/{id}
+    await waitFor(() => expect(getOrder).toHaveBeenCalledWith(31));
+    expect(await screen.findByText('Awa Client')).toBeTruthy();
+    expect(await screen.findByText('Koffi Livreur')).toBeTruthy();
+    expect(await screen.findByText('Dantokpa — Marché central — Près de la pharmacie')).toBeTruthy();
+    // Téléphones affichés en complément
+    expect(dialog.textContent).toContain('+229 97 00 00 01');
+    expect(dialog.textContent).toContain('+229 97 00 00 02');
+  });
+
+  it('indique « Chargement… » puis complète les informations', async () => {
+    let resoudre: (v: unknown) => void = () => {};
+    getOrder.mockImplementationOnce(
+      () => new Promise((resolve) => { resoudre = resolve; }),
+    );
+    const dialog = await ouvrirModal('all');
+    expect(dialog.textContent).toContain('Chargement…');
+    await act(async () => {
+      resoudre({
+        data: {
+          id: 31,
+          statut: 'en_preparation',
+          landmark: { nom: 'Calavi — Carrefour' },
+          client: { nom_complet: 'Awa Client' },
+          livreur: { nom_complet: 'Koffi Livreur' },
+        },
+      });
+    });
+    await waitFor(() => expect(dialog.textContent).not.toContain('Chargement…'));
+    expect(dialog.textContent).toContain('Calavi — Carrefour');
+  });
+
+  it('reste utilisable si le détail de la commande est refusé (repli sur #id)', async () => {
+    getOrder.mockRejectedValueOnce(new Error('403'));
+    const dialog = await ouvrirModal('all');
+    await waitFor(() => expect(dialog.textContent).not.toContain('Chargement…'));
+    expect(dialog.textContent).toContain('#20');   // identifiant du client
+    expect(dialog.textContent).toContain('Livreur');
+    expect(dialog.textContent).toContain('Adresse de livraison');
+    expect(screen.getByRole('dialog')).toBeTruthy();
   });
 
   it('se ferme au clic sur Fermer', async () => {

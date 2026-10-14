@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 import MIcon from '../shared/MIcon';
-import { paymentsApi } from '../../services/api';
+import { ordersApi, paymentsApi } from '../../services/api';
+import type { ReceiptOrder } from '../../services/receipts/receiptData';
 import ReceiptButton from './ReceiptButton';
 import { dateCourte, fmtFcfa, listOf, unwrap } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -58,10 +59,39 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<PaymentRow | null>(null);
+  // Détail de la commande liée (client, livreur, adresse) — chargé À L'OUVERTURE
+  // de la modale : GET /orders/{id} renvoie les relations (OrderResource), ce
+  // que la liste des paiements ne fournit pas. Aucune modification backend.
+  const [detail, setDetail] = useState<ReceiptOrder | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   // Actualisation globale (bouton / silencieuse) : recharge les paiements sans squelette.
   const tick = useGlobalRefreshTick();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const orderId = selected ? selected.order?.id ?? selected.order_id : null;
+    if (!selected || !orderId) {
+      setDetail(null);
+      return;
+    }
+    let alive = true;
+    setDetail(null);
+    setDetailLoading(true);
+    ordersApi
+      .getOrder(orderId)
+      .then((res) => {
+        if (!alive) return;
+        setDetail((((res as { data?: ReceiptOrder })?.data ?? res) as ReceiptOrder) ?? null);
+      })
+      .catch(() => {
+        if (alive) setDetail(null); // la modale reste utilisable sans le détail
+      })
+      .finally(() => alive && setDetailLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [selected]);
 
   /** Ouvre la commande liée au paiement (suivi côté client, liste côté admin). */
   const ouvrirCommande = (orderId: number) => {
@@ -250,8 +280,15 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                       <MIcon name="person" className="text-text-tertiary text-base" />
                       <span className="text-text-secondary">{tx("Client")} :</span>
                       <span className="font-bold text-on-surface">
-                        {selected.client_id ? `#${selected.client_id}` : '—'}
+                        {detail?.client?.nom_complet
+                          ? detail.client.nom_complet
+                          : selected.client_id
+                            ? `#${selected.client_id}`
+                            : '—'}
                       </span>
+                      {detail?.client?.telephone && (
+                        <span className="text-micro text-text-tertiary">{detail.client.telephone}</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -271,13 +308,40 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                       {(selected.order?.id ?? selected.order_id) ? `#${selected.order?.id ?? selected.order_id}` : '—'}
                     </span>
                   </div>
-                  {selected.order?.statut && (
+                  {(detail?.statut ?? selected.order?.statut) && (
                     <div className="flex items-center gap-2">
                       <MIcon name="local_shipping" className="text-text-tertiary text-base" />
                       <span className="text-text-secondary">{tx("Statut")} :</span>
-                      <span className="font-bold text-on-surface">{selected.order.statut}</span>
+                      <span className="font-bold text-on-surface">{detail?.statut ?? selected.order?.statut}</span>
                     </div>
                   )}
+                  <div className="flex items-center gap-2">
+                    <MIcon name="two_wheeler" className="text-text-tertiary text-base" />
+                    <span className="text-text-secondary">{tx("Livreur")} :</span>
+                    {detailLoading && !detail ? (
+                      <span className="text-micro text-text-tertiary">{tx("Chargement…")}</span>
+                    ) : (
+                      <>
+                        <span className="font-bold text-on-surface">
+                          {detail?.livreur?.nom_complet || '—'}
+                        </span>
+                        {detail?.livreur?.telephone && (
+                          <span className="text-micro text-text-tertiary">{detail.livreur.telephone}</span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-start gap-2 md:col-span-2">
+                    <MIcon name="location_on" className="text-text-tertiary text-base" />
+                    <span className="text-text-secondary">{tx("Adresse de livraison")} :</span>
+                    {detailLoading && !detail ? (
+                      <span className="text-micro text-text-tertiary">{tx("Chargement…")}</span>
+                    ) : (
+                      <span className="font-bold text-on-surface">
+                        {[detail?.landmark?.nom, detail?.description_lieu].filter(Boolean).join(' — ') || '—'}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -286,6 +350,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
             <div className="px-6 py-4 bg-bg-secondary border-t border-border-default flex flex-wrap items-center justify-between gap-3 shrink-0">
               <ReceiptButton
                 payment={selected}
+                order={detail}
                 variant="button"
                 testId={`receipt-payment-${selected.id}-detail`}
               />

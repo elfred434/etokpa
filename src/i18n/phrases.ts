@@ -1,4 +1,5 @@
 export const EN: Record<string, string> = {
+  "Adresse de livraison": "Delivery address",
   "Calculé automatiquement à partir des produits du pack": "Calculated automatically from the pack products",
   "Calcul automatique": "Automatic calculation",
   "Commande associée": "Related order",
