@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 import MIcon from '../shared/MIcon';
 import { paymentsApi } from '../../services/api';
+import ReceiptButton from './ReceiptButton';
 import { dateCourte, fmtFcfa, listOf, unwrap } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
@@ -41,16 +42,6 @@ const STATUT_CLASS: Record<string, string> = {
 function asPayment(row: any): PaymentRow {
   const inner = row?.data && typeof row.data === 'object' && 'id' in row.data ? row.data : row;
   return inner as PaymentRow;
-}
-
-function receiptHref(url?: string | null): string | null {
-  if (!url) return null;
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : null;
-  } catch {
-    return null;
-  }
 }
 
 const LOADERS = {
@@ -122,7 +113,6 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
               <tbody>
                 {rows.map((p) => {
                   const statut = p.statut ?? '';
-                  const receipt = receiptHref(p.recu_url);
                   const orderId = p.order?.id ?? p.order_id;
                   return (
                     <tr key={p.id} className="cursor-pointer border-t border-border-default" onClick={() => setSelected(p)}>
@@ -146,12 +136,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                       </td>
                       <td className="px-4 py-3">
                         <p>{p.fedapay_ref || '—'}</p>
-                        {receipt && (
-                          <a href={receipt} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-primary">
-                            <MIcon name="receipt" className="text-[16px]" />
-                            {tx("Reçu")}
-                          </a>
-                        )}
+                        <ReceiptButton payment={p} testId={`receipt-payment-${p.id}`} stopPropagation />
                       </td>
                     </tr>
                   );
@@ -179,12 +164,13 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
               <div><dt className="text-micro uppercase text-text-secondary">{tx("Payé le")}</dt><dd className="font-semibold">{selected.paid_at ? dateCourte(selected.paid_at) : '—'}</dd></div>
               <div><dt className="text-micro uppercase text-text-secondary">{tx("Référence")}</dt><dd className="break-all font-semibold">{selected.fedapay_ref || '—'}</dd></div>
             </dl>
-            {receiptHref(selected.recu_url) && (
-              <a href={receiptHref(selected.recu_url) ?? undefined} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1 font-semibold text-primary">
-                <MIcon name="receipt" className="text-[16px]" />
-                {tx("Reçu")}
-              </a>
-            )}
+            <div className="mt-4">
+              <ReceiptButton
+                payment={selected}
+                variant="button"
+                testId={`receipt-payment-${selected.id}-detail`}
+              />
+            </div>
           </div>
         </div>
       )}

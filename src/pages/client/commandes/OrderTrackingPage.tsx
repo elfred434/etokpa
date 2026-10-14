@@ -5,6 +5,7 @@ import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
 import RealBeninMap from '../../../components/client/commandes/RealBeninMap';
+import ReceiptButton from '../../../components/payments/ReceiptButton';
 import { useRiderLocation } from '../../../hooks/useRiderLocation';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
@@ -500,6 +501,17 @@ export default function OrderTrackingPage() {
                       {order.description_lieu ? ` — ${order.description_lieu}` : ''}
                     </p>
                   )}
+                  {/* Reçu de paiement — disponible pour tous les statuts (les non-payés
+                      portent la mention « non payé ») */}
+                  {order.payment?.id ? (
+                    <div className="mt-sm border-t border-border-default pt-sm">
+                      <ReceiptButton
+                        payment={order.payment}
+                        order={order}
+                        testId={`receipt-order-${order.id}`}
+                      />
+                    </div>
+                  ) : null}
                 </div>
               )}
             </>
