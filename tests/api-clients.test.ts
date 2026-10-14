@@ -102,7 +102,8 @@ describe('livreur, payment and notification adapters', () => {
     vi.mocked(apiClient.patch).mockResolvedValue({ data: {} });
     await paymentsApi.getPayment(9);
     await notificationsApi.markRead(9);
-    expect(apiClient.get).toHaveBeenCalledWith('/payments/9');
+    // Délai explicite de 30 s sur les lectures de paiements (voir NOTE_22).
+    expect(apiClient.get).toHaveBeenCalledWith('/payments/9', { timeout: 30000 });
     expect(apiClient.patch).toHaveBeenCalledWith('/notifications/9/read');
   });
 
