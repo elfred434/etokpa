@@ -54,8 +54,16 @@ function monter(source: 'mine' | 'all') {
   );
 }
 
+/** Session simulée : la vue administration n'appelle l'annuaire que pour un admin. */
+function connecter(role: string, nom: string, id: number) {
+  localStorage.setItem('tokpa_token', 'jeton-de-test');
+  localStorage.setItem('tokpa_user', JSON.stringify({ id, nom_complet: nom, role }));
+}
+
 beforeEach(() => {
+  localStorage.clear();
   localStorage.setItem('tokpa_lang', 'fr');
+  connecter('admin', 'Alain Admin', 1);
   vi.clearAllMocks();
   listAll.mockResolvedValue({ success: true, data: [paiement] });
   listMine.mockResolvedValue({ success: true, data: [paiement] });
@@ -119,12 +127,16 @@ describe('modale de paiement — disposition', () => {
     expect(screen.getByTestId('receipt-payment-16-detail')).toBeTruthy();
   });
 
-  it('affiche le client uniquement dans la vue administration', async () => {
+  it('affiche la ligne « Client » dans les deux vues (disposition identique)', async () => {
     const admin = await ouvrirModal('all');
-    expect(admin.textContent).toContain('Client');
+    expect(admin.textContent).toContain('Client :');
+    await waitFor(() => expect(admin.textContent).toContain('Awa Client'));
     document.body.innerHTML = '';
+
+    connecter('client', 'Awa Client', 20);
     const client = await ouvrirModal('mine');
-    expect(client.textContent).not.toContain('Client :');
+    expect(client.textContent).toContain('Client :');
+    expect(client.textContent).toContain('Awa Client');
   });
 
   it('ouvre la commande liée (liste admin) puis se ferme', async () => {
@@ -153,7 +165,7 @@ describe('modale de paiement — disposition', () => {
     // Chargés à l'ouverture via GET /orders/{id}
     await waitFor(() => expect(getOrder).toHaveBeenCalledWith(31));
     // Le nom du client vient de /admin/users : GET /orders/{id} ne l'expose pas.
-    expect(await screen.findByText('Awa Client')).toBeTruthy();
+    await waitFor(() => expect(dialog.textContent).toContain('Awa Client'));
     expect(getUsers).toHaveBeenCalled();
     expect(await screen.findByText('Koffi Livreur')).toBeTruthy();
     expect(await screen.findByText('Dantokpa — Marché central — Près de la pharmacie')).toBeTruthy();
@@ -191,10 +203,44 @@ describe('modale de paiement — disposition', () => {
     expect(dialog.textContent).toContain('#20');
   });
 
-  it('n’appelle pas l’annuaire côté client (vue « mes paiements »)', async () => {
-    await ouvrirModal('mine');
+  it('côté clientèle : même disposition, nom de la session, annuaire jamais appelé', async () => {
+    connecter('client', 'Awa Client', 20);
+    const dialog = await ouvrirModal('mine');
     await waitFor(() => expect(getOrder).toHaveBeenCalledWith(31));
+    // Mêmes blocs que la vue administration
+    expect(dialog.textContent).toContain('Détail du paiement et de la commande associée');
+    expect(dialog.textContent).toContain('Informations de paiement');
+    expect(dialog.textContent).toContain('Commande associée');
+    expect(dialog.textContent).toContain('Livreur');
+    expect(dialog.textContent).toContain('Adresse de livraison');
+    expect(dialog.textContent).toContain('Voir la commande');
+    // Son propre nom, lu dans la session — et aucun appel à /admin/users
+    expect(dialog.textContent).toContain('Awa Client');
     expect(getUsers).not.toHaveBeenCalled();
+  });
+
+  it('côté clientèle : n’affiche jamais le nom d’un autre compte', async () => {
+    connecter('client', 'Awa Client', 20);
+    listMine.mockResolvedValue({ success: true, data: [{ ...paiement, client_id: 19 }] });
+    const dialog = await ouvrirModal('mine');
+    await waitFor(() => expect(dialog.textContent).not.toContain('Chargement…'));
+    expect(dialog.textContent).not.toContain('Awa Client'); // pas son paiement
+    expect(dialog.textContent).toContain('#19');            // identifiant neutre
+    expect(getUsers).not.toHaveBeenCalled();
+  });
+
+  it('n’appelle pas la route admin si l’utilisateur n’est pas administrateur', async () => {
+    connecter('client', 'Awa Client', 20);
+    monter('all'); // cas limite : vue « tous les paiements » avec un rôle client
+    await screen.findByText('#16');
+    expect(getUsers).not.toHaveBeenCalled();
+  });
+
+  it('affiche le nom du client dans le tableau (vue administration)', async () => {
+    monter('all');
+    await screen.findByText('#16');
+    await waitFor(() => expect(getUsers).toHaveBeenCalled());
+    expect(await screen.findByText('Awa Client')).toBeTruthy();
   });
 
   it('reste utilisable si le détail de la commande est refusé', async () => {

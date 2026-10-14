@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 import MIcon from '../shared/MIcon';
 import { adminApi, ordersApi, paymentsApi } from '../../services/api';
+import { currentUserId, currentUserName, isAdminRole } from '../../routes/authGuard';
 import type { ReceiptOrder } from '../../services/receipts/receiptData';
 import ReceiptButton from './ReceiptButton';
 import { dateCourte, fmtFcfa, listOf, unwrap } from '../../services/api/unwrap';
@@ -75,7 +76,10 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (source !== 'all') return;
+    // Vue administration uniquement, et seulement pour un admin : la route
+    // /admin/users est protégée côté backend ; on ne la sollicite pas depuis
+    // la vue clientèle (qui n'a pas besoin des données des autres comptes).
+    if (source !== 'all' || !isAdminRole()) return;
     let alive = true;
     adminApi
       .getUsers({ per_page: 200 })
@@ -119,6 +123,23 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
       alive = false;
     };
   }, [selected]);
+
+  /**
+   * Nom affiché pour « Client ».
+   * - Vue administration : détail de la commande, sinon annuaire (/admin/users).
+   * - Vue clientèle : le nom de la session, et UNIQUEMENT si la ligne appartient
+   *   à l'utilisateur connecté — sinon l'identifiant, pour ne jamais exposer le
+   *   nom d'un autre compte.
+   */
+  const nomClientAffiche = !selected
+    ? '—'
+    : source === 'all'
+      ? detail?.client?.nom_complet ||
+        (selected.client_id ? annuaire[Number(selected.client_id)] : undefined) ||
+        (selected.client_id ? `#${selected.client_id}` : '—')
+      : selected.client_id == null || selected.client_id === currentUserId()
+        ? currentUserName() || (selected.client_id ? `#${selected.client_id}` : '—')
+        : `#${selected.client_id}`;
 
   /** Ouvre la commande liée au paiement (suivi côté client, liste côté admin). */
   const ouvrirCommande = (orderId: number) => {
@@ -194,7 +215,11 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                         <p className="font-semibold">{orderId ? `#${orderId}` : '—'}</p>
                         <p className="text-text-secondary">{p.order?.statut ?? ''}</p>
                       </td>
-                      {source === 'all' && <td className="px-4 py-3">{p.client_id ? `#${p.client_id}` : '—'}</td>}
+                      {source === 'all' && (
+                        <td className="px-4 py-3">
+                          {p.client_id ? annuaire[Number(p.client_id)] ?? `#${p.client_id}` : '—'}
+                        </td>
+                      )}
                       <td className="px-4 py-3">
                         <p className="font-semibold">{fmtFcfa(p.montant)}</p>
                         <p className="text-text-secondary">{p.paid_at ? `${tx("Payé le")} ${dateCourte(p.paid_at)}` : ''}</p>
@@ -302,20 +327,14 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                       {selected.fedapay_ref || '—'}
                     </span>
                   </div>
-                  {source === 'all' && (
-                    <div className="flex items-center gap-2">
-                      <MIcon name="person" className="text-text-tertiary text-base" />
-                      <span className="text-text-secondary">{tx("Client")} :</span>
-                      <span className="font-bold text-on-surface">
-                        {detail?.client?.nom_complet ||
-                          (selected.client_id ? annuaire[Number(selected.client_id)] : undefined) ||
-                          (selected.client_id ? `#${selected.client_id}` : '—')}
-                      </span>
-                      {detail?.client?.telephone && (
-                        <span className="text-micro text-text-tertiary">{detail.client.telephone}</span>
-                      )}
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <MIcon name="person" className="text-text-tertiary text-base" />
+                    <span className="text-text-secondary">{tx("Client")} :</span>
+                    <span className="font-bold text-on-surface">{nomClientAffiche}</span>
+                    {detail?.client?.telephone && (
+                      <span className="text-micro text-text-tertiary">{detail.client.telephone}</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
