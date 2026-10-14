@@ -10,6 +10,7 @@ import LoadingState from '../../../components/shared/LoadingState';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import type { CategoryId, Product } from '../../../types/models';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { catalogApi, type ApiBundle, type ApiCategory, type ApiProduct } from '../../../services/api';
 import { absImageUrl } from '../../../utils/imageUrl';
 import { categoryKind, type CategoryKind } from '../../../utils/categoryKind';
@@ -87,6 +88,12 @@ export default function CatalogPage() {
   const [productsError, setProductsError] = useState<string | null>(null);
   // « Réessayer » : relance les appels (produits, catégories, packs).
   const [reloadKey, setReloadKey] = useState(0);
+  // Actualisation globale (bouton / silencieuse) : rejoue les trois chargements
+  // (catégories, packs, produits) sans afficher les squelettes (voir silentRefreshActive).
+  const tick = useGlobalRefreshTick();
+  useEffect(() => {
+    if (tick > 0) setReloadKey((k) => k + 1);
+  }, [tick]);
   const [search, setSearch] = useState(q);
   const [cat, setCat] = useState<CatFilter>(() => parseCat(catParam));
   // Prix max choisi au curseur ; null = aucune limite (la maquette figeait value="7500", ce qui masquait
@@ -123,7 +130,7 @@ export default function CatalogPage() {
   const [packsError, setPacksError] = useState<string | null>(null);
   useEffect(() => {
     let alive = true;
-    setApiPacks(null);
+    if (!silentRefreshActive()) setApiPacks(null);
     setPacksError(null);
     catalogApi
       .getBundles()
@@ -204,7 +211,7 @@ export default function CatalogPage() {
   // Connection API Backend GET /api/products — 100 premiers, nouveautés d'abord, recherche q (debounce)
   useEffect(() => {
     let alive = true;
-    setProductsLoading(true);
+    if (!silentRefreshActive()) setProductsLoading(true);
     const timer = window.setTimeout(() => {
       catalogApi.getProducts({ q: search.trim() || undefined, per_page: 100, sort: 'created_at', dir: 'desc' })
         .then((res) => {

@@ -3366,4 +3366,9 @@ export const EN: Record<string, string> = {
   "Vos packs sont conservés sur cet appareil tant que le serveur ne les accepte pas.": "Your packs are kept on this device until the server accepts them.",
   "produits": "products",
   "Zoom": "Zoom",
+  "Actualisation en cours…": "Refreshing…",
+  "Dernière actualisation": "Last refresh",
+  "Actualisation automatique": "Automatic refresh",
+  "Toutes les 30 secondes": "Every 30 seconds",
+  "Informations actualisées.": "Information refreshed.",
 };

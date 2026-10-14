@@ -4,6 +4,7 @@ import MobileTableBridge from '../../shared/MobileTableBridge';
 import MIcon from '../../shared/MIcon';
 import AdminNotificationBell from './AdminNotificationBell';
 import LangToggle from '../../shared/LangToggle';
+import RefreshButton from '../../shared/RefreshButton';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
@@ -68,6 +69,7 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
           </div>
         </div>
         <div className="ml-auto flex items-center gap-1 sm:gap-md">
+          <RefreshButton withLabel />
           <LangToggle />
           {/* Vraies notifications (GET /notifications) : compteur, liste, marquer comme lue */}
           <AdminNotificationBell

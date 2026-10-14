@@ -13,6 +13,7 @@ import { extractApiError, formatApiError } from '../../../utils/apiError';
 import { absImageUrl } from '../../../utils/imageUrl';
 import { mapApiProduct } from '../../../utils/productMap';
 import { currentUserId } from '../../../routes/authGuard';
+import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import {
@@ -180,6 +181,9 @@ export default function MesPacksPage() {
   const pageRef = useRef<HTMLDivElement>(null);
   const pressRef = useRef<Pression | null>(null);
 
+  // Actualisation globale : rejoue le chargement (produits + packs) en place.
+  const tick = useGlobalRefreshTick();
+
   useEffect(() => {
     let stop = false;
     (async () => {
@@ -198,7 +202,7 @@ export default function MesPacksPage() {
       }
     })();
     return () => { stop = true; };
-  }, []);
+  }, [tick]);
 
   useEffect(() => {
     const mq = mediaGrandEcran();

@@ -1315,4 +1315,9 @@ export const DE: Record<string, string> = {
   "Vos packs apparaîtront ici.": "Ihre Packs erscheinen hier.",
   "Vos packs sont conservés sur cet appareil tant que le serveur ne les accepte pas.": "Ihre Packs bleiben auf diesem Gerät, bis der Server sie akzeptiert.",
   "produits": "Produkte",
+  "Actualisation en cours…": "Aktualisierung läuft…",
+  "Dernière actualisation": "Letzte Aktualisierung",
+  "Actualisation automatique": "Automatische Aktualisierung",
+  "Toutes les 30 secondes": "Alle 30 Sekunden",
+  "Informations actualisées.": "Informationen aktualisiert.",
 };

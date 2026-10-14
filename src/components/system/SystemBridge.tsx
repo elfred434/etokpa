@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useCartSync } from '../../hooks/useCartSync';
+import { useAutoRefresh } from '../../hooks/useRefresh';
 import { useRealtimeNotifications } from '../../hooks/useRealtimeNotifications';
 
 /** Session ouverte, quel que soit le rôle : le panier clientèle est celui de cet utilisateur. */
@@ -13,6 +14,9 @@ function hasOpenSession(): boolean {
  *  - useRealtimeNotifications : écoute le canal Reverb `notifications.{userId}`
  *    (statuts commande, négociations, paiements, assignation livreur)
  *    → toasts + événements de rafraîchissement pour les pages.
+ *  - useAutoRefresh : processus d'actualisation SILENCIEUSE (30 s si l'onglet est
+ *    visible, retour d'onglet, retour du réseau) — mêmes effets que le bouton
+ *    « Actualiser », sans aucun clic.
  *
  * Se (re)branche automatiquement à chaque changement de session
  * (événement `tokpa:auth-changed` émis par services/api/auth.ts).
@@ -35,6 +39,8 @@ export default function SystemBridge() {
 
   useCartSync(cartKey);
   useRealtimeNotifications(sessionKey);
+  // Actualisation silencieuse globale : catalogue, commandes, panier, notifications…
+  useAutoRefresh();
 
   return null;
 }

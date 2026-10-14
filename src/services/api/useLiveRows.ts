@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { invokeDesign } from '../../utils/designRuntime';
 import { unwrap, listOf } from './unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
+import { onGlobalRefresh } from '../refresh/refreshBus';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -38,6 +39,17 @@ export function useLiveRows(fetcher: () => Promise<unknown>, deps: unknown[] = [
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
+
+  // Rafraîchissement global (bouton / silencieux) : recharge le tableau en place.
+  const reloadRef = useRef(reload);
+  reloadRef.current = reload;
+  useEffect(
+    () =>
+      onGlobalRefresh(() => {
+        reloadRef.current();
+      }),
+    [],
+  );
 
   return { rows, err, loading, reload };
 }

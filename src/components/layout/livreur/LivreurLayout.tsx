@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import LangToggle from '../../shared/LangToggle';
+import RefreshButton from '../../shared/RefreshButton';
 import { authApi } from '../../../services/api';
 import { currentUserName } from '../../../routes/authGuard';
 import UserAvatar from '../../shared/UserAvatar';
@@ -99,6 +100,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-40 flex h-[52px] w-full items-center justify-between gap-2 border-b border-border-default bg-bg-card px-3 sm:px-lg">
           <span className="font-h1 text-h1 font-bold text-primary">TOKPa</span>
           <div className="flex min-w-0 items-center gap-2 sm:gap-lg">
+            <RefreshButton withLabel />
             <LangToggle />
             <Link to="/notifications" aria-label={tx("Notifications")} className="text-text-secondary transition-colors hover:text-primary">
               <MIcon name="notifications" />

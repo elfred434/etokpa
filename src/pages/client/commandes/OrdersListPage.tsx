@@ -8,6 +8,7 @@ import EmptyState from '../../../components/shared/EmptyState';
 import Pagination from '../../../components/shared/Pagination';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { ordersApi, paymentsApi } from '../../../services/api';
 import { isOwnOrder } from '../../../utils/ownOrder';
 import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
@@ -89,9 +90,12 @@ export default function OrdersListPage() {
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<ApiOrder | null>(null);
 
+  // Actualisation globale (bouton / silencieuse) : rejoue la liste sans squelette.
+  const tick = useGlobalRefreshTick();
+
   useEffect(() => {
     if (!isAuthenticated) return;
-    setLoading(true);
+    if (!silentRefreshActive()) setLoading(true);
     setError(null);
     ordersApi
       .getOrders(page, statusFilter)
@@ -106,7 +110,7 @@ export default function OrdersListPage() {
         setError(alertApiError(err, 'orders-list'));
       })
       .finally(() => setLoading(false));
-  }, [isAuthenticated, page, statusFilter]);
+  }, [isAuthenticated, page, statusFilter, tick]);
 
   const payLock = useRef(false);
   const handlePayer = async (order: ApiOrder) => {

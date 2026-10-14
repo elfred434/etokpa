@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { onGlobalRefresh } from '../services/refresh/refreshBus';
 import { store, } from '../store';
 import { useAppDispatch, useAppSelector } from '../hooks/useStore';
 import { add, clear } from '../store/slices/cart/cartSlice';
@@ -53,6 +54,11 @@ export function useCartSync(sessionKey: number): void {
   const items = useAppSelector((s) => s.cart.items);
   const prevItemsRef = useRef<Record<string, number>>({});
   const [hydrated, setHydrated] = useState(false);
+  // Incrémenté à chaque rafraîchissement global (bouton / silencieux) : rejoue
+  // l'hydratation ci-dessous sans toucher au reste de l'application.
+  const [revision, setRevision] = useState(0);
+
+  useEffect(() => onGlobalRefresh(() => setRevision((r) => r + 1)), []);
 
   const localItems = (): LocalItem[] => store.getState().cart.items;
 
@@ -113,7 +119,7 @@ export function useCartSync(sessionKey: number): void {
     return () => {
       cancelled = true;
     };
-  }, [sessionKey, dispatch]);
+  }, [sessionKey, dispatch, revision]);
 
   // 2) Diff Redux → appels API (après hydratation)
   useEffect(() => {

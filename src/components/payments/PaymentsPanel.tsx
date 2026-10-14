@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 import MIcon from '../shared/MIcon';
 import { paymentsApi } from '../../services/api';
 import { dateCourte, fmtFcfa, listOf, unwrap } from '../../services/api/unwrap';
@@ -65,9 +66,12 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<PaymentRow | null>(null);
 
+  // Actualisation globale (bouton / silencieuse) : recharge les paiements sans squelette.
+  const tick = useGlobalRefreshTick();
+
   useEffect(() => {
     let alive = true;
-    setLoading(true);
+    if (!silentRefreshActive()) setLoading(true);
     setErr(null);
     LOADERS[source]()
       .then((res) => {
@@ -83,7 +87,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
     return () => {
       alive = false;
     };
-  }, [source]);
+  }, [source, tick]);
 
   return (
     <div className="space-y-6">

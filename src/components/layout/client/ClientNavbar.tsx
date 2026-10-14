@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
 import MIcon from '../../shared/MIcon';
+import RefreshButton from '../../shared/RefreshButton';
 import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
 import { LANGUAGES, useLanguage } from '../../../context/LanguageContext';
@@ -154,6 +155,9 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
             <MIcon name="language" className="text-[16px]" />
             <span className="hidden uppercase min-[400px]:inline">{language}</span>
           </button>
+
+          {/* Actualisation globale : bouton + processus silencieux (30 s, onglet visible) */}
+          <RefreshButton />
 
           <Link to="/notifications" className="scale-interaction" aria-label={tx("Notifications")}>
             <MIcon name="notifications" />
