@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast';
 import { tr, tx } from '../i18n/tx';
+import { API_BASE_URL } from '../services/api/client';
 
 /**
  * Extraction & mise en forme des erreurs API Laravel pour l'UX.
@@ -54,10 +55,21 @@ export function formatApiError(info: ApiErrorInfo): string {
   const prefix = info.status != null ? `[HTTP ${info.status}]` : tr('[Réseau]', '[Network]');
   let text = `${prefix} ${info.message}`;
   if (info.status === null) {
+    // L'adresse affichée est celle RÉELLEMENT appelée (elle dépend de
+    // VITE_API_BASE_URL : chemin relatif /api en aperçu, localhost:8000 en local).
     text += tr(
-    ' — Backend injoignable (serveur arrêté ? CORS ? vérifiez localhost:8000).',
-    ' — Backend unreachable (server stopped? CORS? check localhost:8000).',
-  );
+      ` — Backend injoignable sur ${API_BASE_URL} (serveur arrêté ? CORS ?).`,
+      ` — Backend unreachable at ${API_BASE_URL} (server stopped? CORS?).`,
+    );
+    // Un dépassement de délai ne veut pas dire « serveur arrêté » : le serveur
+    // répond, mais trop lentement. Cas connu : les listes de paiements
+    // interrogent FedaPay une fois par paiement en attente (voir NOTE_22).
+    if (/timeout/i.test(info.message)) {
+      text += tr(
+        ' Le serveur a répondu trop tard : réessayez. Si la page Paiements est concernée, elle ralentit avec le nombre de paiements en attente (voir NOTE_22).',
+        ' The server answered too late: try again. If the Payments page is affected, it slows down with the number of pending payments (see NOTE_22).',
+      );
+    }
   }
   const fields = Object.entries(info.fieldErrors ?? {}).map(([field, msgs]) => {
     const list = Array.isArray(msgs) ? msgs.join(' ') : String(msgs);

@@ -24,6 +24,14 @@ describe('payment API adapter', () => {
   it('loads payment details', async () => {
     vi.mocked(apiClient.get).mockResolvedValue({ data: { id: 3, statut: 'en_attente' } });
     await paymentsApi.getPayment(3);
-    expect(apiClient.get).toHaveBeenCalledWith('/payments/3');
+    // Les lectures de paiements passent un délai explicite de 30 s (voir NOTE_22).
+    expect(apiClient.get).toHaveBeenCalledWith('/payments/3', { timeout: 30000 });
+  });
+  it('laisse un délai généreux aux listes de paiements (routes lentes côté serveur)', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { success: true, data: [] } });
+    await paymentsApi.listAll();
+    expect(apiClient.get).toHaveBeenCalledWith('/admin/payments', { timeout: 30000 });
+    await paymentsApi.listMine();
+    expect(apiClient.get).toHaveBeenCalledWith('/payments', { timeout: 30000 });
   });
 });
