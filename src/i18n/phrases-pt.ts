@@ -5,13 +5,16 @@
  * Généré le 12/10/2026.
  */
 export const PT: Record<string, string> = {
+  "Commande associée": "Pedido associado",
   "Document généré par TokPa — justificatif de paiement.": "Documento gerado pela TokPa — comprovativo de pagamento.",
   "Désignation": "Designação",
   "Détail des articles": "Detalhe dos artigos",
   "Détail des articles indisponible": "Detalhe dos artigos indisponível",
+  "Détail du paiement et de la commande associée": "Detalhe do pagamento e do pedido associado",
   "Fermer": "Fechar",
   "Annuler": "Cancelar",
   "Impossible de générer le reçu.": "Não foi possível gerar o recibo.",
+  "Informations de paiement": "Informações de pagamento",
   "Non payé": "Não pago",
   "N° de reçu": "N.º de recibo",
   "Paiement en attente": "Pagamento pendente",

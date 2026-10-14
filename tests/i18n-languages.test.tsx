@@ -230,9 +230,11 @@ describe('Couche tx()/tr() — es, de, pt', () => {
     const reference = Object.keys(ES).sort();
     // 240 phrases initiales + 1055 longue traîne + 15 « Mes packs » (atelier client)
     // + 5 « actualisation » (bouton Actualiser + processus silencieux ; « Actualiser »
-    //   existait déjà) =
+    //   existait déjà)
+    // + 3 « modale de paiement » (détail, informations de paiement, commande
+    //   associée ; « Voir la commande » existait déjà) =
     // couverture complète des tx() statiques.
-    expect(reference.length).toBe(1331);
+    expect(reference.length).toBe(1334);
     for (const [name, dict] of dicts) {
       expect(Object.keys(dict).sort(), `clés ${name}`).toEqual(reference);
       for (const [k, v] of Object.entries(dict)) {

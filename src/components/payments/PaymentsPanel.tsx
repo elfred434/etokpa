@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 import MIcon from '../shared/MIcon';
 import { paymentsApi } from '../../services/api';
@@ -22,6 +23,7 @@ type PaymentRow = {
   fedapay_ref?: string | null;
   recu_url?: string | null;
   paid_at?: string | null;
+  created_at?: string | null;
   order?: { id?: number; statut?: string } | null;
 };
 
@@ -59,6 +61,17 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
 
   // Actualisation globale (bouton / silencieuse) : recharge les paiements sans squelette.
   const tick = useGlobalRefreshTick();
+  const navigate = useNavigate();
+
+  /** Ouvre la commande liée au paiement (suivi côté client, liste côté admin). */
+  const ouvrirCommande = (orderId: number) => {
+    setSelected(null);
+    if (source === 'all' || source === 'own-admin') {
+      void navigate({ to: '/admin/commandes' });
+    } else {
+      void navigate({ to: '/commandes/suivi', search: { order: String(orderId) } });
+    }
+  };
 
   useEffect(() => {
     let alive = true;
@@ -147,29 +160,154 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
         )}
       </div>
       {selected && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setSelected(null)}>
-          <div className="max-h-[85vh] w-full max-w-[640px] overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl sm:rounded-2xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <h2 className="text-h3 font-h3 font-bold">{tx("Paiement")} #{selected.id}</h2>
-              <button type="button" className="rounded-lg p-1 text-text-secondary" aria-label={tx("Fermer")} onClick={() => setSelected(null)}>
-                <MIcon name="close" />
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl border border-border-default w-full max-w-[620px] max-h-[90vh] flex flex-col overflow-hidden"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {/* En-tête */}
+            <div className="px-6 py-4 border-b border-border-default flex items-center justify-between bg-surface-container-low shrink-0">
+              <div className="flex items-center gap-2">
+                <MIcon name="payments" className="text-primary text-xl" />
+                <div>
+                  <h3 className="font-h2 text-h3 font-bold text-on-surface">
+                    {tx("Paiement")} #{selected.id}
+                  </h3>
+                  <p className="font-secondary text-micro text-text-secondary">
+                    {tx("Détail du paiement et de la commande associée")}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                aria-label={tx("Fermer le modal")}
+                onClick={() => setSelected(null)}
+                className="p-1.5 text-text-secondary hover:text-on-surface hover:bg-black/5 rounded-full transition-colors cursor-pointer"
+              >
+                <MIcon name="close" className="text-xl" />
               </button>
             </div>
-            <dl className="space-y-3 text-label">
-              <div><dt className="text-micro uppercase text-text-secondary">{tx("Méthode")}</dt><dd className="font-semibold">{selected.methode || '—'}</dd></div>
-              <div><dt className="text-micro uppercase text-text-secondary">{tx("Commande")}</dt><dd className="font-semibold">{(selected.order?.id ?? selected.order_id) ? `#${selected.order?.id ?? selected.order_id}` : '—'} {selected.order?.statut ?? ''}</dd></div>
-              {source === 'all' && <div><dt className="text-micro uppercase text-text-secondary">{tx("Client")}</dt><dd className="font-semibold">{selected.client_id ? `#${selected.client_id}` : '—'}</dd></div>}
-              <div><dt className="text-micro uppercase text-text-secondary">{tx("Montant")}</dt><dd className="font-semibold">{fmtFcfa(selected.montant)}</dd></div>
-              <div><dt className="text-micro uppercase text-text-secondary">{tx("Statut")}</dt><dd className="font-semibold">{tx(STATUT_LABEL[selected.statut ?? ''] ?? (selected.statut || '—'))}</dd></div>
-              <div><dt className="text-micro uppercase text-text-secondary">{tx("Payé le")}</dt><dd className="font-semibold">{selected.paid_at ? dateCourte(selected.paid_at) : '—'}</dd></div>
-              <div><dt className="text-micro uppercase text-text-secondary">{tx("Référence")}</dt><dd className="break-all font-semibold">{selected.fedapay_ref || '—'}</dd></div>
-            </dl>
-            <div className="mt-4">
+
+            {/* Corps */}
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
+              {/* Bandeau : identifiant, montant, statut */}
+              <div className="flex items-start justify-between gap-4 pb-3 border-b border-border-default">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-mono font-bold text-label text-primary bg-primary-light/40 px-2 py-0.5 rounded">
+                      #{selected.id}
+                    </span>
+                    {selected.created_at && (
+                      <span className="text-micro text-text-secondary font-medium">
+                        {dateCourte(selected.created_at)}
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="text-h2 font-bold text-on-surface">{fmtFcfa(selected.montant)}</h4>
+                </div>
+                <span
+                  className={`px-3 py-1 font-bold rounded-full text-micro ${
+                    STATUT_CLASS[selected.statut ?? ''] ?? 'bg-bg-secondary text-text-secondary'
+                  }`}
+                >
+                  {tx(STATUT_LABEL[selected.statut ?? ''] ?? (selected.statut || '—'))}
+                </span>
+              </div>
+
+              {/* Informations de paiement */}
+              <div className="bg-bg-secondary p-3.5 rounded-lg border border-border-default space-y-2">
+                <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
+                  <MIcon name="credit_card" className="text-sm" />
+                  {tx("Informations de paiement")}
+                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-label pt-1">
+                  <div className="flex items-center gap-2">
+                    <MIcon name="payments" className="text-text-tertiary text-base" />
+                    <span className="text-text-secondary">{tx("Méthode")} :</span>
+                    <span className="font-bold text-on-surface">{selected.methode || '—'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MIcon name="schedule" className="text-text-tertiary text-base" />
+                    <span className="text-text-secondary">{tx("Payé le")} :</span>
+                    <span className="font-bold text-on-surface">
+                      {selected.paid_at ? dateCourte(selected.paid_at) : '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2 md:col-span-2">
+                    <MIcon name="receipt_long" className="text-text-tertiary text-base" />
+                    <span className="text-text-secondary">{tx("Référence")} :</span>
+                    <span className="font-mono break-all font-bold text-on-surface">
+                      {selected.fedapay_ref || '—'}
+                    </span>
+                  </div>
+                  {source === 'all' && (
+                    <div className="flex items-center gap-2">
+                      <MIcon name="person" className="text-text-tertiary text-base" />
+                      <span className="text-text-secondary">{tx("Client")} :</span>
+                      <span className="font-bold text-on-surface">
+                        {selected.client_id ? `#${selected.client_id}` : '—'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Commande associée */}
+              <div className="bg-bg-secondary p-3.5 rounded-lg border border-border-default space-y-2">
+                <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
+                  <MIcon name="receipt_long" className="text-sm" />
+                  {tx("Commande associée")}
+                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-label pt-1">
+                  <div className="flex items-center gap-2">
+                    <MIcon name="shopping_bag" className="text-text-tertiary text-base" />
+                    <span className="text-text-secondary">{tx("Commande")} :</span>
+                    <span className="font-bold text-on-surface">
+                      {(selected.order?.id ?? selected.order_id) ? `#${selected.order?.id ?? selected.order_id}` : '—'}
+                    </span>
+                  </div>
+                  {selected.order?.statut && (
+                    <div className="flex items-center gap-2">
+                      <MIcon name="local_shipping" className="text-text-tertiary text-base" />
+                      <span className="text-text-secondary">{tx("Statut")} :</span>
+                      <span className="font-bold text-on-surface">{selected.order.statut}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Pied de modale */}
+            <div className="px-6 py-4 bg-bg-secondary border-t border-border-default flex flex-wrap items-center justify-between gap-3 shrink-0">
               <ReceiptButton
                 payment={selected}
                 variant="button"
                 testId={`receipt-payment-${selected.id}-detail`}
               />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  className="px-4 py-2 text-label font-medium text-text-secondary hover:bg-border-default/40 rounded-lg transition-colors cursor-pointer"
+                >
+                  {tx("Fermer")}
+                </button>
+                {(selected.order?.id ?? selected.order_id) ? (
+                  <button
+                    type="button"
+                    onClick={() => ouvrirCommande(Number(selected.order?.id ?? selected.order_id))}
+                    className="px-4 py-2 text-label font-bold text-white bg-primary-container hover:bg-primary-hover rounded-lg transition-transform active:scale-95 flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  >
+                    <MIcon name="open_in_new" className="text-base" />
+                    <span>{tx("Voir la commande")}</span>
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
