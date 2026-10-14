@@ -12,11 +12,13 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { LanguageProvider } from '../src/context/LanguageContext';
 
 const listAll = vi.fn();
+const getUsers = vi.fn();
 const listMine = vi.fn();
 const navigate = vi.fn();
 const getOrder = vi.fn();
 
 vi.mock('../src/services/api', () => ({
+  adminApi: { getUsers: (...a: unknown[]) => getUsers(...a) },
   paymentsApi: {
     listAll: () => listAll(),
     listMine: () => listMine(),
@@ -57,6 +59,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   listAll.mockResolvedValue({ success: true, data: [paiement] });
   listMine.mockResolvedValue({ success: true, data: [paiement] });
+  getUsers.mockResolvedValue({
+    data: [
+      { id: 20, nom_complet: 'Awa Client', prenom: 'Awa', nom: 'Client', role: 'client' },
+      { id: 19, nom_complet: 'Benoît Client', prenom: 'Benoît', nom: 'Client', role: 'client' },
+    ],
+  });
   getOrder.mockResolvedValue({
     data: {
       id: 31,
@@ -66,7 +74,7 @@ beforeEach(() => {
       description_lieu: 'Près de la pharmacie',
       items: [{ nom: 'Feuilles de gboma (botte)', quantite: 1, prix_unitaire: 700 }],
       landmark: { nom: 'Dantokpa — Marché central' },
-      client: { nom_complet: 'Awa Client', telephone: '+229 97 00 00 01' },
+      // pas de « client » : le backend ne l'expose pas (vérifié sur l'API réelle).
       livreur: { nom_complet: 'Koffi Livreur', telephone: '+229 97 00 00 02' },
     },
   });
@@ -144,11 +152,12 @@ describe('modale de paiement — disposition', () => {
 
     // Chargés à l'ouverture via GET /orders/{id}
     await waitFor(() => expect(getOrder).toHaveBeenCalledWith(31));
+    // Le nom du client vient de /admin/users : GET /orders/{id} ne l'expose pas.
     expect(await screen.findByText('Awa Client')).toBeTruthy();
+    expect(getUsers).toHaveBeenCalled();
     expect(await screen.findByText('Koffi Livreur')).toBeTruthy();
     expect(await screen.findByText('Dantokpa — Marché central — Près de la pharmacie')).toBeTruthy();
-    // Téléphones affichés en complément
-    expect(dialog.textContent).toContain('+229 97 00 00 01');
+    // Téléphone du livreur (fourni par le détail de la commande)
     expect(dialog.textContent).toContain('+229 97 00 00 02');
   });
 
@@ -174,13 +183,29 @@ describe('modale de paiement — disposition', () => {
     expect(dialog.textContent).toContain('Calavi — Carrefour');
   });
 
-  it('reste utilisable si le détail de la commande est refusé (repli sur #id)', async () => {
+  it('replie sur l’identifiant quand l’annuaire ne connaît pas le client', async () => {
+    getUsers.mockResolvedValueOnce({ data: [] });
+    const dialog = await ouvrirModal('all');
+    await waitFor(() => expect(getUsers).toHaveBeenCalled());
+    await waitFor(() => expect(dialog.textContent).not.toContain('Chargement…'));
+    expect(dialog.textContent).toContain('#20');
+  });
+
+  it('n’appelle pas l’annuaire côté client (vue « mes paiements »)', async () => {
+    await ouvrirModal('mine');
+    await waitFor(() => expect(getOrder).toHaveBeenCalledWith(31));
+    expect(getUsers).not.toHaveBeenCalled();
+  });
+
+  it('reste utilisable si le détail de la commande est refusé', async () => {
     getOrder.mockRejectedValueOnce(new Error('403'));
     const dialog = await ouvrirModal('all');
     await waitFor(() => expect(dialog.textContent).not.toContain('Chargement…'));
-    expect(dialog.textContent).toContain('#20');   // identifiant du client
-    expect(dialog.textContent).toContain('Livreur');
-    expect(dialog.textContent).toContain('Adresse de livraison');
+    // Le nom du client reste affiché (il vient de l'annuaire, pas de la commande)…
+    expect(dialog.textContent).toContain('Awa Client');
+    // …et les champs dépendant de la commande affichent un tiret.
+    expect(dialog.textContent).toContain('Livreur :—');
+    expect(dialog.textContent).toContain('Adresse de livraison :—');
     expect(screen.getByRole('dialog')).toBeTruthy();
   });
 

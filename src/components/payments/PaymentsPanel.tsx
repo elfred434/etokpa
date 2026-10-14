@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 import MIcon from '../shared/MIcon';
-import { ordersApi, paymentsApi } from '../../services/api';
+import { adminApi, ordersApi, paymentsApi } from '../../services/api';
 import type { ReceiptOrder } from '../../services/receipts/receiptData';
 import ReceiptButton from './ReceiptButton';
 import { dateCourte, fmtFcfa, listOf, unwrap } from '../../services/api/unwrap';
@@ -64,10 +64,37 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
   // que la liste des paiements ne fournit pas. Aucune modification backend.
   const [detail, setDetail] = useState<ReceiptOrder | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  // Annuaire id → nom complet des comptes. Nécessaire car GET /orders/{id} ne
+  // renvoie PAS le client (OrderController ne charge pas la relation) : sans cet
+  // annuaire, la modale ne pouvait afficher que « #20 ». Réservé à la vue
+  // administration (route /admin/users) — le client n'en a pas besoin.
+  const [annuaire, setAnnuaire] = useState<Record<number, string>>({});
 
   // Actualisation globale (bouton / silencieuse) : recharge les paiements sans squelette.
   const tick = useGlobalRefreshTick();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (source !== 'all') return;
+    let alive = true;
+    adminApi
+      .getUsers({ per_page: 200 })
+      .then((res) => {
+        if (!alive) return;
+        const map: Record<number, string> = {};
+        for (const u of listOf(unwrap(res)) as Array<{ id?: number; nom_complet?: string; prenom?: string; nom?: string }>) {
+          const nom = u?.nom_complet ?? [u?.prenom, u?.nom].filter(Boolean).join(' ');
+          if (u?.id != null && nom) map[Number(u.id)] = nom;
+        }
+        setAnnuaire(map);
+      })
+      .catch(() => {
+        /* repli silencieux sur l'identifiant */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [source]);
 
   useEffect(() => {
     const orderId = selected ? selected.order?.id ?? selected.order_id : null;
@@ -280,11 +307,9 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                       <MIcon name="person" className="text-text-tertiary text-base" />
                       <span className="text-text-secondary">{tx("Client")} :</span>
                       <span className="font-bold text-on-surface">
-                        {detail?.client?.nom_complet
-                          ? detail.client.nom_complet
-                          : selected.client_id
-                            ? `#${selected.client_id}`
-                            : '—'}
+                        {detail?.client?.nom_complet ||
+                          (selected.client_id ? annuaire[Number(selected.client_id)] : undefined) ||
+                          (selected.client_id ? `#${selected.client_id}` : '—')}
                       </span>
                       {detail?.client?.telephone && (
                         <span className="text-micro text-text-tertiary">{detail.client.telephone}</span>
