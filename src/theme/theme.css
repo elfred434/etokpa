@@ -1003,7 +1003,7 @@
    GÉNÉRÉ AUTOMATIQUEMENT par scripts/generer_surcharges_sombres.py
    -------------------------------------------------------------------------- */
 [data-theme='dark'] .bg-on-surface-variant { background-color: rgb(74, 58, 47); }
-[data-theme='dark'] .hover\\:bg-primary-shade\:hover { background-color: rgb(154, 52, 18); }
+[data-theme='dark'] .hover\:bg-primary-shade:hover { background-color: rgb(154, 52, 18); }
 
 /* --------------------------------------------------------------------------
    ÉLÉVATION EN MODE SOMBRE
@@ -1012,7 +1012,6 @@
    des ombres (Tailwind v4 lit --tw-shadow-color, qui n'est PAS héritable :
    il faut cibler les classes elles-mêmes).
    -------------------------------------------------------------------------- */
-[data-theme='dark'] .shadow-2xs,
 [data-theme='dark'] .shadow-xs,
 [data-theme='dark'] .shadow-sm,
 [data-theme='dark'] .shadow-md,

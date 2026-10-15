@@ -23,11 +23,11 @@ const DESIGN_CSS = `
             vertical-align: middle;
         }
         .sidebar-dark { background-color: var(--color-inverse-surface); }
-        .map-container { background-color: #E8F4FD; position: relative; overflow: hidden; border-radius: 14px; isolation: isolate; z-index: 0; }
+        .map-container { background-color: var(--color-info-light); position: relative; overflow: hidden; border-radius: 14px; isolation: isolate; z-index: 0; }
         .map-container.jeu-carte { position: fixed; inset: 0; z-index: 1100; width: 100vw; height: 100dvh; border-radius: 0; }
         .jeu-carte .tokpa-map-quiet { display: none; }
         .jeu-carte::after { content: ''; position: absolute; inset: 0; z-index: 500; pointer-events: none; box-shadow: inset 0 0 90px rgba(28, 19, 13, 0.5); }
-        .map-container .leaflet-container { background: #E8F4FD; font: inherit; }
+        .map-container .leaflet-container { background: var(--color-info-light); font: inherit; }
         .map-container .leaflet-tile-pane { filter: grayscale(0.65) contrast(0.95); }
         .map-container .leaflet-tooltip { border: 1px solid var(--color-border-default); border-radius: 8px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); font-size: 12px; }
         .card-shadow { border: 0.5px solid #E5E7EB; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }

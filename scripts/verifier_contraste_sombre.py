@@ -6,7 +6,11 @@ couleur effective en mode sombre — jeton sombre, puis surcharge de classe
 (`[data-theme='dark'] .bg-primary { … }`) si elle existe — compose la
 transparence sur la surface de la page, puis calcule le contraste.
 
-Il signale aussi toute surface qui resterait claire (l'« éblouissement »).
+Il signale aussi :
+- les **surfaces restées claires** (l'« éblouissement ») ;
+- les **surcharges sans effet** : sélecteur mal échappé (double antislash) ou
+  classe inexistante — une règle morte ne corrige rien ;
+- les **textes illisibles** et les textes faibles (à arbitrer).
 
 Usage :  python3 scripts/verifier_contraste_sombre.py [--seuil 4.5] [--tout]
 Sortie  : code 0 si aucun défaut bloquant, 1 sinon.
@@ -23,11 +27,94 @@ RACINE = Path(__file__).resolve().parent.parent
 SEUIL_TEXTE = 4.5     # texte courant (AA)
 SEUIL_ACCENT = 3.0    # icônes, gros texte, texte sur fond de marque
 SURFACE_PAGE = '#1c1917'   # --color-bg-card en mode sombre
-
-# Effets de verre : translucides par choix, posés sur des fonds de marque.
-VERRES = ('white/5', 'white/10', 'white/15', 'white/20')
+VERRES = ('white/5', 'white/10', 'white/15', 'white/20')   # translucides voulus
 
 
+# --------------------------------------------------------------------------- #
+# Utilitaires de lecture de CSS (sans expression régulière fragile)
+# --------------------------------------------------------------------------- #
+def dechappe(texte: str) -> str:
+    """Retire UN niveau d'échappement CSS : `hover\\:bg-x` → `hover:bg-x`.
+
+    Sur un sélecteur mal échappé (`hover\\\\:bg-x`), il reste un antislash : c'est
+    précisément ce que le contrôle des surcharges sans effet doit voir.
+    """
+    sortie, i = [], 0
+    while i < len(texte):
+        if texte[i] == '\\' and i + 1 < len(texte):
+            sortie.append(texte[i + 1])
+            i += 2
+        else:
+            sortie.append(texte[i])
+            i += 1
+    return ''.join(sortie)
+
+
+def normalise(texte: str) -> str:
+    """Nom de classe utilisable par le code source (`hover:bg-x`)."""
+    return dechappe(texte).replace('\\', '')
+
+
+def nom_de_classe(selecteur: str) -> tuple[str, str] | None:
+    """(nom normalisé, nom brut) de la DERNIÈRE classe d'un sélecteur.
+
+    Gère les sélecteurs descendants (`[data-theme='dark'] .leaflet-bar a`) et les
+    variantes échappées (`hover\\:bg-x:hover`).
+    """
+    classes = [morceau for morceau in selecteur.split() if morceau.startswith('.')]
+    if not classes:
+        return None
+    brut, i, gardes = classes[-1][1:], 0, []
+    while i < len(brut):
+        if brut[i] == '\\':
+            gardes.append(brut[i:i + 2])
+            i += 2
+            continue
+        if brut[i] == ':':          # pseudo-classe : fin du nom
+            break
+        gardes.append(brut[i])
+        i += 1
+    premier = ''.join(gardes)
+    return normalise(premier), dechappe(premier)
+
+
+def preludes(css: str) -> list[str]:
+    """Tous les sélecteurs du fichier, à n'importe quelle profondeur.
+
+    Un découpage naïf sur les accolades se trompe sur les règles imbriquées
+    (`@media`/`@layer`/`@supports`) : le sélecteur interne se retrouve alors dans
+    le corps de la règle englobante. On avance caractère par caractère.
+    """
+    trouves, tampon = [], []
+    for caractere in css:
+        if caractere == '{':
+            trouves.append(''.join(tampon))
+            tampon = []
+        elif caractere == '}':
+            tampon = []
+        else:
+            tampon.append(caractere)
+    return trouves
+
+
+def classes_connues(css: str) -> set[str]:
+    """Noms de classes réellement définies, hors surcharges sombres."""
+    noms: set[str] = set()
+    for prelude in preludes(css):
+        if 'data-theme' in prelude:
+            continue
+        for morceau in prelude.replace(',', ' ').split():
+            if not morceau.startswith('.'):
+                continue
+            resultat = nom_de_classe(morceau)
+            if resultat:
+                noms.add(resultat[0])
+    return noms
+
+
+# --------------------------------------------------------------------------- #
+# Couleurs
+# --------------------------------------------------------------------------- #
 def bloc_equilibre(css: str, entete: str) -> str:
     debut = css.index(entete)
     i = css.index('{', debut)
@@ -43,14 +130,7 @@ def bloc_equilibre(css: str, entete: str) -> str:
     raise ValueError(f'Bloc non fermé : {entete}')
 
 
-def css_compile() -> str:
-    fichiers = glob.glob(str(RACINE / 'dist' / 'assets' / 'index-*.css'))
-    if not fichiers:
-        sys.exit('CSS compilé introuvable — lancez `npx vite build`.')
-    return open(max(fichiers, key=os.path.getmtime), encoding='utf8').read()
-
-
-def canaux(couleur: str) -> tuple[float, float, float, float] | None:
+def canaux(couleur: str):
     valeur = couleur.strip()
     m = re.match(r'rgba?\(([\d.]+), ([\d.]+), ([\d.]+)(?:, ([\d.]+))?\)', valeur)
     if m:
@@ -70,7 +150,6 @@ def canaux(couleur: str) -> tuple[float, float, float, float] | None:
 
 
 def melanger(couleur: str, fond: str) -> str:
-    """Compose une couleur éventuellement translucide sur un fond opaque."""
     haut, bas = canaux(couleur), canaux(fond)
     if haut is None:
         return couleur
@@ -98,32 +177,44 @@ def contraste(a: str, b: str) -> float:
     return round((haut + 0.05) / (bas + 0.05), 2)
 
 
-def lire_surcharges(css: str) -> dict[str, dict[str, str]]:
-    """Surcharges compilées. Lightning CSS regroupe les sélecteurs identiques
-    et échappe les deux-points des variantes (`hover\\:bg-primary:hover`)."""
+def css_compile() -> str:
+    fichiers = glob.glob(str(RACINE / 'dist' / 'assets' / 'index-*.css'))
+    if not fichiers:
+        sys.exit('CSS compilé introuvable — lancez `npx vite build`.')
+    return open(max(fichiers, key=os.path.getmtime), encoding='utf8').read()
+
+
+def lire_surcharges(css: str) -> tuple[dict[str, dict[str, str]], set[str]]:
+    """Surcharges sombres compilées : (par classe normalisée, sélecteurs bruts)."""
     surcharges: dict[str, dict[str, str]] = {}
+    bruts: set[str] = set()
     for regle in re.finditer(r'\[data-theme=dark\]([^{}]*)\{([^{}]*)\}', css):
-        declarations = dict(
-            (p, v.strip()) for p, v in re.findall(r'(background-color|color|border-color):\s*([^;]+)', regle.group(2))
-        )
+        declarations = {
+            prop: valeur.strip()
+            for prop, valeur in re.findall(r'(background-color|color|border-color):\s*([^;]+)', regle.group(2))
+        }
         if not declarations:
             continue
         for morceau in regle.group(1).split(','):
-            selecteur = re.sub(r'^.*?\]', '', morceau).strip().lstrip('.').strip()
-            if not selecteur:
+            resultat = nom_de_classe(morceau.split(']')[-1])
+            if not resultat:
                 continue
-            classe = re.split(r'(?<!\\):', selecteur)[0].replace('\\', '')
-            surcharges.setdefault(classe, {}).update(declarations)
-    return surcharges
+            normalise_nom, brut = resultat
+            surcharges.setdefault(normalise_nom, {}).update(declarations)
+            bruts.add(brut)
+    return surcharges, bruts
 
 
 def main() -> None:
     seuil = float(sys.argv[sys.argv.index('--seuil') + 1]) if '--seuil' in sys.argv else SEUIL_TEXTE
+    tout = '--tout' in sys.argv
     css = css_compile()
     motif = r'(--color-[a-z0-9-]+):\s*(#[0-9a-fA-F]{3,8})\s*;'
     clair = dict(re.findall(motif, bloc_equilibre(css, '@layer theme')))
     sombre = dict(re.findall(motif, bloc_equilibre(css, '[data-theme=dark]')))
-    surcharges = lire_surcharges(css)
+    surcharges, selecteurs_bruts = lire_surcharges(css)
+    connues = classes_connues(css)
+    inertes = sorted(s for s in selecteurs_bruts if s not in connues)
 
     def resoudre(classe: str, prop: str) -> str | None:
         base = classe.split('-', 1)[1] if '-' in classe else classe
@@ -148,17 +239,16 @@ def main() -> None:
                 if 'dark:' in variantes:
                     continue
                 propriete = 'background-color' if prop == 'bg' else 'color'
-                # le combinateur « / » fait partie du nom de classe : on cherche
-                # d'abord la surcharge exacte (bg-primary/10), puis la base
                 nom = f'{variantes}{prop}-{base}' + (f'/{opacite}' if opacite else '')
                 brut = resoudre(nom, propriete)
-                surcharge_trouvee = nom in surcharges
+                depuis_surcharge = nom in surcharges
                 if not brut and opacite:
                     nom = f'{variantes}{prop}-{base}'
                     brut = resoudre(nom, propriete)
+                    depuis_surcharge = nom in surcharges
                 if not brut:
                     continue
-                if opacite and not surcharge_trouvee:
+                if opacite and not depuis_surcharge:
                     c = canaux(brut)
                     if c:
                         brut = f'rgba({round(c[0])}, {round(c[1])}, {round(c[2])}, {round(min(c[3], int(opacite) / 100), 3)})'
@@ -169,7 +259,7 @@ def main() -> None:
                     textes.append((nom, brut))
 
             for nom, surface in fonds.items():
-                if any(v in nom for v in VERRES):
+                if any(verre in nom for verre in VERRES):
                     continue
                 l = luminance(surface)
                 if l is not None and l > 0.5:
@@ -179,8 +269,7 @@ def main() -> None:
                 continue
             for nom_texte, couleur in textes:
                 for nom_fond, surface in (fonds.items() or [('surface de page', SURFACE_PAGE)]):
-                    effective = melanger(couleur, surface)
-                    ratio = contraste(effective, surface)
+                    ratio = contraste(melanger(couleur, surface), surface)
                     if ratio < SEUIL_ACCENT:
                         illisibles.append(f'{fichier.name}:{ligne} {nom_texte} sur {nom_fond} → {ratio}:1')
                     elif ratio < seuil:
@@ -189,16 +278,17 @@ def main() -> None:
     def rapport(titre: str, lignes: list[str], limite: int | None = None) -> None:
         uniques = sorted(set(lignes))
         print(f'\n=== {titre} ({len(uniques)}) ===')
-        for ligne in (uniques[:limite] if limite else uniques):
+        for ligne in (uniques if tout else uniques[:limite or 15]):
             print('   ' + ligne)
-        if limite and len(uniques) > limite:
+        if not tout and limite and len(uniques) > limite:
             print(f'   … et {len(uniques) - limite} autre(s)')
 
-    print(f'classes analysées : {classes_vues} · surcharges sombres trouvées : {len(surcharges)}')
-    rapport('surfaces restées claires (éblouissement)', surfaces_claires, 20 if '--tout' not in sys.argv else None)
-    rapport('textes illisibles (< 3:1)', illisibles, 25 if '--tout' not in sys.argv else None)
-    rapport(f'textes faibles (3 à {seuil}:1, à arbitrer)', faibles, 15 if '--tout' not in sys.argv else None)
-    sys.exit(1 if (surfaces_claires or illisibles) else 0)
+    print(f'classes analysées : {classes_vues} · surcharges sombres : {len(surcharges)} · classes connues : {len(connues)}')
+    rapport('surcharges sans effet (sélecteur mal échappé ou classe inexistante)', inertes)
+    rapport('surfaces restées claires (éblouissement)', surfaces_claires, 10)
+    rapport('textes illisibles (< 3:1)', illisibles, 10)
+    rapport(f'textes faibles (3 à {seuil}:1, à arbitrer)', faibles, 10)
+    sys.exit(1 if (surfaces_claires or illisibles or inertes) else 0)
 
 
 if __name__ == '__main__':

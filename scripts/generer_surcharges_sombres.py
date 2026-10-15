@@ -88,7 +88,8 @@ PSEUDO = {'hover': ':hover', 'focus': ':focus', 'active': ':active'}
 # --- surcharges ponctuelles : classes précises, décidées au cas par cas --------
 PONCTUELS = {
     'bg-on-surface-variant': 'background-color: rgb(74, 58, 47)',
-    r'hover\:bg-primary-shade:hover': 'background-color: rgb(154, 52, 18)',
+    # clé = nom de classe NON échappé ; « :pseudo:xxx » ajoute la pseudo-classe
+    'hover:bg-primary-shade:pseudo:hover': 'background-color: rgb(154, 52, 18)',
 }
 
 ENTETES = {
@@ -238,8 +239,13 @@ def construire(clair: dict[str, str], sombre: dict[str, str]) -> dict[str, str]:
 
    GÉNÉRÉ AUTOMATIQUEMENT par scripts/generer_surcharges_sombres.py
    -------------------------------------------------------------------------- */"""
+    def selecteur_ponctuel(classe: str) -> str:
+        # `hover:bg-x:hover` → `.hover\:bg-x:hover` (seule la classe est échappée)
+        variante, _, pseudo = classe.partition(':pseudo')
+        return '.' + selecteur(variante) + pseudo
+
     lignes_ponctuels = [
-        f"[data-theme='dark'] .{selecteur(classe)} {{ {declaration}; }}"
+        f"[data-theme='dark'] {selecteur_ponctuel(classe)} {{ {declaration}; }}"
         for classe, declaration in sorted(PONCTUELS.items())
     ]
 
