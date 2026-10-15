@@ -1344,6 +1344,11 @@ export const DE: Record<string, string> = {
   "Actualisation automatique": "Automatische Aktualisierung",
   "Toutes les 30 secondes": "Alle 30 Sekunden",
   "Informations actualisées.": "Informationen aktualisiert.",
+  // Bestellungen — Detail (Modale für Kunden, Verwaltung und Manager)
+  "Aucun article rattaché à cette commande.": "Keine Artikel mit dieser Bestellung verknüpft.",
+  "Détail de la commande": "Bestelldetails",
+  "Livreur en cours d’assignation…": "Fahrer wird zugewiesen…",
+  "Précisions": "Weitere Angaben",
   // Einstellungen — Darstellung und Sprache (Seite „Einstellungen“ aller vier Bereiche)
   "Langue et thème": "Sprache und Design",
   "Langue de l'interface": "Sprache der Oberfläche",

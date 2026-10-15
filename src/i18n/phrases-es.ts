@@ -1344,6 +1344,11 @@ export const ES: Record<string, string> = {
   "Actualisation automatique": "Actualización automática",
   "Toutes les 30 secondes": "Cada 30 segundos",
   "Informations actualisées.": "Información actualizada.",
+  // Pedidos — detalle (modales de cliente, administración y gerente)
+  "Aucun article rattaché à cette commande.": "Ningún artículo vinculado a este pedido.",
+  "Détail de la commande": "Detalle del pedido",
+  "Livreur en cours d’assignation…": "Repartidor en asignación…",
+  "Précisions": "Indicaciones",
   // Ajustes — apariencia e idioma (página Ajustes de los cuatro espacios)
   "Langue et thème": "Idioma y tema",
   "Langue de l'interface": "Idioma de la interfaz",

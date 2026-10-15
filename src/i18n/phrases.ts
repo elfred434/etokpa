@@ -3338,6 +3338,11 @@ export const EN: Record<string, string> = {
   "Actualisation automatique": "Automatic refresh",
   "Toutes les 30 secondes": "Every 30 seconds",
   "Informations actualisées.": "Information refreshed.",
+  // Commandes — détail (modales client, administration, manager)
+  "Aucun article rattaché à cette commande.": "No item attached to this order.",
+  "Détail de la commande": "Order details",
+  "Livreur en cours d’assignation…": "Rider being assigned…",
+  "Précisions": "Further details",
   // Paramètres — apparence et langue (page Paramètres des quatre espaces)
   "Langue et thème": "Language and theme",
   "Suit le réglage de votre appareil": "Follows your device setting",

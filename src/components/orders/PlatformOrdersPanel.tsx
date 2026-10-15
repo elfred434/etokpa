@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import MIcon from '../shared/MIcon';
 import Pagination from '../shared/Pagination';
+import { ModalShell, BandeauFiche, FicheCard, LigneFiche, BoutonFermer } from '../shared/ModalShell';
 import { adminApi, catalogApi, managerApi } from '../../services/api';
 import { dateCourte, fmtFcfa, listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -19,6 +19,10 @@ const FILTRES = [
   { label: 'Livrées', statut: 'livre' },
   { label: 'Annulées', statut: 'annule' },
 ];
+
+const LIBELLE_STATUT: Record<string, string> = Object.fromEntries(
+  FILTRES.filter((f) => f.statut).map((f) => [f.statut, f.label]),
+);
 
 const STATUT_CLASS: Record<string, string> = {
   en_attente: 'bg-bg-secondary text-text-secondary',
@@ -246,39 +250,100 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
       {lastPage > 1 && <Pagination page={page} pageCount={lastPage} onChange={setPage} />}
 
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelected(null)}>
-          <div className="flex max-h-[85vh] w-full max-w-[640px] flex-col rounded-2xl bg-bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-border-default p-4">
-              <h3 className="text-h3 font-h3 font-bold">{tx("Commande")} #{selected.id}</h3>
-              <button type="button" onClick={() => setSelected(null)} className="p-1 text-text-secondary">
-                <MIcon name="close" className="text-[20px]" />
-              </button>
-            </div>
-            <div className="flex-1 space-y-3 overflow-y-auto p-4 text-label">
-              <p>{dateCourte(selected.created_at)} · {selected.statut}</p>
-              <p>{tx("Client")} : <strong>{(selected.client ?? selected.user)?.nom_complet ?? '—'}</strong></p>
-              <p>{tx("Téléphone")} : {(selected.client ?? selected.user)?.telephone ?? '—'}</p>
-              <p>{tx("Montant")} : <strong>{fmtFcfa(selected.montant_total)}</strong></p>
-              <p>{tx("Frais de livraison")} : {fmtFcfa(selected.frais_livraison)}</p>
-              <p>{tx("Point de repère")} : {selected.landmark?.nom ?? selected.description_lieu ?? '—'}</p>
-              <p>Zone : {zoneNom(selected.landmark?.zone_id)}</p>
-              <p>{tx("Livreur")} : {selected.livreur?.nom_complet ?? tx("— Non affecté —")}</p>
-              {Array.isArray(selected.items) && selected.items.length > 0 && (
-                <ul className="space-y-1">
-                  {selected.items.map((it) => (
-                    <li key={it.id ?? `${it.nom}-${it.quantite}`} className="flex justify-between rounded-lg bg-bg-app px-3 py-2">
-                      <span>{tx(orderLineName(it))} × {it.quantite}</span>
-                      <span className="font-semibold">{fmtFcfa(it.prix_unitaire)}</span>
-                    </li>
-                  ))}
-                </ul>
+        <ModalShell
+          testId={`order-modal-${selected.id}`}
+          icone="receipt_long"
+          titre={`${tx("Commande")} #${selected.id}`}
+          sousTitre={`${tx("Détail de la commande")}${selected.created_at ? ` · ${dateCourte(selected.created_at)}` : ''}`}
+          maxWidth={620}
+          onFermer={() => setSelected(null)}
+          pied={
+            <>
+              {renderActions ? <div className="flex items-center gap-2">{renderActions(selected)}</div> : <span />}
+              <div className="flex items-center gap-2">
+                <BoutonFermer onClick={() => setSelected(null)} />
+              </div>
+            </>
+          }
+        >
+          {/* Bandeau : identifiant, date, montant, statut */}
+          <BandeauFiche
+            id={selected.id}
+            date={selected.created_at ? dateCourte(selected.created_at) : undefined}
+            montant={fmtFcfa(selected.montant_total)}
+            statut={
+              <span
+                className={`px-3 py-1 font-bold rounded-full text-micro whitespace-nowrap ${
+                  STATUT_CLASS[selected.statut ?? ''] ?? 'bg-bg-secondary text-text-secondary'
+                }`}
+              >
+                {tx(LIBELLE_STATUT[selected.statut ?? ''] ?? (selected.statut || '—'))}
+              </span>
+            }
+          />
+
+          {/* Client */}
+          <FicheCard icone="person" titre={tx("Client")}>
+            <LigneFiche icone="badge" etiquette={tx("Nom")}>
+              {(selected.client ?? selected.user)?.nom_complet ?? '—'}
+            </LigneFiche>
+            <LigneFiche icone="call" etiquette={tx("Téléphone")}>
+              {(selected.client ?? selected.user)?.telephone ?? '—'}
+            </LigneFiche>
+          </FicheCard>
+
+          {/* Livraison */}
+          <FicheCard icone="local_shipping" titre={tx("Livraison")}>
+            <LigneFiche icone="location_on" etiquette={tx("Point de repère")} large>
+              {selected.landmark?.nom ?? selected.description_lieu ?? '—'}
+            </LigneFiche>
+            {selected.description_lieu && selected.landmark?.nom ? (
+              <LigneFiche icone="notes" etiquette={tx("Précisions")} large>
+                {selected.description_lieu}
+              </LigneFiche>
+            ) : null}
+            <LigneFiche icone="map" etiquette={tx("Zone")}>
+              {zoneNom(selected.landmark?.zone_id)}
+            </LigneFiche>
+            <LigneFiche icone="payments" etiquette={tx("Frais de livraison")}>
+              {fmtFcfa(selected.frais_livraison)}
+            </LigneFiche>
+            <LigneFiche icone="two_wheeler" etiquette={tx("Livreur")} large>
+              {selected.livreur?.nom_complet ?? tx("— Non affecté —")}
+              {selected.livreur?.telephone && (
+                <span className="ml-2 font-normal text-micro text-text-tertiary">{selected.livreur.telephone}</span>
               )}
-            </div>
-            <div className="flex justify-end border-t border-border-default p-4">
-              <button type="button" className="btn btn-ghost" onClick={() => setSelected(null)}>{tx("Fermer")}</button>
-            </div>
-          </div>
-        </div>
+            </LigneFiche>
+          </FicheCard>
+
+          {/* Articles */}
+          <FicheCard icone="shopping_bag" titre={tx("Articles")} colonnes={1}>
+            {Array.isArray(selected.items) && selected.items.length > 0 ? (
+              <>
+                {selected.items.map((it) => (
+                  <div
+                    key={it.id ?? `${it.nom}-${it.quantite}`}
+                    className="flex flex-wrap items-center justify-between gap-2 border-b border-border-default/60 pb-2 last:border-0 last:pb-0"
+                  >
+                    <span className="min-w-0 break-words text-on-surface">
+                      {tx(orderLineName(it))}
+                      <span className="ml-2 text-micro text-text-secondary">
+                        {Number(it.quantite ?? 1)} × {fmtFcfa(it.prix_unitaire)}
+                      </span>
+                    </span>
+                    <span className="font-bold text-on-surface">{fmtFcfa((it.prix_unitaire ?? 0) * (it.quantite ?? 1))}</span>
+                  </div>
+                ))}
+                <div className="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-border-default pt-2 font-bold text-on-surface">
+                  <span>{tx("Total")}</span>
+                  <span>{fmtFcfa(selected.montant_total)}</span>
+                </div>
+              </>
+            ) : (
+              <span className="text-text-tertiary">{tx("Aucun article rattaché à cette commande.")}</span>
+            )}
+          </FicheCard>
+        </ModalShell>
       )}
     </div>
   );

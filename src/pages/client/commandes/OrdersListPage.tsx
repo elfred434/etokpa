@@ -6,6 +6,14 @@ import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
 import Pagination from '../../../components/shared/Pagination';
+import {
+  ModalShell,
+  BandeauFiche,
+  FicheCard,
+  LigneFiche,
+  BoutonPrincipal,
+  BoutonFermer,
+} from '../../../components/shared/ModalShell';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
@@ -64,6 +72,12 @@ const STATUT_CLASS: Record<string, string> = {
   en_livraison: 'status-shipping',
   livre: 'status-delivered',
   annule: 'status-cancelled',
+};
+
+/** Libellé traduit d'un statut de commande (les 5 langues via tx). */
+const libelleStatut = (statut: string) => {
+  const l = STATUT_LABELS[statut];
+  return l ? tx(l.fr) : statut;
 };
 
 const articlesCount = (o: ApiOrder) => (o.items ?? []).reduce((s, it) => s + Number(it.quantite ?? 0), 0);
@@ -210,6 +224,8 @@ export default function OrdersListPage() {
   const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR') : '—');
   const fmtDateTime = (iso?: string) => (iso ? new Date(iso).toLocaleString('fr-FR') : '—');
   const money = (n?: number) => `${Number(n ?? 0).toLocaleString('fr-FR')} ${selected?.devise ?? 'FCFA'}`;
+  /** Devise de la commande ouverte (les montants de la modale restent homogènes). */
+  const devise = selected?.devise ?? 'FCFA';
 
   return (
     <div className="bg-bg-app font-body text-on-surface antialiased min-h-screen flex flex-col">
@@ -344,178 +360,171 @@ export default function OrdersListPage() {
         </div>
       </main>
 
-      {/* MODALE DÉTAILS COMMANDE — même gabarit que NegotiationModal (largeur arbitraire : max-w-lg = bug TW4) */}
+      {/* MODALE DÉTAILS COMMANDE — gabarit commun (ModalShell), identique à la modale de
+          paiement : en-tête icône + titre + sous-titre, bandeau #id / date / montant /
+          statut, cartes de section sur fond bg-bg-secondary, pied d'actions. */}
       {selected && (
-        <div
-          className="fixed inset-0 z-[500] flex items-center justify-center bg-black/50 p-4 animate-fade-in"
-          onClick={() => setSelected(null)}
-        >
-          <div
-            className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-bg-card shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* En-tête modale */}
-            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line bg-warm p-4 sm:p-lg">
-              <div>
-                <h2 className="font-h2 text-h2 text-on-surface">
-                  {isFr ? tx("Commande") : 'Order'} #{selected.id}
-                </h2>
-                <p className="text-micro text-text-secondary mt-xs">{fmtDateTime(selected.created_at)}</p>
+        <ModalShell
+          testId={`order-modal-${selected.id}`}
+          icone="shopping_bag"
+          titre={`${tx("Commande")} #${selected.id}`}
+          sousTitre={fmtDateTime(selected.created_at)}
+          maxWidth={620}
+          onFermer={() => setSelected(null)}
+          pied={
+            <>
+              <div className="flex items-center gap-2 text-micro text-text-secondary">
+                <MIcon name="credit_card" className="text-base text-text-tertiary" />
+                {selected.payment
+                  ? `${selected.payment.methode} · ${Number(selected.payment.montant).toLocaleString('fr-FR')} FCFA`
+                  : tx("Paiement non initialisé")}
               </div>
-              <div className="flex items-center gap-sm">
-                <span className={`status ${STATUT_CLASS[selected.statut] ?? ''}`}>
-                  {isFr
-                    ? (STATUT_LABELS[selected.statut]?.fr ?? selected.statut)
-                    : (STATUT_LABELS[selected.statut]?.en ?? selected.statut)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSelected(null)}
-                  aria-label={isFr ? tx("Fermer") : 'Close'}
-                  className="w-8 h-8 rounded-button border border-line flex items-center justify-center hover:bg-bg-card transition-colors cursor-pointer"
-                >
-                  <MIcon name="close" className="text-[18px]" />
-                </button>
-              </div>
-            </div>
-
-            {/* Corps scrollable */}
-            <div className="space-y-lg overflow-y-auto p-4 sm:p-lg">
-              {/* Articles */}
-              <section>
-                <h3 className="label text-text-main mb-sm flex items-center gap-xs">
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary-lighter text-primary-dark">
-                    <MIcon name="shopping_bag" className="text-[16px]" />
-                  </span>
-                  {isFr ? tx("Articles") : 'Items'}
-                </h3>
-                <div className="space-y-2">
-                  {(selected.items ?? []).map((it) => (
-                    <div key={it.id} className="flex flex-col gap-1 border-b border-line/60 py-2 last:border-0 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="min-w-0 break-words font-semibold text-text-main">{tx(orderLineName(it))}</p>
-                      <p className="break-words text-text-secondary">
-                        × {it.quantite} · {Number(it.prix_unitaire).toLocaleString('fr-FR')} FCFA ·{' '}
-                        <strong className="text-text-main">
-                          {(Number(it.prix_unitaire) * Number(it.quantite)).toLocaleString('fr-FR')} FCFA
-                        </strong>
-                      </p>
-                    </div>
-                  ))}
-                  {(selected.items ?? []).length === 0 && <p className="py-xs text-text-tertiary">—</p>}
-                </div>
-                <div className="mt-sm space-y-xs text-body border-t border-line pt-sm">
-                  <div className="flex flex-wrap justify-between gap-2 text-text-secondary">
-                    <span>{isFr ? tx("Sous-total produits") : 'Items subtotal'}</span>
-                    <span>
-                      {(selected.items ?? [])
-                        .reduce((s, it) => s + Number(it.prix_unitaire) * Number(it.quantite), 0)
-                        .toLocaleString('fr-FR')}{' '}
-                      FCFA
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap justify-between gap-2 text-text-secondary">
-                    <span>{isFr ? tx("Frais de livraison") : 'Delivery fee'}</span>
-                    <span>{Number(selected.frais_livraison ?? 0).toLocaleString('fr-FR')} FCFA</span>
-                  </div>
-                  <div className="flex flex-wrap justify-between gap-2 font-bold text-text-main">
-                    <span>{isFr ? 'Total' : 'Total'}</span>
-                    <span className="price">{money(selected.montant_total)}</span>
-                  </div>
-                </div>
-              </section>
-
-              {/* Livraison */}
-              <section>
-                <h3 className="label text-text-main mb-sm flex items-center gap-xs">
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary-lighter text-primary-dark">
-                    <MIcon name="local_shipping" className="text-[16px]" />
-                  </span>
-                  {isFr ? tx("Livraison") : 'Delivery'}
-                </h3>
-                <div className="bg-warm rounded-card p-md space-y-xs text-body">
-                  <p className="text-text-main font-bold">{selected.landmark?.nom ?? '—'}</p>
-                  {selected.description_lieu && (
-                    <p className="text-text-secondary">{selected.description_lieu}</p>
-                  )}
-                  <p className="text-text-secondary">
-                    {selected.livreur ? (
-                      <>
-                        {isFr ? tx("Livreur") : 'Rider'} : {selected.livreur.nom_complet}
-                        {selected.livreur.telephone && (
-                          <>
-                            {' · '}
-                            <a
-                              href={`tel:${selected.livreur.telephone.replace(/\s/g, '')}`}
-                              className="text-primary-dark font-bold hover:underline"
-                            >
-                              {selected.livreur.telephone}
-                            </a>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      (isFr ? 'Livreur en cours d’assignation…' : 'Rider being assigned…')
-                    )}
-                  </p>
-                </div>
-              </section>
-
-              {/* Paiement */}
-              <section>
-                <h3 className="label text-text-main mb-sm flex items-center gap-xs">
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary-lighter text-primary-dark">
-                    <MIcon name="credit_card" className="text-[16px]" />
-                  </span>
-                  {isFr ? tx("Paiement") : 'Payment'}
-                </h3>
-                <div className="bg-warm rounded-card p-md text-body text-text-secondary">
-                  {selected.payment ? (
-                    <div className="flex flex-wrap justify-between gap-2">
-                      <span>
-                        {selected.payment.methode} · {selected.payment.statut}
-                      </span>
-                      <span className="font-bold text-text-main">
-                        {Number(selected.payment.montant).toLocaleString('fr-FR')} FCFA
-                      </span>
-                    </div>
-                  ) : (
-                    <span>{isFr ? tx("Paiement non initialisé") : 'Payment not initialized'}</span>
-                  )}
-                </div>
-              </section>
-
-              {/* Actions modale */}
-              <div className="flex flex-wrap gap-2">
-                {!selected.payment && selected.statut !== 'annule' && (
-                  <button type="button" onClick={() => handlePayer(selected)} disabled={paying} className="btn btn-primary flex-1 disabled:opacity-60">
-                    <MIcon name={paying ? 'sync' : 'payments'} className={paying ? 'animate-spin' : undefined} />
-                    {isFr ? tx("Payer") : 'Pay'}
-                  </button>
-                )}
-                {!isCancelledStatut(selected.statut) && (
-                  <button type="button" onClick={() => handleSuivre(selected.id)} className="btn btn-primary flex-1">
-                    <MIcon name="near_me" />
-                    {isFr ? tx("Suivre cette commande") : 'Track this order'}
-                  </button>
-                )}
-                {selected.statut === "en_attente" && (
+              <div className="flex flex-wrap items-center gap-2">
+                {selected.statut === 'en_attente' && (
                   <button
                     type="button"
                     onClick={() => handleAnnuler(selected)}
                     disabled={cancelling}
-                    className="btn btn-danger disabled:opacity-60"
+                    className="px-4 py-2 text-label font-medium text-error hover:bg-error-light rounded-lg transition-colors disabled:opacity-60 cursor-pointer flex items-center gap-1.5"
                   >
                     <MIcon name={cancelling ? 'sync' : 'cancel'} className={cancelling ? 'animate-spin' : undefined} />
-                    {isFr ? tx("Annuler") : 'Cancel'}
+                    {tx("Annuler")}
                   </button>
                 )}
-                <button type="button" onClick={() => setSelected(null)} className="btn btn-ghost">
-                  {isFr ? tx("Fermer") : 'Close'}
-                </button>
+                {!selected.payment && selected.statut !== 'annule' && (
+                  <BoutonPrincipal onClick={() => handlePayer(selected)} icone={paying ? 'sync' : 'payments'} disabled={paying}>
+                    {tx("Payer")}
+                  </BoutonPrincipal>
+                )}
+                {!isCancelledStatut(selected.statut) && (
+                  selected.payment || selected.statut === 'annule' ? (
+                    <BoutonPrincipal onClick={() => handleSuivre(selected.id)} icone="near_me">
+                      {tx("Suivre cette commande")}
+                    </BoutonPrincipal>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleSuivre(selected.id)}
+                      className="px-4 py-2 text-label font-medium text-text-secondary hover:bg-border-default/40 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+                    >
+                      <MIcon name="near_me" className="text-base" />
+                      {tx("Suivre cette commande")}
+                    </button>
+                  )
+                )}
+                <BoutonFermer onClick={() => setSelected(null)} />
               </div>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+          {/* Bandeau : identifiant, date, montant, statut */}
+          <BandeauFiche
+            id={selected.id}
+            date={fmtDateTime(selected.created_at)}
+            montant={money(selected.montant_total)}
+            statut={
+              <span className={`status ${STATUT_CLASS[selected.statut] ?? ''} whitespace-nowrap`}>
+                {libelleStatut(selected.statut)}
+              </span>
+            }
+          />
+
+          {/* Articles */}
+          <FicheCard icone="shopping_bag" titre={tx("Articles")} colonnes={1}>
+            {(selected.items ?? []).length > 0 ? (
+              <>
+                {(selected.items ?? []).map((it) => (
+                  <div
+                    key={it.id}
+                    className="flex flex-wrap items-center justify-between gap-2 border-b border-border-default/60 pb-2 last:border-0 last:pb-0"
+                  >
+                    <span className="min-w-0 break-words text-on-surface">
+                      {tx(orderLineName(it))}
+                      <span className="ml-2 text-micro text-text-secondary">
+                        {Number(it.quantite).toLocaleString('fr-FR')} × {Number(it.prix_unitaire).toLocaleString('fr-FR')}{' '}
+                        {devise}
+                      </span>
+                    </span>
+                    <span className="font-bold text-on-surface">
+                      {(Number(it.prix_unitaire) * Number(it.quantite)).toLocaleString('fr-FR')} {devise}
+                    </span>
+                  </div>
+                ))}
+                <div className="mt-1 space-y-1 border-t border-border-default pt-2">
+                  <div className="flex flex-wrap justify-between gap-2 text-text-secondary">
+                    <span>{tx("Sous-total produits")}</span>
+                    <span>
+                      {(selected.items ?? [])
+                        .reduce((somme, it) => somme + Number(it.prix_unitaire) * Number(it.quantite), 0)
+                        .toLocaleString('fr-FR')}{' '}
+                      {devise}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap justify-between gap-2 text-text-secondary">
+                    <span>{tx("Frais de livraison")}</span>
+                    <span>
+                      {Number(selected.frais_livraison ?? 0).toLocaleString('fr-FR')} {devise}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap justify-between gap-2 font-bold text-on-surface">
+                    <span>{tx("Total")}</span>
+                    <span>{money(selected.montant_total)}</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <span className="text-text-tertiary">{tx("Aucun article rattaché à cette commande.")}</span>
+            )}
+          </FicheCard>
+
+          {/* Livraison */}
+          <FicheCard icone="local_shipping" titre={tx("Livraison")}>
+            <LigneFiche icone="location_on" etiquette={tx("Point de repère")} large>
+              {selected.landmark?.nom ?? '—'}
+            </LigneFiche>
+            {selected.description_lieu && (
+              <LigneFiche icone="notes" etiquette={tx("Précisions")} large>
+                {selected.description_lieu}
+              </LigneFiche>
+            )}
+            <LigneFiche icone="two_wheeler" etiquette={tx("Livreur")} large>
+              {selected.livreur ? (
+                <>
+                  {selected.livreur.nom_complet}
+                  {selected.livreur.telephone && (
+                    <a
+                      href={`tel:${selected.livreur.telephone.replace(/\s/g, '')}`}
+                      className="ml-2 text-primary font-bold hover:underline"
+                    >
+                      {selected.livreur.telephone}
+                    </a>
+                  )}
+                </>
+              ) : (
+                <span className="font-normal text-text-secondary">{tx("Livreur en cours d’assignation…")}</span>
+              )}
+            </LigneFiche>
+          </FicheCard>
+
+          {/* Paiement */}
+          <FicheCard icone="credit_card" titre={tx("Paiement")}>
+            {selected.payment ? (
+              <>
+                <LigneFiche icone="payments" etiquette={tx("Méthode")}>
+                  {selected.payment.methode}
+                </LigneFiche>
+                <LigneFiche icone="schedule" etiquette={tx("Statut")}>
+                  {selected.payment.statut}
+                </LigneFiche>
+                <LigneFiche icone="receipt_long" etiquette={tx("Montant")} large>
+                  {Number(selected.payment.montant).toLocaleString('fr-FR')} {devise}
+                </LigneFiche>
+              </>
+            ) : (
+              <span className="text-text-secondary">{tx("Paiement non initialisé")}</span>
+            )}
+          </FicheCard>
+        </ModalShell>
       )}
 
       <ClientBottomNav />
