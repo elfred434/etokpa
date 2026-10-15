@@ -936,6 +936,7 @@
 [data-theme='dark'] .hover\:bg-primary-tint\/30:hover { background-color: rgba(42, 26, 18, 0.3); }
 [data-theme='dark'] .hover\:bg-primary-tint\/40:hover { background-color: rgba(42, 26, 18, 0.4); }
 [data-theme='dark'] .hover\:border-primary\/30:hover { border-color: rgba(251, 146, 60, 0.3); }
+[data-theme='dark'] .hover\:border-primary\/40:hover { border-color: rgba(251, 146, 60, 0.4); }
 [data-theme='dark'] .hover\:border-primary\/50:hover { border-color: rgba(251, 146, 60, 0.5); }
 
 /* --------------------------------------------------------------------------

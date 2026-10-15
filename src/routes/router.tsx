@@ -48,6 +48,7 @@ import LivreurCoursePage from '../pages/livreur/course-active/LivreurCoursePage'
 import LivreurRecapPage from '../pages/livreur/recap-fin-course/LivreurRecapPage';
 import LivreurHistoryPage from '../pages/livreur/historique-livraisons/LivreurHistoryPage';
 import LivreurSettingsPage from '../pages/livreur/parametres/LivreurSettingsPage';
+import ParametresPage from '../pages/client/parametres/ParametresPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import SystemBridge from '../components/system/SystemBridge';
 
@@ -131,6 +132,8 @@ const confirmationRoute = createRoute({
   }),
 });
 const profilRoute = createRoute({ getParentRoute: () => rootRoute, path: '/profil', component: ProfilePage });
+// Paramètres du client : langue et thème (déplacés hors de la barre de navigation).
+const parametresRoute = createRoute({ getParentRoute: () => rootRoute, path: '/parametres', component: ParametresPage });
 const negociationsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/negociations', component: NegotiationsPage });
 const orderTrackingRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -216,6 +219,7 @@ const routeTree = rootRoute.addChildren([
   panierRoute,
   confirmationRoute,
   profilRoute,
+  parametresRoute,
   negociationsRoute,
   ordersListRoute,
   paymentsRoute,

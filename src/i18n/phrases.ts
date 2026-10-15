@@ -3338,4 +3338,8 @@ export const EN: Record<string, string> = {
   "Actualisation automatique": "Automatic refresh",
   "Toutes les 30 secondes": "Every 30 seconds",
   "Informations actualisées.": "Information refreshed.",
+  // Paramètres — apparence et langue (page Paramètres des quatre espaces)
+  "Langue et thème": "Language and theme",
+  "Suit le réglage de votre appareil": "Follows your device setting",
+  "Préférences conservées sur cet appareil": "Preferences are kept on this device",
 };

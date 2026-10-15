@@ -3,6 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import LivreurLayout from '../../../components/layout/livreur/LivreurLayout';
 import MIcon from '../../../components/shared/MIcon';
+import ParametresPanel from '../../../components/settings/ParametresPanel';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
 import { authApi } from '../../../services/api';
@@ -138,6 +139,11 @@ export default function LivreurSettingsPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Thème et langue */}
+          <div className="mb-lg">
+            <ParametresPanel />
           </div>
 
           {err ? (

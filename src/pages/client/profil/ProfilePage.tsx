@@ -69,7 +69,7 @@ const PAYMENT_LABELS: Record<string, { fr: string; en: string; tone: string }> =
  */
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { language, toggleLanguage, isFr } = useLanguage();
+  const { language, isFr } = useLanguage();
   const isAuthenticated = hasSession();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -505,20 +505,22 @@ export default function ProfilePage() {
                   <MIcon name="chevron_right" className="text-text-tertiary" />
                 </Link>
 
-                <button
-                  type="button"
-                  onClick={toggleLanguage}
-                  className="w-full p-md flex items-center justify-between border-t border-border-default hover:bg-bg-secondary transition-colors text-left cursor-pointer"
+                <Link
+                  to="/parametres"
+                  className="w-full p-md flex items-center justify-between border-t border-border-default hover:bg-bg-secondary transition-colors text-left"
                 >
                   <div className="flex items-center gap-md">
-                    <MIcon name="language" className="text-text-secondary" />
-                    <span className="text-body text-text-main">{isFr ? tx("Langue") : 'Language'}</span>
+                    <MIcon name="settings" className="text-text-secondary" />
+                    <div className="flex flex-col">
+                      <span className="text-body text-text-main">{tx("Paramètres")}</span>
+                      <span className="text-label text-text-tertiary">{tx("Langue et thème")}</span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-sm">
                     <span className="text-secondary text-text-tertiary font-bold uppercase">{language}</span>
                     <MIcon name="chevron_right" className="text-text-tertiary" />
                   </div>
-                </button>
+                </Link>
 
                 <button
                   type="button"

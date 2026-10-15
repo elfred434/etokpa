@@ -2,6 +2,7 @@ import { useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
+import ParametresPanel from '../../components/settings/ParametresPanel';
 import { currentUserZone } from '../../routes/authGuard';
 
 
@@ -50,6 +51,9 @@ export default function ManagerParametresPage() {
           </div>
           <span className="rounded-full bg-bg-secondary px-2.5 py-1 text-overline font-semibold">{tx("MAQUETTE")}</span>
         </div>
+
+        {/* Thème et langue : réglages réels (les onglets ci-dessous restent une maquette) */}
+        <ParametresPanel />
 
         <div className="flex flex-wrap gap-2 border-b border-border-default pb-2">
           {ONGLETS.map((o) => (

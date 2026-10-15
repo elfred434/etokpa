@@ -2,9 +2,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import MIcon from '../../shared/MIcon';
 import MobileTableBridge from '../../shared/MobileTableBridge';
 import ManagerSidebar from './ManagerSidebar';
-import LangToggle from '../../shared/LangToggle';
-import ThemeToggle from '../../shared/ThemeToggle';
 import RefreshButton from '../../shared/RefreshButton';
+import SettingsLink from '../../shared/SettingsLink';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import { currentRole, currentUserId, currentUserName, currentUserZone, isAdminRole, rememberUserZone } from '../../../routes/authGuard';
@@ -90,8 +89,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
         </div>
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <RefreshButton withLabel />
-            <LangToggle />
-            <ThemeToggle />
+            <SettingsLink to="/manager/parametres" />
           <button
             type="button"
             className="hidden rounded-lg p-2 text-text-secondary hover:bg-bg-secondary hover:text-on-surface sm:block"

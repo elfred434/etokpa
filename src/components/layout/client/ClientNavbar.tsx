@@ -3,13 +3,13 @@ import { createPortal } from 'react-dom';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
 import MIcon from '../../shared/MIcon';
-import RefreshButton from '../../shared/RefreshButton';
 import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
-import { LANGUAGES, useLanguage } from '../../../context/LanguageContext';
+import { useLanguage } from '../../../context/LanguageContext';
+import SettingsLink from '../../shared/SettingsLink';
+import RefreshButton from '../../shared/RefreshButton';
 import { currentRole, currentUserName, hasSession, staffSpace, useAuthRevision } from '../../../routes/authGuard';
 import UserAvatar from '../../shared/UserAvatar';
-import ThemeToggle from '../../shared/ThemeToggle';
 import { tx } from '../../../i18n/tx';
 
 
@@ -32,9 +32,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
 
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { language, toggleLanguage, t } = useLanguage();
-  const langIdx = LANGUAGES.findIndex((l) => l.code === language);
-  const langTitle = `${LANGUAGES[langIdx]?.label ?? language} → ${LANGUAGES[(langIdx + 1) % LANGUAGES.length].label}`;
+  const { t } = useLanguage();
   useAuthRevision();
   const [localSearch, setLocalSearch] = useState('');
   const [menu, setMenu] = useState(false);
@@ -143,22 +141,10 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
           </form>
         )}
 
-        {/* Icônes & Sélecteur de langue */}
+        {/* Icônes : paramètres (langue + thème), notifications, panier, espace, profil */}
         <div className="flex shrink-0 items-center gap-1 text-primary-shade sm:gap-md">
-          {/* Sélecteur de langue : cycle fr → en → es → de → pt */}
-          <button
-            type="button"
-            onClick={toggleLanguage}
-            title={langTitle}
-            aria-label={`Langue : ${langTitle}`}
-            className="flex items-center gap-1 rounded-full border border-primary-light bg-primary-lighter px-2.5 py-1 text-xs font-bold text-primary-shade transition-transform active:scale-95"
-          >
-            <MIcon name="language" className="text-[16px]" />
-            <span className="hidden uppercase min-[400px]:inline">{language}</span>
-          </button>
-
-          {/* Thème : cycle clair → sombre → système */}
-          <ThemeToggle />
+          {/* Réglages : langue et thème ont leur page (la barre ne garde qu'un raccourci) */}
+          <SettingsLink to="/parametres" />
 
           {/* Actualisation globale : bouton + processus silencieux (30 s, onglet visible) */}
           <RefreshButton />

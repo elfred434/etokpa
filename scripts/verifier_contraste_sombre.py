@@ -78,6 +78,21 @@ def nom_de_classe(selecteur: str) -> tuple[str, str] | None:
     return normalise(premier), dechappe(premier)
 
 
+def branches(classes: str) -> list[str]:
+    """Sépare les branches d'une expression de classes ternaire.
+
+    `className={`a ${actif ? 'bg-primary text-white' : 'bg-bg-card text-text-main'}`}`
+    mélange deux rendus possibles : croiser `bg-primary` avec `text-text-main`
+    produirait un couple qui n'existe jamais à l'écran (« faux positif »). Chaque
+    littéral entre quotes devient donc un groupe évalué à part, le reste
+    (classes communes) formant le premier groupe.
+    """
+    litteraux = [m.group(1) for m in re.finditer(r"'([^']*)'", classes)]
+    commun = re.sub(r"'[^']*'", ' ', classes).strip()
+    groupes = ([commun] if commun else []) + litteraux
+    return groupes or [classes]
+
+
 def preludes(css: str) -> list[str]:
     """Tous les sélecteurs du fichier, à n'importe quelle profondeur.
 
@@ -233,47 +248,48 @@ def main() -> None:
         for m in re.finditer(r'className\s*=\s*(?:"([^"]*)"|\{`([^`]*)`\})', contenu):
             classes = m.group(1) or m.group(2) or ''
             ligne = contenu[:m.start()].count('\n') + 1
-            fonds, textes = {}, []
-            for usage in motif_classe.finditer(classes):
-                variantes, prop, base, opacite = usage.groups()
-                if 'dark:' in variantes:
-                    continue
-                propriete = 'background-color' if prop == 'bg' else 'color'
-                nom = f'{variantes}{prop}-{base}' + (f'/{opacite}' if opacite else '')
-                brut = resoudre(nom, propriete)
-                depuis_surcharge = nom in surcharges
-                if not brut and opacite:
-                    nom = f'{variantes}{prop}-{base}'
-                    brut = resoudre(nom, propriete)
-                    depuis_surcharge = nom in surcharges
-                if not brut:
-                    continue
-                if opacite and not depuis_surcharge:
-                    c = canaux(brut)
-                    if c:
-                        brut = f'rgba({round(c[0])}, {round(c[1])}, {round(c[2])}, {round(min(c[3], int(opacite) / 100), 3)})'
-                classes_vues += 1
-                if prop == 'bg':
-                    fonds[nom] = melanger(brut, SURFACE_PAGE)
-                else:
-                    textes.append((nom, brut))
+            for classes_branche in branches(classes):
+              fonds, textes = {}, []
+              for usage in motif_classe.finditer(classes_branche):
+                  variantes, prop, base, opacite = usage.groups()
+                  if 'dark:' in variantes:
+                      continue
+                  propriete = 'background-color' if prop == 'bg' else 'color'
+                  nom = f'{variantes}{prop}-{base}' + (f'/{opacite}' if opacite else '')
+                  brut = resoudre(nom, propriete)
+                  depuis_surcharge = nom in surcharges
+                  if not brut and opacite:
+                      nom = f'{variantes}{prop}-{base}'
+                      brut = resoudre(nom, propriete)
+                      depuis_surcharge = nom in surcharges
+                  if not brut:
+                      continue
+                  if opacite and not depuis_surcharge:
+                      c = canaux(brut)
+                      if c:
+                          brut = f'rgba({round(c[0])}, {round(c[1])}, {round(c[2])}, {round(min(c[3], int(opacite) / 100), 3)})'
+                  classes_vues += 1
+                  if prop == 'bg':
+                      fonds[nom] = melanger(brut, SURFACE_PAGE)
+                  else:
+                      textes.append((nom, brut))
 
-            for nom, surface in fonds.items():
-                if any(verre in nom for verre in VERRES):
-                    continue
-                l = luminance(surface)
-                if l is not None and l > 0.5:
-                    surfaces_claires.append(f'{fichier.name}:{ligne} {nom} → {surface}')
+              for nom, surface in fonds.items():
+                  if any(verre in nom for verre in VERRES):
+                      continue
+                  l = luminance(surface)
+                  if l is not None and l > 0.5:
+                      surfaces_claires.append(f'{fichier.name}:{ligne} {nom} → {surface}')
 
-            if not textes:
-                continue
-            for nom_texte, couleur in textes:
-                for nom_fond, surface in (fonds.items() or [('surface de page', SURFACE_PAGE)]):
-                    ratio = contraste(melanger(couleur, surface), surface)
-                    if ratio < SEUIL_ACCENT:
-                        illisibles.append(f'{fichier.name}:{ligne} {nom_texte} sur {nom_fond} → {ratio}:1')
-                    elif ratio < seuil:
-                        faibles.append(f'{fichier.name}:{ligne} {nom_texte} sur {nom_fond} → {ratio}:1')
+              if not textes:
+                  continue
+              for nom_texte, couleur in textes:
+                  for nom_fond, surface in (fonds.items() or [('surface de page', SURFACE_PAGE)]):
+                      ratio = contraste(melanger(couleur, surface), surface)
+                      if ratio < SEUIL_ACCENT:
+                          illisibles.append(f'{fichier.name}:{ligne} {nom_texte} sur {nom_fond} → {ratio}:1')
+                      elif ratio < seuil:
+                          faibles.append(f'{fichier.name}:{ligne} {nom_texte} sur {nom_fond} → {ratio}:1')
 
     def rapport(titre: str, lignes: list[str], limite: int | None = None) -> None:
         uniques = sorted(set(lignes))

@@ -3,9 +3,8 @@ import AdminSidebar from './AdminSidebar';
 import MobileTableBridge from '../../shared/MobileTableBridge';
 import MIcon from '../../shared/MIcon';
 import AdminNotificationBell from './AdminNotificationBell';
-import LangToggle from '../../shared/LangToggle';
-import ThemeToggle from '../../shared/ThemeToggle';
 import RefreshButton from '../../shared/RefreshButton';
+import SettingsLink from '../../shared/SettingsLink';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
@@ -71,8 +70,7 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
         </div>
         <div className="ml-auto flex items-center gap-1 sm:gap-md">
           <RefreshButton withLabel />
-          <LangToggle />
-            <ThemeToggle />
+          <SettingsLink to="/admin/parametres" />
           {/* Vraies notifications (GET /notifications) : compteur, liste, marquer comme lue */}
           <AdminNotificationBell
             className="cursor-pointer rounded-full p-2 text-text-secondary transition-all hover:bg-bg-app active:scale-[0.97]"

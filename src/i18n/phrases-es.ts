@@ -1344,4 +1344,9 @@ export const ES: Record<string, string> = {
   "Actualisation automatique": "Actualización automática",
   "Toutes les 30 secondes": "Cada 30 segundos",
   "Informations actualisées.": "Información actualizada.",
+  // Ajustes — apariencia e idioma (página Ajustes de los cuatro espacios)
+  "Langue et thème": "Idioma y tema",
+  "Langue de l'interface": "Idioma de la interfaz",
+  "Suit le réglage de votre appareil": "Sigue la configuración de tu dispositivo",
+  "Préférences conservées sur cet appareil": "Preferencias guardadas en este dispositivo",
 };
