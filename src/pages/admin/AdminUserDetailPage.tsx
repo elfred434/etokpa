@@ -66,7 +66,7 @@ export default function AdminUserDetailPage() {
         {loading && <p className="text-label text-text-secondary">{tx("Chargement…")}</p>}
 
         {user && (
-          <div className="max-w-[600px] rounded-lg border border-border-default bg-white p-4 shadow-sm sm:p-lg">
+          <div className="max-w-[600px] rounded-lg border border-border-default bg-bg-card p-4 shadow-sm sm:p-lg">
             <div className="space-y-3 text-label">
               {[
                 [tx("Nom complet"), user.nom_complet ?? `${user.prenom ?? ''} ${user.nom ?? ''}`],

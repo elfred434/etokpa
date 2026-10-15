@@ -92,7 +92,7 @@ export default function LivreurDecisionButtons({
       </div>
       {ask && createPortal(
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4" onClick={() => !locked && setAsk(false)}>
-          <div className="w-full max-w-[420px] rounded-2xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-[420px] rounded-2xl bg-bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-h3 text-h3 font-bold">{tx('Refuser cette course ?')}</h3>
             <p className="mt-2 text-label text-text-secondary">
               {tokRef(orderId)}. {tx('Elle sera remise en file pour une nouvelle attribution.')}

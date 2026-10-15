@@ -171,7 +171,7 @@ export default function InscriptionPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-bg-app p-4 md:p-6 font-body text-text-main">
       <div className="fixed right-4 top-4 z-50"><LangToggle /></div>
-      <div className="w-full max-w-[700px] overflow-hidden rounded-2xl bg-white shadow-sm border border-border-default">
+      <div className="w-full max-w-[700px] overflow-hidden rounded-2xl bg-bg-card shadow-sm border border-border-default">
         {/* Header Banner */}
         <header className="relative h-28 overflow-hidden bg-primary-tint border-b border-primary-light flex items-center justify-center">
           <div className="flex flex-col items-center">
@@ -183,7 +183,7 @@ export default function InscriptionPage() {
             </span>
           </div>
           {step === 2 && (
-            <span className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-text-secondary border border-border-default shadow-xs">
+            <span className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-bg-card px-3 py-1 text-xs font-medium text-text-secondary border border-border-default shadow-xs">
               <span className="h-2 w-2 rounded-full bg-success" />
               {tx("Bénin (+229)")}
             </span>
@@ -310,7 +310,7 @@ export default function InscriptionPage() {
                   <select
                     value={profil.ville}
                     onChange={(e) => setProfilField('ville', e.target.value)}
-                    className={`w-full pl-10 pr-8 py-2.5 rounded-lg border text-sm outline-none appearance-none bg-white ${
+                    className={`w-full pl-10 pr-8 py-2.5 rounded-lg border text-sm outline-none appearance-none bg-bg-card ${
                       profilErrors.ville ? 'border-error' : 'border-border-default focus:border-primary-container'
                     }`}
                   >

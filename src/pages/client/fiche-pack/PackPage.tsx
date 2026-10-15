@@ -108,7 +108,7 @@ export default function PackPage() {
       <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
         <ClientNavbar />
         <main className="flex justify-center pt-[80px] px-md">
-          <div className="w-full max-w-[560px] bg-white rounded-xl border border-border-default p-xl">
+          <div className="w-full max-w-[560px] bg-bg-card rounded-xl border border-border-default p-xl">
             <ApiErrorState
               title={tx("Impossible de charger le pack")}
               message={loadError}
@@ -126,7 +126,7 @@ export default function PackPage() {
       <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
         <ClientNavbar />
         <main className="flex justify-center pt-[80px] px-md">
-          <div className="w-full max-w-[560px] bg-white rounded-xl border border-border-default p-xl">
+          <div className="w-full max-w-[560px] bg-bg-card rounded-xl border border-border-default p-xl">
             <EmptyState
               icon={<MIcon name="search_off" className="text-4xl text-primary" />}
               title={tx("Pack introuvable")}
@@ -199,18 +199,18 @@ export default function PackPage() {
         <div className="flex w-full max-w-[1200px] flex-1 flex-col">
           {/* ---- Breadcrumbs ---- */}
           <div className="flex flex-wrap gap-2 py-3 md:px-10">
-            <Link to="/" className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">
+            <Link to="/" className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">
               {tx("Accueil")}
             </Link>
-            <span className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">/</span>
-            <Link to="/catalogue" search={{ cat: 'pack' }} className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">
+            <span className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">/</span>
+            <Link to="/catalogue" search={{ cat: 'pack' }} className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">
               {tx("Packs & Bundles")}
             </Link>
-            <span className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">/</span>
+            <span className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">/</span>
             <span className="text-xs font-medium leading-normal text-[#1c130d] sm:text-sm">{pack.nom}</span>
           </div>
 
-          <main className="grid grid-cols-1 gap-6 rounded-xl bg-white p-4 pb-8 shadow-sm md:gap-8 md:px-10 md:pb-12 lg:grid-cols-2">
+          <main className="grid grid-cols-1 gap-6 rounded-xl bg-bg-card p-4 pb-8 shadow-sm md:gap-8 md:px-10 md:pb-12 lg:grid-cols-2">
             {/* LEFT COLUMN: Image */}
             <div className="flex flex-col gap-4 md:gap-6">
               <div className="relative flex h-[260px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-[#FFF7ED] to-[#FED7AA] sm:h-[320px] md:h-[400px]">
@@ -301,7 +301,7 @@ export default function PackPage() {
           </main>
 
           {/* ---- Composition du pack ---- */}
-          <section className="mx-auto mt-8 mb-20 w-full max-w-[1200px] overflow-hidden rounded-xl bg-white shadow-sm">
+          <section className="mx-auto mt-8 mb-20 w-full max-w-[1200px] overflow-hidden rounded-xl bg-bg-card shadow-sm">
             <div className="border-b border-line px-4 py-4 sm:px-8">
               <h3 className="text-h3 text-ink">{tx("Produits inclus")}</h3>
             </div>

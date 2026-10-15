@@ -8,6 +8,7 @@ import './theme/theme.css';
 import { store } from './store';
 import { router } from './routes/router';
 import { LanguageProvider } from './context/LanguageContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { initEcho } from './services/realtime/echo';
 
 /**
@@ -91,9 +92,11 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <GlobalErrorBoundary>
       <Provider store={store}>
-        <LanguageProvider>
-          <RouterProvider router={router} />
-        </LanguageProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <RouterProvider router={router} />
+          </LanguageProvider>
+        </ThemeProvider>
       </Provider>
     </GlobalErrorBoundary>
   </StrictMode>,

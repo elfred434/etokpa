@@ -3,6 +3,7 @@ import MIcon from '../../shared/MIcon';
 import MobileTableBridge from '../../shared/MobileTableBridge';
 import ManagerSidebar from './ManagerSidebar';
 import LangToggle from '../../shared/LangToggle';
+import ThemeToggle from '../../shared/ThemeToggle';
 import RefreshButton from '../../shared/RefreshButton';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
@@ -58,7 +59,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-bg-primary text-on-surface">
+    <div className="min-h-screen bg-bg-card text-on-surface">
       {navOpen && (
         <button
           type="button"
@@ -68,7 +69,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
         />
       )}
       <ManagerSidebar currentPath={currentPath} open={navOpen} onClose={() => setNavOpen(false)} />
-      <header className="fixed left-0 right-0 top-0 z-30 flex h-[52px] items-center justify-between gap-2 border-b border-border-default bg-bg-primary px-3 sm:px-lg lg:left-64">
+      <header className="fixed left-0 right-0 top-0 z-30 flex h-[52px] items-center justify-between gap-2 border-b border-border-default bg-bg-card px-3 sm:px-lg lg:left-64">
         <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
@@ -90,6 +91,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <RefreshButton withLabel />
             <LangToggle />
+            <ThemeToggle />
           <button
             type="button"
             className="hidden rounded-lg p-2 text-text-secondary hover:bg-bg-secondary hover:text-on-surface sm:block"
@@ -106,14 +108,14 @@ export default function ManagerLayout({ children, currentPath }: Props) {
       <MobileTableBridge rootId="manager-main" />
       {admin && open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-[512px] rounded-2xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-[512px] rounded-2xl bg-bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-h3 font-h3 font-bold">{tx("Changer de zone")}</h2>
             <label className="mt-4 block text-label font-semibold">
               {tx("Zone géographique")}
               <select
                 value={zoneId}
                 onChange={(e) => setZoneId(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-border-default bg-white px-3 py-2 text-label"
+                className="mt-1 w-full rounded-lg border border-border-default bg-bg-card px-3 py-2 text-label"
               >
                 <option value="">{tx("— Choisir une zone —")}</option>
                 {zones.map((z) => (

@@ -454,7 +454,7 @@ export default function CartPage() {
 
             {/* Step 1: Panier (Completed) */}
             <div className="flex w-[23%] flex-col items-center gap-1 text-primary-container sm:gap-sm">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary-container bg-white font-bold text-primary-container transition-all duration-300 sm:h-9 sm:w-9 sm:text-h3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary-container bg-bg-card font-bold text-primary-container transition-all duration-300 sm:h-9 sm:w-9 sm:text-h3">
                 <MIcon name="check" style={{ fontSize: 18 }} />
               </div>
               <span className="text-center text-[11px] font-medium leading-tight text-primary-container sm:text-label">{tx("Panier")}</span>
@@ -490,7 +490,7 @@ export default function CartPage() {
           {/* Left Column: Basket & Delivery */}
           <div className="lg:w-[60%] flex flex-col gap-lg">
             {/* Articles Section */}
-            <div className="bg-white rounded-lg p-lg shadow-sm border border-border-default/50">
+            <div className="bg-bg-card rounded-lg p-lg shadow-sm border border-border-default/50">
               <div className="mb-lg flex flex-wrap items-center gap-sm border-b border-border-default pb-md">
                 <MIcon name="shopping_cart" className="text-primary-container" />
                 <h2 className="font-h2 text-h2 text-on-surface">Votre panier ({count} articles)</h2>
@@ -620,7 +620,7 @@ export default function CartPage() {
             </div>
 
             {/* Point de Repère Section — zones + points de repère réels (GET /api/zones) */}
-            <div className="bg-white rounded-lg p-lg shadow-sm border border-border-default/50">
+            <div className="bg-bg-card rounded-lg p-lg shadow-sm border border-border-default/50">
               <div className="flex items-center gap-sm mb-lg">
                 <MIcon name="location_on" className="text-primary-container" />
                 <h2 className="font-h2 text-h2 text-on-surface">{tx("Lieu de livraison")}</h2>
@@ -634,7 +634,7 @@ export default function CartPage() {
                     <div className="relative">
                       <MIcon name="map" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                       <select
-                        className="w-full pl-10 pr-10 py-3 bg-white rounded-lg border-1.5 border-border-default appearance-none focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body disabled:opacity-60"
+                        className="w-full pl-10 pr-10 py-3 bg-bg-card rounded-lg border-1.5 border-border-default appearance-none focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body disabled:opacity-60"
                         value={zoneId ?? ''}
                         onChange={(e) => handleZoneChange(Number(e.target.value))}
                         disabled={zonesLoading}
@@ -657,7 +657,7 @@ export default function CartPage() {
                     <div className="relative">
                       <MIcon name="edit_location" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                       <select
-                        className={`w-full pl-10 pr-10 py-3 bg-white rounded-lg border-1.5 appearance-none focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body disabled:opacity-60 ${
+                        className={`w-full pl-10 pr-10 py-3 bg-bg-card rounded-lg border-1.5 appearance-none focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body disabled:opacity-60 ${
                           landmarkError ? 'border-error' : 'border-border-default'
                         }`}
                         value={landmarkSel}
@@ -742,7 +742,7 @@ export default function CartPage() {
                   <div className="relative">
                     <MIcon name="edit" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                     <input
-                      className="w-full pl-10 pr-4 py-3 bg-white rounded-lg border-1.5 border-border-default focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body"
+                      className="w-full pl-10 pr-4 py-3 bg-bg-card rounded-lg border-1.5 border-border-default focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body"
                       type="text"
                       value={descriptionLieu}
                       onChange={(e) => setDescriptionLieu(e.target.value)}
@@ -766,7 +766,7 @@ export default function CartPage() {
 
           {/* Right Column: Summary (Sticky) */}
           <div className="lg:w-[40%]">
-            <div className="bg-white rounded-lg p-lg shadow-sm border border-border-default/50 sticky top-[72px]">
+            <div className="bg-bg-card rounded-lg p-lg shadow-sm border border-border-default/50 sticky top-[72px]">
               <h2 className="font-h2 text-h2 text-on-surface mb-lg">{tx("Récapitulatif")}</h2>
               <div className="space-y-sm pb-lg border-b border-border-default">
                 <div className="flex justify-between items-center">

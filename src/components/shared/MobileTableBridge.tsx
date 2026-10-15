@@ -81,7 +81,7 @@ export default function MobileTableBridge({ rootId }: { rootId: string }) {
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setSheet(null)}>
       <div
-        className="max-h-[85vh] w-full max-w-[640px] overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl sm:rounded-2xl"
+        className="max-h-[85vh] w-full max-w-[640px] overflow-y-auto rounded-t-2xl bg-bg-card p-4 shadow-2xl sm:rounded-2xl"
         role="dialog"
         aria-modal="true"
         onClick={(event) => event.stopPropagation()}

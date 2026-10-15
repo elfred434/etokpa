@@ -194,7 +194,7 @@ export default function LivreurCoursePage() {
           {/* Floating Status Badge */}
           {badge && (
             <div className="absolute left-md top-md z-[500] max-w-[calc(100%-32px)]">
-              <div className="flex items-center gap-md rounded-lg border border-border-default bg-white px-lg py-md shadow-lg">
+              <div className="flex items-center gap-md rounded-lg border border-border-default bg-bg-card px-lg py-md shadow-lg">
                 <div className="relative h-3 w-3 shrink-0">
                   {enLivraison && <div className="absolute inset-0 animate-ping rounded-full bg-primary opacity-75" />}
                   <div className="relative h-3 w-3 rounded-full bg-primary" />
@@ -209,7 +209,7 @@ export default function LivreurCoursePage() {
         </section>
 
         {/* RIGHT COLUMN: Delivery Details (30%) */}
-        <section className="z-10 flex flex-col border-l border-border-default bg-white lg:h-full lg:w-[30%]">
+        <section className="z-10 flex flex-col border-l border-border-default bg-bg-card lg:h-full lg:w-[30%]">
           {/* Header */}
           <div className="border-b border-border-default bg-surface-container-low p-lg">
             <div className="mb-sm flex items-start justify-between">
@@ -256,7 +256,7 @@ export default function LivreurCoursePage() {
                   type="button"
                   disabled
                   title={tx("Numéro du client non transmis par l'API")}
-                  className="flex cursor-not-allowed items-center justify-center gap-sm rounded-lg border border-border-default bg-white py-sm opacity-50"
+                  className="flex cursor-not-allowed items-center justify-center gap-sm rounded-lg border border-border-default bg-bg-card py-sm opacity-50"
                 >
                   <MIcon name="call" className="text-on-surface-variant" />
                   <span className="text-sm font-medium">{tx("Appeler")}</span>
@@ -265,7 +265,7 @@ export default function LivreurCoursePage() {
                   type="button"
                   disabled
                   title={tx("Messagerie non ouverte aux livreurs par le backend")}
-                  className="flex cursor-not-allowed items-center justify-center gap-sm rounded-lg border border-border-default bg-white py-sm opacity-50"
+                  className="flex cursor-not-allowed items-center justify-center gap-sm rounded-lg border border-border-default bg-bg-card py-sm opacity-50"
                 >
                   <MIcon name="chat_bubble" className="text-on-surface-variant" />
                   <span className="text-sm font-medium">{tx("Chat")}</span>
@@ -306,7 +306,7 @@ export default function LivreurCoursePage() {
           </div>
 
           {/* Footer Actions : accepter / refuser, puis le statut réel */}
-          <div className="space-y-md bg-white p-lg shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+          <div className="space-y-md bg-bg-card p-lg shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
             <LivreurDecisionButtons
               orderId={order.id}
               layout="stack"

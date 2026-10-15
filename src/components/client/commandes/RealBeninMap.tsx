@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTheme } from '../../../context/ThemeContext';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -74,6 +75,7 @@ export default function RealBeninMap({
   onRecenterRider,
 }: RealBeninMapProps) {
   useLanguage();
+  const { sombre } = useTheme();
   const mapCenter: [number, number] = riderCoords ?? destinationCoords ?? DANTOKPA_COORDS;
   const routePath: [number, number][] = [
     DANTOKPA_COORDS,
@@ -82,7 +84,7 @@ export default function RealBeninMap({
   ];
 
   return (
-    <div className="relative w-full h-full min-h-[450px] z-10">
+    <div className="relative w-full h-full min-h-[450px] z-10 dark:ring-1 dark:ring-border-default dark:ring-offset-0">
       <MapContainer
         center={mapCenter}
         zoom={14}
@@ -90,9 +92,20 @@ export default function RealBeninMap({
         className="w-full h-full rounded-b-none"
         style={{ height: '100%', width: '100%', minHeight: '450px' }}
       >
+        {/* Tuiles adaptées au thème : OSM en clair, CARTO sombre en sombre
+            (les tuiles OSM claires éblouissent sur une interface sombre). */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          key={sombre ? 'tuiles-sombres' : 'tuiles-claires'}
+          attribution={
+            sombre
+              ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+              : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          }
+          url={
+            sombre
+              ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+              : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+          }
         />
 
         <MapRecenterController center={mapCenter} />
@@ -140,7 +153,7 @@ export default function RealBeninMap({
         type="button"
         onClick={onRecenterRider}
         title={tx("Recentrer sur la position temps réel du livreur")}
-        className="absolute bottom-6 right-6 z-[400] w-12 h-12 bg-white rounded-full flex items-center justify-center border border-border-default shadow-xl hover:bg-bg-secondary transition-transform active:scale-95 cursor-pointer"
+        className="absolute bottom-6 right-6 z-[400] w-12 h-12 bg-bg-card rounded-full flex items-center justify-center border border-border-default shadow-xl hover:bg-bg-secondary transition-transform active:scale-95 cursor-pointer"
       >
         <span className="material-symbols-outlined text-text-main">my_location</span>
       </button>

@@ -70,7 +70,7 @@ export default function ManagerLitigesPage() {
               className={`rounded-full border px-3 py-1.5 text-label font-semibold transition ${
                 filtre === o.f
                   ? 'border-primary bg-primary text-white'
-                  : 'border-border-default bg-white text-text-secondary hover:border-primary hover:text-primary'
+                  : 'border-border-default bg-bg-card text-text-secondary hover:border-primary hover:text-primary'
               }`}
             >
               {tx(o.label)} ({o.n})
@@ -80,7 +80,7 @@ export default function ManagerLitigesPage() {
 
         <div className="space-y-4 opacity-70">
           {cartes.map((l) => (
-            <div key={l.id} className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+            <div key={l.id} className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-label font-bold">
                   {l.id} <span className="text-text-secondary">· Cde {l.cde}</span>

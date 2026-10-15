@@ -254,7 +254,7 @@ export default function OrderTrackingPage() {
         )}
 
         {/* STATUS PANEL (Floating Bottom Sheet) */}
-        <section className="relative flex-grow bg-white rounded-t-[20px] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-lg pt-lg pb-xl z-40 -mt-8 overflow-y-auto max-w-[800px] mx-auto w-full">
+        <section className="relative flex-grow bg-bg-card rounded-t-[20px] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-lg pt-lg pb-xl z-40 -mt-8 overflow-y-auto max-w-[800px] mx-auto w-full">
           <div className="w-12 h-1.5 bg-border-default rounded-full mx-auto mb-lg" />
 
           {fetchError && (
@@ -404,7 +404,7 @@ export default function OrderTrackingPage() {
                             ? 'bg-success text-white'
                             : active
                               ? 'bg-primary-container text-white animate-bounce'
-                              : 'bg-white border-2 border-border-default text-border-default'
+                              : 'bg-bg-card border-2 border-border-default text-border-default'
                         }`}
                       >
                         <MIcon name={done ? 'check' : (step.icon as string)} className="text-[16px]" />
@@ -455,7 +455,7 @@ export default function OrderTrackingPage() {
                   {rider?.telephone && (
                     <a
                       href={`tel:${rider.telephone.replace(/\s/g, '')}`}
-                      className="w-10 h-10 bg-white border border-border-default rounded-lg flex items-center justify-center text-primary-container active:scale-95 transition-transform"
+                      className="w-10 h-10 bg-bg-card border border-border-default rounded-lg flex items-center justify-center text-primary-container active:scale-95 transition-transform"
                       title={isFr ? 'Appeler le livreur' : 'Call rider'}
                     >
                       <MIcon name="call" />
@@ -463,7 +463,7 @@ export default function OrderTrackingPage() {
                   )}
                   <Link
                     to="/messagerie"
-                    className="w-10 h-10 bg-white border border-border-default rounded-lg flex items-center justify-center text-primary-container active:scale-95 transition-transform"
+                    className="w-10 h-10 bg-bg-card border border-border-default rounded-lg flex items-center justify-center text-primary-container active:scale-95 transition-transform"
                     title={isFr ? tx("Discuter") : 'Chat'}
                   >
                     <MIcon name="chat" />

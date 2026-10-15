@@ -36,7 +36,7 @@ export default function ProfileSettings() {
       <section className="mb-xl">
         <h3 className="mb-sm font-h3 text-h3 text-ink">{t('profile.settingsAndSecurity')}</h3>
 
-        <div className="overflow-hidden rounded-[14px] border border-line bg-white shadow-sm">
+        <div className="overflow-hidden rounded-[14px] border border-line bg-bg-card shadow-sm">
           {/* Changer mot de passe */}
           <button
             type="button"
@@ -97,7 +97,7 @@ export default function ProfileSettings() {
       {/* Modal Changement Mot de Passe */}
       {passwordOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-[440px] rounded-2xl bg-white p-lg shadow-xl">
+          <div className="w-full max-w-[440px] rounded-2xl bg-bg-card p-lg shadow-xl">
             <div className="mb-md flex items-center justify-between border-b border-line pb-sm">
               <h3 className="font-h2 text-h2 text-ink">{tx("Changer le mot de passe")}</h3>
               <button

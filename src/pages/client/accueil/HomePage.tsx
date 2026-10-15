@@ -191,7 +191,7 @@ export default function HomePage() {
 
       <main className="mx-auto w-full max-w-[1200px] overflow-x-hidden px-3 sm:px-4 pb-[80px] pt-[52px] lg:pb-0">
         {/* ---- Hero ---- */}
-        <section className="relative mt-md sm:mt-lg flex min-h-[380px] sm:min-h-[460px] md:min-h-[500px] items-center overflow-hidden rounded-[20px] sm:rounded-[24px] border border-line bg-white shadow-sm">
+        <section className="relative mt-md sm:mt-lg flex min-h-[380px] sm:min-h-[460px] md:min-h-[500px] items-center overflow-hidden rounded-[20px] sm:rounded-[24px] border border-line bg-bg-card shadow-sm">
           <div className="absolute inset-0 z-0">
             <img
               alt={tx("Marché TOKPa Illustration")}
@@ -247,7 +247,7 @@ export default function HomePage() {
               title={isFr ? tx("Impossible de charger les catégories") : 'Unable to load categories'}
               message={catsError}
               onRetry={retry}
-              className="rounded-[14px] border border-line bg-white px-md"
+              className="rounded-[14px] border border-line bg-bg-card px-md"
             />
           ) : apiCats === null ? (
             <LoadingState label={isFr ? tx("Chargement des catégories…") : 'Loading categories…'} className="rounded-[14px] bg-warm-low" />
@@ -281,7 +281,7 @@ export default function HomePage() {
             {selLoading ? (
               <LoadingState
                 label={isFr ? tx("Chargement des produits…") : 'Loading products…'}
-                className="rounded-[14px] border border-line bg-white"
+                className="rounded-[14px] border border-line bg-bg-card"
               />
             ) : needsLogin ? (
               <EmptyState
@@ -297,14 +297,14 @@ export default function HomePage() {
                     {isFr ? tx("Se connecter") : 'Log in'}
                   </Link>
                 }
-                className="rounded-[14px] border border-line bg-white px-md"
+                className="rounded-[14px] border border-line bg-bg-card px-md"
               />
             ) : selError ? (
               <ApiErrorState
                 title={isFr ? tx("Impossible de charger les produits") : 'Unable to load products'}
                 message={selError}
                 onRetry={retry}
-                className="rounded-[14px] border border-line bg-white px-md"
+                className="rounded-[14px] border border-line bg-bg-card px-md"
               />
             ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -312,7 +312,7 @@ export default function HomePage() {
                 <div
                   key={item.id}
                   onClick={() => navigate({ to: '/produit/$productId', params: { productId: item.id } })}
-                  className="bento-hover group cursor-pointer overflow-hidden rounded-[14px] border border-line bg-white p-md shadow-xs"
+                  className="bento-hover group cursor-pointer overflow-hidden rounded-[14px] border border-line bg-bg-card p-md shadow-xs"
                 >
                   <div className="relative mb-md h-48 sm:h-40 overflow-hidden rounded-[10px] bg-page flex items-center justify-center">
                     {!item.image ? (
@@ -327,7 +327,7 @@ export default function HomePage() {
                       />
                     )}
                     <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-success px-2 py-0.5 text-micro text-white">
-                      <span className="h-1.5 w-1.5 rounded-full bg-white" /> {item.badge}
+                      <span className="h-1.5 w-1.5 rounded-full bg-bg-card" /> {item.badge}
                     </span>
                   </div>
                   <div className="flex flex-col gap-xs">
@@ -357,7 +357,7 @@ export default function HomePage() {
 
         {/* ---- Négociation : vrai produit négociable (masqué s'il n'y en a pas) ---- */}
         {negoProduct && (
-        <section className="mb-lg sm:mb-xl bg-white rounded-[14px] border-l-[3px] border-secondary-container p-4 sm:p-lg flex flex-col md:flex-row items-center justify-between gap-md sm:gap-lg">
+        <section className="mb-lg sm:mb-xl bg-bg-card rounded-[14px] border-l-[3px] border-secondary-container p-4 sm:p-lg flex flex-col md:flex-row items-center justify-between gap-md sm:gap-lg">
           <div className="w-full md:w-[70%]">
             <div className="inline-flex max-w-full items-center gap-2 bg-secondary-container/10 text-on-secondary-container px-2.5 py-1 rounded-full mb-sm text-xs sm:text-label font-medium uppercase tracking-wider overflow-hidden">
               <span className="material-symbols-outlined text-[16px] sm:text-[18px] shrink-0">handshake</span>
@@ -381,7 +381,7 @@ export default function HomePage() {
               <div className="flex justify-between items-center text-xs sm:text-label">
                 <span className="text-secondary">{t('home.yourOffer')}</span>
                 <input
-                  className="w-20 sm:w-24 text-right border-none bg-white rounded-lg p-1 font-bold text-primary focus:ring-1 focus:ring-primary text-xs sm:text-sm"
+                  className="w-20 sm:w-24 text-right border-none bg-bg-card rounded-lg p-1 font-bold text-primary focus:ring-1 focus:ring-primary text-xs sm:text-sm"
                   type="text"
                   value={offre}
                   onChange={(e) => setOffre(e.target.value)}

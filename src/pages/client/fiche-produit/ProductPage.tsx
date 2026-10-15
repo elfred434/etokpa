@@ -157,7 +157,7 @@ export default function ProductPage() {
       <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
         <ClientNavbar />
         <main className="flex justify-center pt-[80px] px-md">
-          <div className="w-full max-w-[560px] bg-white rounded-xl border border-border-default p-xl">
+          <div className="w-full max-w-[560px] bg-bg-card rounded-xl border border-border-default p-xl">
             <ApiErrorState
               title={tx("Impossible de charger le produit")}
               message={loadError}
@@ -175,7 +175,7 @@ export default function ProductPage() {
       <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
         <ClientNavbar />
         <main className="flex justify-center pt-[80px] px-md">
-          <div className="w-full max-w-[560px] bg-white rounded-xl border border-border-default p-xl">
+          <div className="w-full max-w-[560px] bg-bg-card rounded-xl border border-border-default p-xl">
             <EmptyState
               icon={<MIcon name="search_off" className="text-4xl text-primary" />}
               title={tx("Produit introuvable")}
@@ -207,19 +207,19 @@ export default function ProductPage() {
         <div className="flex w-full max-w-[1200px] flex-1 flex-col">
           {/* ---- Breadcrumbs (catégorie réelle de l'API) ---- */}
           <div className="flex flex-wrap gap-2 py-3 md:px-10">
-            <Link to="/" className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">
+            <Link to="/" className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">
               {tx("Accueil")}
             </Link>
-            <span className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">/</span>
-            <Link to="/catalogue" className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">
+            <span className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">/</span>
+            <Link to="/catalogue" className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">
               {categoryNom}
             </Link>
-            <span className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">/</span>
+            <span className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">/</span>
             <span className="text-xs font-medium leading-normal text-[#1c130d] sm:text-sm">{product.nom}</span>
           </div>
 
           {/* ---- Main Product Content ---- */}
-          <main className="grid grid-cols-1 gap-6 rounded-xl bg-white p-4 pb-8 shadow-sm md:gap-8 md:px-10 md:pb-12 lg:grid-cols-2">
+          <main className="grid grid-cols-1 gap-6 rounded-xl bg-bg-card p-4 pb-8 shadow-sm md:gap-8 md:px-10 md:pb-12 lg:grid-cols-2">
             {/* LEFT COLUMN: Images */}
             <div className="flex flex-col gap-4 md:gap-6">
               <div className="relative flex h-[260px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-[#FFF7ED] to-[#FED7AA] sm:h-[320px] md:h-[400px]">
@@ -408,7 +408,7 @@ export default function ProductPage() {
                       <button
                         type="button"
                         onClick={() => dispatch(cancelNegotiation({ productId: product.id }))}
-                        className="rounded-lg border border-line bg-white px-3 py-2 text-xs font-bold text-ink-2 cursor-pointer"
+                        className="rounded-lg border border-line bg-bg-card px-3 py-2 text-xs font-bold text-ink-2 cursor-pointer"
                       >
                         {tx("Annuler")}
                       </button>
@@ -444,7 +444,7 @@ export default function ProductPage() {
                       <button
                         type="button"
                         onClick={() => dispatch(cancelNegotiation({ productId: product.id }))}
-                        className="rounded-lg border border-line bg-white px-3 py-2 text-xs font-bold text-ink-2 cursor-pointer"
+                        className="rounded-lg border border-line bg-bg-card px-3 py-2 text-xs font-bold text-ink-2 cursor-pointer"
                       >
                         {tx("Refuser")}
                       </button>
@@ -465,7 +465,7 @@ export default function ProductPage() {
                     <button
                       type="button"
                       onClick={() => dispatch(cancelNegotiation({ productId: product.id }))}
-                      className="w-full rounded-lg bg-white border border-line py-2 text-xs font-bold text-ink hover:bg-surface cursor-pointer"
+                      className="w-full rounded-lg bg-bg-card border border-line py-2 text-xs font-bold text-ink hover:bg-surface cursor-pointer"
                     >
                       {tx("Faire une nouvelle offre")}
                     </button>
@@ -488,7 +488,7 @@ export default function ProductPage() {
                   type="button"
                   onClick={buyNow}
                   disabled={unavailable}
-                  className="w-full rounded-[10px] border border-primary bg-white py-3.5 font-bold text-primary transition-all hover:bg-primary-lighter cursor-pointer disabled:opacity-50"
+                  className="w-full rounded-[10px] border border-primary bg-bg-card py-3.5 font-bold text-primary transition-all hover:bg-primary-lighter cursor-pointer disabled:opacity-50"
                 >
                   {tx("Acheter maintenant")}
                 </button>
@@ -497,7 +497,7 @@ export default function ProductPage() {
           </main>
 
           {/* ---- Bottom Section: Tabs ---- */}
-          <section className="mx-auto mt-8 mb-20 w-full max-w-[1200px] overflow-hidden rounded-xl bg-white shadow-sm">
+          <section className="mx-auto mt-8 mb-20 w-full max-w-[1200px] overflow-hidden rounded-xl bg-bg-card shadow-sm">
             <div className="flex overflow-x-auto border-b border-line">
               {(
                 [

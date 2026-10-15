@@ -478,7 +478,7 @@ export default function AdminDashboardPage() {
               </p>
               <button
                 type="button"
-                className="bg-white text-primary px-4 py-2 rounded-lg font-bold text-label transition-transform active:scale-95 cursor-pointer"
+                className="bg-bg-card text-primary px-4 py-2 rounded-lg font-bold text-label transition-transform active:scale-95 cursor-pointer"
               >
                 Support Direct
               </button>
@@ -500,7 +500,7 @@ export default function AdminDashboardPage() {
           onClick={() => setSelected(null)}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl border border-border-default w-full max-w-[600px] max-h-[90vh] flex flex-col overflow-hidden"
+            className="bg-bg-card rounded-xl shadow-2xl border border-border-default w-full max-w-[600px] max-h-[90vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* En-tête */}
@@ -552,7 +552,7 @@ export default function AdminDashboardPage() {
                     <MIcon name="person" className="text-sm" />
                     {tx("Profil de l'Acteur")}
                   </span>
-                  <span className="text-micro font-bold text-primary bg-white px-2 py-0.5 rounded border border-border-default">
+                  <span className="text-micro font-bold text-primary bg-bg-card px-2 py-0.5 rounded border border-border-default">
                     {selected.userRole}
                   </span>
                 </div>
@@ -596,7 +596,7 @@ export default function AdminDashboardPage() {
                   <MIcon name="shopping_bag" className="text-sm" />
                   {tx("Articles / Objet de l'opération")}
                 </span>
-                <div className="bg-white p-3 rounded-lg border border-border-default">
+                <div className="bg-bg-card p-3 rounded-lg border border-border-default">
                   <p className="text-label text-on-surface font-medium leading-relaxed">{selected.items}</p>
                 </div>
               </div>
@@ -617,7 +617,7 @@ export default function AdminDashboardPage() {
             <div className="px-6 py-4 bg-bg-secondary border-t border-border-default flex items-center justify-between gap-3 shrink-0">
               <button
                 type="button"
-                className="px-3 py-2 text-label font-medium text-text-secondary hover:bg-border-default/40 rounded-lg transition-colors flex items-center gap-1.5 border border-border-default bg-white cursor-pointer"
+                className="px-3 py-2 text-label font-medium text-text-secondary hover:bg-border-default/40 rounded-lg transition-colors flex items-center gap-1.5 border border-border-default bg-bg-card cursor-pointer"
               >
                 <MIcon name="download" className="text-base" />
                 <span>{tx("Télécharger reçu")}</span>

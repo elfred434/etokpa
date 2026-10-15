@@ -99,7 +99,7 @@ export default function Verification2faPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg-app p-4 font-body text-text-main">
       <div className="fixed right-4 top-4 z-50"><LangToggle /></div>
-      <div className="w-full max-w-[440px] rounded-2xl bg-white p-6 md:p-8 shadow-sm border border-border-default">
+      <div className="w-full max-w-[440px] rounded-2xl bg-bg-card p-6 md:p-8 shadow-sm border border-border-default">
         <div className="flex flex-col items-center text-center">
           <div className="mb-4 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-primary-tint border border-primary-light">
             <MIcon name="mark_email_read" className="text-primary-container text-[36px]" />

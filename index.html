@@ -5,6 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="TOKPa — Ton marché, ta façon. Le marché digital du Bénin." />
     <title>TOKPa — Ton marché, ta façon</title>
+    <!--
+      Amorçage du thème AVANT tout rendu : évite le flash de page claire (FOUC).
+      Même logique que src/context/ThemeContext.tsx — choix mémorisé dans
+      « tokpa_theme » (light | dark | system), sinon préférence du système.
+      Script en ligne volontaire : un module externe arriverait trop tard.
+    -->
+    <script>
+      (function () {
+        try {
+          var choix = localStorage.getItem('tokpa_theme') || 'system';
+          var sombre =
+            choix === 'dark' ||
+            (choix !== 'light' &&
+              window.matchMedia &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var racine = document.documentElement;
+          racine.setAttribute('data-theme', sombre ? 'dark' : 'light');
+          if (sombre) racine.classList.add('dark');
+          racine.style.colorScheme = sombre ? 'dark' : 'light';
+        } catch (e) {
+          /* stockage indisponible : on reste en clair */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

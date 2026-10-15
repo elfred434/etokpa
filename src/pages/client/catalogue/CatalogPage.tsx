@@ -325,18 +325,18 @@ export default function CatalogPage() {
     <div className="absolute left-2 top-2 flex flex-col gap-1">
       {p.stock === 'available' && (
         <span className="flex items-center gap-1 rounded-full bg-success px-2 py-0.5 text-[10px] font-bold text-white">
-          <span className="h-1.5 w-1.5 rounded-full bg-white" /> {tx("Disponible")}
+          <span className="h-1.5 w-1.5 rounded-full bg-bg-card" /> {tx("Disponible")}
         </span>
       )}
       {p.promo && <span className="rounded-full bg-amber px-2 py-0.5 text-[10px] font-bold text-white">{p.promo}</span>}
       {p.stock === 'low' && (
         <span className="flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">
-          <span className="h-1.5 w-1.5 rounded-full bg-white" /> {tx("Stock faible")}
+          <span className="h-1.5 w-1.5 rounded-full bg-bg-card" /> {tx("Stock faible")}
         </span>
       )}
       {p.stock === 'none' && (
         <span className="flex items-center gap-1 rounded-full bg-ink-3 px-2 py-0.5 text-[10px] font-bold text-white">
-          <span className="h-1.5 w-1.5 rounded-full bg-white" /> {tx("Rupture")}
+          <span className="h-1.5 w-1.5 rounded-full bg-bg-card" /> {tx("Rupture")}
         </span>
       )}
     </div>
@@ -355,7 +355,7 @@ export default function CatalogPage() {
       <main className="mx-auto flex w-full max-w-[1200px] gap-4 px-4 py-lg">
         {/* ---- Sidebar Filters ---- */}
         <aside className="hidden w-[260px] flex-shrink-0 space-y-md md:block">
-          <div className="rounded-xl border-[0.5px] border-line bg-white p-md shadow-sm">
+          <div className="rounded-xl border-[0.5px] border-line bg-bg-card p-md shadow-sm">
             <h3 className="mb-md font-h3 text-h3">{tx("Catégories")}</h3>
             <nav className="space-y-1">
               {categories.map((c) => (
@@ -417,7 +417,7 @@ export default function CatalogPage() {
                 >
                   <span
                     className={clsx(
-                      'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow',
+                      'absolute top-0.5 h-4 w-4 rounded-full bg-bg-card shadow',
                       dispoOnly ? 'right-0.5' : 'left-0.5',
                     )}
                   />
@@ -438,7 +438,7 @@ export default function CatalogPage() {
         {/* ---- Mobile Filter Drawer ---- */}
         {mobileFilterOpen && (
           <div className="fixed inset-0 z-50 flex flex-col bg-black/50 md:hidden">
-            <div className="mt-auto max-h-[85vh] w-full overflow-y-auto rounded-t-2xl bg-white p-lg shadow-xl">
+            <div className="mt-auto max-h-[85vh] w-full overflow-y-auto rounded-t-2xl bg-bg-card p-lg shadow-xl">
               <div className="mb-md flex items-center justify-between border-b border-line pb-sm">
                 <h3 className="font-h2 text-h2 text-on-surface">{tx("Filtres du catalogue")}</h3>
                 <button
@@ -505,7 +505,7 @@ export default function CatalogPage() {
                   >
                     <span
                       className={clsx(
-                        'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow',
+                        'absolute top-0.5 h-4 w-4 rounded-full bg-bg-card shadow',
                         dispoOnly ? 'right-0.5' : 'left-0.5',
                       )}
                     />
@@ -563,13 +563,13 @@ export default function CatalogPage() {
               <button
                 type="button"
                 onClick={() => setMobileFilterOpen(true)}
-                className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-1.5 text-xs font-semibold text-primary shadow-sm md:hidden"
+                className="flex items-center gap-2 rounded-lg border border-line bg-bg-card px-3 py-1.5 text-xs font-semibold text-primary shadow-sm md:hidden"
               >
                 <MIcon name="tune" className="text-[18px]" />
                 {tx("Filtres")}
               </button>
 
-              <div className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-1.5">
+              <div className="flex items-center gap-2 rounded-lg border border-line bg-bg-card px-3 py-1.5">
                 <span className="hidden text-xs text-ink-2 sm:inline">{tx("Trier :")}</span>
                 <select
                   value={sort}
@@ -584,7 +584,7 @@ export default function CatalogPage() {
                   <option value="new">{tx("Nouveautés")}</option>
                 </select>
               </div>
-              <div className="flex overflow-hidden rounded-lg border border-line bg-white">
+              <div className="flex overflow-hidden rounded-lg border border-line bg-bg-card">
                 <button
                   type="button"
                   aria-label={tx("Vue grille")}
@@ -625,17 +625,17 @@ export default function CatalogPage() {
           {listLoading ? (
             <LoadingState
               label={packMode ? tx("Chargement des packs…") : 'Chargement des produits…'}
-              className="rounded-xl border-[0.5px] border-line bg-white"
+              className="rounded-xl border-[0.5px] border-line bg-bg-card"
             />
           ) : listError ? (
             <ApiErrorState
               title={packMode ? tx("Impossible de charger les packs") : tx("Impossible de charger les produits")}
               message={listError}
               onRetry={retry}
-              className="rounded-xl border-[0.5px] border-line bg-white px-md"
+              className="rounded-xl border-[0.5px] border-line bg-bg-card px-md"
             />
           ) : visible.length === 0 ? (
-            <div className="rounded-xl border-[0.5px] border-line bg-white p-xl text-center text-ink-2">
+            <div className="rounded-xl border-[0.5px] border-line bg-bg-card p-xl text-center text-ink-2">
               {packMode ? tx("Aucun pack ne correspond à ces filtres.") : tx("Aucun produit ne correspond à ces filtres.")}
             </div>
           ) : view === 'grid' ? (
@@ -644,7 +644,7 @@ export default function CatalogPage() {
                 <div
                   key={p.id}
                   onClick={() => openItem(p)}
-                  className="group cursor-pointer overflow-hidden rounded-xl border-[0.5px] border-line bg-white transition-all hover:shadow-md"
+                  className="group cursor-pointer overflow-hidden rounded-xl border-[0.5px] border-line bg-bg-card transition-all hover:shadow-md"
                 >
                   <div className="relative flex h-[110px] items-center justify-center bg-gradient-to-br from-primary-lighter to-primary-light">
                     {p.image ? (
@@ -689,7 +689,7 @@ export default function CatalogPage() {
                 <div
                   key={p.id}
                   onClick={() => openItem(p)}
-                  className="group flex cursor-pointer flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-md rounded-xl border-[0.5px] border-line bg-white p-3 sm:p-md transition-all hover:shadow-md"
+                  className="group flex cursor-pointer flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-md rounded-xl border-[0.5px] border-line bg-bg-card p-3 sm:p-md transition-all hover:shadow-md"
                 >
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className="relative flex h-[70px] w-[90px] sm:h-[80px] sm:w-[110px] shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary-lighter to-primary-light">
@@ -762,7 +762,7 @@ export default function CatalogPage() {
               aria-label={tx("Page précédente")}
               disabled={currentPage === 1}
               onClick={() => setPage(currentPage - 1)}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-on-surface-variant transition-all hover:border-line hover:bg-white disabled:opacity-40"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-on-surface-variant transition-all hover:border-line hover:bg-bg-card disabled:opacity-40"
             >
               <MIcon name="chevron_left" />
             </button>
@@ -775,7 +775,7 @@ export default function CatalogPage() {
                   'flex h-10 w-10 items-center justify-center rounded-lg transition-all',
                   n === currentPage
                     ? 'bg-primary font-bold text-white shadow-sm'
-                    : 'border border-transparent text-on-surface-variant hover:border-line hover:bg-white',
+                    : 'border border-transparent text-on-surface-variant hover:border-line hover:bg-bg-card',
                 )}
               >
                 {n}
@@ -786,7 +786,7 @@ export default function CatalogPage() {
               aria-label={tx("Page suivante")}
               disabled={currentPage === totalPages}
               onClick={() => setPage(currentPage + 1)}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-on-surface-variant transition-all hover:border-line hover:bg-white disabled:opacity-40"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-on-surface-variant transition-all hover:border-line hover:bg-bg-card disabled:opacity-40"
             >
               <MIcon name="chevron_right" />
             </button>

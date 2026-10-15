@@ -48,8 +48,8 @@ const STATUT_UI: Record<string, { label: string; badge: string; dot: string }> =
   inactif: { label: 'Inactif', badge: 'bg-gray-100 text-gray-600 border border-gray-200', dot: 'bg-gray-400' },
   suspendu: { label: 'Suspendu', badge: 'bg-red-50 text-red-700 border border-red-200', dot: 'bg-red-500' },
 };
-const TAB_IDLE = 'role-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-white/80 transition-all';
-const TAB_ACTIVE = 'role-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-primary shadow-xs border border-primary/30 transition-all';
+const TAB_IDLE = 'role-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-bg-card/80 transition-all';
+const TAB_ACTIVE = 'role-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-bg-card text-primary shadow-xs border border-primary/30 transition-all';
 const PER_PAGE = 10;
 const MAX_PAGES = 25;
 
@@ -393,7 +393,7 @@ export default function AdminUsersPage() {
       )}
       {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
       <style>{DESIGN_CSS}</style>
-      <header className="flex flex-col gap-3 border-b border-gray-200 bg-white px-4 py-3 sm:px-6">
+      <header className="flex flex-col gap-3 border-b border-gray-200 bg-bg-card px-4 py-3 sm:px-6">
         <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
           <span className="hidden font-medium text-gray-500 sm:inline">{tx("Administration Centrale")}</span>
           <span className="hidden text-gray-300 sm:inline">/</span>
@@ -417,7 +417,7 @@ export default function AdminUsersPage() {
               icon={<i className="ti ti-bell text-lg"></i>}
             />
             <button
-              className="btn-press flex items-center gap-1.5 rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-800 shadow-sm transition-all hover:bg-gray-50"
+              className="btn-press flex items-center gap-1.5 rounded-[10px] border border-gray-200 bg-bg-card px-3 py-2 text-xs font-medium text-gray-800 shadow-sm transition-all hover:bg-gray-50"
               type="button"
               onClick={openSelfManager}
             >
@@ -443,11 +443,11 @@ export default function AdminUsersPage() {
             <p className="text-sm text-gray-500 mt-0.5">{tx("Supervisez, modifiez les rôles et gérez les comptes des clients, coursiers, managers et administrateurs.")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button className="btn-press px-3 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-[10px] flex items-center gap-1.5 transition-all" type="button" onClick={exportCsv}>
+            <button className="btn-press px-3 py-2 bg-bg-card border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-[10px] flex items-center gap-1.5 transition-all" type="button" onClick={exportCsv}>
               <i className="ti ti-download text-sm"></i>
               <span>{tx("Exporter CSV")}</span>
             </button>
-            <button className="btn-press px-3 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-[10px] flex items-center gap-1.5 transition-all" type="button" onClick={resetAndReload}>
+            <button className="btn-press px-3 py-2 bg-bg-card border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-[10px] flex items-center gap-1.5 transition-all" type="button" onClick={resetAndReload}>
               <i className="ti ti-refresh text-sm"></i>
               <span>{tx("Actualiser")}</span>
             </button>
@@ -456,7 +456,7 @@ export default function AdminUsersPage() {
 
         {/* Statistiques réelles (comptes chargés) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-[14px] border border-gray-200 shadow-sm flex items-center gap-4">
+          <div className="bg-bg-card p-4 rounded-[14px] border border-gray-200 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-orange-50 text-primary flex items-center justify-center text-xl shrink-0">
               <i className="ti ti-users"></i>
             </div>
@@ -468,7 +468,7 @@ export default function AdminUsersPage() {
               </p>
             </div>
           </div>
-          <div className="bg-white p-4 rounded-[14px] border border-gray-200 shadow-sm flex items-center gap-4">
+          <div className="bg-bg-card p-4 rounded-[14px] border border-gray-200 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0">
               <i className="ti ti-shopping-cart"></i>
             </div>
@@ -480,7 +480,7 @@ export default function AdminUsersPage() {
               </p>
             </div>
           </div>
-          <div className="bg-white p-4 rounded-[14px] border border-gray-200 shadow-sm flex items-center gap-4">
+          <div className="bg-bg-card p-4 rounded-[14px] border border-gray-200 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0">
               <i className="ti ti-motorbike"></i>
             </div>
@@ -492,7 +492,7 @@ export default function AdminUsersPage() {
               </p>
             </div>
           </div>
-          <div className="bg-white p-4 rounded-[14px] border border-gray-200 shadow-sm flex items-center gap-4">
+          <div className="bg-bg-card p-4 rounded-[14px] border border-gray-200 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0">
               <i className="ti ti-shield-check"></i>
             </div>
@@ -506,7 +506,7 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-[14px] border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+        <div className="bg-bg-card rounded-[14px] border border-gray-200 shadow-sm overflow-hidden flex flex-col">
           <div className="p-4 border-b border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50/50">
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0" id="roleFilters">
               {(
@@ -527,7 +527,7 @@ export default function AdminUsersPage() {
               <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
                 <span className="shrink-0 text-xs font-medium text-gray-400">{tx("Statut :")}</span>
                 <select
-                  className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 focus:border-primary focus:outline-none sm:flex-none"
+                  className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-bg-card px-2.5 py-1.5 text-xs text-gray-700 focus:border-primary focus:outline-none sm:flex-none"
                   id="statusFilter"
                   value={statusF}
                   onChange={(e) => choose(() => setStatusF(e.target.value))}
@@ -541,7 +541,7 @@ export default function AdminUsersPage() {
               <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
                 <span className="shrink-0 text-xs font-medium text-gray-400">{tx("Zone :")}</span>
                 <select
-                  className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 focus:border-primary focus:outline-none sm:flex-none"
+                  className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-bg-card px-2.5 py-1.5 text-xs text-gray-700 focus:border-primary focus:outline-none sm:flex-none"
                   id="zoneFilter"
                   value={zoneF}
                   onChange={(e) => choose(() => setZoneF(e.target.value))}
@@ -657,7 +657,7 @@ export default function AdminUsersPage() {
             <div className="flex flex-wrap items-center justify-center gap-1">
               <button
                 type="button"
-                className="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-40"
+                className="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-bg-card text-gray-500 hover:bg-gray-100 disabled:opacity-40"
                 disabled={current <= 1}
                 onClick={() => setPage(current - 1)}
               >
@@ -668,7 +668,7 @@ export default function AdminUsersPage() {
                   {i > 0 && n - pageNumbers[i - 1] > 1 && <span className="px-1 text-gray-400">...</span>}
                   <button
                     type="button"
-                    className={n === current ? 'px-3 py-1.5 rounded-lg bg-primary text-white font-semibold' : 'px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100'}
+                    className={n === current ? 'px-3 py-1.5 rounded-lg bg-primary text-white font-semibold' : 'px-3 py-1.5 rounded-lg border border-gray-200 bg-bg-card text-gray-700 hover:bg-gray-100'}
                     onClick={() => setPage(n)}
                   >
                     {n}
@@ -677,7 +677,7 @@ export default function AdminUsersPage() {
               ))}
               <button
                 type="button"
-                className="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-40"
+                className="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-bg-card text-gray-700 hover:bg-gray-100 disabled:opacity-40"
                 disabled={current >= pages}
                 onClick={() => setPage(current + 1)}
               >
@@ -695,7 +695,7 @@ export default function AdminUsersPage() {
         onClick={() => setSelected(null)}
       >
         {selected && (
-          <div className="w-full max-w-[512px] max-h-[90vh] overflow-y-auto rounded-[16px] border border-gray-200 bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-[512px] max-h-[90vh] overflow-y-auto rounded-[16px] border border-gray-200 bg-bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 p-4 sm:p-5">
               <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-primary" id="modalAvatar">
@@ -734,7 +734,7 @@ export default function AdminUsersPage() {
                   <span className="text-gray-400 block font-medium">{tx("Zone d'assignation")}</span>
                   {hasZone ? (
                     <select
-                      className="mt-1 w-full text-xs bg-white border border-gray-200 text-gray-800 font-semibold rounded-lg px-2 py-1 focus:outline-none focus:border-primary"
+                      className="mt-1 w-full text-xs bg-bg-card border border-gray-200 text-gray-800 font-semibold rounded-lg px-2 py-1 focus:outline-none focus:border-primary"
                       value={editZone}
                       onChange={(e) => setEditZone(e.target.value)}
                     >
@@ -758,7 +758,7 @@ export default function AdminUsersPage() {
                       <span className={`w-1.5 h-1.5 rounded-full ${selStatut.dot}`}></span> {tx(selStatut.label)}
                     </span>
                     <select
-                      className="flex-1 text-xs bg-white border border-gray-200 text-gray-800 rounded-lg px-2 py-1 focus:outline-none focus:border-primary"
+                      className="flex-1 text-xs bg-bg-card border border-gray-200 text-gray-800 rounded-lg px-2 py-1 focus:outline-none focus:border-primary"
                       value={editStatut}
                       onChange={(e) => setEditStatut(e.target.value)}
                       aria-label={tx("Nouveau statut")}
@@ -799,7 +799,7 @@ export default function AdminUsersPage() {
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     type="button"
-                    className="btn-press flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-gray-300 bg-white px-3 py-2 font-medium text-gray-700 transition-all hover:bg-gray-50"
+                    className="btn-press flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-gray-300 bg-bg-card px-3 py-2 font-medium text-gray-700 transition-all hover:bg-gray-50"
                     onClick={() => resetPassword(selected)}
                   >
                     <i className="ti ti-key text-sm"></i>
@@ -817,7 +817,7 @@ export default function AdminUsersPage() {
               </div>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 p-4">
-              <button type="button" className="btn-press px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all" onClick={() => setSelected(null)}>
+              <button type="button" className="btn-press px-4 py-2 bg-bg-card border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all" onClick={() => setSelected(null)}>
                 {tx("Fermer")}
               </button>
               <button
@@ -839,7 +839,7 @@ export default function AdminUsersPage() {
         id="addUserModal"
         onClick={() => setAddOpen(false)}
       >
-        <div className="my-4 w-full max-w-[576px] overflow-hidden rounded-[16px] border border-gray-200 bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="my-4 w-full max-w-[576px] overflow-hidden rounded-[16px] border border-gray-200 bg-bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50/80 p-4 sm:p-5">
             <div className="flex min-w-0 items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-orange-50 text-primary flex items-center justify-center text-lg border border-orange-200">
@@ -854,7 +854,7 @@ export default function AdminUsersPage() {
               <i className="ti ti-x text-lg"></i>
             </button>
           </div>
-          <div className="border-b border-gray-100 bg-white px-4 pb-3 pt-4 sm:px-6">
+          <div className="border-b border-gray-100 bg-bg-card px-4 pb-3 pt-4 sm:px-6">
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2 cursor-pointer" id="stepperStep1" onClick={() => setStep(1)}>
                 <div
@@ -902,7 +902,7 @@ export default function AdminUsersPage() {
                   {tx("Nom complet")} <span className="text-red-500">*</span>
                 </label>
                 <input
-                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all placeholder:text-gray-400"
+                  className="w-full px-3.5 py-2.5 bg-bg-card border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all placeholder:text-gray-400"
                   id="newUserName"
                   placeholder={tx("Ex: Sègla Hounkpati")}
                   type="text"
@@ -916,7 +916,7 @@ export default function AdminUsersPage() {
                     {tx("Rôle plateforme")} <span className="text-red-500">*</span>
                   </label>
                   <select
-                    className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all"
+                    className="w-full px-3.5 py-2.5 bg-bg-card border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all"
                     id="newUserRole"
                     value={newRole}
                     onChange={(e) => {
@@ -934,7 +934,7 @@ export default function AdminUsersPage() {
                     {tx("Zone géographique")} {needsZone && <span className="text-red-500">*</span>}
                   </label>
                   <select
-                    className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all"
+                    className="w-full px-3.5 py-2.5 bg-bg-card border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all"
                     id="newUserZone"
                     value={newZone}
                     onChange={(e) => setNewZone(e.target.value)}
@@ -953,7 +953,7 @@ export default function AdminUsersPage() {
                   {tx("Adresse Email")} <span className="text-red-500">*</span>
                 </label>
                 <input
-                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all placeholder:text-gray-400"
+                  className="w-full px-3.5 py-2.5 bg-bg-card border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all placeholder:text-gray-400"
                   id="newUserEmail"
                   placeholder="utilisateur@tokpa.bj ou perso@gmail.com"
                   type="email"
@@ -979,7 +979,7 @@ export default function AdminUsersPage() {
                 <p className="text-[11px] text-gray-400 mt-1">{tx("Un lien pour définir son mot de passe sera envoyé à l'adresse email.")}</p>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3">
-                <button type="button" className="btn-press rounded-[10px] border border-gray-200 bg-white px-4 py-2 font-medium text-gray-700 transition-all hover:bg-gray-100" onClick={() => setAddOpen(false)}>
+                <button type="button" className="btn-press rounded-[10px] border border-gray-200 bg-bg-card px-4 py-2 font-medium text-gray-700 transition-all hover:bg-gray-100" onClick={() => setAddOpen(false)}>
                   {tx("Annuler")}
                 </button>
                 <button
@@ -1011,7 +1011,7 @@ export default function AdminUsersPage() {
                     {tx("Numéro CIP / NPI ANIP Bénin (10 chiffres)")} <span className="text-red-500">*</span>
                   </label>
                   <input
-                    className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400"
+                    className="w-full px-3.5 py-2.5 bg-bg-card border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400"
                     id="livreurCip"
                     maxLength={10}
                     placeholder="Ex: 1048291048"
@@ -1023,7 +1023,7 @@ export default function AdminUsersPage() {
                     {tx("Numéro de Permis de conduire")} <span className="text-red-500">*</span>
                   </label>
                   <input
-                    className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400"
+                    className="w-full px-3.5 py-2.5 bg-bg-card border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400"
                     id="livreurPermis"
                     placeholder="Ex: BJ-2023-A1-4921"
                     type="text"
@@ -1035,7 +1035,7 @@ export default function AdminUsersPage() {
                   <label className="block text-gray-700 font-semibold mb-1">
                     {tx("Catégorie de véhicule")} <span className="text-red-500">*</span>
                   </label>
-                  <select className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900" id="livreurVehiculeType">
+                  <select className="w-full px-3.5 py-2.5 bg-bg-card border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900" id="livreurVehiculeType">
                     <option value="moto">{tx("Moto 2 roues (Zémidjan / Express)")}</option>
                     <option value="tricycle">{tx("Tricycle fret Dantokpa")}</option>
                     <option value="utilitaire">{tx("Utilitaire léger / Fourgonnette")}</option>
@@ -1046,7 +1046,7 @@ export default function AdminUsersPage() {
                     {tx("Plaque d'immatriculation béninoise")} <span className="text-red-500">*</span>
                   </label>
                   <input
-                    className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400"
+                    className="w-full px-3.5 py-2.5 bg-bg-card border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400"
                     id="livreurPlaque"
                     placeholder="Ex: 2A 9402 RB"
                     type="text"
@@ -1092,7 +1092,7 @@ export default function AdminUsersPage() {
                 </div>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3">
-                <button type="button" className="btn-press px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all flex items-center gap-1.5" onClick={() => setStep(1)}>
+                <button type="button" className="btn-press px-4 py-2 bg-bg-card border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all flex items-center gap-1.5" onClick={() => setStep(1)}>
                   <i className="ti ti-arrow-left text-xs"></i>
                   <span>{tx("Retour aux informations")}</span>
                 </button>
@@ -1115,7 +1115,7 @@ export default function AdminUsersPage() {
         id="managerModal"
         onClick={() => setManagerTarget(null)}
       >
-        <div className="bg-white rounded-[16px] shadow-2xl max-w-[512px] w-full max-h-[90vh] overflow-y-auto border border-gray-200 animate-in fade-in zoom-in duration-150" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-bg-card rounded-[16px] shadow-2xl max-w-[512px] w-full max-h-[90vh] overflow-y-auto border border-gray-200 animate-in fade-in zoom-in duration-150" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50/80 p-4 sm:p-5">
             <div className="min-w-0">
               <h3 className="break-words text-base font-bold text-gray-900">
@@ -1140,7 +1140,7 @@ export default function AdminUsersPage() {
               <select
                 value={managerZone}
                 onChange={(e) => setManagerZone(e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-[10px] px-3 py-2 text-sm bg-white"
+                className="mt-1 w-full border border-gray-200 rounded-[10px] px-3 py-2 text-sm bg-bg-card"
                 required
               >
                 <option value="">{tx("— Choisir une zone —")}</option>
@@ -1150,7 +1150,7 @@ export default function AdminUsersPage() {
               </select>
             </label>
             <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
-              <button type="button" className="btn-press px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all" onClick={() => setManagerTarget(null)}>
+              <button type="button" className="btn-press px-4 py-2 bg-bg-card border border-gray-200 text-gray-700 font-medium rounded-[10px] hover:bg-gray-100 transition-all" onClick={() => setManagerTarget(null)}>
                 {tx("Annuler")}
               </button>
               <button

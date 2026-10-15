@@ -25,7 +25,7 @@ export default function ProfileRecentOrders() {
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-[14px] border border-line bg-white shadow-sm">
+      <div className="overflow-hidden rounded-[14px] border border-line bg-bg-card shadow-sm">
         <div className="divide-y divide-line">
           {RECENT_ORDERS.map((o) => (
             <div

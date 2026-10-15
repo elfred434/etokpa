@@ -6,6 +6,7 @@
  */
 export const DE: Record<string, string> = {
   "Adresse de livraison": "Lieferadresse",
+  "Clair": "Hell",
   "Commande associée": "Zugehörige Bestellung",
   "Document généré par TokPa — justificatif de paiement.": "Von TokPa erstelltes Dokument — Zahlungsnachweis.",
   "Désignation": "Bezeichnung",
@@ -27,6 +28,7 @@ export const DE: Record<string, string> = {
   "Reçu de paiement": "Zahlungsbeleg",
   "Reçu téléchargé.": "Beleg heruntergeladen.",
   "Référence de transaction": "Transaktionsreferenz",
+  "Sombre": "Dunkel",
   "Statut": "Status",
   "Erreur API": "API-Fehler",
   "Commande": "Bestellung",
@@ -42,6 +44,8 @@ export const DE: Record<string, string> = {
   "Supprimer": "Löschen",
   "Modifier": "Bearbeiten",
   "Notifications": "Benachrichtigungen",
+  "Système": "System",
+  "Thème": "Design",
   "Zone non attribuée": "Nicht zugewiesene Zone",
   "Se connecter": "Anmelden",
   "Téléphone": "Telefon",

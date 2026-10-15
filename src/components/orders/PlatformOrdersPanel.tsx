@@ -163,7 +163,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
             className={`rounded-full border px-3 py-1.5 text-label font-semibold transition ${
               statut === f.statut
                 ? 'border-primary bg-primary text-white'
-                : 'border-border-default bg-white text-text-secondary hover:border-primary hover:text-primary'
+                : 'border-border-default bg-bg-card text-text-secondary hover:border-primary hover:text-primary'
             }`}
           >
             {tx(f.label)}
@@ -173,7 +173,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
           <select
             value={zoneId}
             onChange={(e) => setZoneId(e.target.value)}
-            className="rounded-lg border border-border-default bg-white px-3 py-2 text-label"
+            className="rounded-lg border border-border-default bg-bg-card px-3 py-2 text-label"
           >
             <option value="">{tx("Toutes les zones")}</option>
             {zones.map((z) => (
@@ -183,7 +183,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
         )}
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border-default bg-white shadow-sm">
+      <div className="overflow-hidden rounded-lg border border-border-default bg-bg-card shadow-sm">
         {loading && <p className="p-lg text-label text-text-secondary">{tx("Chargement…")}</p>}
         {!loading && orders.length === 0 && (
           <p className="p-lg text-label text-text-secondary">{tx("Aucune commande.")}</p>
@@ -247,7 +247,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
 
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelected(null)}>
-          <div className="flex max-h-[85vh] w-full max-w-[640px] flex-col rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="flex max-h-[85vh] w-full max-w-[640px] flex-col rounded-2xl bg-bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border-default p-4">
               <h3 className="text-h3 font-h3 font-bold">{tx("Commande")} #{selected.id}</h3>
               <button type="button" onClick={() => setSelected(null)} className="p-1 text-text-secondary">

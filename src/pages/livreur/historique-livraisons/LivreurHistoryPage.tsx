@@ -221,7 +221,7 @@ export default function LivreurHistoryPage() {
                           aria-label={tx("Page précédente")}
                           disabled={current <= 1}
                           onClick={() => setPage(current - 1)}
-                          className="rounded-md p-1 text-text-secondary hover:bg-white disabled:opacity-40"
+                          className="rounded-md p-1 text-text-secondary hover:bg-bg-card disabled:opacity-40"
                         >
                           <MIcon name="chevron_left" />
                         </button>
@@ -234,7 +234,7 @@ export default function LivreurHistoryPage() {
                               onClick={() => setPage(n)}
                               className={clsx(
                                 'h-8 w-8 rounded-md text-label font-semibold',
-                                n === current ? 'bg-[#F97316] text-white' : 'text-text-secondary hover:bg-white',
+                                n === current ? 'bg-[#F97316] text-white' : 'text-text-secondary hover:bg-bg-card',
                               )}
                             >
                               {n}
@@ -245,7 +245,7 @@ export default function LivreurHistoryPage() {
                           aria-label={tx("Page suivante")}
                           disabled={current >= pages}
                           onClick={() => setPage(current + 1)}
-                          className="rounded-md p-1 text-text-secondary hover:bg-white disabled:opacity-40"
+                          className="rounded-md p-1 text-text-secondary hover:bg-bg-card disabled:opacity-40"
                         >
                           <MIcon name="chevron_right" />
                         </button>
@@ -297,7 +297,7 @@ export default function LivreurHistoryPage() {
           onClick={() => setSelected(null)}
           className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 p-md"
         >
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[520px] overflow-hidden rounded-xl bg-white shadow-xl">
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[520px] overflow-hidden rounded-xl bg-bg-card shadow-xl">
             {/* Header */}
             <div className="flex items-start justify-between gap-md border-b border-border-default p-lg">
               <div className="flex items-center gap-md">

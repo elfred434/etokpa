@@ -186,7 +186,7 @@ export default function AdminLivreursPage() {
       )}
       {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
       <style>{DESIGN_CSS}</style>
-      <div className="flex-1 bg-white rounded-lg border border-border-default overflow-hidden flex flex-col">
+      <div className="flex-1 bg-bg-card rounded-lg border border-border-default overflow-hidden flex flex-col">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse" data-mobile-detail="native">
             <thead className="bg-bg-secondary border-b border-border-default">
@@ -274,7 +274,7 @@ export default function AdminLivreursPage() {
               : tr(`Affichage de ${(current - 1) * PER_PAGE + 1} à ${Math.min(current * PER_PAGE, livreurs.length)} sur ${livreurs.length} livreurs`, `Showing ${(current - 1) * PER_PAGE + 1}–${Math.min(current * PER_PAGE, livreurs.length)} of ${livreurs.length} riders`)}
           </span>
           <div className="flex gap-2">
-            <button type="button" className="px-3 py-1 border border-border-default rounded hover:bg-white transition-colors disabled:opacity-40" disabled={current <= 1} onClick={() => setPage(current - 1)}>
+            <button type="button" className="px-3 py-1 border border-border-default rounded hover:bg-bg-card transition-colors disabled:opacity-40" disabled={current <= 1} onClick={() => setPage(current - 1)}>
               <MIcon name="chevron_left" className="text-[18px] align-middle" />
             </button>
             {Array.from({ length: pages }, (_, i) => i + 1)
@@ -286,21 +286,21 @@ export default function AdminLivreursPage() {
                   className={
                     n === current
                       ? 'px-3 py-1 border border-primary-container bg-primary-container text-white rounded text-label'
-                      : 'px-3 py-1 border border-border-default rounded hover:bg-white transition-colors'
+                      : 'px-3 py-1 border border-border-default rounded hover:bg-bg-card transition-colors'
                   }
                   onClick={() => setPage(n)}
                 >
                   {n}
                 </button>
               ))}
-            <button type="button" className="px-3 py-1 border border-border-default rounded hover:bg-white transition-colors disabled:opacity-40" disabled={current >= pages} onClick={() => setPage(current + 1)}>
+            <button type="button" className="px-3 py-1 border border-border-default rounded hover:bg-bg-card transition-colors disabled:opacity-40" disabled={current >= pages} onClick={() => setPage(current + 1)}>
               <MIcon name="chevron_right" className="text-[18px] align-middle" />
             </button>
           </div>
         </div>
       </div>
       {selected && (
-        <aside className="fixed inset-0 z-[60] flex w-full max-w-full flex-col overflow-y-auto bg-white p-4 lg:static lg:z-auto lg:w-80 lg:rounded-lg lg:border lg:border-border-default lg:p-lg" id="detailPanel">
+        <aside className="fixed inset-0 z-[60] flex w-full max-w-full flex-col overflow-y-auto bg-bg-card p-4 lg:static lg:z-auto lg:w-80 lg:rounded-lg lg:border lg:border-border-default lg:p-lg" id="detailPanel">
           <div className="flex justify-between items-start mb-lg">
             <h3 className="font-h2 text-h2 text-primary">{tx("Détails du Livreur")}</h3>
             <button
@@ -369,7 +369,7 @@ export default function AdminLivreursPage() {
                 <p className="text-text-secondary text-micro uppercase">{tx("Modifier le livreur")}</p>
                 <label className="block text-label">
                   Zone
-                  <select className="mt-1 w-full rounded border border-border-default bg-white px-2 py-1 text-label" value={editZone} onChange={(e) => setEditZone(e.target.value)}>
+                  <select className="mt-1 w-full rounded border border-border-default bg-bg-card px-2 py-1 text-label" value={editZone} onChange={(e) => setEditZone(e.target.value)}>
                     <option value="">{tx("— Aucune —")}</option>
                     {zones.map((z) => (
                       <option key={z.id} value={String(z.id)}>
@@ -380,7 +380,7 @@ export default function AdminLivreursPage() {
                 </label>
                 <label className="block text-label">
                   {tx("Statut du compte")}
-                  <select className="mt-1 w-full rounded border border-border-default bg-white px-2 py-1 text-label" value={editStatut} onChange={(e) => setEditStatut(e.target.value)}>
+                  <select className="mt-1 w-full rounded border border-border-default bg-bg-card px-2 py-1 text-label" value={editStatut} onChange={(e) => setEditStatut(e.target.value)}>
                     <option value="actif">{tx("Actif")}</option>
                     <option value="inactif">{tx("Inactif")}</option>
                     <option value="suspendu">{tx("Suspendu")}</option>
@@ -419,12 +419,12 @@ export default function AdminLivreursPage() {
             {selected.telephone ? (
               <a
                 href={`tel:+${String(selected.telephone).replace(/\D/g, '')}`}
-                className="flex-1 bg-white border border-primary-container text-primary-container py-2 rounded-lg font-bold hover:bg-primary-tint active:scale-97 transition-all text-center"
+                className="flex-1 bg-bg-card border border-primary-container text-primary-container py-2 rounded-lg font-bold hover:bg-primary-tint active:scale-97 transition-all text-center"
               >
                 {tx("Contacter")}
               </a>
             ) : (
-              <button type="button" disabled className="flex-1 bg-white border border-primary-container text-primary-container py-2 rounded-lg font-bold opacity-50">
+              <button type="button" disabled className="flex-1 bg-bg-card border border-primary-container text-primary-container py-2 rounded-lg font-bold opacity-50">
                 {tx("Contacter")}
               </button>
             )}

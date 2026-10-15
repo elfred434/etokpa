@@ -487,7 +487,7 @@ export default function MesPacksPage() {
           <div
             key={p.id}
             {...dragProps('new', Number(p.id))}
-            className={`flex cursor-grab touch-none items-center gap-3 rounded-2xl border bg-white p-2 shadow-sm active:cursor-grabbing ${deja ? 'border-primary/50 ring-2 ring-primary/20' : 'border-border-default'}`}
+            className={`flex cursor-grab touch-none items-center gap-3 rounded-2xl border bg-bg-card p-2 shadow-sm active:cursor-grabbing ${deja ? 'border-primary/50 ring-2 ring-primary/20' : 'border-border-default'}`}
           >
             <Vignette produit={p} className="h-14 w-14 shrink-0 rounded-xl" />
             <div className="min-w-0 flex-1">
@@ -519,14 +519,14 @@ export default function MesPacksPage() {
         <div className="flex w-full max-w-[1200px] flex-1 flex-col">
           {/* ---- Breadcrumbs ---- */}
           <div className="flex flex-wrap gap-2 py-3 md:px-1">
-            <Link to="/" className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">
+            <Link to="/" className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">
               {tx("Accueil")}
             </Link>
-            <span className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">/</span>
-            <Link to="/catalogue" search={{ cat: 'pack' }} className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">
+            <span className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">/</span>
+            <Link to="/catalogue" search={{ cat: 'pack' }} className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">
               {tx("Packs & Bundles")}
             </Link>
-            <span className="text-xs font-medium leading-normal text-[#9e6b47] sm:text-sm">/</span>
+            <span className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">/</span>
             <span className="text-xs font-medium leading-normal text-[#1c130d] sm:text-sm">{tx("Mes packs")}</span>
           </div>
 
@@ -567,7 +567,7 @@ export default function MesPacksPage() {
 
               {!pret && <p className="text-sm text-ink-2">{tx("Chargement…")}</p>}
               {drafts.length === 0 && (
-                <div className="rounded-3xl border border-dashed border-primary/30 bg-white px-6 py-16 text-center">
+                <div className="rounded-3xl border border-dashed border-primary/30 bg-bg-card px-6 py-16 text-center">
                   <MIcon name="package_2" className="text-5xl text-primary" />
                   <p className="mt-3 text-lg font-bold text-on-surface">{tx("Aucun pack créé pour l'instant.")}</p>
                   <p className="mt-1 text-sm text-ink-2">{tx("Vos packs apparaîtront ici.")}</p>
@@ -583,7 +583,7 @@ export default function MesPacksPage() {
                   const fichePublique = publie && idPublics.has(Number(draft.serverId));
                   const cover = absImageUrl(draft.img_url) || draft.produits.map((p) => absImageUrl(p.image_url)).find(Boolean) || '';
                   return (
-                    <article key={draft.localId} className="overflow-hidden rounded-xl border-[0.5px] border-line bg-white shadow-sm transition hover:shadow-md">
+                    <article key={draft.localId} className="overflow-hidden rounded-xl border-[0.5px] border-line bg-bg-card shadow-sm transition hover:shadow-md">
                       <div className="relative h-40 overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
                         {cover ? (
                           <img src={cover} alt="" className="h-full w-full object-cover" />
@@ -595,7 +595,7 @@ export default function MesPacksPage() {
                             <Vignette produit={p} className="h-full w-full" />
                           </div>
                         ))}
-                        <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold ${publie ? 'bg-white text-success-dark' : 'bg-white/90 text-amber-text'}`}>
+                        <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold ${publie ? 'bg-bg-card text-success-dark' : 'bg-bg-card/90 text-amber-text'}`}>
                           {publie ? tx("Publié") : tx("Brouillon — enregistré sur cet appareil")}
                         </span>
                       </div>
@@ -632,8 +632,8 @@ export default function MesPacksPage() {
           )}
 
           {vue === 'atelier' && (
-            <div className="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border-[0.5px] border-line bg-white shadow-sm lg:h-[calc(100vh-160px)] lg:min-h-[640px]">
-              <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-black/5 bg-white px-3 py-3 sm:gap-3 sm:px-4">
+            <div className="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border-[0.5px] border-line bg-bg-card shadow-sm lg:h-[calc(100vh-160px)] lg:min-h-[640px]">
+              <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-black/5 bg-bg-card px-3 py-3 sm:gap-3 sm:px-4">
                 <button type="button" className="rounded-xl p-2 hover:bg-bg-secondary" onClick={retourGalerie} aria-label={tx("Retour aux packs")}>
                   <MIcon name="arrow_back" />
                 </button>
@@ -657,7 +657,7 @@ export default function MesPacksPage() {
               )}
 
               <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-                <aside className="hidden w-full shrink-0 flex-col border-b border-black/5 bg-white lg:flex lg:max-h-none lg:w-[320px] lg:border-b-0 lg:border-r">
+                <aside className="hidden w-full shrink-0 flex-col border-b border-black/5 bg-bg-card lg:flex lg:max-h-none lg:w-[320px] lg:border-b-0 lg:border-r">
                   <div className="space-y-2 border-b border-border-default p-3">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-bold">{tx("Rayon produits")}</p>
@@ -667,7 +667,7 @@ export default function MesPacksPage() {
                       <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-tertiary" />
                       <input value={qProduit} onChange={(e) => setQProduit(e.target.value)} placeholder={tx("Rechercher un produit...")} className="w-full rounded-xl border border-border-default py-2 pl-9 pr-3 text-sm outline-none focus:border-primary" />
                     </div>
-                    <select value={catRail} onChange={(e) => setCatRail(e.target.value)} className="w-full rounded-xl border border-border-default bg-white px-3 py-2 text-sm">
+                    <select value={catRail} onChange={(e) => setCatRail(e.target.value)} className="w-full rounded-xl border border-border-default bg-bg-card px-3 py-2 text-sm">
                       <option value="">{tx("Toutes les catégories")}</option>
                       {categories.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
                     </select>
@@ -684,7 +684,7 @@ export default function MesPacksPage() {
                           {tx("Choisir des produits")}
                         </button>
                         {lignes.length === 0 && (
-                          <div className="rounded-3xl border border-dashed border-primary/30 bg-white px-4 py-12 text-center">
+                          <div className="rounded-3xl border border-dashed border-primary/30 bg-bg-card px-4 py-12 text-center">
                             <MIcon name="package_2" className="text-4xl text-primary" />
                             <p className="mt-3 text-lg font-bold">{tx("La page du pack est encore vide.")}</p>
                             <p className="mt-1 text-sm text-text-secondary">{tx("Choisissez les produits, puis fermez la fenêtre pour les voir ici.")}</p>
@@ -695,10 +695,10 @@ export default function MesPacksPage() {
                             const produit = produitDe(ligne.id);
                             const photo = imageDe(ligne.id);
                             return (
-                              <article key={ligne.id} className={`overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/5 ${pulse === ligne.id ? 'ring-2 ring-primary' : ''}`}>
+                              <article key={ligne.id} className={`overflow-hidden rounded-3xl bg-bg-card shadow-sm ring-1 ring-black/5 ${pulse === ligne.id ? 'ring-2 ring-primary' : ''}`}>
                                 <div className="relative">
                                   <Vignette produit={produit} className="h-36 w-full" />
-                                  <button type="button" aria-label={tx("Retirer")} className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-text-secondary shadow hover:text-error" onClick={() => retirer(ligne.id)}>
+                                  <button type="button" aria-label={tx("Retirer")} className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-bg-card/95 text-text-secondary shadow hover:text-error" onClick={() => retirer(ligne.id)}>
                                     <MIcon name="close" className="text-[18px]" />
                                   </button>
                                 </div>
@@ -733,7 +733,7 @@ export default function MesPacksPage() {
                       <p className="pointer-events-none absolute bottom-6 right-7 text-5xl font-black tracking-tight text-primary/10">TOKPa</p>
                       {lignes.length === 0 && (
                         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-                          <div className={`flex h-36 w-36 items-center justify-center rounded-full border-2 border-dashed ${surPage ? 'border-primary bg-primary/10' : 'border-primary/30 bg-white/70'}`}>
+                          <div className={`flex h-36 w-36 items-center justify-center rounded-full border-2 border-dashed ${surPage ? 'border-primary bg-primary/10' : 'border-primary/30 bg-bg-card/70'}`}>
                             <MIcon name="swipe_right" className="text-4xl text-primary" />
                           </div>
                           <p className="mt-4 text-xl font-bold">{surPage ? tx("Déposer ici") : tx("Déposez les produits ici")}</p>
@@ -750,13 +750,13 @@ export default function MesPacksPage() {
                           <div
                             key={ligne.id}
                             {...dragProps('move', ligne.id)}
-                            className={`pack-pop absolute cursor-grab touch-none rounded-2xl bg-white shadow-xl ring-1 ring-black/5 active:cursor-grabbing ${pulse === ligne.id ? 'ring-2 ring-primary' : ''} ${bouge ? 'opacity-30' : ''}`}
+                            className={`pack-pop absolute cursor-grab touch-none rounded-2xl bg-bg-card shadow-xl ring-1 ring-black/5 active:cursor-grabbing ${pulse === ligne.id ? 'ring-2 ring-primary' : ''} ${bouge ? 'opacity-30' : ''}`}
                             style={{ left: ligne.x, top: ligne.y, width: CARD_W }}
                           >
                             {ligne.qte > 1 && <div className="absolute -bottom-1.5 -right-1.5 -z-10 h-full w-full rounded-2xl bg-primary-lighter ring-1 ring-primary/20" />}
                             <div className="relative">
                               <Vignette produit={produit} className="h-24 w-full rounded-t-2xl" />
-                              <button type="button" aria-label={tx("Retirer")} className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-text-secondary shadow hover:text-error" onClick={() => retirer(ligne.id)}>
+                              <button type="button" aria-label={tx("Retirer")} className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-bg-card/95 text-text-secondary shadow hover:text-error" onClick={() => retirer(ligne.id)}>
                                 <MIcon name="close" className="text-[16px]" />
                               </button>
                             </div>
@@ -778,7 +778,7 @@ export default function MesPacksPage() {
                     </div>
                   </div>
 
-                  <div className="shrink-0 border-t border-black/5 bg-white px-3 py-2">
+                  <div className="shrink-0 border-t border-black/5 bg-bg-card px-3 py-2">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-xs font-bold text-text-secondary">{tx("Photo du pack")}</p>
                       {couverture && (
@@ -800,7 +800,7 @@ export default function MesPacksPage() {
                     </div>
                   </div>
 
-                  <footer className="grid shrink-0 gap-3 border-t border-black/5 bg-white/95 p-3 md:grid-cols-[1.4fr_160px_160px_180px]">
+                  <footer className="grid shrink-0 gap-3 border-t border-black/5 bg-bg-card/95 p-3 md:grid-cols-[1.4fr_160px_160px_180px]">
                     <label className="block text-xs text-text-secondary">
                       {tx("Description")}
                       <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 w-full rounded-xl border border-border-default px-3 py-2 text-sm" />
@@ -838,7 +838,7 @@ export default function MesPacksPage() {
       {choixOuvert && !large && (
         <div className="fixed inset-0 z-[75] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setChoixOuvert(false)}>
           <div className="flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-3xl bg-[#efe8e2] shadow-2xl sm:rounded-3xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-start justify-between gap-3 bg-white px-4 py-3">
+            <div className="flex items-start justify-between gap-3 bg-bg-card px-4 py-3">
               <div className="min-w-0">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{tx("Rayon produits")}</p>
                 <h2 className="text-lg font-bold">{tx("Choisir des produits")}</h2>
@@ -847,18 +847,18 @@ export default function MesPacksPage() {
                 <MIcon name="close" />
               </button>
             </div>
-            <div className="space-y-2 border-b border-black/5 bg-white px-4 pb-3">
+            <div className="space-y-2 border-b border-black/5 bg-bg-card px-4 pb-3">
               <div className="relative">
                 <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-tertiary" />
                 <input value={qProduit} onChange={(e) => setQProduit(e.target.value)} placeholder={tx("Rechercher un produit...")} className="w-full rounded-xl border border-border-default py-2 pl-9 pr-3 text-sm outline-none focus:border-primary" />
               </div>
-              <select value={catRail} onChange={(e) => setCatRail(e.target.value)} className="w-full rounded-xl border border-border-default bg-white px-3 py-2 text-sm">
+              <select value={catRail} onChange={(e) => setCatRail(e.target.value)} className="w-full rounded-xl border border-border-default bg-bg-card px-3 py-2 text-sm">
                 <option value="">{tx("Toutes les catégories")}</option>
                 {categories.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
               </select>
             </div>
             {RayonListe}
-            <div className="shrink-0 bg-white p-3">
+            <div className="shrink-0 bg-bg-card p-3">
               <button type="button" className="btn btn-primary w-full" onClick={() => setChoixOuvert(false)}>
                 {tx("Fermer la fenêtre")}
               </button>
@@ -870,7 +870,7 @@ export default function MesPacksPage() {
       {/* ---- Fantôme de glisser-déposer (grand écran) ---- */}
       {ghost && ghostProduit && (
         <div className="pointer-events-none fixed z-[90]" style={{ left: ghost.x - 88, top: ghost.y - 28, width: CARD_W }}>
-          <div className={`rounded-2xl bg-white shadow-2xl ring-2 ${surPage ? 'ring-primary' : 'ring-black/10'}`}>
+          <div className={`rounded-2xl bg-bg-card shadow-2xl ring-2 ${surPage ? 'ring-primary' : 'ring-black/10'}`}>
             <Vignette produit={ghostProduit} className="h-24 w-full rounded-t-2xl" />
             <p className="line-clamp-2 p-2.5 text-sm font-bold">{ghostProduit.nom}</p>
           </div>

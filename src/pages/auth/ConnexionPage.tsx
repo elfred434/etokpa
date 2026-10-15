@@ -55,7 +55,7 @@ export default function ConnexionPage() {
   };
 
   return (
-    <div className="bg-white min-h-screen font-body text-text-main">
+    <div className="bg-bg-card min-h-screen font-body text-text-main">
       <div className="fixed right-4 top-4 z-50"><LangToggle /></div>
       <main className="flex flex-col md:flex-row min-h-screen">
         {/* Left Column: Branding (Desktop) */}
@@ -91,7 +91,7 @@ export default function ConnexionPage() {
         </section>
 
         {/* Right Column: Login Form */}
-        <section className="flex flex-1 flex-col items-center justify-center bg-white p-4 sm:p-lg md:p-[48px]">
+        <section className="flex flex-1 flex-col items-center justify-center bg-bg-card p-4 sm:p-lg md:p-[48px]">
           <div className="w-full max-w-[440px]">
             {/* Header */}
             <header className="mb-xl">
@@ -118,7 +118,7 @@ export default function ConnexionPage() {
                 <div className="relative">
                   <MIcon name="mail" className="absolute left-md top-1/2 -translate-y-1/2 text-text-secondary text-[20px]" />
                   <input
-                    className={`w-full pl-[44px] pr-md py-sm border-[1.5px] rounded-[10px] bg-white text-text-main font-body text-body outline-none transition-all ${
+                    className={`w-full pl-[44px] pr-md py-sm border-[1.5px] rounded-[10px] bg-bg-card text-text-main font-body text-body outline-none transition-all ${
                       authError ? 'border-error' : 'border-border-default focus:border-[#F97316]'
                     }`}
                     id="email"
@@ -161,7 +161,7 @@ export default function ConnexionPage() {
                 <div className="relative">
                   <MIcon name="lock" className="absolute left-md top-1/2 -translate-y-1/2 text-text-secondary text-[20px]" />
                   <input
-                    className={`w-full pl-[44px] pr-[44px] py-sm border-[1.5px] rounded-[10px] bg-white text-text-main font-body text-body outline-none transition-all ${
+                    className={`w-full pl-[44px] pr-[44px] py-sm border-[1.5px] rounded-[10px] bg-bg-card text-text-main font-body text-body outline-none transition-all ${
                       authError ? 'border-error' : 'border-border-default focus:border-[#F97316]'
                     }`}
                     id="password"
@@ -223,7 +223,7 @@ export default function ConnexionPage() {
                   <div className="w-full border-t border-border-default" />
                 </div>
                 <div className="relative flex justify-center text-[12px] uppercase">
-                  <span className="bg-white px-md text-text-tertiary">{tx("ou continuer avec")}</span>
+                  <span className="bg-bg-card px-md text-text-tertiary">{tx("ou continuer avec")}</span>
                 </div>
               </div>
 
@@ -246,7 +246,7 @@ export default function ConnexionPage() {
             </p>
 
             {/* Footer Info */}
-            <footer className="mt-xl flex items-center justify-center gap-xs text-[#9CA3AF] text-[12px] font-secondary">
+            <footer className="mt-xl flex items-center justify-center gap-xs text-text-tertiary text-[12px] font-secondary">
               <MIcon name="lock" className="text-[16px]" />
               {tx("Paiement sécurisé via FedaPay")}
             </footer>

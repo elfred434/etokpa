@@ -62,10 +62,10 @@ export default function LivreurRecapPage() {
                 title={tx("Récapitulatif indisponible")}
                 message={err ?? tx("Aucune commande indiquée.")}
                 onRetry={commande ? () => setReloadKey((k) => k + 1) : undefined}
-                className="rounded-[14px] border-[0.5px] border-[#E5E7EB] bg-white px-md"
+                className="rounded-[14px] border-[0.5px] border-border-default bg-bg-card px-md"
               />
             ) : (
-              <LoadingState label={tx("Chargement du récapitulatif…")} className="rounded-[14px] border-[0.5px] border-[#E5E7EB] bg-white" />
+              <LoadingState label={tx("Chargement du récapitulatif…")} className="rounded-[14px] border-[0.5px] border-border-default bg-bg-card" />
             )
           ) : (
             <>
@@ -74,54 +74,54 @@ export default function LivreurRecapPage() {
                 <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#10B981]/30 bg-[#ECFDF5] shadow-sm">
                   <MIcon name="check_circle" className="text-[38px] text-[#10B981]" />
                 </div>
-                <h1 className="text-[28px] font-bold leading-tight text-[#111827]">{tx("Course terminée avec succès !")}</h1>
-                <p className="mt-1.5 text-[15px] text-[#6B7280]">
+                <h1 className="text-[28px] font-bold leading-tight text-text-main">{tx("Course terminée avec succès !")}</h1>
+                <p className="mt-1.5 text-[15px] text-text-secondary">
                   Félicitations pour cette livraison{prenom ? `, ${prenom}` : ''}.
                 </p>
               </header>
 
               {/* Main Summary Card */}
-              <section className="mb-6 overflow-hidden rounded-[14px] border-[0.5px] border-[#E5E7EB] bg-white shadow-sm">
+              <section className="mb-6 overflow-hidden rounded-[14px] border-[0.5px] border-border-default bg-bg-card shadow-sm">
                 {/* Section 1: Montants réels */}
-                <div className="border-b border-[#E5E7EB] bg-white p-6 text-center">
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-[#6B7280]">{tx("Frais de livraison")}</p>
-                  <h2 className="flex flex-wrap items-center justify-center gap-2 text-[32px] font-bold text-[#111827]">
+                <div className="border-b border-border-default bg-bg-card p-6 text-center">
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx("Frais de livraison")}</p>
+                  <h2 className="flex flex-wrap items-center justify-center gap-2 text-[32px] font-bold text-text-main">
                     <span>{tx("Course :")}</span>
                     <span className="font-bold text-[#F97316]">{fmtFcfa(order.frais_livraison)}</span>
                   </h2>
                   <div className="mt-5 flex items-center justify-center gap-10 border-t border-[#F3F4F6] pt-4">
                     <div className="text-center">
-                      <p className="text-xs font-medium text-[#6B7280]">{tx("Montant de la commande")}</p>
-                      <p className="mt-0.5 text-base font-semibold text-[#111827]">{fmtFcfa(order.montant_total)}</p>
+                      <p className="text-xs font-medium text-text-secondary">{tx("Montant de la commande")}</p>
+                      <p className="mt-0.5 text-base font-semibold text-text-main">{fmtFcfa(order.montant_total)}</p>
                     </div>
-                    <div className="h-8 w-px bg-[#E5E7EB]" />
+                    <div className="h-8 w-px bg-border-default" />
                     <div className="text-center">
-                      <p className="text-xs font-medium text-[#6B7280]">{tx("Articles")}</p>
-                      <p className="mt-0.5 text-base font-semibold text-[#111827]">{articlesCount(order)}</p>
+                      <p className="text-xs font-medium text-text-secondary">{tx("Articles")}</p>
+                      <p className="mt-0.5 text-base font-semibold text-text-main">{articlesCount(order)}</p>
                     </div>
                   </div>
                 </div>
                 {/* Section 2: Course Details */}
-                <div className="grid grid-cols-1 gap-4 border-b border-[#E5E7EB] bg-[#F9FAFB] p-5 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 border-b border-border-default bg-bg-secondary p-5 sm:grid-cols-3">
                   <div className="flex flex-col">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[#6B7280]">{tx("Commande")}</span>
-                    <span className="mt-0.5 text-sm font-bold text-[#111827]">{tokRef(order.id)}</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx("Commande")}</span>
+                    <span className="mt-0.5 text-sm font-bold text-text-main">{tokRef(order.id)}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[#6B7280]">{tx("Heure de livraison")}</span>
-                    <span className="mt-0.5 text-sm font-medium text-[#111827]">{heure}</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx("Heure de livraison")}</span>
+                    <span className="mt-0.5 text-sm font-medium text-text-main">{heure}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[#6B7280]">{tx("Destination")}</span>
-                    <span className="mt-0.5 text-sm font-medium text-[#111827]">{destination(order)}</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx("Destination")}</span>
+                    <span className="mt-0.5 text-sm font-medium text-text-main">{destination(order)}</span>
                   </div>
                 </div>
               </section>
 
               {/* Order Summary Card */}
-              <section className="mb-8 rounded-[14px] border-[0.5px] border-[#E5E7EB] bg-white p-6 shadow-sm">
-                <h3 className="mb-4 flex items-center gap-2 text-base font-bold text-[#111827]">
-                  <MIcon name="shopping_basket" className="text-[20px] text-[#6B7280]" />
+              <section className="mb-8 rounded-[14px] border-[0.5px] border-border-default bg-bg-card p-6 shadow-sm">
+                <h3 className="mb-4 flex items-center gap-2 text-base font-bold text-text-main">
+                  <MIcon name="shopping_basket" className="text-[20px] text-text-secondary" />
                   <span>{tx("Détails de la commande")}</span>
                 </h3>
                 <ul className="divide-y divide-[#F3F4F6]">
@@ -131,12 +131,12 @@ export default function LivreurRecapPage() {
                         <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#FED7AA]/50 bg-[#FFF7ED] text-xs font-bold text-[#F97316]">
                           {it.quantite}x
                         </span>
-                        <span className="text-sm font-medium text-[#111827]">{tx(orderLineName(it))}</span>
+                        <span className="text-sm font-medium text-text-main">{tx(orderLineName(it))}</span>
                       </div>
-                      <span className="rounded-full bg-[#F3F4F6] px-2.5 py-1 text-xs font-medium text-[#6B7280]">{fmtFcfa(it.prix_unitaire)}</span>
+                      <span className="rounded-full bg-bg-app px-2.5 py-1 text-xs font-medium text-text-secondary">{fmtFcfa(it.prix_unitaire)}</span>
                     </li>
                   ))}
-                  {(order.items ?? []).length === 0 && <li className="py-3 text-sm text-[#6B7280]">{tx("Aucun article transmis.")}</li>}
+                  {(order.items ?? []).length === 0 && <li className="py-3 text-sm text-text-secondary">{tx("Aucun article transmis.")}</li>}
                 </ul>
               </section>
             </>

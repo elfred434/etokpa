@@ -540,7 +540,7 @@ export default function NegotiationsPage() {
                             <button
                               type="button"
                               onClick={() => openEditOffer(neg)}
-                              className="px-md py-2 bg-white border border-border-default text-on-surface font-medium text-label rounded-button hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
+                              className="px-md py-2 bg-bg-card border border-border-default text-on-surface font-medium text-label rounded-button hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
                             >
                               {isFr ? tx("Modifier mon offre") : 'Edit my offer'}
                             </button>
@@ -575,7 +575,7 @@ export default function NegotiationsPage() {
 
           {/* Sidebar: Guide */}
           <aside className="w-full lg:w-[300px] shrink-0">
-            <div className="bg-white rounded-card p-lg border border-border-default shadow-sm sticky top-[80px]">
+            <div className="bg-bg-card rounded-card p-lg border border-border-default shadow-sm sticky top-[80px]">
               <div className="flex items-center gap-sm mb-md text-primary">
                 <MIcon name="tips_and_updates" />
                 <h2 className="font-h2 text-h2">{isFr ? tx("Guide de Négociation") : 'Negotiation Guide'}</h2>
@@ -635,7 +635,7 @@ export default function NegotiationsPage() {
       {/* Modal « Modifier mon offre » — PUT /api/budget-proposals/{id} */}
       {editModal && (
         <div className="fixed inset-0 bg-on-surface/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4 animate-fade-in">
-          <div className="bg-white w-full max-w-[480px] max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl p-lg">
+          <div className="bg-bg-card w-full max-w-[480px] max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl p-lg">
             <div className="flex justify-between items-center mb-md border-b border-border-default pb-3">
               <h3 className="font-h2 text-h2 font-bold">{isFr ? tx("Modifier mon offre") : 'Edit my offer'}</h3>
               <button

@@ -183,7 +183,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
           <p>{err}</p>
         </div>
       )}
-      <div className="overflow-hidden rounded-lg border border-border-default bg-white shadow-sm">
+      <div className="overflow-hidden rounded-lg border border-border-default bg-bg-card shadow-sm">
         {loading && <p className="p-lg text-label text-text-secondary">{tx("Chargement…")}</p>}
         {!loading && rows.length === 0 && !err && (
           <p className="p-lg text-label text-text-secondary">{tx("Aucun paiement.")}</p>
@@ -249,7 +249,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
           onClick={() => setSelected(null)}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl border border-border-default w-full max-w-[620px] max-h-[90vh] flex flex-col overflow-hidden"
+            className="bg-bg-card rounded-xl shadow-2xl border border-border-default w-full max-w-[620px] max-h-[90vh] flex flex-col overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
             {/* En-tête */}

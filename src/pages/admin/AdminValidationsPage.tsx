@@ -38,7 +38,7 @@ type Filtre = 'all' | 'en_attente' | 'accepte' | 'refuse';
 const PER_PAGE = 10;
 const MAX_PAGES = 25;
 const TAB_ACTIVE = 'px-4 py-1.5 rounded-full text-sm font-medium bg-primary text-white shadow-sm shadow-primary/20';
-const TAB_IDLE = 'px-4 py-1.5 rounded-full text-sm font-medium bg-white text-text-secondary border border-gray-200 hover:bg-gray-50 transition-colors';
+const TAB_IDLE = 'px-4 py-1.5 rounded-full text-sm font-medium bg-bg-card text-text-secondary border border-gray-200 hover:bg-gray-50 transition-colors';
 const STATUT: Record<string, { label: string; cls: string }> = {
   en_attente: { label: 'En attente', cls: 'text-primary' },
   accepte: { label: 'Acceptée', cls: 'text-success' },
@@ -211,7 +211,7 @@ export default function AdminValidationsPage() {
         </div>
       </header>
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-4 pb-4 lg:flex-row lg:gap-6 lg:px-8 lg:pb-8">
-        <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+        <div className="flex-1 bg-bg-card rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
           <div className="overflow-x-auto flex-1 custom-scrollbar">
             <table className="w-full text-left border-collapse" data-mobile-detail="native">
               <thead className="sticky top-0 bg-gray-50 z-10 border-b border-gray-200">
@@ -281,7 +281,7 @@ export default function AdminValidationsPage() {
                 type="button"
                 disabled={current <= 1}
                 onClick={() => setPage(current - 1)}
-                className="p-1.5 rounded bg-white border border-gray-200 hover:bg-gray-100 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
+                className="p-1.5 rounded bg-bg-card border border-gray-200 hover:bg-gray-100 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
               >
                 <MIcon name="chevron_left" className="text-[18px]" />
               </button>
@@ -289,7 +289,7 @@ export default function AdminValidationsPage() {
                 type="button"
                 disabled={current >= pages}
                 onClick={() => setPage(current + 1)}
-                className="p-1.5 rounded bg-white border border-gray-200 hover:bg-gray-100 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
+                className="p-1.5 rounded bg-bg-card border border-gray-200 hover:bg-gray-100 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
               >
                 <MIcon name="chevron_right" className="text-[18px]" />
               </button>
@@ -298,7 +298,7 @@ export default function AdminValidationsPage() {
         </div>
         {selected && (
           <aside className="fixed inset-0 z-[60] flex w-full flex-col gap-4 overflow-y-auto bg-black/50 p-4 lg:static lg:z-auto lg:w-[320px] lg:shrink-0 lg:bg-transparent lg:p-0">
-            <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-bg-card p-5 shadow-sm">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="text-lg font-bold text-text-main">{tx("Détail de la proposition")}</h2>
                 <button type="button" className="rounded-lg p-1 text-text-secondary lg:hidden" aria-label={tx("Fermer")} onClick={() => setSelectedId(null)}>
@@ -349,7 +349,7 @@ export default function AdminValidationsPage() {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 flex flex-col gap-4">
+            <div className="bg-bg-card rounded-2xl p-5 shadow-sm border border-gray-200 flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold text-text-secondary uppercase tracking-widest">{tx("Historique client")}</h4>
               </div>
@@ -388,7 +388,7 @@ export default function AdminValidationsPage() {
               </button>
               <button
                 type="button"
-                className="w-full py-3 bg-white border-2 border-primary text-primary hover:bg-primary-tint rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 bg-bg-card border-2 border-primary text-primary hover:bg-primary-tint rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
                 onClick={() => toast.error(tx("La contre-proposition n'est pas encore disponible."))}
               >
                 <MIcon name="edit" className="text-[18px]" />

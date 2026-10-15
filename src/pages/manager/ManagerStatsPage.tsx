@@ -63,7 +63,7 @@ export default function ManagerStatsPage() {
                 className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-label font-semibold transition ${
                   periode === p.param
                     ? 'border-primary bg-primary text-white'
-                    : 'border-border-default bg-white text-text-secondary hover:border-primary hover:text-primary'
+                    : 'border-border-default bg-bg-card text-text-secondary hover:border-primary hover:text-primary'
                 }`}
               >
                 {p.param === 'jour' && <MIcon name="calendar_today" className="text-[16px]" />}
@@ -83,7 +83,7 @@ export default function ManagerStatsPage() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {kpis.map((k) => (
-            <div key={k.label} className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+            <div key={k.label} className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
               <div className="flex items-center gap-2">
                 <MIcon name={k.icon} className="text-primary text-[20px]" />
                 <p className="text-label text-text-secondary">{tx(k.label)}</p>
@@ -97,7 +97,7 @@ export default function ManagerStatsPage() {
 
         {/* Phase dev : forme brute de la réponse pour caler le mapping */}
         {stats != null && (
-          <div className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+          <div className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
             <h2 className="text-h3 font-h3 font-bold">{tx("Réponse brute (phase dev)")}</h2>
             <pre className="mt-2 overflow-x-auto rounded-lg bg-bg-app p-3 text-micro">{JSON.stringify(stats, null, 2)}</pre>
           </div>

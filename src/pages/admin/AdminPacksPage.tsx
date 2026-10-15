@@ -465,7 +465,7 @@ export default function AdminPacksPage() {
               <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">{tx("Atelier des packs")}</h1>
               <p className="mt-2 max-w-2xl text-sm leading-5 text-orange-50/90">{tx("Sur grand écran, glissez les produits sur la page blanche. Sur téléphone, choisissez-les dans la fenêtre, puis fermez-la pour voir le pack.")}</p>
             </div>
-            <button type="button" className="w-full rounded-2xl bg-white px-5 py-3 text-sm font-bold text-primary-dark shadow-lg transition hover:-translate-y-0.5 sm:w-auto" onClick={() => aller({ nouveau: 1 })}>
+            <button type="button" className="w-full rounded-2xl bg-bg-card px-5 py-3 text-sm font-bold text-primary-dark shadow-lg transition hover:-translate-y-0.5 sm:w-auto" onClick={() => aller({ nouveau: 1 })}>
               {tx("Composer un pack")}
             </button>
           </section>
@@ -473,14 +473,14 @@ export default function AdminPacksPage() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative min-w-0 w-full flex-1 sm:min-w-[240px]">
               <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
-              <input value={qPack} onChange={(e) => setQPack(e.target.value)} placeholder={tx("Rechercher un pack...")} className="w-full rounded-2xl border border-border-default bg-white py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary" />
+              <input value={qPack} onChange={(e) => setQPack(e.target.value)} placeholder={tx("Rechercher un pack...")} className="w-full rounded-2xl border border-border-default bg-bg-card py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary" />
             </div>
             <span className="text-sm text-text-secondary">{packsFiltres.length} / {packs.length}</span>
           </div>
 
           {!pret && <p className="text-sm text-text-secondary">{tx("Chargement des données réelles…")}</p>}
           {pret && packsFiltres.length === 0 && (
-            <div className="rounded-3xl border border-dashed border-primary/30 bg-white px-6 py-16 text-center">
+            <div className="rounded-3xl border border-dashed border-primary/30 bg-bg-card px-6 py-16 text-center">
               <MIcon name="package_2" className="text-5xl text-primary" />
               <p className="mt-3 text-lg font-bold">{tx("Aucun pack pour l'instant.")}</p>
               <button type="button" className="btn btn-primary mt-4" onClick={() => aller({ nouveau: 1 })}>{tx("Composer un pack")}</button>
@@ -491,7 +491,7 @@ export default function AdminPacksPage() {
               const inclus = inclusDe(pack);
               const cover = absImageUrl(pack.img_url) || inclus.map((p) => absImageUrl(p.image_url)).find(Boolean) || '';
               return (
-                <article key={pack.id} className="group cursor-pointer overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/5 transition hover:-translate-y-1 hover:shadow-xl" onClick={() => aller({ pack: Number(pack.id) })}>
+                <article key={pack.id} className="group cursor-pointer overflow-hidden rounded-3xl bg-bg-card shadow-sm ring-1 ring-black/5 transition hover:-translate-y-1 hover:shadow-xl" onClick={() => aller({ pack: Number(pack.id) })}>
                   <div className="relative h-44 overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
                     {cover ? (
                       <img src={cover} alt="" className="h-full w-full object-cover" />
@@ -503,7 +503,7 @@ export default function AdminPacksPage() {
                         <Vignette produit={p} className="h-full w-full" />
                       </div>
                     ))}
-                    <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold ${pack.disponible !== false ? 'bg-white text-success-dark' : 'bg-white/90 text-text-secondary'}`}>
+                    <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold ${pack.disponible !== false ? 'bg-bg-card text-success-dark' : 'bg-bg-card/90 text-text-secondary'}`}>
                       {pack.disponible !== false ? tx("Disponible") : tx("Rupture")}
                     </span>
                   </div>
@@ -543,7 +543,7 @@ export default function AdminPacksPage() {
         </div>
       ) : vue === 'composer' && (
         <div className="flex min-h-[70vh] flex-col lg:h-[calc(100vh-52px)] lg:min-h-[640px]">
-          <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-black/5 bg-white px-3 py-3 sm:gap-3 sm:px-4">
+          <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-black/5 bg-bg-card px-3 py-3 sm:gap-3 sm:px-4">
             <button type="button" className="rounded-xl p-2 hover:bg-bg-secondary" onClick={retour} aria-label={tx("Retour aux packs")}>
               <MIcon name="arrow_back" />
             </button>
@@ -561,7 +561,7 @@ export default function AdminPacksPage() {
           </header>
 
           <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-            <aside className="hidden w-full shrink-0 flex-col border-b border-black/5 bg-white lg:flex lg:max-h-none lg:w-[320px] lg:border-b-0 lg:border-r">
+            <aside className="hidden w-full shrink-0 flex-col border-b border-black/5 bg-bg-card lg:flex lg:max-h-none lg:w-[320px] lg:border-b-0 lg:border-r">
               <div className="space-y-2 border-b border-border-default p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-bold">{tx("Rayon produits")}</p>
@@ -571,7 +571,7 @@ export default function AdminPacksPage() {
                   <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-tertiary" />
                   <input value={qProduit} onChange={(e) => setQProduit(e.target.value)} placeholder={tx("Rechercher un produit...")} className="w-full rounded-xl border border-border-default py-2 pl-9 pr-3 text-sm outline-none focus:border-primary" />
                 </div>
-                <select value={catRail} onChange={(e) => setCatRail(e.target.value)} className="w-full rounded-xl border border-border-default bg-white px-3 py-2 text-sm">
+                <select value={catRail} onChange={(e) => setCatRail(e.target.value)} className="w-full rounded-xl border border-border-default bg-bg-card px-3 py-2 text-sm">
                   <option value="">{tx("Toutes les catégories")}</option>
                   {categories.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
                 </select>
@@ -584,7 +584,7 @@ export default function AdminPacksPage() {
                     <div
                       key={p.id}
                       {...dragProps('new', Number(p.id))}
-                      className={`flex cursor-grab touch-none items-center gap-3 rounded-2xl border bg-white p-2 shadow-sm active:cursor-grabbing ${deja ? 'border-primary/50 ring-2 ring-primary/20' : 'border-border-default'}`}
+                      className={`flex cursor-grab touch-none items-center gap-3 rounded-2xl border bg-bg-card p-2 shadow-sm active:cursor-grabbing ${deja ? 'border-primary/50 ring-2 ring-primary/20' : 'border-border-default'}`}
                     >
                       <Vignette produit={p} className="h-14 w-14 shrink-0 rounded-xl" />
                       <div className="min-w-0 flex-1">
@@ -608,7 +608,7 @@ export default function AdminPacksPage() {
                       {tx("Choisir des produits")}
                     </button>
                     {lignes.length === 0 && (
-                      <div className="rounded-3xl border border-dashed border-primary/30 bg-white px-4 py-12 text-center">
+                      <div className="rounded-3xl border border-dashed border-primary/30 bg-bg-card px-4 py-12 text-center">
                         <MIcon name="package_2" className="text-4xl text-primary" />
                         <p className="mt-3 text-lg font-bold">{tx("La page du pack est encore vide.")}</p>
                         <p className="mt-1 text-sm text-text-secondary">{tx("Choisissez les produits, puis fermez la fenêtre pour les voir ici.")}</p>
@@ -619,10 +619,10 @@ export default function AdminPacksPage() {
                         const produit = produitDe(ligne.id);
                         const photo = imageDe(ligne.id);
                         return (
-                          <article key={ligne.id} className={`overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/5 ${pulse === ligne.id ? 'ring-2 ring-primary' : ''}`}>
+                          <article key={ligne.id} className={`overflow-hidden rounded-3xl bg-bg-card shadow-sm ring-1 ring-black/5 ${pulse === ligne.id ? 'ring-2 ring-primary' : ''}`}>
                             <div className="relative">
                               <Vignette produit={produit} className="h-36 w-full" />
-                              <button type="button" aria-label={tx("Retirer")} className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-text-secondary shadow hover:text-error" onClick={() => retirer(ligne.id)}>
+                              <button type="button" aria-label={tx("Retirer")} className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-bg-card/95 text-text-secondary shadow hover:text-error" onClick={() => retirer(ligne.id)}>
                                 <MIcon name="close" className="text-[18px]" />
                               </button>
                             </div>
@@ -657,7 +657,7 @@ export default function AdminPacksPage() {
                   <p className="pointer-events-none absolute bottom-6 right-7 text-5xl font-black tracking-tight text-primary/10">TOKPa</p>
                   {lignes.length === 0 && (
                     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <div className={`flex h-36 w-36 items-center justify-center rounded-full border-2 border-dashed ${surPage ? 'border-primary bg-primary/10' : 'border-primary/30 bg-white/70'}`}>
+                      <div className={`flex h-36 w-36 items-center justify-center rounded-full border-2 border-dashed ${surPage ? 'border-primary bg-primary/10' : 'border-primary/30 bg-bg-card/70'}`}>
                         <MIcon name="swipe_right" className="text-4xl text-primary" />
                       </div>
                       <p className="mt-4 text-xl font-bold">{surPage ? tx("Déposer ici") : tx("Déposez les produits ici")}</p>
@@ -674,13 +674,13 @@ export default function AdminPacksPage() {
                       <div
                         key={ligne.id}
                         {...dragProps('move', ligne.id)}
-                        className={`pack-pop absolute cursor-grab touch-none rounded-2xl bg-white shadow-xl ring-1 ring-black/5 active:cursor-grabbing ${pulse === ligne.id ? 'ring-2 ring-primary' : ''} ${bouge ? 'opacity-30' : ''}`}
+                        className={`pack-pop absolute cursor-grab touch-none rounded-2xl bg-bg-card shadow-xl ring-1 ring-black/5 active:cursor-grabbing ${pulse === ligne.id ? 'ring-2 ring-primary' : ''} ${bouge ? 'opacity-30' : ''}`}
                         style={{ left: ligne.x, top: ligne.y, width: CARD_W }}
                       >
                         {ligne.qte > 1 && <div className="absolute -bottom-1.5 -right-1.5 -z-10 h-full w-full rounded-2xl bg-primary-lighter ring-1 ring-primary/20" />}
                         <div className="relative">
                           <Vignette produit={produit} className="h-24 w-full rounded-t-2xl" />
-                          <button type="button" aria-label={tx("Retirer")} className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-text-secondary shadow hover:text-error" onClick={() => retirer(ligne.id)}>
+                          <button type="button" aria-label={tx("Retirer")} className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-bg-card/95 text-text-secondary shadow hover:text-error" onClick={() => retirer(ligne.id)}>
                             <MIcon name="close" className="text-[16px]" />
                           </button>
                         </div>
@@ -710,7 +710,7 @@ export default function AdminPacksPage() {
                   {tx("Enregistrer appliquera ce nouveau prix.")}
                 </div>
               )}
-              <div className="shrink-0 border-t border-black/5 bg-white px-3 py-2">
+              <div className="shrink-0 border-t border-black/5 bg-bg-card px-3 py-2">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-bold text-text-secondary">{tx("Photo du pack")}</p>
                   {couverture && (
@@ -731,7 +731,7 @@ export default function AdminPacksPage() {
                   {!couverture && <p className="text-xs text-text-secondary">{tx("Aucune photo pour l'instant. Ajoutez un produit qui en a une.")}</p>}
                 </div>
               </div>
-              <footer className="grid shrink-0 gap-3 border-t border-black/5 bg-white/95 p-3 md:grid-cols-[1.4fr_160px_160px_180px]">
+              <footer className="grid shrink-0 gap-3 border-t border-black/5 bg-bg-card/95 p-3 md:grid-cols-[1.4fr_160px_160px_180px]">
                 <label className="block text-xs text-text-secondary">
                   {tx("Description")}
                   <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 w-full rounded-xl border border-border-default px-3 py-2 text-sm" />
@@ -766,7 +766,7 @@ export default function AdminPacksPage() {
       {choixOuvert && !large && (
         <div className="fixed inset-0 z-[75] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setChoixOuvert(false)}>
           <div className="flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-3xl bg-[#efe8e2] shadow-2xl sm:rounded-3xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-start justify-between gap-3 bg-white px-4 py-3">
+            <div className="flex items-start justify-between gap-3 bg-bg-card px-4 py-3">
               <div className="min-w-0">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{tx("Rayon produits")}</p>
                 <h2 className="text-lg font-bold">{tx("Choisir des produits")}</h2>
@@ -775,12 +775,12 @@ export default function AdminPacksPage() {
                 <MIcon name="close" />
               </button>
             </div>
-            <div className="space-y-2 border-b border-black/5 bg-white px-4 pb-3">
+            <div className="space-y-2 border-b border-black/5 bg-bg-card px-4 pb-3">
               <div className="relative">
                 <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-tertiary" />
                 <input value={qProduit} onChange={(e) => setQProduit(e.target.value)} placeholder={tx("Rechercher un produit...")} className="w-full rounded-xl border border-border-default py-2 pl-9 pr-3 text-sm outline-none focus:border-primary" />
               </div>
-              <select value={catRail} onChange={(e) => setCatRail(e.target.value)} className="w-full rounded-xl border border-border-default bg-white px-3 py-2 text-sm">
+              <select value={catRail} onChange={(e) => setCatRail(e.target.value)} className="w-full rounded-xl border border-border-default bg-bg-card px-3 py-2 text-sm">
                 <option value="">{tx("Toutes les catégories")}</option>
                 {categories.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
               </select>
@@ -791,7 +791,7 @@ export default function AdminPacksPage() {
                 {rayon.map((p) => {
                   const deja = lignes.find((l) => l.id === Number(p.id));
                   return (
-                    <button key={p.id} type="button" className={`overflow-hidden rounded-2xl bg-white text-left shadow-sm ring-1 ${deja ? 'ring-2 ring-primary' : 'ring-black/5'}`} onClick={() => poser(Number(p.id), 'suivant')}>
+                    <button key={p.id} type="button" className={`overflow-hidden rounded-2xl bg-bg-card text-left shadow-sm ring-1 ${deja ? 'ring-2 ring-primary' : 'ring-black/5'}`} onClick={() => poser(Number(p.id), 'suivant')}>
                       <Vignette produit={p} className="h-28 w-full" />
                       <div className="space-y-1 p-2.5">
                         <p className="line-clamp-2 min-h-10 text-sm font-bold leading-5">{p.nom}</p>
@@ -806,7 +806,7 @@ export default function AdminPacksPage() {
               </div>
               {pret && rayon.length === 0 && <p className="py-8 text-center text-sm text-text-secondary">{tx("Aucun résultat pour ces filtres.")}</p>}
             </div>
-            <div className="border-t border-black/5 bg-white p-3">
+            <div className="border-t border-black/5 bg-bg-card p-3">
               <button type="button" className="btn btn-primary w-full" onClick={() => setChoixOuvert(false)}>
                 {tx("Voir le pack")} · {lignes.length}
               </button>
@@ -816,7 +816,7 @@ export default function AdminPacksPage() {
       )}
 
       {ghost && ghostProduit && (
-        <div className="pointer-events-none fixed z-[80] w-[176px] -rotate-2 rounded-2xl bg-white shadow-2xl ring-2 ring-primary" style={{ left: ghost.x - ghost.offsetX, top: ghost.y - ghost.offsetY }}>
+        <div className="pointer-events-none fixed z-[80] w-[176px] -rotate-2 rounded-2xl bg-bg-card shadow-2xl ring-2 ring-primary" style={{ left: ghost.x - ghost.offsetX, top: ghost.y - ghost.offsetY }}>
           <Vignette produit={ghostProduit} className="h-20 w-full rounded-t-2xl" />
           <p className="truncate px-2 py-2 text-sm font-bold">{ghostProduit.nom}</p>
         </div>
@@ -824,7 +824,7 @@ export default function AdminPacksPage() {
 
       {aSupprimer && (
         <div className="fixed inset-0 z-[70] grid place-items-center bg-black/50 p-4" onClick={() => setASupprimer(null)}>
-          <div className="w-[min(92vw,36rem)] shrink-0 rounded-3xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-[min(92vw,36rem)] shrink-0 rounded-3xl bg-bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-error-light text-error">
               <MIcon name="delete" />
             </div>
@@ -863,7 +863,7 @@ function DetailPack({
   const somme = inclus.reduce((total, p) => total + prixDe(p) * Math.max(1, Number(p.pivot?.qte ?? 1)), 0);
   return (
     <div className="flex min-h-[70vh] flex-col lg:h-[calc(100vh-52px)] lg:min-h-[640px]">
-      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-black/5 bg-white px-3 py-3 sm:gap-3 sm:px-4">
+      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-black/5 bg-bg-card px-3 py-3 sm:gap-3 sm:px-4">
         <button type="button" className="rounded-xl p-2 hover:bg-bg-secondary" onClick={onBack} aria-label={tx("Retour aux packs")}>
           <MIcon name="arrow_back" />
         </button>
@@ -885,7 +885,7 @@ function DetailPack({
       )}
       {pack && (
         <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[320px_1fr]">
-          <aside className="space-y-4 overflow-y-auto border-b border-black/5 bg-white p-5 lg:border-b-0 lg:border-r">
+          <aside className="space-y-4 overflow-y-auto border-b border-black/5 bg-bg-card p-5 lg:border-b-0 lg:border-r">
             {absImageUrl(pack.img_url) && (
               <img src={absImageUrl(pack.img_url) ?? ''} alt="" className="h-40 w-full rounded-2xl object-cover" />
             )}
@@ -904,7 +904,7 @@ function DetailPack({
               {inclus.length === 0 && <p className="text-text-secondary">{tx("Aucun produit pour l'instant.")}</p>}
               <div className="relative z-10 flex flex-wrap gap-4">
                 {inclus.map((p) => (
-                  <div key={p.id} className="w-[176px] rounded-2xl bg-white shadow-xl ring-1 ring-black/5">
+                  <div key={p.id} className="w-[176px] rounded-2xl bg-bg-card shadow-xl ring-1 ring-black/5">
                     <Vignette produit={p} className="h-24 w-full rounded-t-2xl" />
                     <div className="p-3">
                       <p className="line-clamp-2 min-h-10 text-sm font-bold">{p.nom || tx("Produit retiré")}</p>

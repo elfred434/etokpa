@@ -124,7 +124,7 @@ export default function ProfileLandmarks() {
         {landmarks.map((l) => (
           <div
             key={l.id}
-            className="group flex flex-col justify-between gap-3 rounded-[10px] border border-line bg-white p-md transition-colors hover:border-primary-light sm:flex-row sm:items-center"
+            className="group flex flex-col justify-between gap-3 rounded-[10px] border border-line bg-bg-card p-md transition-colors hover:border-primary-light sm:flex-row sm:items-center"
           >
             <div className="flex items-start gap-md sm:items-center">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-lighter text-primary-dark">
@@ -171,7 +171,7 @@ export default function ProfileLandmarks() {
       {/* Modal Ajout/Édition de repère */}
       {addOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-[480px] rounded-2xl bg-white p-lg shadow-xl">
+          <div className="w-full max-w-[480px] rounded-2xl bg-bg-card p-lg shadow-xl">
             <div className="mb-md flex items-center justify-between border-b border-line pb-sm">
               <h3 className="font-h2 text-h2 text-ink">
                 {editItem ? (isFr ? tx("Modifier le repère") : 'Edit Landmark') : (isFr ? tx("Ajouter un point de repère") : 'Add Landmark')}

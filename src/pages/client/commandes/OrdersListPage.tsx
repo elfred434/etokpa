@@ -220,14 +220,14 @@ export default function OrdersListPage() {
           {/* En-tête */}
           <div className="flex flex-wrap items-center justify-between gap-2 mb-lg">
             <h1 className="font-h1 text-h1 text-on-surface">{isFr ? tx("Mes commandes") : 'My orders'}</h1>
-            <span className="text-micro text-text-secondary bg-white border border-border-default rounded-lg px-3 py-1.5">
+            <span className="text-micro text-text-secondary bg-bg-card border border-border-default rounded-lg px-3 py-1.5">
               {total} {isFr ? tx("commande(s)") : 'order(s)'}
             </span>
           </div>
 
           <div className="mb-lg flex flex-wrap items-center gap-2">
             <label htmlFor="order-status" className="text-micro font-bold text-text-secondary">{isFr ? tx("Filtrer par statut") : 'Filter by status'}</label>
-            <select id="order-status" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="rounded-lg border border-border-default bg-white px-3 py-2 text-label">
+            <select id="order-status" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="rounded-lg border border-border-default bg-bg-card px-3 py-2 text-label">
               <option value="">{isFr ? tx("Tous les statuts") : 'All statuses'}</option>
               {Object.entries(STATUT_LABELS).map(([value, label]) => <option key={value} value={value}>{isFr ? label.fr : label.en}</option>)}
             </select>
@@ -240,11 +240,11 @@ export default function OrdersListPage() {
           )}
 
           {loading ? (
-            <div className="py-2xl flex justify-center bg-white rounded-lg border border-border-default">
+            <div className="py-2xl flex justify-center bg-bg-card rounded-lg border border-border-default">
               <MIcon name="sync" className="text-primary text-3xl animate-spin" />
             </div>
           ) : orders.length === 0 ? (
-            <div className="py-xl bg-white rounded-lg border border-border-default">
+            <div className="py-xl bg-bg-card rounded-lg border border-border-default">
               <EmptyState
                 icon={<MIcon name="receipt_long" className="text-4xl text-primary" />}
                 title={isFr ? tx("Aucune commande") : 'No orders yet'}
@@ -262,7 +262,7 @@ export default function OrdersListPage() {
             </div>
           ) : (
             /* Tableau — design de base (sans barre de défilement : colonnes responsives + scrollbar masquée) */
-            <div className="bg-white rounded-lg border border-border-default overflow-hidden">
+            <div className="bg-bg-card rounded-lg border border-border-default overflow-hidden">
               <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <table className="w-full text-left text-body">
                   <thead>
@@ -351,7 +351,7 @@ export default function OrdersListPage() {
           onClick={() => setSelected(null)}
         >
           <div
-            className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden"
+            className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-bg-card shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* En-tête modale */}
@@ -372,7 +372,7 @@ export default function OrdersListPage() {
                   type="button"
                   onClick={() => setSelected(null)}
                   aria-label={isFr ? tx("Fermer") : 'Close'}
-                  className="w-8 h-8 rounded-button border border-line flex items-center justify-center hover:bg-white transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-button border border-line flex items-center justify-center hover:bg-bg-card transition-colors cursor-pointer"
                 >
                   <MIcon name="close" className="text-[18px]" />
                 </button>

@@ -103,7 +103,7 @@ export default function ManagerDashboardPage() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {kpis.map((k) => (
-            <div key={k.label} className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+            <div key={k.label} className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
               <div className="flex items-center gap-2">
                 <MIcon name={k.icon} className="text-primary text-[20px]" />
                 <p className="text-label text-text-secondary">{k.label}</p>
@@ -117,7 +117,7 @@ export default function ManagerDashboardPage() {
           ))}
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-border-default bg-white shadow-sm">
+        <div className="overflow-hidden rounded-lg border border-border-default bg-bg-card shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-default px-4 py-4 sm:px-lg">
             <h2 className="text-h3 font-h3 font-bold">{tx("Commandes Actives")}</h2>
             <Link to="/manager/commandes" className="text-label font-semibold text-primary hover:underline">

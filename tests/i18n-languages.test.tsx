@@ -235,7 +235,7 @@ describe('Couche tx()/tr() — es, de, pt', () => {
     //   associée ; « Voir la commande » existait déjà)
     // + 1 « adresse de livraison » (modale de paiement) =
     // couverture complète des tx() statiques.
-    expect(reference.length).toBe(1335);
+    expect(reference.length).toBe(1339);
     for (const [name, dict] of dicts) {
       expect(Object.keys(dict).sort(), `clés ${name}`).toEqual(reference);
       for (const [k, v] of Object.entries(dict)) {

@@ -349,7 +349,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={handleOpenEditProfile}
-                className="px-md py-sm bg-white border border-border-default text-text-secondary rounded-lg font-label text-label flex items-center gap-sm transition-all hover:bg-bg-secondary cursor-pointer"
+                className="px-md py-sm bg-bg-card border border-border-default text-text-secondary rounded-lg font-label text-label flex items-center gap-sm transition-all hover:bg-bg-secondary cursor-pointer"
               >
                 <MIcon name="edit" className="text-sm" />
                 {isFr ? tx("Modifier") : 'Edit'}
@@ -537,7 +537,7 @@ export default function ProfilePage() {
       {/* Modal Edit Profile (PUT /api/profile) */}
       {editProfileOpen && (
         <div className="fixed inset-0 bg-on-surface/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4 animate-fade-in">
-          <div className="bg-white w-full max-w-[500px] rounded-xl shadow-2xl overflow-hidden p-lg">
+          <div className="bg-bg-card w-full max-w-[500px] rounded-xl shadow-2xl overflow-hidden p-lg">
             <div className="flex justify-between items-center mb-md border-b border-border-default pb-3">
               <h3 className="font-h2 text-h2 font-bold">{isFr ? tx("Modifier mon profil") : 'Edit my profile'}</h3>
               <button
@@ -621,7 +621,7 @@ export default function ProfilePage() {
       {/* Modal Change Password (POST /api/auth/change-password) */}
       {pwModalOpen && (
         <div className="fixed inset-0 bg-on-surface/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4 animate-fade-in">
-          <div className="bg-white w-full max-w-[500px] rounded-xl shadow-2xl overflow-hidden p-lg">
+          <div className="bg-bg-card w-full max-w-[500px] rounded-xl shadow-2xl overflow-hidden p-lg">
             <div className="flex justify-between items-center mb-md border-b border-border-default pb-3">
               <h3 className="font-h2 text-h2 font-bold">{isFr ? tx("Changer le mot de passe") : 'Change password'}</h3>
               <button
@@ -700,7 +700,7 @@ export default function ProfilePage() {
 
       {orderSheet && (
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setOrderSheet(null)}>
-          <div className="max-h-[85vh] w-full max-w-[640px] overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl sm:rounded-2xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+          <div className="max-h-[85vh] w-full max-w-[640px] overflow-y-auto rounded-t-2xl bg-bg-card p-4 shadow-2xl sm:rounded-2xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
             <div className="mb-3 flex items-start justify-between gap-3">
               <h2 className="text-h3 font-h3 font-bold">{tx("Commande")} #{orderSheet.id}</h2>
               <button type="button" className="rounded-lg p-1 text-text-secondary" aria-label={tx("Fermer")} onClick={() => setOrderSheet(null)}>
@@ -727,7 +727,7 @@ export default function ProfilePage() {
       )}
       {paymentSheet && (
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setPaymentSheet(null)}>
-          <div className="max-h-[85vh] w-full max-w-[640px] overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl sm:rounded-2xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+          <div className="max-h-[85vh] w-full max-w-[640px] overflow-y-auto rounded-t-2xl bg-bg-card p-4 shadow-2xl sm:rounded-2xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
             <div className="mb-3 flex items-start justify-between gap-3">
               <h2 className="text-h3 font-h3 font-bold">{tx("Paiement")} #{paymentSheet.id}</h2>
               <button type="button" className="rounded-lg p-1 text-text-secondary" aria-label={tx("Fermer")} onClick={() => setPaymentSheet(null)}>

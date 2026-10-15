@@ -48,7 +48,7 @@ export default function NegotiationModal({ isOpen, onClose }: NegotiationModalPr
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in" onClick={onClose}>
       <div
-        className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden"
+        className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-bg-card shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -192,7 +192,7 @@ export default function NegotiationModal({ isOpen, onClose }: NegotiationModalPr
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-line bg-white px-4 py-2 text-xs font-bold text-ink-2 hover:bg-surface"
+            className="rounded-lg border border-line bg-bg-card px-4 py-2 text-xs font-bold text-ink-2 hover:bg-surface"
           >
             {isFr ? 'Fermer' : 'Close'}
           </button>

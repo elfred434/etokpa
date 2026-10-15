@@ -252,7 +252,7 @@ export default function ConfirmationPage() {
             <button
               type="button"
               onClick={() => navigate({ to: '/catalogue' })}
-              className="w-full bg-white border border-border-default text-text-secondary font-label font-bold h-[48px] rounded-lg hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
+              className="w-full bg-bg-card border border-border-default text-text-secondary font-label font-bold h-[48px] rounded-lg hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
             >
               Retour au catalogue
             </button>

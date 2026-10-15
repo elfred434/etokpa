@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import LangToggle from '../../shared/LangToggle';
+import ThemeToggle from '../../shared/ThemeToggle';
 import RefreshButton from '../../shared/RefreshButton';
 import { authApi } from '../../../services/api';
 import { currentUserName } from '../../../routes/authGuard';
@@ -68,7 +69,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
                 aria-current={isActive(item.to, item.exact) ? 'page' : undefined}
                 className={
                   isActive(item.to, item.exact)
-                    ? 'flex items-center gap-3 rounded-xl bg-white px-4 py-2.5 font-bold text-[#F97316] shadow-sm transition-all'
+                    ? 'flex items-center gap-3 rounded-xl bg-bg-card px-4 py-2.5 font-bold text-[#F97316] shadow-sm transition-all'
                     : 'flex items-center gap-3 rounded-xl px-4 py-2.5 font-medium text-white/80 transition-all hover:bg-white/10 hover:text-white'
                 }
               >
@@ -102,6 +103,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
           <div className="flex min-w-0 items-center gap-2 sm:gap-lg">
             <RefreshButton withLabel />
             <LangToggle />
+            <ThemeToggle />
             <Link to="/notifications" aria-label={tx("Notifications")} className="text-text-secondary transition-colors hover:text-primary">
               <MIcon name="notifications" />
             </Link>
@@ -126,7 +128,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
       </main>
 
       {/* Barre du bas (mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t border-border-default bg-white lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t border-border-default bg-bg-card lg:hidden">
         {NAV.map((item) => (
           <Link
             key={item.to}

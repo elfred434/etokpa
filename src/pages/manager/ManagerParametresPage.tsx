@@ -69,7 +69,7 @@ export default function ManagerParametresPage() {
         <div className="opacity-70">
           {onglet === ONGLETS[0] && (
             <div className="space-y-6">
-              <section className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+              <section className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
                 <h2 className="text-h3 font-h3 font-bold">
                   {tx("Périmètre opérationnel")} — {currentUserZone() ?? tx("Zone non attribuée")}
                 </h2>
@@ -95,7 +95,7 @@ export default function ManagerParametresPage() {
                   </Ligne>
                 </div>
               </section>
-              <section className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+              <section className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
                 <h2 className="text-h3 font-h3 font-bold">{tx("Barème Tarifaire & Frais de Course")}</h2>
                 <div className="mt-4">
                   <Ligne label={tx("Forfait de base (0 à 3 km)")}>
@@ -116,7 +116,7 @@ export default function ManagerParametresPage() {
           )}
 
           {onglet === ONGLETS[1] && (
-            <section className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+            <section className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
               <h2 className="text-h3 font-h3 font-bold">{tx("Attribution & Dispatch des Livreurs")}</h2>
               <div className="mt-4">
                 <Ligne label={tx("Attribution automatique au plus proche (Recommandé)")} aide={tx("Actif")}>
@@ -138,7 +138,7 @@ export default function ManagerParametresPage() {
           )}
 
           {onglet === ONGLETS[2] && (
-            <section className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+            <section className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
               <h2 className="text-h3 font-h3 font-bold">{tx("Alertes Manager & Seuils")}</h2>
               <div className="mt-4">
                 <Ligne label={tx("Alerte livreurs insuffisants")} aide="Si moins de 5 livreurs sont actifs">
@@ -152,7 +152,7 @@ export default function ManagerParametresPage() {
           )}
 
           {onglet === ONGLETS[3] && (
-            <section className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+            <section className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
               <h2 className="text-h3 font-h3 font-bold">{tx("Manager certifié TOKPa")}</h2>
               <div className="mt-4">
                 <Ligne label={tx("Téléphone direct (Bénin)")}>

@@ -74,7 +74,7 @@ export default function ManagerEquipePage() {
           <select
             value={statut}
             onChange={(e) => setStatut(e.target.value)}
-            className="rounded-lg border border-border-default bg-white px-3 py-2 text-label"
+            className="rounded-lg border border-border-default bg-bg-card px-3 py-2 text-label"
           >
             {STATUSES.map((s) => (
               <option key={s} value={s}>{tx(s)}</option>
@@ -97,7 +97,7 @@ export default function ManagerEquipePage() {
               .toUpperCase();
             const st = String(l.statut ?? "hors ligne").toLowerCase();
             return (
-              <div key={l.id} className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
+              <div key={l.id} className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-tint text-h3 font-bold text-primary">
                     {init}
@@ -147,7 +147,7 @@ export default function ManagerEquipePage() {
       {ajout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setAjout(false)}>
           <div
-            className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl"
+            className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-bg-card shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-border-default p-4">

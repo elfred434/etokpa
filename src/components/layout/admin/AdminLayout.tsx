@@ -4,6 +4,7 @@ import MobileTableBridge from '../../shared/MobileTableBridge';
 import MIcon from '../../shared/MIcon';
 import AdminNotificationBell from './AdminNotificationBell';
 import LangToggle from '../../shared/LangToggle';
+import ThemeToggle from '../../shared/ThemeToggle';
 import RefreshButton from '../../shared/RefreshButton';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
@@ -46,7 +47,7 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
       <AdminSidebar currentPath={currentPath} open={navOpen} onClose={() => setNavOpen(false)} />
 
       {/* TOP APP BAR */}
-      <header className="fixed top-0 right-0 left-0 z-30 flex h-[52px] items-center justify-between gap-2 border-b border-border-default bg-white px-3 sm:px-lg lg:left-64">
+      <header className="fixed top-0 right-0 left-0 z-30 flex h-[52px] items-center justify-between gap-2 border-b border-border-default bg-bg-card px-3 sm:px-lg lg:left-64">
         <button
           type="button"
           className="rounded-lg p-2 text-text-secondary hover:bg-bg-app lg:hidden"
@@ -71,6 +72,7 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
         <div className="ml-auto flex items-center gap-1 sm:gap-md">
           <RefreshButton withLabel />
           <LangToggle />
+            <ThemeToggle />
           {/* Vraies notifications (GET /notifications) : compteur, liste, marquer comme lue */}
           <AdminNotificationBell
             className="cursor-pointer rounded-full p-2 text-text-secondary transition-all hover:bg-bg-app active:scale-[0.97]"

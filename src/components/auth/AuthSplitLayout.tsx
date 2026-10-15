@@ -22,7 +22,7 @@ interface AuthSplitLayoutProps {
 export default function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
   useLanguage();
   return (
-    <div className="flex min-h-screen flex-col bg-white md:flex-row">
+    <div className="flex min-h-screen flex-col bg-bg-card md:flex-row">
       {/* Panneau brand orange */}
       <aside className="relative hidden overflow-hidden bg-primary p-lg flex-col justify-between md:flex md:w-[40%]">
         <div
@@ -53,7 +53,7 @@ export default function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
       </aside>
 
       {/* Panneau formulaire */}
-      <main className="flex flex-1 flex-col items-center justify-center bg-white p-lg md:p-[48px]">
+      <main className="flex flex-1 flex-col items-center justify-center bg-bg-card p-lg md:p-[48px]">
         <span className="mb-lg text-[28px] font-bold tracking-tight text-primary md:hidden">TOKPa</span>
         <div className="w-full max-w-[440px]">{children}</div>
       </main>

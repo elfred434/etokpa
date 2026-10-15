@@ -43,7 +43,7 @@ export default function ProfileStats() {
         <Link
           key={s.label}
           to={s.link}
-          className="flex items-center gap-md rounded-[14px] border border-line bg-white p-4 shadow-sm transition-transform hover:border-primary-light active:scale-98"
+          className="flex items-center gap-md rounded-[14px] border border-line bg-bg-card p-4 shadow-sm transition-transform hover:border-primary-light active:scale-98"
         >
           <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${s.iconBg}`}>
             <MIcon name={s.icon} className="text-[24px]" />

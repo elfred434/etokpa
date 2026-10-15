@@ -424,7 +424,7 @@ export default function MessagingPage() {
                   >
                     <div
                       className={clsx('p-md shadow-sm text-body rounded-xl', {
-                        'bg-white bubble-received text-text-main border border-border-default/50':
+                        'bg-bg-card bubble-received text-text-main border border-border-default/50':
                           msg.sender === 'rider',
                         'bg-primary-container bubble-sent text-white shadow-md': msg.sender === 'client',
                       })}

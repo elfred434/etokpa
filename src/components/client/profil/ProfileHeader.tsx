@@ -42,7 +42,7 @@ export default function ProfileHeader() {
 
   return (
     <>
-      <section className="mb-md flex flex-col justify-between gap-md rounded-[14px] border border-line bg-white p-4 sm:p-lg sm:flex-row sm:items-center">
+      <section className="mb-md flex flex-col justify-between gap-md rounded-[14px] border border-line bg-bg-card p-4 sm:p-lg sm:flex-row sm:items-center">
         <div className="flex items-center gap-md">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary-lighter text-[20px] font-bold text-primary-dark sm:h-16 sm:w-16 sm:text-[22px]">
             {initials}
@@ -72,7 +72,7 @@ export default function ProfileHeader() {
             setForm(user);
             setEditOpen(true);
           }}
-          className="scale-interaction flex items-center justify-center gap-2 rounded-lg border border-line bg-white px-4 py-2.5 text-xs font-bold text-ink-2 transition-colors hover:bg-surface hover:text-ink sm:text-sm"
+          className="scale-interaction flex items-center justify-center gap-2 rounded-lg border border-line bg-bg-card px-4 py-2.5 text-xs font-bold text-ink-2 transition-colors hover:bg-surface hover:text-ink sm:text-sm"
         >
           <MIcon name="edit" className="text-sm" />
           {t('profile.editProfile')}
@@ -82,7 +82,7 @@ export default function ProfileHeader() {
       {/* Modal de modification de profil */}
       {editOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-[500px] rounded-2xl bg-white p-lg shadow-xl">
+          <div className="w-full max-w-[500px] rounded-2xl bg-bg-card p-lg shadow-xl">
             <div className="mb-md flex items-center justify-between border-b border-line pb-sm">
               <h3 className="font-h2 text-h2 text-ink">{t('profile.editProfile')}</h3>
               <button

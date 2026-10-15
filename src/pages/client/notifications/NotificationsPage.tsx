@@ -134,7 +134,7 @@ export default function NotificationsPage() {
 
       <div className="mt-[52px] md:mt-[64px] flex flex-1 max-w-[1200px] w-full mx-auto pb-24">
         {/* Sidebar Navigation */}
-        <aside className="hidden md:flex w-64 border-r border-border-default bg-white flex-col p-4 gap-2 shrink-0">
+        <aside className="hidden md:flex w-64 border-r border-border-default bg-bg-card flex-col p-4 gap-2 shrink-0">
           <div className="px-2 py-3">
             <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider">{tx("Filtres")}</p>
           </div>
@@ -205,7 +205,7 @@ export default function NotificationsPage() {
                     'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium shrink-0 transition-all cursor-pointer',
                     filter === key
                       ? 'bg-primary-container text-white font-bold'
-                      : 'bg-white text-text-secondary border border-border-default',
+                      : 'bg-bg-card text-text-secondary border border-border-default',
                   )}
                 >
                   <MIcon name={icon} className="text-sm" />
@@ -216,7 +216,7 @@ export default function NotificationsPage() {
 
             {/* Notification List */}
             {loadError ? (
-              <div className="bg-white border border-border-default rounded-xl">
+              <div className="bg-bg-card border border-border-default rounded-xl">
                 <ApiErrorState
                   title={tx("Impossible de charger les notifications")}
                   message={loadError}
@@ -224,7 +224,7 @@ export default function NotificationsPage() {
                 />
               </div>
             ) : filtered.length === 0 && hasLoaded ? (
-              <div className="bg-white border border-border-default rounded-xl">
+              <div className="bg-bg-card border border-border-default rounded-xl">
                 <EmptyState
                   icon={<MIcon name="notifications" className="text-4xl text-primary" />}
                   title={filter === 'all' ? tx("Aucune notification") : 'Aucune notification de ce type'}
@@ -259,7 +259,7 @@ export default function NotificationsPage() {
                       onClick={() => handleNotificationClick(item)}
                       className={clsx(
                         'p-4 rounded-xl border border-border-default flex items-start gap-4 transition-all hover:border-primary-container hover:shadow-sm cursor-pointer',
-                        isUnread ? 'bg-white' : 'bg-white/80 opacity-80',
+                        isUnread ? 'bg-bg-card' : 'bg-bg-card/80 opacity-80',
                       )}
                     >
                       <div className={clsx('w-10 h-10 shrink-0 rounded-full flex items-center justify-center border', iconBg)}>

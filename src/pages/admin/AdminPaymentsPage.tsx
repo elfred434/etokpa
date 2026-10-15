@@ -15,7 +15,7 @@ export default function AdminPaymentsPage() {
           type="button"
           onClick={() => setVue('all')}
           className={`rounded-full border px-3 py-1.5 text-label font-semibold ${
-            vue === 'all' ? 'border-primary bg-primary text-white' : 'border-border-default bg-white text-text-secondary'
+            vue === 'all' ? 'border-primary bg-primary text-white' : 'border-border-default bg-bg-card text-text-secondary'
           }`}
         >
           {tx("Tous les paiements")}
@@ -24,7 +24,7 @@ export default function AdminPaymentsPage() {
           type="button"
           onClick={() => setVue('own-admin')}
           className={`rounded-full border px-3 py-1.5 text-label font-semibold ${
-            vue === 'own-admin' ? 'border-primary bg-primary text-white' : 'border-border-default bg-white text-text-secondary'
+            vue === 'own-admin' ? 'border-primary bg-primary text-white' : 'border-border-default bg-bg-card text-text-secondary'
           }`}
         >
           {tx("Mes paiements")}

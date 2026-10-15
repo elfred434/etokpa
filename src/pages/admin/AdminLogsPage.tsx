@@ -123,13 +123,13 @@ export default function AdminLogsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button className="flex items-center gap-2 bg-white border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97">
+          <button className="flex items-center gap-2 bg-bg-card border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97">
             <i className="ti ti-download"></i> {tx("Exporter PDF")}
           </button>
           <button
             type="button"
             onClick={exporterCsv}
-            className="flex items-center gap-2 bg-white border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97"
+            className="flex items-center gap-2 bg-bg-card border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97"
           >
             <i className="ti ti-download"></i> {tx("Exporter CSV")}
           </button>
@@ -141,7 +141,7 @@ export default function AdminLogsPage() {
           <p>{err}</p>
         </div>
       )}
-      <section className="bg-white border border-border-default rounded-[14px] p-lg mb-xl shadow-sm">
+      <section className="bg-bg-card border border-border-default rounded-[14px] p-lg mb-xl shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-md mb-md">
           <div className="relative">
             <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Recherche")}</label>
@@ -160,7 +160,7 @@ export default function AdminLogsPage() {
           <div>
             <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Type d'action")}</label>
             <select
-              className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none appearance-none bg-white"
+              className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none appearance-none bg-bg-card"
               value={type}
               onChange={(e) => setType(e.target.value)}
             >
@@ -173,7 +173,7 @@ export default function AdminLogsPage() {
           </div>
           <div>
             <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Rôle")}</label>
-            <select className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none appearance-none bg-white">
+            <select className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none appearance-none bg-bg-card">
               <option>{tx("Tous les rôles")}</option>
               <option>{tx("Administrateur")}</option>
               <option>{tx("Vendeur")}</option>
@@ -185,7 +185,7 @@ export default function AdminLogsPage() {
         <div className="flex flex-col gap-md sm:flex-row sm:items-end">
           <div className="flex-1">
             <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Période (à partir du)")}</label>
-            <div className="flex flex-wrap items-center gap-2 rounded-[10px] border-[1.5px] border-border-default bg-white px-4 py-2">
+            <div className="flex flex-wrap items-center gap-2 rounded-[10px] border-[1.5px] border-border-default bg-bg-card px-4 py-2">
               <i className="ti ti-calendar text-text-secondary"></i>
               <input type="date" className="flex-1 text-body text-text-main outline-none bg-transparent" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={tx("Date de début")} />
               <span className="text-body text-text-secondary">{tx("→ Aujourd'hui")}</span>
@@ -200,7 +200,7 @@ export default function AdminLogsPage() {
         <div className="absolute timeline-line"></div>
         <div className="space-y-md relative">
           {!loading && visibles.length === 0 && (
-            <div className="bg-white border-[0.5px] border-border-default rounded-[10px] p-md text-center text-text-secondary">
+            <div className="bg-bg-card border-[0.5px] border-border-default rounded-[10px] p-md text-center text-text-secondary">
               {type ? tx("Aucun événement de ce type sur cette page.") : tx("Aucun événement enregistré.")}
             </div>
           )}
@@ -211,7 +211,7 @@ export default function AdminLogsPage() {
             return (
               <div key={log.id} className="flex items-start gap-3 group sm:gap-lg">
                 <div className="mt-4 w-2.5 h-2.5 rounded-full relative z-10 shrink-0" style={{ backgroundColor: c, boxShadow: `0 0 0 4px ${c}33` }}></div>
-                <div className="flex-1 bg-white border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex-1 bg-bg-card border-[0.5px] border-border-default rounded-[10px] p-md shadow-sm hover:shadow-md transition-shadow">
                   <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className="text-micro px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: `${c}1A`, color: c }}>
@@ -250,7 +250,7 @@ export default function AdminLogsPage() {
             type="button"
             disabled={meta.page <= 1}
             onClick={() => setPage(meta.page - 1)}
-            className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-secondary disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-bg-card text-text-secondary disabled:cursor-not-allowed disabled:opacity-50"
           >
             <i className="ti ti-chevron-left"></i>
           </button>
@@ -263,7 +263,7 @@ export default function AdminLogsPage() {
                 className={
                   n === meta.page
                     ? 'w-10 h-10 flex items-center justify-center border border-primary-container rounded-lg bg-primary-container text-white font-bold'
-                    : 'w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-main hover:bg-surface-container-low transition-colors'
+                    : 'w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-bg-card text-text-main hover:bg-surface-container-low transition-colors'
                 }
               >
                 {n}
@@ -274,7 +274,7 @@ export default function AdminLogsPage() {
             type="button"
             disabled={meta.page >= meta.last}
             onClick={() => setPage(meta.page + 1)}
-            className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-white text-text-main hover:bg-surface-container-low transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-10 h-10 flex items-center justify-center border border-border-default rounded-lg bg-bg-card text-text-main hover:bg-surface-container-low transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           >
             <i className="ti ti-chevron-right"></i>
           </button>

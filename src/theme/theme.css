@@ -6,6 +6,15 @@
 @import 'tailwindcss';
 
 /* --------------------------------------------------------------------------
+   0. MODE SOMBRE — activation du variant `dark:` piloté par `.dark`
+   (Tailwind v4 ne lit plus tailwind.config.js : tout se fait en CSS)
+   L'attribut `data-theme` porte le thème RÉSOLU (light|dark) et sert aux
+   redéfinitions de jetons plus bas ; la classe `.dark` alimente les
+   utilitaires `dark:` pour les rares cas hors jetons (cartes, images, SVG).
+   -------------------------------------------------------------------------- */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* --------------------------------------------------------------------------
    1. TOKENS — @theme (génère les utilitaires Tailwind : bg-primary, rounded-card…)
    -------------------------------------------------------------------------- */
 @theme {
@@ -77,6 +86,8 @@
   --color-primary-container: #f97316;
   --color-primary-deep: #7c2d12;
   --color-surface-container-low: #fff1eb;
+  /* Brun chaud des fils d'Ariane (fiches produit/pack) */
+  --color-warm-ink: #9e6b47;
 
   /* --- Typographie (Inter) --- */
   --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -604,4 +615,251 @@
       cursor: pointer;
     }
   }
+}
+
+/* ==========================================================================
+   MODE SOMBRE — redéfinition des jetons
+   --------------------------------------------------------------------------
+   Principe (voir NOTE_23_MODE_SOMBRE.md) : les composants n'utilisent QUE des
+   jetons sémantiques (`bg-bg-card`, `text-text-main`…), et Tailwind v4 les
+   compile en `var(--color-…)`. Redéfinir ces variables dans un seul bloc
+   suffit donc à basculer l'application entière, sans toucher aux 165 fichiers
+   de composants. Le bloc est volontairement NON LAYERISÉ : en CSS, les règles
+   hors couche priment sur celles des couches `theme`/`utilities` de Tailwind,
+   ce qui garantit la priorité quelle que soit la position du bloc.
+
+   Règles de conception retenues (état de l'art 2026) :
+   - pas de noir pur (#000) ni de blanc pur : moins de halation, moins de
+     fatigue oculaire — on part d'un anthracite légèrement chaud (#12100f),
+     cohérent avec l'identité « marché » (bruns/orangés) du projet ;
+   - hiérarchie par la LUMINOSITÉ (fond < surface < surface élevée) et non par
+     l'ombre, invisible sur fond sombre ;
+   - orange de marque conservé mais éclairci pour le texte (#fb923c) afin de
+     tenir le contraste AA sur fond sombre, et assombri pour les fonds
+     (`bg-primary-container`) afin de garder le texte blanc lisible ;
+   - états sémantiques (succès, erreur, info, ambre) : teinte conservée,
+     fonds passés en nuances sombres, textes éclaircis.
+   ========================================================================== */
+[data-theme='dark'] {
+  color-scheme: dark; /* barres de défilement, champs natifs, sélecteurs */
+
+  /* --- Surfaces & texte (hiérarchie par la luminosité) --- */
+  --color-bg-app: #12100f;
+  --color-page: #12100f;
+  --color-bg-card: #1c1917;
+  --color-card: #1c1917;
+  --color-bg-secondary: #232019;
+  --color-surface: #232019;
+  --color-surface-variant: #2e2925;
+  --color-border-default: #38322c;
+  --color-line: #38322c;
+  --color-outline-variant: #4a4038;
+  --color-text-main: #f4f1ee;
+  --color-ink: #f4f1ee;
+  --color-text-secondary: #b6ada5;
+  --color-ink-2: #b6ada5;
+  --color-text-tertiary: #877f77;
+  --color-ink-3: #877f77;
+  --color-on-surface: #f4f1ee;
+  --color-on-surface-variant: #c8bfb6;
+  --color-inverse-surface: #2b241f;
+
+  /* --- Ambiances chaudes (barre client, en-têtes de modale) --- */
+  --color-warm: #1a1613;
+  --color-warm-low: #201b17;
+  --color-warm-container: #26201a;
+  --color-surface-container-low: #26201a;
+  --color-warm-ink: #c3a58c; /* filets d'Ariane lisibles sur fond sombre */
+
+  /* --- Orange TOKPa --- */
+  --color-primary: #fb923c;          /* texte, icônes, pastilles */
+  --color-primary-hover: #fdba74;
+  --color-primary-dark: #fdba74;     /* libellés secondaires orange */
+  --color-primary-darker: #fed7aa;
+  --color-primary-light: #7c2d12;    /* bordures/décors : devient sombre */
+  --color-primary-lighter: #2a1a12;  /* fond de pastille */
+  --color-primary-tint: #2a1a12;
+  --color-primary-container: #c2410c; /* bouton principal : texte blanc → 5,18:1 (AA) */
+  --color-primary-shade: #fdba74;    /* icônes de la barre client */
+  --color-primary-deep: #7c2d12;
+
+  /* --- Ambre (négociation, promos) --- */
+  --color-amber: #fbbf24;
+  --color-amber-hover: #fcd34d;
+  --color-amber-light: #2a2110;
+  --color-amber-text: #fde68a;
+
+  /* --- Secondaire / tertiaire --- */
+  --color-secondary: #fbbf24;
+  --color-secondary-container: #b45309;
+  --color-on-secondary-container: #fde68a;
+  --color-tertiary: #4db8ff;
+  --color-tertiary-container: #0284c7;
+
+  /* --- États sémantiques --- */
+  --color-success: #34d399;
+  --color-success-dark: #6ee7b7;
+  --color-success-light: #10241c;
+  --color-success-border: #1f5c43;
+  --color-error: #f87171;
+  --color-error-dark: #fca5a5;
+  --color-error-light: #2a1416;
+  --color-error-border: #7f2b2f;
+  --color-error-container: #2a1416;
+  --color-on-error-container: #fca5a5;
+  --color-info: #60a5fa;
+  --color-info-dark: #93c5fd;
+  --color-info-light: #101c2e;
+  --color-warning: #fbbf24;
+
+  /* --- Palette brute encore utilisée par d'anciens composants ---------------
+     Ces classes (`bg-gray-50`, `border-gray-200`, `text-gray-700`…) compilent
+     elles aussi vers `var(--color-…)` en Tailwind v4 : on remappe donc la
+     palette Tailwind au lieu de réécrire ~360 occurrences dans 40 fichiers.
+     Les gris sont inversés (les surfaces claires deviennent des surfaces
+     sombres, les textes foncés deviennent clairs) ; les teintes d'état
+     gardent leur famille avec des fonds assombris et des textes éclaircis. */
+  --color-gray-50: #1f1c19;
+  --color-gray-100: #262220;
+  --color-gray-200: #38322c;
+  --color-gray-300: #4a433c;
+  --color-gray-400: #8b837b;
+  --color-gray-500: #a49b93;
+  --color-gray-600: #bcb3aa;
+  --color-gray-700: #cdc4bb;
+  --color-gray-800: #ded6cd;
+  --color-gray-900: #f0ebe6;
+
+  --color-orange-50: #2a1a12;
+  --color-orange-100: #3a2413;
+  --color-orange-200: #6b3f1c;
+  --color-orange-500: #fb923c;
+  --color-orange-800: #fed7aa;
+
+  --color-emerald-50: #10241c;
+  --color-emerald-100: #14301f;
+  --color-emerald-200: #1f5c43;
+  --color-emerald-500: #34d399;
+  --color-emerald-600: #4ade80;
+  --color-emerald-700: #6ee7b7;
+  --color-emerald-800: #a7f3d0;
+
+  --color-amber-50: #2a2110;
+  --color-amber-100: #3a2d13;
+  --color-amber-200: #5c4519;
+  --color-amber-500: #fbbf24;
+  --color-amber-600: #fcd34d;
+  --color-amber-700: #fde68a;
+  --color-amber-800: #fef3c7;
+  --color-amber-900: #fffbeb;
+
+  --color-red-50: #2a1416;
+  --color-red-100: #3a1a1d;
+  --color-red-200: #7f2b2f;
+  --color-red-500: #f87171;
+  --color-red-600: #fca5a5;
+  --color-red-700: #fecaca;
+
+  --color-blue-50: #101c2e;
+  --color-blue-100: #152441;
+  --color-blue-200: #1e3a6b;
+  --color-blue-600: #60a5fa;
+  --color-blue-700: #93c5fd;
+  --color-blue-800: #bfdbfe;
+}
+
+/* --------------------------------------------------------------------------
+   Confort du basculement : police, défilement, sélection
+   -------------------------------------------------------------------------- */
+:root {
+  /* Les navigateurs peignent le canevas avec color-scheme avant l'arrivée du
+     CSS applicatif : le déclarer ici évite le flash de chrome clair. */
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+  background-color: #12100f; /* fond peint avant le montage de React */
+}
+
+body {
+  background-color: var(--color-bg-app);
+  color: var(--color-text-main);
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
+}
+
+/* Barres de défilement discrètes en mode sombre */
+[data-theme='dark'] {
+  scrollbar-color: #4a433c #1c1917;
+}
+[data-theme='dark'] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+[data-theme='dark'] ::-webkit-scrollbar-track {
+  background: #1c1917;
+}
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #4a433c;
+  border-radius: 6px;
+}
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: #5c544b;
+}
+
+/* Sélection de texte : reste lisible sur fond sombre */
+[data-theme='dark'] ::selection {
+  background: rgba(251, 146, 60, 0.32);
+  color: #fff7ed;
+}
+
+/* Champs natifs (date, sélecteurs, autofill) accordés au thème sombre */
+[data-theme='dark'] input,
+[data-theme='dark'] textarea,
+[data-theme='dark'] select {
+  color-scheme: dark;
+}
+[data-theme='dark'] input:-webkit-autofill,
+[data-theme='dark'] textarea:-webkit-autofill {
+  -webkit-text-fill-color: #f4f1ee;
+  -webkit-box-shadow: 0 0 0 1000px #262220 inset;
+}
+
+/* Images et illustrations : léger adoucissement pour éviter l'éblouissement
+   des photos très claires sur fond sombre (exclut les logos déjà adaptés). */
+[data-theme='dark'] img:not([data-theme-keep]) {
+  filter: brightness(0.94);
+}
+
+/* --------------------------------------------------------------------------
+   Cartographie (Leaflet) : les contrôles natifs sont blancs par défaut et
+   éblouissent sur une carte sombre.
+   -------------------------------------------------------------------------- */
+[data-theme='dark'] .leaflet-control-zoom a {
+  background-color: #232019;
+  color: #f4f1ee;
+  border-color: #38322c;
+}
+[data-theme='dark'] .leaflet-control-zoom a:hover {
+  background-color: #2e2925;
+}
+[data-theme='dark'] .leaflet-control-attribution {
+  background: rgba(28, 25, 23, 0.85);
+  color: #b6ada5;
+}
+[data-theme='dark'] .leaflet-control-attribution a {
+  color: #fb923c;
+}
+[data-theme='dark'] .leaflet-popup-content-wrapper,
+[data-theme='dark'] .leaflet-popup-tip {
+  background: #232019;
+  color: #f4f1ee;
 }

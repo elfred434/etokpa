@@ -88,7 +88,7 @@ export default function ManagerOrdersPage() {
 
       {assignation && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setAssignation(null)}>
-          <div className="flex max-h-[85vh] w-full max-w-[600px] flex-col rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="flex max-h-[85vh] w-full max-w-[600px] flex-col rounded-2xl bg-bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border-default p-4">
               <div className="min-w-0">
                 <h3 className="break-words text-h3 font-h3 font-bold">Assigner un livreur — #{assignation.id}</h3>
