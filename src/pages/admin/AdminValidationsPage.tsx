@@ -18,7 +18,7 @@ const DESIGN_CSS = `
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
         .sidebar-active {
-            background-color: #1F2937;
+            background-color: var(--color-console);
             color: #FFFFFF;
             border-left: 3px solid #F97316;
         }
@@ -26,10 +26,10 @@ const DESIGN_CSS = `
             width: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: #F3F4F6;
+            background-color: var(--color-bg-app);
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #D1D5DB;
+            background-color: var(--color-border-default);
             border-radius: 10px;
         }
     `;

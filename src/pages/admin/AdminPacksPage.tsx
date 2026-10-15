@@ -441,11 +441,11 @@ export default function AdminPacksPage() {
   return (
     <AdminLayout
       currentPath="/admin/packs"
-      mainClassName={vue === 'galerie' ? undefined : 'ml-64 pt-[52px] min-h-screen bg-[#efe8e2]'}
+      mainClassName={vue === 'galerie' ? undefined : 'ml-64 pt-[52px] min-h-screen bg-bg-app'}
     >
       <style>{`
         .pack-page-grid {
-          background-color: #fff;
+          background-color: var(--color-bg-card);
           background-image: radial-gradient(circle, rgba(249,115,22,0.16) 1.1px, transparent 1.2px);
           background-size: 22px 22px;
         }
@@ -765,7 +765,7 @@ export default function AdminPacksPage() {
 
       {choixOuvert && !large && (
         <div className="fixed inset-0 z-[75] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setChoixOuvert(false)}>
-          <div className="flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-3xl bg-[#efe8e2] shadow-2xl sm:rounded-3xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+          <div className="flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-3xl bg-bg-app shadow-2xl sm:rounded-3xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-start justify-between gap-3 bg-bg-card px-4 py-3">
               <div className="min-w-0">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{tx("Rayon produits")}</p>

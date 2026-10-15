@@ -504,11 +504,11 @@ export default function MesPacksPage() {
   );
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#fcfaf8] font-body text-ink">
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-bg-secondary font-body text-ink">
       <ClientNavbar />
       <style>{`
         .pack-page-grid {
-          background-color: #fff;
+          background-color: var(--color-bg-card);
           background-image: radial-gradient(circle, rgba(249,115,22,0.16) 1.1px, transparent 1.2px);
           background-size: 22px 22px;
         }
@@ -527,7 +527,7 @@ export default function MesPacksPage() {
               {tx("Packs & Bundles")}
             </Link>
             <span className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">/</span>
-            <span className="text-xs font-medium leading-normal text-[#1c130d] sm:text-sm">{tx("Mes packs")}</span>
+            <span className="text-xs font-medium leading-normal text-on-surface sm:text-sm">{tx("Mes packs")}</span>
           </div>
 
           {err && (
@@ -536,7 +536,7 @@ export default function MesPacksPage() {
 
           {vue === 'galerie' && (
             <div className="space-y-6">
-              <section className="grid items-center gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-[#fff7ed] via-[#ffedd5] to-[#fed7aa] p-5 shadow-sm ring-1 ring-black/5 sm:grid-cols-[minmax(0,1fr)_auto] sm:p-6">
+              <section className="grid items-center gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-primary-lighter via-primary-light to-primary-light p-5 shadow-sm ring-1 ring-black/5 sm:grid-cols-[minmax(0,1fr)_auto] sm:p-6">
                 <div className="min-w-0">
                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary-dark">{tx("Packs & Bundles")}</p>
                   <h1 className="mt-1 text-2xl font-black tracking-tight text-on-surface sm:text-3xl">{tx("Mes packs")}</h1>
@@ -837,7 +837,7 @@ export default function MesPacksPage() {
       {/* ---- Fenêtre produits (téléphone) : choisir, puis fermer pour voir le pack ---- */}
       {choixOuvert && !large && (
         <div className="fixed inset-0 z-[75] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setChoixOuvert(false)}>
-          <div className="flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-3xl bg-[#efe8e2] shadow-2xl sm:rounded-3xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+          <div className="flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-3xl bg-bg-app shadow-2xl sm:rounded-3xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-start justify-between gap-3 bg-bg-card px-4 py-3">
               <div className="min-w-0">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{tx("Rayon produits")}</p>

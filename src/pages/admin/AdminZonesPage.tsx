@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTheme } from '../../context/ThemeContext';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useDesignScript } from '../../utils/designRuntime';
@@ -32,9 +33,9 @@ const DESIGN_CSS = `
         .card-shadow { border: 0.5px solid #E5E7EB; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }
         .chip { border: 1px solid #e0c0b1; transition: all 0.2s ease; }
         .chip:hover { transform: translateY(-1px); }
-        .design-modal-scroll { scrollbar-width: thin; scrollbar-color: rgba(60,45,38,0.35) transparent; }
+        .design-modal-scroll { scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--color-warm-ink) 35%, transparent) transparent; }
         .design-modal-scroll::-webkit-scrollbar { width: 8px; }
-        .design-modal-scroll::-webkit-scrollbar-thumb { background: rgba(60,45,38,0.35); border-radius: 8px; }
+        .design-modal-scroll::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--color-warm-ink) 35%, transparent); border-radius: 8px; }
         .design-modal-scroll::-webkit-scrollbar-track { background: transparent; }
     `;
 
@@ -189,6 +190,10 @@ export default function AdminZonesPage() {
   const { rows: landmarks, reload: reloadLm } = useLiveRows(() => adminApi.getLandmarks());
   const { rows: managers } = useLiveRows(() => adminApi.getUsers({ role: 'manager', per_page: 100 }));
   const { rows: livreurs } = useLiveRows(() => adminApi.getUsers({ role: 'livreur', per_page: 100 }));
+  // Teintes des repères cartographiques, accordées au thème (voir plus bas).
+  const { sombre } = useTheme();
+  const teinteRepere = sombre ? '#fdba74' : '#9d4300';
+  const teinteRepereInactive = sombre ? '#1c1917' : '#ffffff';
   const [selId, setSelId] = useState<number | null>(null);
   const [refus, setRefus] = useState('');
   const [f, setF] = useState({ nom: '', km_prix: '', description: '', manager: '' });
@@ -602,9 +607,11 @@ export default function AdminZonesPage() {
       const active = String(lm.zone_id) === String(selId);
       L.circleMarker([lat, lng], {
         radius: active ? 7 : 4,
-        color: '#9d4300',
+        // Couleurs lues dans le thème courant : un repère blanc éblouirait sur
+        // la carte sombre, un repère brun foncé disparaîtrait.
+        color: teinteRepere,
         weight: 2,
-        fillColor: active ? '#9d4300' : '#ffffff',
+        fillColor: active ? teinteRepere : teinteRepereInactive,
         fillOpacity: 1,
       })
         .addTo(grp)
@@ -627,7 +634,7 @@ export default function AdminZonesPage() {
       if (all.length >= 2) map.fitBounds(L.latLngBounds(all), { padding: [40, 40], maxZoom: 14, animate: true });
       else map.setView(VUE_BENIN, 7, { animate: true });
     }
-  }, [zones, landmarks, selId]);
+  }, [zones, landmarks, selId, sombre]);
 
   return (
     <AdminLayout currentPath="/admin/zones">

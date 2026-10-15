@@ -63,8 +63,11 @@ const rootRoute = createRootRoute({
         position="top-center"
         toastOptions={{
           style: {
-            background: '#111827',
-            color: '#FFFFFF',
+            // Surfaces sombres dans les deux thèmes (contraste garanti), mais
+            // issues des jetons : brun profond en clair, surface élevée en sombre
+            // — sinon la notification se confondrait avec le fond de page.
+            background: 'var(--color-inverse-surface)',
+            color: '#ffffff',
             borderRadius: '10px',
             fontSize: '14px',
             padding: '10px 16px',

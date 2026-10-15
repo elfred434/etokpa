@@ -50,7 +50,7 @@ const STATUT_LABELS: Record<string, { fr: string; en: string }> = {
 
 /** Pastilles de statut — design de base (comme Profil / commandes récentes). */
 const STATUT_BADGE: Record<string, string> = {
-  en_attente: 'bg-[#FFFBEB] text-amber-text border-[#FDE68A]',
+  en_attente: 'bg-amber-light text-amber-text border-amber',
   en_preparation: 'bg-primary-tint text-primary-dark border-primary-light',
   en_livraison: 'bg-primary-tint text-primary-dark border-primary-light',
   livre: 'bg-success-light text-success-dark border-success-light',

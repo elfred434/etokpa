@@ -243,7 +243,7 @@ export default function OrderTrackingPage() {
       <main className="flex-grow pt-[52px] pb-[80px] md:pb-0 relative overflow-hidden flex flex-col">
         {/* Pas de carte ni de suivi GPS pour une commande annulée. */}
         {!isCancelled && (
-          <section className="relative h-[420px] sm:h-[520px] w-full overflow-hidden bg-[#E8F4FD]">
+          <section className="relative h-[420px] sm:h-[520px] w-full overflow-hidden bg-info-light">
             <RealBeninMap
               riderCoords={riderCoords}
               riderName={rider?.nom_complet}

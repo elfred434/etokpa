@@ -13,7 +13,7 @@ import { tr, tx } from '../../i18n/tx';
 
 const DESIGN_CSS = `
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        .timeline-line { width: 2px; background-color: #E5E7EB; left: 16px; top: 0; bottom: 0; }
+        .timeline-line { width: 2px; background-color: var(--color-border-default); left: 16px; top: 0; bottom: 0; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
     `;
 

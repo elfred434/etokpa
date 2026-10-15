@@ -71,7 +71,7 @@ export default function LivreurRecapPage() {
             <>
               {/* Success Header */}
               <header className="mb-xl text-center">
-                <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#10B981]/30 bg-[#ECFDF5] shadow-sm">
+                <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#10B981]/30 bg-success-light shadow-sm">
                   <MIcon name="check_circle" className="text-[38px] text-[#10B981]" />
                 </div>
                 <h1 className="text-[28px] font-bold leading-tight text-text-main">{tx("Course terminée avec succès !")}</h1>
@@ -89,7 +89,7 @@ export default function LivreurRecapPage() {
                     <span>{tx("Course :")}</span>
                     <span className="font-bold text-[#F97316]">{fmtFcfa(order.frais_livraison)}</span>
                   </h2>
-                  <div className="mt-5 flex items-center justify-center gap-10 border-t border-[#F3F4F6] pt-4">
+                  <div className="mt-5 flex items-center justify-center gap-10 border-t border-border-default pt-4">
                     <div className="text-center">
                       <p className="text-xs font-medium text-text-secondary">{tx("Montant de la commande")}</p>
                       <p className="mt-0.5 text-base font-semibold text-text-main">{fmtFcfa(order.montant_total)}</p>
@@ -128,7 +128,7 @@ export default function LivreurRecapPage() {
                   {(order.items ?? []).map((it) => (
                     <li key={it.id} className="flex items-center justify-between py-3">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#FED7AA]/50 bg-[#FFF7ED] text-xs font-bold text-[#F97316]">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary-light/50 bg-primary-lighter text-xs font-bold text-[#F97316]">
                           {it.quantite}x
                         </span>
                         <span className="text-sm font-medium text-text-main">{tx(orderLineName(it))}</span>
@@ -153,7 +153,7 @@ export default function LivreurRecapPage() {
             </Link>
             <Link
               to="/livreur/historique"
-              className="flex w-full max-w-full items-center justify-center gap-2.5 rounded-[10px] border-[1.5px] border-[#FED7AA] bg-[#FFF7ED] px-6 py-3.5 text-center text-sm font-semibold text-[#C2410C] transition-all duration-150 hover:bg-[#FED7AA] active:scale-95 sm:w-auto sm:min-w-[220px]"
+              className="flex w-full max-w-full items-center justify-center gap-2.5 rounded-[10px] border-[1.5px] border-primary-light bg-primary-lighter px-6 py-3.5 text-center text-sm font-semibold text-[#C2410C] transition-all duration-150 hover:bg-primary-light active:scale-95 sm:w-auto sm:min-w-[220px]"
             >
               <MIcon name="receipt_long" className="text-[20px]" />
               <span>{tx("Voir l'historique complet")}</span>

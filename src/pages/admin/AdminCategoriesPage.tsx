@@ -21,9 +21,9 @@ const DESIGN_CSS = `
             color: white;
         }
         .glass-panel {
-            background: rgba(255, 255, 255, 0.8);
+            background: color-mix(in oklab, var(--color-bg-card) 80%, transparent);
             backdrop-filter: blur(12px);
-            border-left: 1px solid rgba(229, 231, 235, 0.5);
+            border-left: 1px solid var(--color-border-default);
         }
     `;
 

@@ -72,7 +72,7 @@ export default function LivreurDecisionButtons({
             aria-label={`${tx('Refuser la course')} ${tokRef(orderId)}`}
             disabled={locked}
             onClick={() => setAsk(true)}
-            className="flex items-center justify-center gap-1 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-3 font-bold text-[#991B1B] transition-all hover:bg-[#FEE2E2] active:scale-95 disabled:opacity-50"
+            className="flex items-center justify-center gap-1 rounded-xl border border-error bg-error-light px-3 py-3 font-bold text-error-dark transition-all hover:bg-error-light active:scale-95 disabled:opacity-50"
           >
             <MIcon name="close" className="text-[20px]" />
             {layout === 'stack' && <span>{tx('Refuser')}</span>}

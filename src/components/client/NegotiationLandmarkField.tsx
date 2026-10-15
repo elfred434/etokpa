@@ -42,7 +42,7 @@ export default function NegotiationLandmarkField({
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold text-[#92400E]">
+      <p className="text-xs font-semibold text-amber-text">
         {tx("Vous choisissez le point de livraison. L'administration ne le choisit pas.")}
       </p>
       <label className="block text-xs font-medium text-text-secondary" htmlFor="nego-zone">

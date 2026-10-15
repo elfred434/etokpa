@@ -201,7 +201,7 @@ export default function ProductPage() {
   const unavailable = !apiProduct?.disponible || Number(apiProduct?.stock ?? 0) <= 0;
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#fcfaf8] font-body text-ink">
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-bg-secondary font-body text-ink">
       <ClientNavbar />
       <div className="flex flex-1 justify-center px-3 pb-[80px] pt-[64px] sm:px-6 md:px-12 md:pb-8 md:pt-[72px] lg:px-20 xl:px-40">
         <div className="flex w-full max-w-[1200px] flex-1 flex-col">
@@ -215,14 +215,14 @@ export default function ProductPage() {
               {categoryNom}
             </Link>
             <span className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">/</span>
-            <span className="text-xs font-medium leading-normal text-[#1c130d] sm:text-sm">{product.nom}</span>
+            <span className="text-xs font-medium leading-normal text-on-surface sm:text-sm">{product.nom}</span>
           </div>
 
           {/* ---- Main Product Content ---- */}
           <main className="grid grid-cols-1 gap-6 rounded-xl bg-bg-card p-4 pb-8 shadow-sm md:gap-8 md:px-10 md:pb-12 lg:grid-cols-2">
             {/* LEFT COLUMN: Images */}
             <div className="flex flex-col gap-4 md:gap-6">
-              <div className="relative flex h-[260px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-[#FFF7ED] to-[#FED7AA] sm:h-[320px] md:h-[400px]">
+              <div className="relative flex h-[260px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-primary-lighter to-primary-light sm:h-[320px] md:h-[400px]">
                 <div
                   className={`absolute left-4 top-4 flex items-center gap-1.5 rounded-full border px-3 py-1 shadow-sm ${
                     unavailable
@@ -302,11 +302,11 @@ export default function ProductPage() {
               </div>
 
               {/* DYNAMIC NEGOTIATION MODULE (F-10) — prix réels de l'API */}
-              <div className="flex flex-col gap-4 rounded-lg border-l-[3px] border-[#F59E0B] bg-[#FFFBEB] p-4 transition-all">
+              <div className="flex flex-col gap-4 rounded-lg border-l-[3px] border-[#F59E0B] bg-amber-light p-4 transition-all">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <MIcon name="payments" className="text-[#F59E0B]" />
-                    <h3 className="text-sm font-semibold uppercase tracking-tight text-[#92400E]">
+                    <h3 className="text-sm font-semibold uppercase tracking-tight text-amber-text">
                       {tx("Proposer votre budget")}
                     </h3>
                   </div>
@@ -340,7 +340,7 @@ export default function ProductPage() {
                       </div>
                     </div>
 
-                    <p className="text-[12px] italic text-[#92400E]">
+                    <p className="text-[12px] italic text-amber-text">
                       Budget min. accepté : {product.prixMinimum.toLocaleString('fr-FR')} FCFA
                     </p>
 
@@ -437,7 +437,7 @@ export default function ProductPage() {
                           dispatch(acceptCounterOffer({ productId: product.id }));
                           toast.success(tx("Contre-offre acceptée !"));
                         }}
-                        className="w-full rounded-lg bg-amber-text py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-text/90 cursor-pointer"
+                        className="w-full rounded-lg bg-amber-text py-2 text-xs font-bold text-white shadow-sm hover:brightness-110 cursor-pointer"
                       >
                         Accepter ({activeNeg.counterPrice?.toLocaleString('fr-FR')} FCFA)
                       </button>

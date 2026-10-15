@@ -208,9 +208,9 @@ export default function ConnexionPage() {
 
                 {/* Error Message */}
                 {authError && (
-                  <div className="flex items-center gap-sm bg-[#FEF2F2] p-sm rounded-[10px] border border-error/20">
-                    <MIcon name="error" className="text-[#991B1B] text-[20px]" />
-                    <span className="text-[#991B1B] font-secondary text-[13px]">
+                  <div className="flex items-center gap-sm bg-error-light p-sm rounded-[10px] border border-error/20">
+                    <MIcon name="error" className="text-error-dark text-[20px]" />
+                    <span className="text-error-dark font-secondary text-[13px]">
                       {authError}
                     </span>
                   </div>
@@ -231,7 +231,7 @@ export default function ConnexionPage() {
               <button
                 type="button"
                 onClick={() => navigate({ to: '/verification-2fa' })}
-                className="w-full flex items-center justify-center gap-sm bg-[#FFF7ED] hover:bg-primary-tint border border-primary-light text-[#C2410C] font-medium py-sm rounded-[10px] transition-all active:scale-[97%] cursor-pointer"
+                className="w-full flex items-center justify-center gap-sm bg-primary-lighter hover:bg-primary-tint border border-primary-light text-[#C2410C] font-medium py-sm rounded-[10px] transition-all active:scale-[97%] cursor-pointer"
               >
                 <MIcon name="verified_user" className="text-[20px]" />
                 {tx("Vérification en 2 étapes (2FA)")}

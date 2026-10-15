@@ -193,7 +193,7 @@ export default function PackPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#fcfaf8] font-body text-ink">
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-bg-secondary font-body text-ink">
       <ClientNavbar />
       <div className="flex flex-1 justify-center px-3 pb-[80px] pt-[64px] sm:px-6 md:px-12 md:pb-8 md:pt-[72px] lg:px-20 xl:px-40">
         <div className="flex w-full max-w-[1200px] flex-1 flex-col">
@@ -207,13 +207,13 @@ export default function PackPage() {
               {tx("Packs & Bundles")}
             </Link>
             <span className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">/</span>
-            <span className="text-xs font-medium leading-normal text-[#1c130d] sm:text-sm">{pack.nom}</span>
+            <span className="text-xs font-medium leading-normal text-on-surface sm:text-sm">{pack.nom}</span>
           </div>
 
           <main className="grid grid-cols-1 gap-6 rounded-xl bg-bg-card p-4 pb-8 shadow-sm md:gap-8 md:px-10 md:pb-12 lg:grid-cols-2">
             {/* LEFT COLUMN: Image */}
             <div className="flex flex-col gap-4 md:gap-6">
-              <div className="relative flex h-[260px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-[#FFF7ED] to-[#FED7AA] sm:h-[320px] md:h-[400px]">
+              <div className="relative flex h-[260px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-primary-lighter to-primary-light sm:h-[320px] md:h-[400px]">
                 <div
                   className={`absolute left-4 top-4 flex items-center gap-1.5 rounded-full border px-3 py-1 shadow-sm ${
                     disponible ? 'border-success bg-success-light' : 'border-error bg-error-light'
@@ -318,7 +318,7 @@ export default function PackPage() {
               <ul className="divide-y divide-line">
                 {lignes.map((l) => (
                   <li key={l.id} className="flex items-center gap-4 px-4 py-3 md:px-8">
-                    <div className="flex h-[54px] w-[54px] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-[#FFF7ED] to-[#FED7AA]">
+                    <div className="flex h-[54px] w-[54px] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-primary-lighter to-primary-light">
                       {l.image ? (
                         <img src={l.image} alt={l.nom} className="h-full w-full object-cover" />
                       ) : (

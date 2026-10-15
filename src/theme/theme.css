@@ -85,6 +85,10 @@
   --color-text-tertiary: #9ca3af;
   --color-primary-container: #f97316;
   --color-primary-deep: #7c2d12;
+  /* Survol des boutons principaux (distinct du jeton de texte en mode sombre) */
+  --color-primary-container-hover: #ea580c;
+  /* Panneaux « console » déjà sombres par design (pages Système, BDD, Clés API) */
+  --color-console: #0b0f19;
   --color-surface-container-low: #fff1eb;
   /* Brun chaud des fils d'Ariane (fiches produit/pack) */
   --color-warm-ink: #9e6b47;
@@ -232,8 +236,8 @@
   .btn-sm { min-height: 32px; padding: 6px 14px; }
   .btn-xl { min-height: 52px; }  /* livreur : gros boutons mobiles */
 
-  .btn-primary { background-color: var(--color-primary); color: #ffffff; }
-  .btn-primary:hover:not(:disabled) { background-color: var(--color-primary-hover); }
+  .btn-primary { background-color: var(--color-primary-container); color: #ffffff; }
+  .btn-primary:hover:not(:disabled) { background-color: var(--color-primary-container-hover); }
 
   .btn-secondary {
     background-color: var(--color-primary-lighter);
@@ -510,7 +514,7 @@
   /* Classes spécifiques Stitch code.html */
   .rounded-button { border-radius: 10px; }
   .rounded-card { border-radius: 14px; }
-  .negotiation-card { border-left: 4px solid #F59E0B; }
+  .negotiation-card { border-left: 4px solid var(--color-amber); }
   .tab-active { border-bottom: 2px solid #9d4300; color: #9d4300; font-weight: 600; }
   .bubble-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
 
@@ -644,12 +648,12 @@
   color-scheme: dark; /* barres de défilement, champs natifs, sélecteurs */
 
   /* --- Surfaces & texte (hiérarchie par la luminosité) --- */
-  --color-bg-app: #12100f;
-  --color-page: #12100f;
+  --color-bg-app: #0f0d0c;   /* fond plus profond : les cartes se détachent */
+  --color-page: #0f0d0c;
   --color-bg-card: #1c1917;
   --color-card: #1c1917;
-  --color-bg-secondary: #232019;
-  --color-surface: #232019;
+  --color-bg-secondary: #26221f;
+  --color-surface: #26221f;
   --color-surface-variant: #2e2925;
   --color-border-default: #38322c;
   --color-line: #38322c;
@@ -658,18 +662,21 @@
   --color-ink: #f4f1ee;
   --color-text-secondary: #b6ada5;
   --color-ink-2: #b6ada5;
-  --color-text-tertiary: #877f77;
-  --color-ink-3: #877f77;
+  --color-text-tertiary: #948c84; /* 5,28:1 sur carte, 4,77:1 sur surface — AA partout (l'ancien #8f877e tombait à 4,46 sur la surface) */
+  --color-ink-3: #948c84;
   --color-on-surface: #f4f1ee;
   --color-on-surface-variant: #c8bfb6;
   --color-inverse-surface: #2b241f;
 
   /* --- Ambiances chaudes (barre client, en-têtes de modale) --- */
   --color-warm: #1a1613;
-  --color-warm-low: #201b17;
-  --color-warm-container: #26201a;
-  --color-surface-container-low: #26201a;
+  --color-warm-low: #221d18;
+  --color-warm-container: #292319;
+  --color-surface-container-low: #292319;
   --color-warm-ink: #c3a58c; /* filets d'Ariane lisibles sur fond sombre */
+  /* Les consoles restent sombres, mais se détachent du fond de page au lieu
+     de former un « trou noir » indiscernable. */
+  --color-console: #15171e;
 
   /* --- Orange TOKPa --- */
   --color-primary: #fb923c;          /* texte, icônes, pastilles */
@@ -681,6 +688,7 @@
   --color-primary-tint: #2a1a12;
   --color-primary-container: #c2410c; /* bouton principal : texte blanc → 5,18:1 (AA) */
   --color-primary-shade: #fdba74;    /* icônes de la barre client */
+  --color-primary-container-hover: #b23a06; /* survol : un cran plus soutenu */
   --color-primary-deep: #7c2d12;
 
   /* --- Ambre (négociation, promos) --- */
@@ -723,7 +731,7 @@
   --color-gray-100: #262220;
   --color-gray-200: #38322c;
   --color-gray-300: #4a433c;
-  --color-gray-400: #8b837b;
+  --color-gray-400: #928a82; /* 5,15:1 carte, 4,64:1 surface */
   --color-gray-500: #a49b93;
   --color-gray-600: #bcb3aa;
   --color-gray-700: #cdc4bb;
@@ -768,6 +776,252 @@
   --color-blue-800: #bfdbfe;
 }
 
+/* ==========================================================================
+   MODE SOMBRE — classes de composants
+   --------------------------------------------------------------------------
+   Principe : les valeurs du thème CLAIR restent intactes (aucune dérive du
+   design validé). Chaque classe dont une couleur littérale ne survit pas au
+   passage en sombre — parce qu'elle deviendrait un aplat blanc éblouissant ou
+   un texte invisible — reçoit ici une surcharge ciblée.
+   ========================================================================== */
+[data-theme='dark'] .stat-card-gradient {
+  background: linear-gradient(135deg, var(--color-bg-card) 0%, #221e1b 100%);
+}
+[data-theme='dark'] .btn:disabled {
+  background-color: var(--color-border-default);
+}
+/* Textes d'état foncés → versions claires, sinon illisibles sur fond sombre */
+[data-theme='dark'] .btn-success,
+[data-theme='dark'] .badge-available,
+[data-theme='dark'] .status-delivered,
+[data-theme='dark'] .avatar-livreur {
+  color: var(--color-success-dark);
+}
+[data-theme='dark'] .status-pending {
+  background-color: var(--color-amber-light);
+  border-color: #5c4519;
+}
+[data-theme='dark'] .status-preparing {
+  border-color: #1e3a6b;
+  color: var(--color-info-dark);
+}
+[data-theme='dark'] .status-shipping {
+  color: var(--color-primary-dark);
+}
+/* Onglets */
+[data-theme='dark'] .tab-active {
+  border-bottom-color: var(--color-primary-shade);
+  color: var(--color-primary-shade);
+}
+[data-theme='dark'] .active-tab {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-text-main);
+}
+/* Visuels de remplacement : dégradés profonds au lieu des pastels clairs */
+[data-theme='dark'] .ph-vegetable { background: linear-gradient(135deg, #2a1a12, #4a2413); color: var(--color-primary-dark); }
+[data-theme='dark'] .ph-fish      { background: linear-gradient(135deg, #10241c, #14402c); color: var(--color-success-dark); }
+[data-theme='dark'] .ph-pack      { background: linear-gradient(135deg, #101c2e, #1b3355); color: var(--color-info-dark); }
+[data-theme='dark'] .ph-spice     { background: linear-gradient(135deg, #2a2110, #4a3a13); color: var(--color-amber-text); }
+[data-theme='dark'] .ph-grain     { background: linear-gradient(135deg, #232019, #38322c); color: var(--color-text-secondary); }
+/* Curseur du filtre de prix : liseré blanc → liseré de surface */
+[data-theme='dark'] .range-tokpa::-webkit-slider-thumb { border-color: var(--color-bg-card); }
+[data-theme='dark'] .range-tokpa::-moz-range-thumb { border-color: var(--color-bg-card); }
+
+/* ==========================================================================
+   MODE SOMBRE — couleurs semi-transparentes
+   --------------------------------------------------------------------------
+   Tailwind v4 FIGE la valeur d'un utilitaire à opacité au moment du build :
+   `bg-bg-card/95` devient `background-color:#fffffff2`, sans référence au jeton.
+   Ces surfaces restaient donc blanches en mode sombre — l'une des deux causes
+   d'« éblouissement » signalées.
+
+   ATTENTION : la solution évidente (écrire `color-mix(in oklab,
+   var(--color-x) NN%, transparent)`) NE FONCTIONNE PAS ici — le minifieur
+   (Lightning CSS) évalue le mélange au build à partir des jetons, eux-mêmes
+   statiques, et ré-inscrit la couleur claire. Les surcharges ci-dessous portent
+   donc la VALEUR SOMBRE explicite, calculée depuis le jeton.
+
+   Volontairement exclus : le voile de modale `bg-on-surface/60` (il doit rester
+   sombre dans les deux thèmes) et les effets de verre `bg-white/NN` (posés sur
+   des fonds de marque, ils restent translucides).
+
+   GÉNÉRÉ AUTOMATIQUEMENT par scripts/generer_surcharges_sombres.py
+   ========================================================================== */
+[data-theme='dark'] .bg-amber-500\/15 { background-color: rgba(251, 191, 36, 0.15); }
+[data-theme='dark'] .bg-amber-light\/40 { background-color: rgba(42, 33, 16, 0.4); }
+[data-theme='dark'] .bg-bg-card\/70 { background-color: rgba(28, 25, 23, 0.7); }
+[data-theme='dark'] .bg-bg-card\/80 { background-color: rgba(28, 25, 23, 0.8); }
+[data-theme='dark'] .bg-bg-card\/90 { background-color: rgba(28, 25, 23, 0.9); }
+[data-theme='dark'] .bg-bg-card\/95 { background-color: rgba(28, 25, 23, 0.95); }
+[data-theme='dark'] .bg-bg-secondary\/20 { background-color: rgba(38, 34, 31, 0.2); }
+[data-theme='dark'] .bg-bg-secondary\/30 { background-color: rgba(38, 34, 31, 0.3); }
+[data-theme='dark'] .bg-bg-secondary\/40 { background-color: rgba(38, 34, 31, 0.4); }
+[data-theme='dark'] .bg-console\/70 { background-color: rgba(21, 23, 30, 0.7); }
+[data-theme='dark'] .bg-error\/20 { background-color: rgba(248, 113, 113, 0.2); }
+[data-theme='dark'] .bg-error-light\/30 { background-color: rgba(42, 20, 22, 0.3); }
+[data-theme='dark'] .bg-error-light\/60 { background-color: rgba(42, 20, 22, 0.6); }
+[data-theme='dark'] .bg-gray-50\/50 { background-color: rgba(31, 28, 25, 0.5); }
+[data-theme='dark'] .bg-gray-50\/60 { background-color: rgba(31, 28, 25, 0.6); }
+[data-theme='dark'] .bg-gray-50\/80 { background-color: rgba(31, 28, 25, 0.8); }
+[data-theme='dark'] .bg-orange-100\/70 { background-color: rgba(58, 36, 19, 0.7); }
+[data-theme='dark'] .bg-orange-50\/50 { background-color: rgba(42, 26, 18, 0.5); }
+[data-theme='dark'] .bg-primary\/10 { background-color: rgba(251, 146, 60, 0.1); }
+[data-theme='dark'] .bg-primary\/5 { background-color: rgba(251, 146, 60, 0.05); }
+[data-theme='dark'] .bg-primary-container\/10 { background-color: rgba(194, 65, 12, 0.1); }
+[data-theme='dark'] .bg-primary-container\/20 { background-color: rgba(194, 65, 12, 0.2); }
+[data-theme='dark'] .bg-primary-light\/40 { background-color: rgba(124, 45, 18, 0.4); }
+[data-theme='dark'] .bg-primary-tint\/20 { background-color: rgba(42, 26, 18, 0.2); }
+[data-theme='dark'] .bg-primary-tint\/50 { background-color: rgba(42, 26, 18, 0.5); }
+[data-theme='dark'] .bg-primary-tint\/60 { background-color: rgba(42, 26, 18, 0.6); }
+[data-theme='dark'] .bg-secondary-container\/10 { background-color: rgba(180, 83, 9, 0.1); }
+[data-theme='dark'] .bg-secondary-container\/20 { background-color: rgba(180, 83, 9, 0.2); }
+[data-theme='dark'] .bg-success\/15 { background-color: rgba(52, 211, 153, 0.15); }
+[data-theme='dark'] .bg-success-light\/10 { background-color: rgba(16, 36, 28, 0.1); }
+[data-theme='dark'] .bg-success-light\/50 { background-color: rgba(16, 36, 28, 0.5); }
+[data-theme='dark'] .bg-success-light\/70 { background-color: rgba(16, 36, 28, 0.7); }
+[data-theme='dark'] .bg-surface\/85 { background-color: rgba(38, 34, 31, 0.85); }
+[data-theme='dark'] .bg-tertiary\/10 { background-color: rgba(77, 184, 255, 0.1); }
+[data-theme='dark'] .bg-tertiary-container\/10 { background-color: rgba(2, 132, 199, 0.1); }
+[data-theme='dark'] .bg-tertiary-container\/20 { background-color: rgba(2, 132, 199, 0.2); }
+[data-theme='dark'] .border-amber-hover\/20 { border-color: rgba(252, 211, 77, 0.2); }
+[data-theme='dark'] .border-amber-text\/30 { border-color: rgba(253, 230, 138, 0.3); }
+[data-theme='dark'] .border-amber-text\/40 { border-color: rgba(253, 230, 138, 0.4); }
+[data-theme='dark'] .border-border-default\/50 { border-color: rgba(56, 50, 44, 0.5); }
+[data-theme='dark'] .border-border-default\/60 { border-color: rgba(56, 50, 44, 0.6); }
+[data-theme='dark'] .border-border-default\/70 { border-color: rgba(56, 50, 44, 0.7); }
+[data-theme='dark'] .border-error\/20 { border-color: rgba(248, 113, 113, 0.2); }
+[data-theme='dark'] .border-error\/30 { border-color: rgba(248, 113, 113, 0.3); }
+[data-theme='dark'] .border-error\/40 { border-color: rgba(248, 113, 113, 0.4); }
+[data-theme='dark'] .border-error\/50 { border-color: rgba(248, 113, 113, 0.5); }
+[data-theme='dark'] .border-error\/60 { border-color: rgba(248, 113, 113, 0.6); }
+[data-theme='dark'] .border-error-dark\/20 { border-color: rgba(252, 165, 165, 0.2); }
+[data-theme='dark'] .border-line\/60 { border-color: rgba(56, 50, 44, 0.6); }
+[data-theme='dark'] .border-outline-variant\/50 { border-color: rgba(74, 64, 56, 0.5); }
+[data-theme='dark'] .border-primary\/30 { border-color: rgba(251, 146, 60, 0.3); }
+[data-theme='dark'] .border-primary\/50 { border-color: rgba(251, 146, 60, 0.5); }
+[data-theme='dark'] .border-primary\/70 { border-color: rgba(251, 146, 60, 0.7); }
+[data-theme='dark'] .border-primary-light\/30 { border-color: rgba(124, 45, 18, 0.3); }
+[data-theme='dark'] .border-primary-light\/50 { border-color: rgba(124, 45, 18, 0.5); }
+[data-theme='dark'] .border-success\/20 { border-color: rgba(52, 211, 153, 0.2); }
+[data-theme='dark'] .border-success\/40 { border-color: rgba(52, 211, 153, 0.4); }
+[data-theme='dark'] .border-success-dark\/20 { border-color: rgba(110, 231, 183, 0.2); }
+[data-theme='dark'] .from-text-main\/80 { --tw-gradient-from: rgba(244, 241, 238, 0.8); }
+[data-theme='dark'] .ring-primary\/20 { --tw-ring-color: rgba(251, 146, 60, 0.2); }
+[data-theme='dark'] .ring-success\/15 { --tw-ring-color: rgba(52, 211, 153, 0.15); }
+[data-theme='dark'] .text-amber-800\/90 { color: rgba(254, 243, 199, 0.9); }
+[data-theme='dark'] .text-orange-50\/90 { color: rgba(255, 247, 237, 0.9); }
+[data-theme='dark'] .text-primary\/10 { color: rgba(251, 146, 60, 0.1); }
+[data-theme='dark'] .text-primary\/70 { color: rgba(251, 146, 60, 0.7); }
+[data-theme='dark'] .text-primary-dark\/70 { color: rgba(253, 186, 116, 0.7); }
+[data-theme='dark'] .to-warm\/80 { --tw-gradient-to: rgba(26, 22, 19, 0.8); }
+[data-theme='dark'] .focus\:bg-primary-tint\/30:focus { background-color: rgba(42, 26, 18, 0.3); }
+[data-theme='dark'] .focus\:ring-primary\/10:focus { --tw-ring-color: rgba(251, 146, 60, 0.1); }
+[data-theme='dark'] .focus\:ring-primary\/15:focus { --tw-ring-color: rgba(251, 146, 60, 0.15); }
+[data-theme='dark'] .focus\:ring-primary\/20:focus { --tw-ring-color: rgba(251, 146, 60, 0.2); }
+[data-theme='dark'] .focus\:ring-primary-container\/10:focus { --tw-ring-color: rgba(194, 65, 12, 0.1); }
+[data-theme='dark'] .focus\:ring-primary-container\/30:focus { --tw-ring-color: rgba(194, 65, 12, 0.3); }
+[data-theme='dark'] .focus\:ring-primary-container\/40:focus { --tw-ring-color: rgba(194, 65, 12, 0.4); }
+[data-theme='dark'] .hover\:bg-bg-card\/80:hover { background-color: rgba(28, 25, 23, 0.8); }
+[data-theme='dark'] .hover\:bg-bg-secondary\/50:hover { background-color: rgba(38, 34, 31, 0.5); }
+[data-theme='dark'] .hover\:bg-bg-secondary\/60:hover { background-color: rgba(38, 34, 31, 0.6); }
+[data-theme='dark'] .hover\:bg-bg-secondary\/80:hover { background-color: rgba(38, 34, 31, 0.8); }
+[data-theme='dark'] .hover\:bg-border-default\/40:hover { background-color: rgba(56, 50, 44, 0.4); }
+[data-theme='dark'] .hover\:bg-orange-50\/20:hover { background-color: rgba(42, 26, 18, 0.2); }
+[data-theme='dark'] .hover\:bg-orange-50\/30:hover { background-color: rgba(42, 26, 18, 0.3); }
+[data-theme='dark'] .hover\:bg-orange-50\/60:hover { background-color: rgba(42, 26, 18, 0.6); }
+[data-theme='dark'] .hover\:bg-primary-hover\/10:hover { background-color: rgba(253, 186, 116, 0.1); }
+[data-theme='dark'] .hover\:bg-primary-light\/20:hover { background-color: rgba(124, 45, 18, 0.2); }
+[data-theme='dark'] .hover\:bg-primary-light\/30:hover { background-color: rgba(124, 45, 18, 0.3); }
+[data-theme='dark'] .hover\:bg-primary-lighter\/70:hover { background-color: rgba(42, 26, 18, 0.7); }
+[data-theme='dark'] .hover\:bg-primary-tint\/30:hover { background-color: rgba(42, 26, 18, 0.3); }
+[data-theme='dark'] .hover\:bg-primary-tint\/40:hover { background-color: rgba(42, 26, 18, 0.4); }
+[data-theme='dark'] .hover\:border-primary\/30:hover { border-color: rgba(251, 146, 60, 0.3); }
+[data-theme='dark'] .hover\:border-primary\/50:hover { border-color: rgba(251, 146, 60, 0.5); }
+
+/* --------------------------------------------------------------------------
+   Fonds à texte clair
+   Plusieurs jetons sont VOLONTAIREMENT plus clairs en mode sombre : c'est
+   correct pour du texte (un orange lisible sur fond sombre), mais désastreux
+   pour un FOND surmonté de texte blanc — le contraste tombait jusqu'à 1,13:1
+   (texte invisible). Ces jetons reprennent donc, en FOND uniquement, une valeur
+   profonde qui garde le texte blanc lisible (toutes ≥ 4,9:1).
+   Les valeurs de TEXTE correspondantes restent claires : seules les classes de
+   FOND sont surchargées, jamais les jetons.
+
+   GÉNÉRÉ AUTOMATIQUEMENT par scripts/generer_surcharges_sombres.py
+   -------------------------------------------------------------------------- */
+[data-theme='dark'] .bg-amber { background-color: rgb(180, 83, 9); }
+[data-theme='dark'] .bg-amber-text { background-color: rgb(146, 64, 14); }
+[data-theme='dark'] .bg-error { background-color: rgb(185, 28, 28); }
+[data-theme='dark'] .bg-info { background-color: rgb(29, 78, 216); }
+[data-theme='dark'] .bg-on-surface { background-color: rgb(37, 25, 19); }
+[data-theme='dark'] .bg-primary { background-color: rgb(194, 65, 12); }
+[data-theme='dark'] .bg-primary-container { background-color: rgb(194, 65, 12); }
+[data-theme='dark'] .bg-secondary { background-color: rgb(161, 98, 7); }
+[data-theme='dark'] .bg-success { background-color: rgb(4, 120, 87); }
+[data-theme='dark'] .bg-success-dark { background-color: rgb(6, 95, 70); }
+[data-theme='dark'] .hover\:bg-error:hover { background-color: rgb(185, 28, 28); }
+[data-theme='dark'] .hover\:bg-error-dark:hover { background-color: rgb(153, 27, 27); }
+[data-theme='dark'] .hover\:bg-info-dark:hover { background-color: rgb(30, 64, 175); }
+[data-theme='dark'] .hover\:bg-primary:hover { background-color: rgb(194, 65, 12); }
+[data-theme='dark'] .hover\:bg-primary-container:hover { background-color: rgb(194, 65, 12); }
+[data-theme='dark'] .hover\:bg-primary-hover:hover { background-color: rgb(154, 52, 18); }
+[data-theme='dark'] .hover\:bg-success-dark:hover { background-color: rgb(6, 95, 70); }
+[data-theme='dark'] .peer-checked\:bg-primary-container { background-color: rgb(194, 65, 12); }
+
+/* --------------------------------------------------------------------------
+   Textes sur fond sombre
+   Symétrique du bloc précédent. Plusieurs jetons deviennent SOMBRES en mode
+   sombre parce qu'ils servent de fond ailleurs (`--color-primary-tint` = #2a1a12
+   plutôt que #fff7ed) : utilisés comme COULEUR DE TEXTE, ils disparaissaient sur
+   les surfaces sombres (jusqu'à 1,03:1). Ils reprennent donc, en TEXTE
+   uniquement, une teinte claire lisible (≥ 4:1 pour le texte courant).
+
+   GÉNÉRÉ AUTOMATIQUEMENT par scripts/generer_surcharges_sombres.py
+   -------------------------------------------------------------------------- */
+[data-theme='dark'] .text-border-default { color: rgb(138, 129, 119); }
+[data-theme='dark'] .text-gray-300 { color: rgb(156, 163, 175); }
+[data-theme='dark'] .text-orange-100 { color: rgb(255, 237, 213); }
+[data-theme='dark'] .text-orange-200 { color: rgb(254, 215, 170); }
+[data-theme='dark'] .text-primary-container { color: rgb(251, 146, 60); }
+[data-theme='dark'] .text-primary-deep { color: rgb(253, 186, 116); }
+[data-theme='dark'] .text-primary-light { color: rgb(254, 215, 170); }
+[data-theme='dark'] .text-primary-tint { color: rgb(255, 247, 237); }
+[data-theme='dark'] .text-secondary-container { color: rgb(251, 191, 36); }
+[data-theme='dark'] .text-surface-variant { color: rgb(246, 222, 211); }
+[data-theme='dark'] .text-tertiary-container { color: rgb(56, 189, 248); }
+[data-theme='dark'] .text-warm { color: rgb(255, 248, 246); }
+[data-theme='dark'] .hover\:text-primary-container:hover { color: rgb(251, 146, 60); }
+
+/* --------------------------------------------------------------------------
+   Surcharges ponctuelles
+   Pastilles du pied de page : `bg-on-surface-variant` est volontairement clair
+   en mode sombre (il sert de TEXTE ailleurs) ; en FOND, la pastille ressortait
+   comme une tache claire. Elle reprend une teinte charbon chaude, et le survol
+   l'orangé profond — dans les deux cas l'icône claire reste lisible (≥ 7:1).
+
+   GÉNÉRÉ AUTOMATIQUEMENT par scripts/generer_surcharges_sombres.py
+   -------------------------------------------------------------------------- */
+[data-theme='dark'] .bg-on-surface-variant { background-color: rgb(74, 58, 47); }
+[data-theme='dark'] .hover\\:bg-primary-shade\:hover { background-color: rgb(154, 52, 18); }
+
+/* --------------------------------------------------------------------------
+   ÉLÉVATION EN MODE SOMBRE
+   Une ombre à 10 % d'opacité est invisible sur un fond sombre : les cartes
+   paraissent alors plates, l'interface « terne ». On renforce donc la teinte
+   des ombres (Tailwind v4 lit --tw-shadow-color, qui n'est PAS héritable :
+   il faut cibler les classes elles-mêmes).
+   -------------------------------------------------------------------------- */
+[data-theme='dark'] .shadow-2xs,
+[data-theme='dark'] .shadow-xs,
+[data-theme='dark'] .shadow-sm,
+[data-theme='dark'] .shadow-md,
+[data-theme='dark'] .shadow-lg,
+[data-theme='dark'] .shadow-xl,
+[data-theme='dark'] .shadow-2xl {
+  --tw-shadow-color: rgb(0 0 0 / 0.55);
+}
+
 /* --------------------------------------------------------------------------
    Confort du basculement : police, défilement, sélection
    -------------------------------------------------------------------------- */
@@ -779,7 +1033,7 @@
 
 html.dark {
   color-scheme: dark;
-  background-color: #12100f; /* fond peint avant le montage de React */
+  background-color: #0f0d0c; /* fond peint avant le montage de React */
 }
 
 body {
@@ -833,11 +1087,9 @@ body {
   -webkit-box-shadow: 0 0 0 1000px #262220 inset;
 }
 
-/* Images et illustrations : léger adoucissement pour éviter l'éblouissement
-   des photos très claires sur fond sombre (exclut les logos déjà adaptés). */
-[data-theme='dark'] img:not([data-theme-keep]) {
-  filter: brightness(0.94);
-}
+/* Les images et photos ne sont PAS assombries : l'ajustement global rendait les
+   visuels ternes et délavés. Si une illustration précise éblouit, la traiter
+   au cas par cas avec `dark:brightness-95`. */
 
 /* --------------------------------------------------------------------------
    Cartographie (Leaflet) : les contrôles natifs sont blancs par défaut et
@@ -862,4 +1114,30 @@ body {
 [data-theme='dark'] .leaflet-popup-tip {
   background: #232019;
   color: #f4f1ee;
+}
+/* Étiquettes de repères (permanentes sur la carte des zones) : la feuille de
+   style de Leaflet les peint en blanc avec du texte #222 — un aplat éblouissant
+   au milieu d'une carte sombre. On reprend la teinte des surfaces. */
+[data-theme='dark'] .leaflet-tooltip {
+  background: #232019;
+  border-color: #38322c;
+  color: #f4f1ee;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.55);
+}
+[data-theme='dark'] .leaflet-tooltip-top:before { border-top-color: #38322c; }
+[data-theme='dark'] .leaflet-tooltip-bottom:before { border-bottom-color: #38322c; }
+[data-theme='dark'] .leaflet-tooltip-left:before { border-left-color: #38322c; }
+[data-theme='dark'] .leaflet-tooltip-right:before { border-right-color: #38322c; }
+[data-theme='dark'] .leaflet-div-icon {
+  background: #232019;
+  border-color: #38322c;
+}
+[data-theme='dark'] .leaflet-bar a {
+  background-color: #232019;
+  color: #f4f1ee;
+  border-bottom-color: #38322c;
+}
+[data-theme='dark'] .leaflet-bar a:hover,
+[data-theme='dark'] .leaflet-bar a:focus {
+  background-color: #2e2925;
 }

@@ -115,7 +115,7 @@ export default function Verification2faPage() {
           <OtpInput value={code} onChange={setCode} error={!!error} disabled={expired || blocked || loading} />
 
           <div className="flex flex-col items-center gap-2">
-            <span className="flex items-center gap-1.5 rounded-lg border border-[#FDE68A] bg-[#FFFBEB] px-3.5 py-2 text-xs font-semibold text-amber-text">
+            <span className="flex items-center gap-1.5 rounded-lg border border-amber bg-amber-light px-3.5 py-2 text-xs font-semibold text-amber-text">
               <MIcon name="schedule" className="text-sm" />
               {expired ? tx("Code expiré") : tr(`Le code expire dans ${formatTime(secondsLeft)}`, `The code expires in ${formatTime(secondsLeft)}`)}
             </span>
