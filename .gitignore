@@ -28,3 +28,6 @@ pnpm-debug.log*
 junit.xml
 tsc.log
 __pycache__/
+
+# Reçus témoins produits par les tests (voir RECU_TEMOIN_DIR)
+exemples/
