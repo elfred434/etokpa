@@ -1,6 +1,41 @@
 # eTokpa_front
 
+![Tests front](https://github.com/elfred434/etokpa/actions/workflows/tests.yml/badge.svg)
 
+Frontend React de **TOKPa** (marché digital du Bénin) : TanStack Router/Query/Table/Form,
+Redux Toolkit, Tailwind v4, Leaflet, Laravel Reverb.
+
+## Tests et intégration continue
+
+Les tests tournent automatiquement **à chaque envoi sur `main` et à chaque pull request**
+(GitHub Actions, `.github/workflows/tests.yml`) — deux travaux en parallèle :
+
+| Travail | Ce qu'il vérifie |
+|---|---|
+| **Types + tests unitaires** | version de Node, `npm ci`, TypeScript (plafond de dette : le nombre d'erreurs ne doit pas augmenter), suite Vitest (253 tests + rapport JUnit conservé en artefact) |
+| **Build + mode sombre** | build de production, puis vérification que `src/theme/theme.css` est bien à jour (le générateur de surcharges sombres est relancé : s'il modifie le fichier, le passage échoue) et rapport de contrastes du mode sombre |
+
+Le cycle E2E complet (`tests/e2e-cycle.test.ts`) s'ignore de lui-même en intégration
+continue : il exige l'API Laravel et `laravel.log` ; il se lance en local avec le backend
+en marche.
+
+En local :
+
+```bash
+# Node 22.22+ obligatoire (jsdom 30 ne démarre pas sous Node 20)
+npm ci
+npm test              # suite complète
+npm run test:coverage # avec couverture
+npx tsc --noEmit      # dette connue : 24 erreurs, plafonnée en CI
+
+# Contrôles du mode sombre (après un build)
+npm run build
+python3 scripts/generer_surcharges_sombres.py   # régénère les surcharges sombres
+python3 scripts/verifier_contraste_sombre.py    # rapporte les contrastes réels
+```
+
+Le test qui produit un reçu témoin écrit dans `exemples/` du dépôt, ou dans le dossier
+indiqué par `RECU_TEMOIN_DIR` (la sandbox de travail s'en sert pour `/home/user/exemples`).
 
 ## Getting started
 
