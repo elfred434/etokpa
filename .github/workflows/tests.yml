@@ -1,0 +1,188 @@
+name: Tests front
+
+# À chaque envoi sur main et à chaque pull request : la suite de tests du
+# frontend (263 tests, 32 fichiers) plus les deux contrôles qui protègent le
+# mode sombre. Le test E2E « cycle complet » s'ignore tout seul en CI : il a
+# besoin de l'API Laravel et du journal `laravel.log` (voir
+# tests/e2e-cycle.test.ts, `describe.skipIf`).
+#
+# Durée observée en local : ~1 min pour le travail « Types + tests ».
+#
+# Node 22 est le MINIMUM : sous Node 20, jsdom 30 (via undici) échoue au
+# chargement des fichiers en environnement jsdom (« webidl.util.markAsUncloneable
+# is not a function ») et 11 fichiers sur 32 ne démarrent pas. Même exigence pour
+# les postes de développement.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Un seul passage par branche : un nouvel envoi annule le précédent.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Dette TypeScript connue, mesurée le 15/10/2026 : 24 erreurs, toutes
+  # préexistantes et hors périmètre des travaux en cours. Ce chiffre ne doit
+  # JAMAIS augmenter ; il peut être BAISSÉ dès qu'une erreur est corrigée.
+  # (Pour l'abaisser : relancer le travail « Types + tests », lire le compte
+  # affiché dans le résumé, mettre la nouvelle valeur ici.)
+  TSC_BASELINE: 24
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Types et tests unitaires — le cœur de la protection
+  # ---------------------------------------------------------------------------
+  tests:
+    name: Types + tests unitaires
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Vérifier la version de Node (≥ 22)
+        run: |
+          MAJEUR=$(node -p "process.versions.node.split('.')[0]")
+          echo "Node $(node -v)"
+          if [ "$MAJEUR" -lt 22 ]; then
+            echo "❌ Node ${MAJEUR} : jsdom 30 ne démarre pas sous Node 20 (undici). Utiliser Node 22 ou plus." >&2
+            exit 1
+          fi
+
+      - name: Installer les dépendances
+        run: npm ci --no-audit --no-fund
+
+      - name: TypeScript — pas de nouvelle erreur
+        run: |
+          set -o pipefail
+          npx tsc --noEmit > tsc.log 2>&1 || true
+          ERREURS=$(grep -c "error TS" tsc.log || true)
+          echo "### TypeScript : ${ERREURS} erreur(s) — plafond ${TSC_BASELINE}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$ERREURS" -gt "$TSC_BASELINE" ]; then
+            echo "❌ ${ERREURS} erreurs TypeScript (plafond ${TSC_BASELINE}). Nouvelles erreurs :" | tee -a "$GITHUB_STEP_SUMMARY"
+            grep "error TS" tsc.log | tail -30 | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "✅ Aucune régression de typage (${ERREURS} ≤ ${TSC_BASELINE})."
+          if [ "$ERREURS" -lt "$TSC_BASELINE" ]; then
+            echo "🔻 La dette a baissé : mettre TSC_BASELINE à ${ERREURS} dans .github/workflows/tests.yml" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Tests unitaires (Vitest)
+        run: npx vitest run --reporter=default --reporter=junit --outputFile.junit=junit.xml
+
+      - name: Résumé des tests
+        if: always()
+        run: |
+          if [ -f junit.xml ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import xml.etree.ElementTree as ET
+
+          arbre = ET.parse('junit.xml').getroot()
+          total = echecs = ignores = erreurs = 0
+          workers = []
+          for suite in arbre.iter('testsuite'):
+              # Vitest range les erreurs de démarrage de « workers » dans une
+              # pseudo-suite à part : on la traite séparément pour ne pas
+              # l'ajouter au compte des tests.
+              if suite.get('name') == 'vitest unhandled errors':
+                  workers = [(e.get('message') or '')[:140] for e in suite.iter('error')]
+                  continue
+              total += int(suite.get('tests', 0))
+              echecs += int(suite.get('failures', 0))
+              erreurs += int(suite.get('errors', 0))
+              ignores += int(suite.get('skipped', 0))
+
+          reussis = total - echecs - erreurs - ignores
+          etat = '✅' if echecs + erreurs == 0 and not workers else '❌'
+          print(f"{etat} **{reussis} test(s) réussi(s)** sur {total} "
+                f"({echecs} échec(s), {erreurs} erreur(s), {ignores} ignoré(s) — "
+                f"les ignorés sont le cycle E2E, qui exige l'API Laravel)")
+          if workers:
+              print()
+              print("**Erreurs de démarrage de workers :**")
+              for message in workers:
+                  print(f"- {message}")
+          elif reussis or echecs:
+              print()
+              print("Le cycle E2E (`tests/e2e-cycle.test.ts`) s'ignore en CI : il lui faut")
+              print("l'API Laravel et `laravel.log`. Il tourne en local et dans la sandbox")
+              print("de travail, où il affiche 10/10.")
+          PY
+          fi
+
+      - name: Conserver les résultats (rapport JUnit et erreurs de typage)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultats-tests
+          path: |
+            junit.xml
+            tsc.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # 2. Build et mode sombre — ce que les tests unitaires ne voient pas
+  # ---------------------------------------------------------------------------
+  build-theme:
+    name: Build + mode sombre
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Installer les dépendances
+        run: npm ci --no-audit --no-fund
+
+      - name: Build de production
+        run: npm run build
+
+      - name: Surcharges sombres à jour ? (le CSS compilé change ⇒ theme.css doit suivre)
+        run: |
+          python3 scripts/generer_surcharges_sombres.py | tail -5
+          if ! git diff --quiet -- src/theme/theme.css; then
+            echo "❌ src/theme/theme.css n'est pas à jour : le générateur l'a modifié." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "Rappel : après tout changement de composant, relancer" >> "$GITHUB_STEP_SUMMARY"
+            echo "\`vite build\` puis \`python3 scripts/generer_surcharges_sombres.py\` avant de committer." >> "$GITHUB_STEP_SUMMARY"
+            git diff -- src/theme/theme.css | head -40
+            exit 1
+          fi
+          echo "✅ Aucune surcharge sombre manquante ou en trop." | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Informatif : le script sort en code 1 sur les défauts connus et assumés
+      # (2 pastilles ambre de la page Clés API, filigranes décoratifs). Le
+      # rapport complet est écrit dans le résumé du passage.
+      - name: Contrastes du mode sombre (rapport)
+        continue-on-error: true
+        run: |
+          {
+            echo "### Contrastes du mode sombre"
+            echo '```'
+            python3 scripts/verifier_contraste_sombre.py --tout || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          python3 scripts/verifier_contraste_sombre.py --tout || true
