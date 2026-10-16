@@ -31,3 +31,9 @@ __pycache__/
 
 # Reçus témoins produits par les tests (voir RECU_TEMOIN_DIR)
 exemples/
+
+# Couverture de tests (Vitest --coverage)
+coverage/
+
+# État de l'outil de validation locale des pipelines GitLab
+.gitlab-ci-local/

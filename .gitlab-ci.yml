@@ -1,0 +1,153 @@
+# Intégration continue GitLab — tests du frontend TOKPa.
+#
+# Équivalent GitLab de `.github/workflows/tests.yml` (les deux fichiers coexistent :
+# GitHub pour le miroir, GitLab pour l'usine de l'équipe). Mêmes garanties :
+#   1. `types-et-tests`  : TypeScript sous plafond de dette, suite Vitest complète,
+#      couverture et rapport JUnit (affiché dans la merge request) ;
+#   2. `build-et-theme`  : build de production, surcharges sombres à jour,
+#      rapport de contrastes du mode sombre.
+#
+# Node 22 est le MINIMUM : sous Node 20, jsdom 30 (via undici) échoue au chargement
+# des fichiers en environnement jsdom et 11 fichiers sur 32 ne démarrent pas.
+#
+# Le cycle E2E (`tests/e2e-cycle.test.ts`) s'ignore de lui-même en CI : il exige
+# l'API Laravel et `laravel.log` (voir `describe.skipIf` dans le fichier de test).
+---
+stages:
+  - test
+  - build
+
+default:
+  image: node:22
+  # Un nouvel envoi annule le passage en cours pour la même branche.
+  interruptible: true
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+
+variables:
+  # Dette TypeScript connue, mesurée le 15/10/2026 : 24 erreurs, toutes
+  # préexistantes et hors périmètre des travaux en cours. Ce chiffre ne doit
+  # JAMAIS augmenter ; il peut être BAISSÉ dès qu'une erreur est corrigée
+  # (relancer le travail, lire le compte dans le journal, mettre la valeur ici).
+  TSC_BASELINE: "24"
+  NODE_MAJEUR_MINIMUM: "22"
+  # Sorties sans codes couleur : le relevé de couverture doit rester lisible par
+  # l'expression régulière de GitLab (plus bas, `coverage:`).
+  NO_COLOR: "1"
+  npm_config_cache: "$CI_PROJECT_DIR/.npm"
+
+# ---------------------------------------------------------------------------
+# 1. Types et tests unitaires — le cœur de la protection
+# ---------------------------------------------------------------------------
+types-et-tests:
+  stage: test
+  script:
+    - |
+      MAJEUR=$(node -p "process.versions.node.split('.')[0]")
+      echo "Node $(node -v)"
+      if [ "$MAJEUR" -lt "$NODE_MAJEUR_MINIMUM" ]; then
+        echo "Node ${MAJEUR} : jsdom 30 ne démarre pas sous Node 20 (undici). Utiliser Node ${NODE_MAJEUR_MINIMUM}+." >&2
+        exit 1
+      fi
+    - npm ci --no-audit --no-fund
+    - |
+      echo "=== TypeScript (plafond ${TSC_BASELINE}) ==="
+      npx tsc --noEmit > tsc.log 2>&1 || true
+      ERREURS=$(grep -c "error TS" tsc.log || true)
+      echo "TypeScript : ${ERREURS} erreur(s) — plafond ${TSC_BASELINE}"
+      if [ "$ERREURS" -gt "$TSC_BASELINE" ]; then
+        echo "ÉCHEC : ${ERREURS} erreurs TypeScript (plafond ${TSC_BASELINE}). Nouvelles erreurs :"
+        grep "error TS" tsc.log | tail -30
+        exit 1
+      fi
+      echo "OK — aucune régression de typage."
+      if [ "$ERREURS" -lt "$TSC_BASELINE" ]; then
+        echo "La dette a baissé : mettre TSC_BASELINE à ${ERREURS} dans .gitlab-ci.yml"
+      fi
+    - |
+      echo "=== Suite de tests ==="
+      npx vitest run --coverage --reporter=default --reporter=junit --outputFile.junit=junit.xml
+    - |
+      if [ -f junit.xml ]; then
+        echo "=== Bilan des tests ==="
+        python3 - <<'PY'
+      import xml.etree.ElementTree as ET
+
+      arbre = ET.parse('junit.xml').getroot()
+      total = echecs = ignores = erreurs = 0
+      for suite in arbre.iter('testsuite'):
+          # Vitest range les erreurs de démarrage de « workers » dans une
+          # pseudo-suite à part : traitée séparément, hors compte des tests.
+          if suite.get('name') == 'vitest unhandled errors':
+              for erreur in suite.iter('error'):
+                  print(f"ERREUR DE WORKER : {(erreur.get('message') or '')[:140]}")
+              continue
+          total += int(suite.get('tests', 0))
+          echecs += int(suite.get('failures', 0))
+          erreurs += int(suite.get('errors', 0))
+          ignores += int(suite.get('skipped', 0))
+
+      reussis = total - echecs - erreurs - ignores
+      etat = 'OK' if echecs + erreurs == 0 else 'ECHEC'
+      print(f"{etat} — {reussis} test(s) réussi(s) sur {total} "
+            f"({echecs} échec(s), {erreurs} erreur(s), {ignores} ignoré(s))")
+      print("Les ignorés sont le cycle E2E complet, qui exige l'API Laravel "
+            "et laravel.log : il tourne en local.")
+      PY
+      fi
+  # Relevé de couverture lu sur la dernière ligne « All files » du rapport.
+  coverage: '/^All files\s*\|\s*([0-9.]+)/'
+  artifacts:
+    when: always
+    expire_in: 14 days
+    reports:
+      junit: junit.xml
+    paths:
+      - junit.xml
+      - tsc.log
+      - coverage/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+# ---------------------------------------------------------------------------
+# 2. Build et mode sombre — ce que les tests unitaires ne voient pas
+# ---------------------------------------------------------------------------
+build-et-theme:
+  stage: build
+  script:
+    - apt-get update -qq && (command -v python3 >/dev/null || apt-get install -y -qq python3)
+    - npm ci --no-audit --no-fund
+    - echo "=== Build de production ==="
+    - npm run build
+    - |
+      echo "=== Surcharges sombres à jour ? ==="
+      python3 scripts/generer_surcharges_sombres.py | tail -5
+      if ! git diff --quiet -- src/theme/theme.css; then
+        echo "ÉCHEC : src/theme/theme.css n'est pas à jour — le générateur l'a modifié."
+        echo "Après tout changement de composant : relancer « npm run build » puis"
+        echo "« python3 scripts/generer_surcharges_sombres.py » avant de committer."
+        git diff -- src/theme/theme.css | head -40
+        exit 1
+      fi
+      echo "OK — aucune surcharge sombre manquante ou en trop."
+    - |
+      # Informatif : le script sort en code 1 sur les défauts connus et assumés
+      # (2 pastilles ambre de la page Clés API, filigranes décoratifs).
+      echo "=== Contrastes du mode sombre (rapport) ==="
+      python3 scripts/verifier_contraste_sombre.py --tout || true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
