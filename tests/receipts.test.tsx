@@ -7,11 +7,17 @@
  *  3. bouton `ReceiptButton` : libellé, appel réseau du détail, téléchargement,
  *     comportement quand la commande n'est pas accessible.
  *
- * Un reçu témoin est aussi écrit dans /home/user/exemples/ pour inspection.
+ * Un reçu témoin est aussi écrit pour inspection, dans le dossier `exemples/`
+ * du dépôt — ou dans celui indiqué par `RECU_TEMOIN_DIR` (la sandbox de travail
+ * s'en sert pour déposer les témoins de passation dans /home/user/exemples).
+ * Le dossier est créé au besoin ; s'il n'est pas accessible en écriture, le test
+ * est ignoré plutôt que mis en échec (un runner d'intégration continue n'a pas
+ * toujours accès à l'extérieur du dépôt).
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { mkdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 import { buildReceiptData, estPaye, numeroRecu } from '../src/services/receipts/receiptData';
 import { buildReceiptPdf, fmtMontant } from '../src/services/receipts/receiptPdf';
 import { receiptLabels } from '../src/services/receipts/receiptLabels';
@@ -150,12 +156,21 @@ describe('rendu PDF', () => {
     expect(sansEspaceFine(fmtMontant(null))).toBe('0 FCFA');
   });
 
-  it('écrit un reçu témoin dans /home/user/exemples', () => {
+  it('écrit un reçu témoin pour inspection', () => {
     const doc = buildReceiptPdf(buildReceiptData(paiementReussi, commande), receiptLabels());
     const buf = Buffer.from(doc.output('arraybuffer'));
-    mkdirSync('/home/user/exemples', { recursive: true });
-    writeFileSync('/home/user/exemples/recu_exemple.pdf', buf);
     expect(buf.subarray(0, 5).toString()).toBe('%PDF-');
+
+    // Dossier des témoins : variable d'environnement, sinon `exemples/` du dépôt.
+    // Jamais de chemin absolu en dur : en intégration continue le dépôt est le
+    // seul endroit inscriptible (/home/user n'existe pas).
+    const dossier = process.env.RECU_TEMOIN_DIR ?? path.join(process.cwd(), 'exemples');
+    try {
+      mkdirSync(dossier, { recursive: true });
+      writeFileSync(path.join(dossier, 'recu_exemple.pdf'), buf);
+    } catch (erreur) {
+      console.warn(`Reçu témoin non écrit dans ${dossier} : ${(erreur as Error).message}`);
+    }
   });
 });
 
