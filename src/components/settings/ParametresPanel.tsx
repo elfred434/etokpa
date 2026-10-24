@@ -15,12 +15,12 @@ import { tx } from '../../i18n/tx';
  * Aucun état local : le thème et la langue sont lus et écrits dans leurs
  * contextes (`ThemeContext`, `LanguageContext`), qui persistent le choix.
  */
-export default function ParametresPanel() {
+export default function ParametresPanel({ desktopColumns = false }: { desktopColumns?: boolean }) {
   const { choix, effectif, setChoix } = useTheme();
   const { language, setLanguage } = useLanguage();
 
   return (
-    <div className="flex flex-col gap-md">
+    <div className={desktopColumns ? 'flex flex-col gap-md lg:grid lg:grid-cols-2 lg:gap-lg' : 'flex flex-col gap-md'}>
       {/* ---------------------------------------------------------------- */}
       {/* Apparence : trois choix visibles, pas de cycle                    */}
       {/* ---------------------------------------------------------------- */}

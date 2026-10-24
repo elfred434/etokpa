@@ -78,7 +78,7 @@ export default function ManagerLitigesPage() {
           ))}
         </div>
 
-        <div className="space-y-4 opacity-70">
+        <div className="space-y-4 opacity-70 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0">
           {cartes.map((l) => (
             <div key={l.id} className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">

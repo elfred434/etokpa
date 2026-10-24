@@ -18,14 +18,14 @@ export default function ParametresPage() {
   return (
     <div className="min-h-screen bg-warm pb-24">
       <ClientNavbar />
-      <main className="mx-auto w-full max-w-[900px] px-4 pt-[calc(52px+24px)]">
+      <main className="mx-auto w-full max-w-[1100px] px-4 pt-[calc(52px+24px)] lg:px-lg">
         <header className="mb-md">
           <h1 className="font-h1 text-h1 font-bold text-text-main">{tx('Paramètres')}</h1>
           <p className="mt-xs font-body text-secondary text-text-secondary">
             {tx('Préférences conservées sur cet appareil')}
           </p>
         </header>
-        <ParametresPanel />
+        <ParametresPanel desktopColumns />
       </main>
       <ClientBottomNav />
     </div>

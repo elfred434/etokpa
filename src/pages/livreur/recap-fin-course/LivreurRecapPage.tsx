@@ -55,7 +55,7 @@ export default function LivreurRecapPage() {
   return (
     <LivreurLayout>
       <div className="flex flex-col items-center p-xl">
-        <div className="w-full max-w-[800px]">
+        <div className="w-full max-w-[800px] lg:max-w-[1100px]">
           {!order ? (
             err || !commande ? (
               <ApiErrorState
@@ -80,65 +80,67 @@ export default function LivreurRecapPage() {
                 </p>
               </header>
 
-              {/* Main Summary Card */}
-              <section className="mb-6 overflow-hidden rounded-[14px] border-[0.5px] border-border-default bg-bg-card shadow-sm">
-                {/* Section 1: Montants réels */}
-                <div className="border-b border-border-default bg-bg-card p-6 text-center">
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx("Frais de livraison")}</p>
-                  <h2 className="flex flex-wrap items-center justify-center gap-2 text-[32px] font-bold text-text-main">
-                    <span>{tx("Course :")}</span>
-                    <span className="font-bold text-[#F97316]">{fmtFcfa(order.frais_livraison)}</span>
-                  </h2>
-                  <div className="mt-5 flex items-center justify-center gap-10 border-t border-border-default pt-4">
-                    <div className="text-center">
-                      <p className="text-xs font-medium text-text-secondary">{tx("Montant de la commande")}</p>
-                      <p className="mt-0.5 text-base font-semibold text-text-main">{fmtFcfa(order.montant_total)}</p>
-                    </div>
-                    <div className="h-8 w-px bg-border-default" />
-                    <div className="text-center">
-                      <p className="text-xs font-medium text-text-secondary">{tx("Articles")}</p>
-                      <p className="mt-0.5 text-base font-semibold text-text-main">{articlesCount(order)}</p>
-                    </div>
-                  </div>
-                </div>
-                {/* Section 2: Course Details */}
-                <div className="grid grid-cols-1 gap-4 border-b border-border-default bg-bg-secondary p-5 sm:grid-cols-3">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx("Commande")}</span>
-                    <span className="mt-0.5 text-sm font-bold text-text-main">{tokRef(order.id)}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx("Heure de livraison")}</span>
-                    <span className="mt-0.5 text-sm font-medium text-text-main">{heure}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx("Destination")}</span>
-                    <span className="mt-0.5 text-sm font-medium text-text-main">{destination(order)}</span>
-                  </div>
-                </div>
-              </section>
-
-              {/* Order Summary Card */}
-              <section className="mb-8 rounded-[14px] border-[0.5px] border-border-default bg-bg-card p-6 shadow-sm">
-                <h3 className="mb-4 flex items-center gap-2 text-base font-bold text-text-main">
-                  <MIcon name="shopping_basket" className="text-[20px] text-text-secondary" />
-                  <span>{tx("Détails de la commande")}</span>
-                </h3>
-                <ul className="divide-y divide-[#F3F4F6]">
-                  {(order.items ?? []).map((it) => (
-                    <li key={it.id} className="flex items-center justify-between py-3">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary-light/50 bg-primary-lighter text-xs font-bold text-[#F97316]">
-                          {it.quantite}x
-                        </span>
-                        <span className="text-sm font-medium text-text-main">{tx(orderLineName(it))}</span>
+              <div className="lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start lg:gap-lg">
+                {/* Main Summary Card */}
+                <section className="mb-6 overflow-hidden rounded-[14px] border-[0.5px] border-border-default bg-bg-card shadow-sm lg:mb-0">
+                  {/* Section 1: Montants réels */}
+                  <div className="border-b border-border-default bg-bg-card p-6 text-center">
+                    <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx("Frais de livraison")}</p>
+                    <h2 className="flex flex-wrap items-center justify-center gap-2 text-[32px] font-bold text-text-main">
+                      <span>{tx("Course :")}</span>
+                      <span className="font-bold text-[#F97316]">{fmtFcfa(order.frais_livraison)}</span>
+                    </h2>
+                    <div className="mt-5 flex items-center justify-center gap-10 border-t border-border-default pt-4">
+                      <div className="text-center">
+                        <p className="text-xs font-medium text-text-secondary">{tx("Montant de la commande")}</p>
+                        <p className="mt-0.5 text-base font-semibold text-text-main">{fmtFcfa(order.montant_total)}</p>
                       </div>
-                      <span className="rounded-full bg-bg-app px-2.5 py-1 text-xs font-medium text-text-secondary">{fmtFcfa(it.prix_unitaire)}</span>
-                    </li>
-                  ))}
-                  {(order.items ?? []).length === 0 && <li className="py-3 text-sm text-text-secondary">{tx("Aucun article transmis.")}</li>}
-                </ul>
-              </section>
+                      <div className="h-8 w-px bg-border-default" />
+                      <div className="text-center">
+                        <p className="text-xs font-medium text-text-secondary">{tx("Articles")}</p>
+                        <p className="mt-0.5 text-base font-semibold text-text-main">{articlesCount(order)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Section 2: Course Details */}
+                  <div className="grid grid-cols-1 gap-4 border-b border-border-default bg-bg-secondary p-5 sm:grid-cols-3">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx("Commande")}</span>
+                      <span className="mt-0.5 text-sm font-bold text-text-main">{tokRef(order.id)}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx("Heure de livraison")}</span>
+                      <span className="mt-0.5 text-sm font-medium text-text-main">{heure}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx("Destination")}</span>
+                      <span className="mt-0.5 text-sm font-medium text-text-main">{destination(order)}</span>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Order Summary Card */}
+                <section className="mb-8 rounded-[14px] border-[0.5px] border-border-default bg-bg-card p-6 shadow-sm lg:mb-0">
+                  <h3 className="mb-4 flex items-center gap-2 text-base font-bold text-text-main">
+                    <MIcon name="shopping_basket" className="text-[20px] text-text-secondary" />
+                    <span>{tx("Détails de la commande")}</span>
+                  </h3>
+                  <ul className="divide-y divide-[#F3F4F6]">
+                    {(order.items ?? []).map((it) => (
+                      <li key={it.id} className="flex items-center justify-between py-3">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary-light/50 bg-primary-lighter text-xs font-bold text-[#F97316]">
+                            {it.quantite}x
+                          </span>
+                          <span className="text-sm font-medium text-text-main">{tx(orderLineName(it))}</span>
+                        </div>
+                        <span className="rounded-full bg-bg-app px-2.5 py-1 text-xs font-medium text-text-secondary">{fmtFcfa(it.prix_unitaire)}</span>
+                      </li>
+                    ))}
+                    {(order.items ?? []).length === 0 && <li className="py-3 text-sm text-text-secondary">{tx("Aucun article transmis.")}</li>}
+                  </ul>
+                </section>
+              </div>
             </>
           )}
 

@@ -53,7 +53,7 @@ export default function ManagerParametresPage() {
         </div>
 
         {/* Thème et langue : réglages réels (les onglets ci-dessous restent une maquette) */}
-        <ParametresPanel />
+        <ParametresPanel desktopColumns />
 
         <div className="flex flex-wrap gap-2 border-b border-border-default pb-2">
           {ONGLETS.map((o) => (
@@ -72,7 +72,7 @@ export default function ManagerParametresPage() {
 
         <div className="opacity-70">
           {onglet === ONGLETS[0] && (
-            <div className="space-y-6">
+            <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-lg lg:space-y-0">
               <section className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
                 <h2 className="text-h3 font-h3 font-bold">
                   {tx("Périmètre opérationnel")} — {currentUserZone() ?? tx("Zone non attribuée")}

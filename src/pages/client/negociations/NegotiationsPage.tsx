@@ -243,7 +243,7 @@ export default function NegotiationsPage() {
       <ClientNavbar />
 
       {/* Main Container */}
-      <main className="pt-[92px] max-w-[1000px] mx-auto px-md md:px-lg">
+      <main className="mx-auto w-full max-w-[1200px] px-md pt-[92px] md:px-lg lg:px-xl">
         {/* Header Section */}
         <div className="mb-lg">
           <h1 className="font-h1 text-h1 text-on-surface mb-xs">

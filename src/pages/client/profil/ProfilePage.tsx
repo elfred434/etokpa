@@ -187,7 +187,7 @@ export default function ProfilePage() {
     return (
       <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
         <ClientNavbar />
-        <main className="mx-auto mt-[76px] flex max-w-[720px] flex-col items-center px-md text-center">
+        <main className="mx-auto mt-[76px] flex w-full max-w-[720px] flex-col items-center px-md text-center lg:max-w-[900px] lg:px-lg">
           <Link
             to="/connexion"
             search={{ redirect: '/profil' }}
@@ -316,15 +316,15 @@ export default function ProfilePage() {
     <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
       <ClientNavbar />
 
-      <main className="max-w-[720px] mx-auto mt-[76px] px-md">
+      <main className="mx-auto mt-[76px] w-full max-w-[720px] px-md lg:max-w-[1200px] lg:grid lg:grid-cols-2 lg:gap-x-lg lg:gap-y-lg lg:px-lg">
         {isDataLoading ? (
-          <div className="py-2xl flex justify-center">
+          <div className="py-2xl flex justify-center lg:col-span-2">
             <MIcon name="sync" className="text-primary text-4xl animate-spin" />
           </div>
         ) : (
           <>
             {/* PROFILE HEADER */}
-            <section className="bg-bg-card rounded-[14px] p-lg border border-border-default flex flex-col sm:flex-row items-start sm:items-center justify-between gap-md mb-md shadow-xs">
+            <section className="bg-bg-card rounded-[14px] p-lg border border-border-default flex flex-col sm:flex-row items-start sm:items-center justify-between gap-md mb-md shadow-xs lg:col-span-2 lg:mb-0">
               <div className="flex items-center gap-md">
                 <UserAvatar
                   name={userFullName}
@@ -357,7 +357,7 @@ export default function ProfilePage() {
             </section>
 
             {/* STATS (calculées sur les données API réelles) */}
-            <section className="grid grid-cols-2 gap-md mb-md">
+            <section className="grid grid-cols-2 gap-md mb-md lg:col-span-2 lg:mb-0">
               <div className="bg-bg-card p-md rounded-[10px] border border-border-default flex flex-col items-center justify-center text-center shadow-xs">
                 <span className="font-h2 text-h2 text-text-main font-bold">{orderCount}</span>
                 <span className="text-micro text-text-tertiary uppercase mt-1">
@@ -373,7 +373,7 @@ export default function ProfilePage() {
             </section>
 
             {/* ORDERS SECTION */}
-            <section className="mb-md">
+            <section className="mb-md lg:mb-0">
               <div className="flex items-center justify-between mb-sm">
                 <h3 className="font-h3 text-h3 text-text-main font-bold">
                   {isFr ? tx("Mes commandes récentes") : 'Recent orders'}
@@ -426,7 +426,7 @@ export default function ProfilePage() {
             </section>
 
             {/* PAYMENTS SECTION — 5 derniers paiements du compte */}
-            <section className="mb-md">
+            <section className="mb-md lg:mb-0">
               <div className="flex items-center justify-between mb-sm">
                 <h3 className="font-h3 text-h3 text-text-main font-bold">
                   {isFr ? tx("Mes paiements") : 'My payments'}
@@ -475,7 +475,7 @@ export default function ProfilePage() {
             </section>
 
             {/* SECURITY & SETTINGS */}
-            <section className="mb-xl">
+            <section className="mb-xl lg:col-span-2 lg:mb-0">
               <h3 className="font-h3 text-h3 text-text-main mb-sm font-bold">
                 {isFr ? tx("Paramètres & Sécurité") : 'Settings & Security'}
               </h3>

@@ -232,7 +232,7 @@ export default function OrdersListPage() {
       <ClientNavbar />
 
       <main className="flex-grow px-4 py-xl pb-[80px] pt-[52px] sm:px-lg md:pb-0">
-        <div className="max-w-[1000px] mx-auto">
+        <div className="mx-auto w-full max-w-[1200px]">
           {/* En-tête */}
           <div className="flex flex-wrap items-center justify-between gap-2 mb-lg">
             <h1 className="font-h1 text-h1 text-on-surface">{isFr ? tx("Mes commandes") : 'My orders'}</h1>

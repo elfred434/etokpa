@@ -143,7 +143,7 @@ export default function LivreurSettingsPage() {
 
           {/* Thème et langue */}
           <div className="mb-lg">
-            <ParametresPanel />
+            <ParametresPanel desktopColumns />
           </div>
 
           {err ? (

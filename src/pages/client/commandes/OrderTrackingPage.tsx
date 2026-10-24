@@ -240,10 +240,10 @@ export default function OrderTrackingPage() {
     <div className="bg-bg-app font-body text-on-surface antialiased min-h-screen flex flex-col">
       <ClientNavbar />
 
-      <main className="flex-grow pt-[52px] pb-[80px] md:pb-0 relative overflow-hidden flex flex-col">
+      <main className="relative flex flex-grow flex-col overflow-hidden pt-[52px] pb-[80px] md:pb-0 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)] lg:items-stretch lg:gap-lg lg:px-lg lg:pb-lg">
         {/* Pas de carte ni de suivi GPS pour une commande annulée. */}
         {!isCancelled && (
-          <section className="relative h-[420px] sm:h-[520px] w-full overflow-hidden bg-info-light">
+          <section className="relative h-[420px] w-full overflow-hidden bg-info-light sm:h-[520px] lg:h-auto lg:min-h-[620px] lg:rounded-[20px]">
             <RealBeninMap
               riderCoords={riderCoords}
               riderName={rider?.nom_complet}
@@ -254,7 +254,7 @@ export default function OrderTrackingPage() {
         )}
 
         {/* STATUS PANEL (Floating Bottom Sheet) */}
-        <section className="relative flex-grow bg-bg-card rounded-t-[20px] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-lg pt-lg pb-xl z-40 -mt-8 overflow-y-auto max-w-[800px] mx-auto w-full">
+        <section className={`relative z-40 -mt-8 flex-grow overflow-y-auto rounded-t-[20px] bg-bg-card px-lg pt-lg pb-xl shadow-[0_-8px_30px_rgba(0,0,0,0.08)] mx-auto w-full max-w-[800px] lg:mt-0 lg:rounded-[20px] lg:shadow-sm ${isCancelled ? 'lg:col-span-2 lg:max-w-[920px] lg:justify-self-center' : 'lg:max-w-none lg:px-xl lg:pt-xl lg:pb-xl'}`}>
           <div className="w-12 h-1.5 bg-border-default rounded-full mx-auto mb-lg" />
 
           {fetchError && (

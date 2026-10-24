@@ -152,50 +152,52 @@ export default function ConfirmationPage() {
       <ClientNavbar />
 
       <main className="flex-grow flex items-center justify-center px-md py-xl mt-[52px] md:mt-[64px] pb-24">
-        <div className="flex w-full max-w-[520px] flex-col items-center rounded-xl border border-border-default/50 bg-bg-card p-4 text-center shadow-sm sm:p-lg md:p-xl">
-          {/* Success Animation Container */}
-          <div className="relative mb-lg">
-            <div className="w-20 h-20 bg-success-light rounded-full flex items-center justify-center z-10 relative">
-              <MIcon name="check" className="text-[40px] text-success" />
+        <div className="flex w-full max-w-[520px] flex-col items-center rounded-xl border border-border-default/50 bg-bg-card p-4 text-center shadow-sm sm:p-lg md:p-xl lg:grid lg:max-w-[1000px] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-x-8 lg:gap-y-md lg:p-8">
+          <div className="flex w-full flex-col items-center lg:col-start-1 lg:row-start-1">
+            {/* Success Animation Container */}
+            <div className="relative mb-lg">
+              <div className="w-20 h-20 bg-success-light rounded-full flex items-center justify-center z-10 relative">
+                <MIcon name="check" className="text-[40px] text-success" />
+              </div>
+              {/* Discrete Confetti Dots */}
+              <div
+                className="absolute w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"
+                style={{ top: '-5px', left: '-10px' }}
+              />
+              <div
+                className="absolute w-1.5 h-1.5 rounded-full bg-secondary-container animate-pulse"
+                style={{ top: '10px', right: '-15px' }}
+              />
+              <div
+                className="absolute w-1.5 h-1.5 rounded-full bg-success animate-pulse"
+                style={{ bottom: '-5px', left: '50%' }}
+              />
+              <div
+                className="absolute w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"
+                style={{ top: '40px', left: '-20px' }}
+              />
+              <div
+                className="absolute w-1.5 h-1.5 rounded-full bg-secondary-container animate-pulse"
+                style={{ top: '-10px', right: '20px' }}
+              />
             </div>
-            {/* Discrete Confetti Dots */}
-            <div
-              className="absolute w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"
-              style={{ top: '-5px', left: '-10px' }}
-            />
-            <div
-              className="absolute w-1.5 h-1.5 rounded-full bg-secondary-container animate-pulse"
-              style={{ top: '10px', right: '-15px' }}
-            />
-            <div
-              className="absolute w-1.5 h-1.5 rounded-full bg-success animate-pulse"
-              style={{ bottom: '-5px', left: '50%' }}
-            />
-            <div
-              className="absolute w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"
-              style={{ top: '40px', left: '-20px' }}
-            />
-            <div
-              className="absolute w-1.5 h-1.5 rounded-full bg-secondary-container animate-pulse"
-              style={{ top: '-10px', right: '20px' }}
-            />
+
+            {/* Title & Messaging */}
+            <h1 className="font-h1 text-h1 text-text-main mb-sm font-bold">{tx("Commande confirmée !")}</h1>
+            <p className={`font-body text-body mb-md ${shownStatut === "echoue" ? 'text-error' : 'text-text-secondary'}`}>
+              {payMessage}
+            </p>
+
+            {/* Order Number Badge — numéro réel de la commande backend */}
+            {orderNumber && (
+              <div className="bg-primary-tint text-primary-dark font-label text-label px-md py-sm rounded-lg mb-lg border border-primary-light font-bold">
+                {orderNumber}
+              </div>
+            )}
           </div>
 
-          {/* Title & Messaging */}
-          <h1 className="font-h1 text-h1 text-text-main mb-sm font-bold">{tx("Commande confirmée !")}</h1>
-          <p className={`font-body text-body mb-md ${shownStatut === "echoue" ? 'text-error' : 'text-text-secondary'}`}>
-            {payMessage}
-          </p>
-
-          {/* Order Number Badge — numéro réel de la commande backend */}
-          {orderNumber && (
-            <div className="bg-primary-tint text-primary-dark font-label text-label px-md py-sm rounded-lg mb-lg border border-primary-light font-bold">
-              {orderNumber}
-            </div>
-          )}
-
           {/* Summary Box */}
-          <div className="w-full bg-bg-secondary rounded-lg p-md mb-lg space-y-md text-left border border-border-default/50">
+          <div className="w-full bg-bg-secondary rounded-lg p-md mb-lg space-y-md text-left border border-border-default/50 lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:mb-0">
             <div className="flex justify-between items-center">
               <span className="font-body text-text-secondary">{totalLabel}</span>
               <span className="font-price text-price text-primary-container font-bold">
@@ -238,7 +240,7 @@ export default function ConfirmationPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="w-full space-y-md">
+          <div className="w-full space-y-md lg:col-start-1 lg:row-start-2 lg:self-start">
             <button
               type="button"
               onClick={() =>
@@ -262,7 +264,7 @@ export default function ConfirmationPage() {
           <button
             type="button"
             onClick={() => toast(tx("Support client TOKPa — ouvert 7j/7"))}
-            className="mt-lg flex items-center gap-xs font-label text-primary-container font-bold hover:underline transition-all cursor-pointer"
+            className="mt-lg flex items-center gap-xs font-label text-primary-container font-bold hover:underline transition-all cursor-pointer lg:col-start-1 lg:row-start-3 lg:mt-0"
           >
             <MIcon name="headset_mic" className="text-[18px]" />
             {tx("Besoin d'aide ? Contactez le support")}
@@ -272,7 +274,7 @@ export default function ConfirmationPage() {
           <button
             type="button"
             onClick={() => toast.success(tx("Lien de parrainage copié ! Partagez-le avec vos proches."))}
-            className="w-full mt-xl bg-primary-tint border border-primary-light rounded-lg p-md flex items-center justify-between text-left hover:bg-primary-light/30 transition-all cursor-pointer"
+            className="w-full mt-xl bg-primary-tint border border-primary-light rounded-lg p-md flex items-center justify-between text-left hover:bg-primary-light/30 transition-all cursor-pointer lg:col-span-2 lg:row-start-4 lg:mt-0"
           >
             <div className="flex flex-col">
               <span className="font-label text-primary-dark font-bold text-h3 flex items-center gap-1">
