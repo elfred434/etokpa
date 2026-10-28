@@ -1,0 +1,57 @@
+name: Build Docker image
+
+# Build + smoke test sur chaque push (toutes branches), sans publication au registre.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker-build:
+    name: Build et smoke test Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Configurer Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Construire l’image sans la publier
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: tokpa-frontend:ci
+
+      - name: Démarrer le conteneur et vérifier Nginx + la route SPA
+        run: |
+          set -euo pipefail
+          container=tokpa-frontend-smoke
+          docker run --detach --name "$container" tokpa-frontend:ci
+          trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
+
+          healthy=0
+          for _ in $(seq 1 20); do
+            if docker exec "$container" wget -qO- http://127.0.0.1/healthz 2>/dev/null | grep -Fxq 'ok'; then
+              healthy=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "$healthy" -ne 1 ]; then
+            docker logs "$container"
+            exit 1
+          fi
+
+          docker exec "$container" wget -qO- http://127.0.0.1/catalogue | grep -Fq '<div id="root"></div>'

@@ -16,6 +16,7 @@
 stages:
   - test
   - build
+  - docker
 
 default:
   image: node:22
@@ -151,3 +152,47 @@ build-et-theme:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_PIPELINE_SOURCE == "schedule"
+
+# ---------------------------------------------------------------------------
+# 3. Docker — à chaque push, build local + smoke test (aucune publication)
+# Le runner GitLab doit autoriser Docker-in-Docker (mode privileged).
+# ---------------------------------------------------------------------------
+docker-build:
+  stage: docker
+  image: docker:cli
+  services:
+    - name: docker:dind
+      alias: docker
+  variables:
+    DOCKER_HOST: "tcp://docker:2376"
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_TLS_VERIFY: "1"
+    DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+    DOCKER_DRIVER: overlay2
+  script:
+    - docker info
+    - docker build --pull --tag "tokpa-frontend:${CI_COMMIT_SHA}" .
+    - |
+      set -eu
+      container=tokpa-frontend-smoke
+      image="tokpa-frontend:${CI_COMMIT_SHA}"
+      trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
+      docker run --detach --name "$container" "$image"
+
+      healthy=0
+      for attempt in $(seq 1 20); do
+        if docker exec "$container" wget -qO- http://127.0.0.1/healthz 2>/dev/null | grep -Fxq 'ok'; then
+          healthy=1
+          break
+        fi
+        sleep 1
+      done
+
+      if [ "$healthy" -ne 1 ]; then
+        docker logs "$container"
+        exit 1
+      fi
+
+      docker exec "$container" wget -qO- http://127.0.0.1/catalogue | grep -Fq '<div id="root"></div>'
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
