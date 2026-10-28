@@ -195,10 +195,10 @@ export default function HomePage() {
           <div className="absolute inset-0 z-0">
             <img
               alt={tx("Marché TOKPa Illustration")}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover transition-[filter] duration-300 dark:brightness-[0.74] dark:saturate-[0.82]"
               src="/images/brand/illustration-pattern.png"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent dark:from-[#1c1917] dark:via-[#1c1917]/90 dark:to-transparent" />
           </div>
           <div className="relative z-10 max-w-3xl p-4 sm:p-8 md:p-xl">
             <h1 className="mb-sm sm:mb-md font-h1 text-[26px] sm:text-[36px] md:text-[42px] font-bold leading-tight text-primary-darker">
