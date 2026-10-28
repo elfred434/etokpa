@@ -7,8 +7,8 @@
 #   2. `build-et-theme`  : build de production, surcharges sombres à jour,
 #      rapport de contrastes du mode sombre.
 #
-# Baseline du projet : Node.js 24.22.1 LTS (branche 24, minimum exact dans package.json).
-# Les jobs refusent une version antérieure ou une autre majeure.
+# Version par défaut des jobs CI et de Docker : Node.js 24.22.1 LTS.
+# `.nvmrc` la suggère en local; aucun contrôle ne l'impose aux postes de développement.
 #
 # Le cycle E2E (`tests/e2e-cycle.test.ts`) s'ignore de lui-même en CI : il exige
 # l'API Laravel et `laravel.log` (voir `describe.skipIf` dans le fichier de test).
@@ -39,7 +39,6 @@ variables:
   # JAMAIS augmenter ; il peut être BAISSÉ dès qu'une erreur est corrigée
   # (relancer le travail, lire le compte dans le journal, mettre la valeur ici).
   TSC_BASELINE: "24"
-  NODE_VERSION_MINIMUM: "24.22.1"
   # Sorties sans codes couleur : le relevé de couverture doit rester lisible par
   # l'expression régulière de GitLab (plus bas, `coverage:`).
   NO_COLOR: "1"
@@ -51,10 +50,7 @@ variables:
 types-et-tests:
   stage: test
   script:
-    - |
-      VERSION=$(node -p "process.versions.node")
-      echo "Node ${VERSION}"
-      node -e 'const min=process.env.NODE_VERSION_MINIMUM.split(".").map(Number); const [major,minor,patch]=process.versions.node.split(".").map(Number); if (major !== 24 || minor < min[1] || (minor === min[1] && patch < min[2])) { console.error(`Node ${process.env.NODE_VERSION_MINIMUM}+ de la branche 24 requis; détecté ${process.versions.node}`); process.exit(1); }'
+    - node --version
     - npm ci --no-audit --no-fund
     - |
       echo "=== TypeScript (plafond ${TSC_BASELINE}) ==="

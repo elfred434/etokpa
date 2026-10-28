@@ -8,8 +8,8 @@ name: Tests front
 #
 # Durée observée en local : ~1 min pour le travail « Types + tests ».
 #
-# Baseline du projet : Node.js 24.22.1 LTS (branche 24). Les pipelines et les
-# postes de développement utilisent la même branche et le même minimum patch.
+# Version par défaut : Node.js 24.22.1 LTS pour la CI et Docker. `.nvmrc` la
+# suggère en local, sans imposer une version aux postes de développement.
 on:
   push:
     branches: [main]
@@ -31,7 +31,6 @@ env:
   # (Pour l'abaisser : relancer le travail « Types + tests », lire le compte
   # affiché dans le résumé, mettre la nouvelle valeur ici.)
   TSC_BASELINE: 24
-  NODE_VERSION_MINIMUM: "24.22.1"
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -53,11 +52,8 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - name: Vérifier Node.js 24.22.1 LTS
-        run: |
-          VERSION=$(node -p "process.versions.node")
-          echo "Node ${VERSION}"
-          node -e 'const min=process.env.NODE_VERSION_MINIMUM.split(".").map(Number); const [major,minor,patch]=process.versions.node.split(".").map(Number); if (major !== 24 || minor < min[1] || (minor === min[1] && patch < min[2])) { console.error(`Node ${process.env.NODE_VERSION_MINIMUM}+ de la branche 24 requis; détecté ${process.versions.node}`); process.exit(1); }'
+      - name: Afficher la version de Node
+        run: node --version
 
       - name: Installer les dépendances
         run: npm ci --no-audit --no-fund

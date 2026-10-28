@@ -27,10 +27,10 @@
 - Le sandbox ne dispose pas du client Docker; la construction réelle et le smoke test doivent être exécutés par GitHub/GitLab CI.
 - Le premier push a été rejeté parce que l’ancien credential n’avait pas les droits Workflows requis. L’utilisateur a fourni un PAT finement configuré avec accès en lecture/écriture au contenu et aux workflows.
 
-## Migration Node
+## Politique Node
 
-- Version choisie par l’utilisateur : Node 24.22.1 LTS.
-- Références alignées dans `.nvmrc`, `package.json` (`^24.22.1`), README, GitHub Actions, GitLab CI et `Dockerfile`.
+- Version recommandée et version par défaut de la CI/Docker : Node 24.22.1 LTS; `.nvmrc` la suggère aux développeurs.
+- Aucune version Node n’est déclarée comme contrainte du projet dans `package.json`, et les contrôles personnalisés qui bloquaient d’autres versions ont été retirés. La CI et Docker continuent d’utiliser 24.22.1 par défaut.
 - `npm ci`, build de production avec `VITE_API_BASE_URL=https://api.tokpa.bj/api` et tests sous Node `v24.22.1` : réussite. Le build conserve un avertissement non bloquant de bundle supérieur à 500 kB; 253 tests réussis, 10 tests ignorés, dont le cycle E2E non disponible localement.
 - `npx tsc --noEmit` sous Node `v24.22.1` : 24 diagnostics préexistants, égaux au plafond CI; aucune hausse de dette.
 - Les changements Node sont dans un commit distinct après le commit Docker; consulter `git log` pour les identifiants.

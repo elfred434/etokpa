@@ -22,7 +22,7 @@ en marche.
 En local :
 
 ```bash
-# Node 24.22.1 LTS obligatoire (version fixée dans `.nvmrc` et `package.json`)
+# Version recommandée : Node 24.22.1 LTS (`.nvmrc`); la CI et Docker utilisent cette version.
 npm ci
 npm test              # suite complète
 npm run test:coverage # avec couverture
