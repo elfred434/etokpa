@@ -5,40 +5,50 @@
 ## État du dépôt
 
 - Dépôt frontend TOKPa, branche `main`.
-- Dernier commit publié avant le travail CI Docker : `70664d3` (`feat(home): adapt hero illustration for dark mode`).
-- Commit précédent : `0652006` (`feat(frontend): improve desktop layouts`).
-- Remote documenté : `https://github.com/elfred434/etokpa.git`, branche `main`. La configuration `origin` peut disparaître entre les sessions; la rétablir sans identifiant dans l’URL si nécessaire.
+- Base publiée avant les changements Docker/Node de cette passation : `70664d3` (`feat(home): adapt hero illustration for dark mode`).
+- Commit CI Docker : `adc4c98` (`ci(docker): build and smoke-test on pushes`). Le premier push, tenté avec le credential précédent, a été refusé par GitHub faute de permission de modifier `.github/workflows`.
+- Remote documenté : `https://github.com/elfred434/etokpa.git`, branche `main`. Si `origin` a disparu entre sessions, le recréer sans identifiant dans l’URL.
 - Aucun changement backend dans le périmètre.
 
-## Travail déjà publié
+## Travail déjà publié avant cette passation
 
 - Adaptations desktop des pages concernées dans les espaces client, admin, manager et livreur; 13 fichiers frontend, mobile préservé.
 - Création de `docs/passation/`.
 - Adaptation ciblée du hero de l’accueil en mode sombre dans `src/pages/client/accueil/HomePage.tsx` : illustration conservée, image légèrement atténuée/désaturée et dégradé sombre assorti à la carte. Mode clair, contenu et géométrie responsive conservés.
 - Aperçu autonome avant/après : `/home/user/apercu-avant-apres-frontend.html`, 10 sections comparatives avec image du hero embarquée. Présenté et validé le 28 octobre 2026.
 
-## Travail CI Docker — publication demandée par l’utilisateur
+## CI Docker
 
-- `Dockerfile` multi-stage : build Vite avec Node 22, puis service statique Nginx. `VITE_API_BASE_URL` est un argument de build avec valeur de production du `.env.example`, surchargeable.
+- `Dockerfile` multi-stage : build Vite avec Node 24.22.1 LTS, puis service statique Nginx. `VITE_API_BASE_URL` est un argument de build basé sur la valeur de production du `.env.example`, surchargeable.
 - `nginx.conf` : repli SPA pour TanStack Router, endpoint `/healthz` et cache des assets Vite versionnés.
-- `.dockerignore` exclut les fichiers d’environnement, les credentials, les dépendances et les artefacts locaux.
-- `.github/workflows/docker.yml` : déclenché sur tout push (toutes branches), pull request et lancement manuel; build Buildx + smoke test du conteneur, sans publication au registre.
+- `.dockerignore` exclut les fichiers d’environnement, credentials, dépendances et artefacts locaux.
+- `.github/workflows/docker.yml` : déclenchement sur tout push (toutes branches), pull request et lancement manuel; build Buildx + smoke test du conteneur, sans publication au registre.
 - `.gitlab-ci.yml` : stage `docker` sur chaque pipeline de type `push`, build + smoke test via Docker-in-Docker, sans publication au registre. Le runner GitLab doit autoriser Docker-in-Docker en mode privilégié.
-- Le sandbox ne dispose pas du client Docker; la construction réelle et le smoke test devront être exécutés par GitHub/GitLab CI.
-- Les YAML ont été analysés avec PyYAML; déclencheurs `push`, smoke test et absence de publication au registre vérifiés.
-- L’utilisateur a explicitement demandé le commit et le push de ces changements Docker; effectuer un push normal sur `main`, sans merge ni force.
-- Le ZIP de passation reste à créer après confirmation sur l’inclusion ou non du credential complet; le credential ne doit en aucun cas être ajouté au dépôt Git.
+- Le sandbox ne dispose pas du client Docker; la construction réelle et le smoke test doivent être exécutés par GitHub/GitLab CI.
+- Le premier push a été rejeté parce que l’ancien credential n’avait pas les droits Workflows requis. L’utilisateur a fourni un PAT finement configuré avec accès en lecture/écriture au contenu et aux workflows.
+
+## Migration Node
+
+- Version choisie par l’utilisateur : Node 24.22.1 LTS.
+- Références alignées dans `.nvmrc`, `package.json` (`^24.22.1`), README, GitHub Actions, GitLab CI et `Dockerfile`.
+- `npm ci`, build de production avec `VITE_API_BASE_URL=https://api.tokpa.bj/api` et tests sous Node `v24.22.1` : réussite. Le build conserve un avertissement non bloquant de bundle supérieur à 500 kB; 253 tests réussis, 10 tests ignorés, dont le cycle E2E non disponible localement.
+- `npx tsc --noEmit` sous Node `v24.22.1` : 24 diagnostics préexistants, égaux au plafond CI; aucune hausse de dette.
+- Les changements Node sont dans un commit distinct après le commit Docker; consulter `git log` pour les identifiants.
+
+## Credential et archive de passation
+
+- Le credential GitHub frontend complet est conservé hors du dépôt dans `passation_v2/credentials/CREDENTIALS_GITHUB.md`; fichier protégé par permissions locales `600`.
+- L’archive de passation demandée contient le présent document et le credential frontend complet; elle reste hors du dépôt Git.
+- Ne jamais mettre le credential dans Git, une URL distante, une commande ou un journal. Utiliser un mécanisme askpass temporaire pour l’authentification Git.
 
 ## Vérifications et points connus
 
-- Build de production : réussi avec Node `v22.22.2`, y compris avec `VITE_API_BASE_URL=https://api.tokpa.bj/api` comme dans le build Docker; avertissement non bloquant sur un bundle dépassant 500 kB.
-- Tests après l’adaptation du hero : 31 fichiers passés, 1 fichier E2E ignoré; 253 tests réussis et 10 ignorés.
-- `git diff --check` : réussi sur les changements actuels.
-- `npm ci` signale 9 vulnérabilités du lockfile (3 modérées, 5 élevées, 1 critique); aucun correctif de dépendances appliqué.
-- La précédente vérification TypeScript échouait sur des erreurs préexistantes dans plusieurs fichiers, notamment `ProfilePage.tsx` et `LivreurSettingsPage.tsx`; elle n’a pas été relancée pour les changements Docker.
+- Les trois YAML de CI (GitHub tests, GitHub Docker, GitLab) se parsèrent; leurs déclencheurs Docker sur push ont été vérifiés.
+- `git diff --check` a réussi après la migration Node.
+- `npm ci` signale 9 vulnérabilités dans le lockfile (3 modérées, 5 élevées, 1 critique); aucun correctif de dépendances appliqué.
 
 ## Règles de publication et sécurité
 
-- Ne pas fusionner de changements distants sans demande explicite.
-- Utiliser uniquement un push normal, sans force, après validation de l’utilisateur.
-- Ne jamais placer de jeton ou identifiant dans le dépôt, une URL Git distante, un commit ou un journal.
+- Ne pas fusionner de changements distants sans demande explicite; aucun pull ni merge pour ce travail.
+- Utiliser uniquement un push normal, sans force.
+- Aucun jeton dans le dépôt ou l’URL Git distante; pas de publication d’image Docker au registre.

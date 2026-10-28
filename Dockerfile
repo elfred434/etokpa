@@ -1,5 +1,5 @@
 # Build multi-stage du frontend statique TOKPa.
-FROM node:22-slim AS frontend-build
+FROM node:24.22.1-slim AS frontend-build
 WORKDIR /app
 
 COPY package.json package-lock.json ./

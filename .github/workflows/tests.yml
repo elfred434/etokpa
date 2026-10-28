@@ -8,10 +8,8 @@ name: Tests front
 #
 # Durée observée en local : ~1 min pour le travail « Types + tests ».
 #
-# Node 22 est le MINIMUM : sous Node 20, jsdom 30 (via undici) échoue au
-# chargement des fichiers en environnement jsdom (« webidl.util.markAsUncloneable
-# is not a function ») et 11 fichiers sur 32 ne démarrent pas. Même exigence pour
-# les postes de développement.
+# Baseline du projet : Node.js 24.22.1 LTS (branche 24). Les pipelines et les
+# postes de développement utilisent la même branche et le même minimum patch.
 on:
   push:
     branches: [main]
@@ -33,6 +31,7 @@ env:
   # (Pour l'abaisser : relancer le travail « Types + tests », lire le compte
   # affiché dans le résumé, mettre la nouvelle valeur ici.)
   TSC_BASELINE: 24
+  NODE_VERSION_MINIMUM: "24.22.1"
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -47,21 +46,18 @@ jobs:
       - name: Récupérer le dépôt
         uses: actions/checkout@v4
 
-      - name: Installer Node.js 22
+      - name: Installer Node.js 24.22.1 LTS
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24.22.1
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - name: Vérifier la version de Node (≥ 22)
+      - name: Vérifier Node.js 24.22.1 LTS
         run: |
-          MAJEUR=$(node -p "process.versions.node.split('.')[0]")
-          echo "Node $(node -v)"
-          if [ "$MAJEUR" -lt 22 ]; then
-            echo "❌ Node ${MAJEUR} : jsdom 30 ne démarre pas sous Node 20 (undici). Utiliser Node 22 ou plus." >&2
-            exit 1
-          fi
+          VERSION=$(node -p "process.versions.node")
+          echo "Node ${VERSION}"
+          node -e 'const min=process.env.NODE_VERSION_MINIMUM.split(".").map(Number); const [major,minor,patch]=process.versions.node.split(".").map(Number); if (major !== 24 || minor < min[1] || (minor === min[1] && patch < min[2])) { console.error(`Node ${process.env.NODE_VERSION_MINIMUM}+ de la branche 24 requis; détecté ${process.versions.node}`); process.exit(1); }'
 
       - name: Installer les dépendances
         run: npm ci --no-audit --no-fund
@@ -148,10 +144,10 @@ jobs:
       - name: Récupérer le dépôt
         uses: actions/checkout@v4
 
-      - name: Installer Node.js 22
+      - name: Installer Node.js 24.22.1 LTS
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24.22.1
           cache: npm
           cache-dependency-path: package-lock.json
 

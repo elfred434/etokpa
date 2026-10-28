@@ -22,7 +22,7 @@ en marche.
 En local :
 
 ```bash
-# Node 22.22+ obligatoire (jsdom 30 ne démarre pas sous Node 20)
+# Node 24.22.1 LTS obligatoire (version fixée dans `.nvmrc` et `package.json`)
 npm ci
 npm test              # suite complète
 npm run test:coverage # avec couverture
