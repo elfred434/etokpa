@@ -12,6 +12,7 @@ import type { GeoPlace } from '../../services/api/geocode';
 import DESIGN_SCRIPT from './_scripts/AdminZonesPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 
@@ -251,11 +252,11 @@ export default function AdminZonesPage() {
       manager_id: f.manager ? Number(f.manager) : null,
     };
     if (!payload.nom) {
-      window.alert(tx("Le nom de la zone est obligatoire."));
+      void adminDialogs.alert(tx("Le nom de la zone est obligatoire."), { title: tx("Vérifiez les champs") });
       return;
     }
     if (!Number.isFinite(payload.km_prix)) {
-      window.alert(tx("Les frais de livraison (nombre en FCFA) sont obligatoires."));
+      void adminDialogs.alert(tx("Les frais de livraison (nombre en FCFA) sont obligatoires."), { title: tx("Vérifiez les champs") });
       return;
     }
     try {
@@ -263,12 +264,16 @@ export default function AdminZonesPage() {
       reload();
       reloadLm();
     } catch (e) {
-      window.alert(formatApiError(extractApiError(e)));
+      void adminDialogs.alert(formatApiError(extractApiError(e)), { title: tx("Erreur API"), danger: true });
     }
   };
   const delZone = async () => {
     if (!sel) return;
-    if (!window.confirm(tr(`Supprimer la zone « ${sel.nom} » ?`, `Delete zone “${sel.nom}”?`))) return;
+    const confirme = await adminDialogs.confirm(
+      tr(`Supprimer la zone « ${sel.nom} » ?`, `Delete zone “${sel.nom}”?`),
+      { title: tx("Confirmer la suppression"), confirmLabel: tx("Supprimer"), danger: true },
+    );
+    if (!confirme) return;
     try {
       await adminApi.deleteZone(sel.id);
       setRefus('');
@@ -278,7 +283,7 @@ export default function AdminZonesPage() {
     } catch (e) {
       const msg = messageApi(e);
       setRefus(msg);
-      window.alert(msg);
+      void adminDialogs.alert(msg, { title: tx("Suppression refusée"), danger: true });
     }
   };
 
@@ -288,7 +293,7 @@ export default function AdminZonesPage() {
     try {
       await adminApi.updateZone(zoneId, { polygone_geo: hull });
     } catch (e) {
-      window.alert(formatApiError(extractApiError(e)));
+      void adminDialogs.alert(formatApiError(extractApiError(e)), { title: tx("Erreur API"), danger: true });
     }
   };
   const geoPtsOf = (zoneId: number, list: any[] = landmarks) =>
@@ -310,20 +315,20 @@ export default function AdminZonesPage() {
   const saveZoneModal = async () => {
     const z = zoneForm;
     if (!z.nom.trim()) {
-      window.alert(tx("Le nom de la zone est obligatoire."));
+      void adminDialogs.alert(tx("Le nom de la zone est obligatoire."), { title: tx("Vérifiez les champs") });
       return;
     }
     if (!Number.isFinite(Number(z.km_prix))) {
-      window.alert(tx("Les frais de livraison (nombre en FCFA) sont obligatoires."));
+      void adminDialogs.alert(tx("Les frais de livraison (nombre en FCFA) sont obligatoires."), { title: tx("Vérifiez les champs") });
       return;
     }
     if (zonePts.length < 3) {
-      window.alert(tx("Une zone = la délimitation de ses points de repère : ajoutez au moins 3 points à la limite (3 = triangle, 6 = hexagone)."));
+      void adminDialogs.alert(tx("Une zone = la délimitation de ses points de repère : ajoutez au moins 3 points à la limite (3 = triangle, 6 = hexagone)."), { title: tx("Vérifiez les champs") });
       return;
     }
     const hull = hullPoly(zonePts);
     if (!hull) {
-      window.alert(tx("Les points sont alignés : impossible de former une surface."));
+      void adminDialogs.alert(tx("Les points sont alignés : impossible de former une surface."), { title: tx("Vérifiez les points") });
       return;
     }
     try {
@@ -345,7 +350,7 @@ export default function AdminZonesPage() {
       reloadLm();
       if (Number.isFinite(zoneId)) setSelId(zoneId);
     } catch (e) {
-      window.alert(formatApiError(extractApiError(e)));
+      void adminDialogs.alert(formatApiError(extractApiError(e)), { title: tx("Erreur API"), danger: true });
     }
   };
 
@@ -362,7 +367,7 @@ export default function AdminZonesPage() {
   /* ---------- Modale « Nouveau point de repère » (intérieur ou à la limite) ---------- */
   const openLmModal = () => {
     if (!zones.length) {
-      window.alert(tx("Créez d'abord une zone (avec ses points à la limite)."));
+      void adminDialogs.alert(tx("Créez d'abord une zone (avec ses points à la limite)."), { title: tx("Zone requise") });
       return;
     }
     setLmEditId(null);
@@ -384,11 +389,11 @@ export default function AdminZonesPage() {
   const saveLm = async () => {
     const zoneId = Number(lmForm.zone_id);
     if (!zoneId) {
-      window.alert(tx("Choisissez la zone du repère."));
+      void adminDialogs.alert(tx("Choisissez la zone du repère."), { title: tx("Vérifiez les champs") });
       return;
     }
     if (!lmForm.nom.trim()) {
-      window.alert(tx("Le nom du repère est obligatoire."));
+      void adminDialogs.alert(tx("Le nom du repère est obligatoire."), { title: tx("Vérifiez les champs") });
       return;
     }
     const lat = Number(lmForm.latitude);
@@ -428,11 +433,15 @@ export default function AdminZonesPage() {
       reloadLm();
       reload();
     } catch (e) {
-      window.alert(formatApiError(extractApiError(e)));
+      void adminDialogs.alert(formatApiError(extractApiError(e)), { title: tx("Erreur API"), danger: true });
     }
   };
   const delLm = async (lm: any) => {
-    if (!window.confirm(tr(`Supprimer le point de repère « ${lm.nom} » ?`, `Delete landmark “${lm.nom}”?`))) return;
+    const confirme = await adminDialogs.confirm(
+      tr(`Supprimer le point de repère « ${lm.nom} » ?`, `Delete landmark “${lm.nom}”?`),
+      { title: tx("Confirmer la suppression"), confirmLabel: tx("Supprimer"), danger: true },
+    );
+    if (!confirme) return;
     try {
       await adminApi.deleteLandmark(lm.id);
       const rest = landmarks.filter((l: any) => l.id !== lm.id);
@@ -442,7 +451,7 @@ export default function AdminZonesPage() {
     } catch (e) {
       const msg = messageApi(e);
       setRefus(msg);
-      window.alert(msg);
+      void adminDialogs.alert(msg, { title: tx("Suppression refusée"), danger: true });
     }
   };
 

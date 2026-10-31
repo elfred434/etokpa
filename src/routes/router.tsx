@@ -51,6 +51,7 @@ import LivreurSettingsPage from '../pages/livreur/parametres/LivreurSettingsPage
 import ParametresPage from '../pages/client/parametres/ParametresPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import SystemBridge from '../components/system/SystemBridge';
+import { AdminActionDialogHost } from '../components/shared/AdminActionDialogs';
 
 const rootRoute = createRootRoute({
   // Garde globale (authGuard.ts) : non connecté → /connexion sur toute page hors accueil et écrans
@@ -60,6 +61,7 @@ const rootRoute = createRootRoute({
     <>
       <SystemBridge />
       <Outlet />
+      <AdminActionDialogHost />
       <Toaster
         position="top-center"
         toastOptions={{

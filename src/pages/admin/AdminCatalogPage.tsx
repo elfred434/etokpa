@@ -11,6 +11,7 @@ import { extractApiError, formatApiError, messageApi } from '../../utils/apiErro
 import DESIGN_SCRIPT from './_scripts/AdminCatalogPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 
@@ -77,7 +78,7 @@ export default function AdminCatalogPage() {
         : code === 'lourde' || code === 'lecture'
           ? tx("Image trop lourde pour être lue dans le navigateur.")
           : tx("Impossible de convertir cette image en WebP.");
-    window.alert(msg);
+    void adminDialogs.alert(msg, { title: tx("Image non valide") });
   };
   const pickImage = async (f?: File | null) => {
     if (!f) return;
@@ -144,7 +145,9 @@ export default function AdminCatalogPage() {
       if (edition?.id) await adminApi.updateProduct(edition.id, payload);
       else await adminApi.createProduct(payload);
       fermer(); reload();
-    } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
+    } catch (e: any) {
+      await adminDialogs.alert(formatApiError(extractApiError(e)), { title: tx("Erreur API"), danger: true });
+    }
   };
   const modifierDepuisDetail = () => {
     if (!detail) return;
@@ -173,22 +176,37 @@ export default function AdminCatalogPage() {
       setRefus(messageApi(e));
     });
   };
-  const supprimer = async (id: number) => {
+  const supprimer = async (pr: any) => {
+    const confirme = await adminDialogs.confirm(
+      tr(`Supprimer le produit « ${pr.nom} » ? Cette action est irréversible.`, `Delete product “${pr.nom}”? This action cannot be undone.`),
+      { title: tx("Confirmer la suppression"), confirmLabel: tx("Supprimer"), danger: true },
+    );
+    if (!confirme) return;
     try {
-      await adminApi.deleteProduct(id);
+      await adminApi.deleteProduct(pr.id);
       setRefus('');
-      setDetail((cur) => (cur?.kind === 'produit' && String(cur.item?.id) === String(id) ? null : cur));
+      setDetail((cur) => (cur?.kind === 'produit' && String(cur.item?.id) === String(pr.id) ? null : cur));
       reload();
     } catch (e: any) {
       setRefusTitre('Suppression refusée');
       const msg = messageApi(e);
       setRefus(msg);
-      window.alert(msg);
+      await adminDialogs.alert(msg, { title: tx("Suppression refusée"), danger: true });
     }
   };
   const supprimerCat = async (c: any) => {
-    if (!window.confirm(tr(`Supprimer la catégorie « ${c.nom} » ?`, `Delete category “${c.nom}”?`))) return;
-    try { await adminApi.deleteCategory(c.id); loadCats(); reload(); } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
+    const confirme = await adminDialogs.confirm(
+      tr(`Supprimer la catégorie « ${c.nom} » ?`, `Delete category “${c.nom}”?`),
+      { title: tx("Confirmer la suppression"), confirmLabel: tx("Supprimer"), danger: true },
+    );
+    if (!confirme) return;
+    try {
+      await adminApi.deleteCategory(c.id);
+      loadCats();
+      reload();
+    } catch (e: any) {
+      await adminDialogs.alert(formatApiError(extractApiError(e)), { title: tx("Suppression refusée"), danger: true });
+    }
   };
   const qMin = q.trim().toLowerCase();
   const produitsF = produits.filter((p: any) => {
@@ -258,7 +276,7 @@ export default function AdminCatalogPage() {
                     <td className="py-4 px-md text-text-secondary">{pr.categorie?.nom ?? '—'}</td>
                     <td className="py-4 px-md font-price text-primary">{fmtFcfa(pr.prix)}</td>
                     <td className="py-4 px-md"> <span className={`px-2 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 w-fit ${pr.disponible !== false && Number(pr.stock) > 0 ? 'bg-success-light text-success-dark' : 'bg-bg-secondary text-text-secondary'}`}> <span className={`w-1.5 h-1.5 rounded-full ${pr.disponible !== false && Number(pr.stock) > 0 ? 'bg-success' : 'bg-text-tertiary'}`}></span> {pr.disponible !== false && Number(pr.stock) > 0 ? tx("Disponible") : 'Rupture'} </span> </td>
-                    <td className="py-4 px-md text-right" onClick={(e) => e.stopPropagation()}> <div className="flex gap-2 justify-end"> <button type="button" className="font-semibold text-primary hover:underline" onClick={() => ouvrir(pr)}>{tx("Modifier")}</button> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimer(pr.id)}>{tx("Supprimer")}</button> </div> </td>
+                    <td className="py-4 px-md text-right" onClick={(e) => e.stopPropagation()}> <div className="flex gap-2 justify-end"> <button type="button" className="font-semibold text-primary hover:underline" onClick={() => ouvrir(pr)}>{tx("Modifier")}</button> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimer(pr)}>{tx("Supprimer")}</button> </div> </td>
                   </tr>
                 ))}
                 {tab === 'categories' && slicePage(catsF).map((c: any) => (

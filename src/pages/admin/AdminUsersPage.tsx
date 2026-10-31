@@ -7,6 +7,7 @@ import { zoneNom, initials } from '../../services/api/useLiveRows';
 import { alertApiError, extractApiError, formatApiError } from '../../utils/apiError';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import AdminNotificationBell from '../../components/layout/admin/AdminNotificationBell';
+import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { currentUserId, currentUserZone, rememberUserZone } from '../../routes/authGuard';
@@ -224,7 +225,15 @@ export default function AdminUsersPage() {
 
   const toggleStatus = async (u: any) => {
     const suspendu = statutOf(u) === 'suspendu';
-    if (!confirm(tr(suspendu ? `Réactiver le compte de ${nomOf(u)} ?` : `Suspendre le compte de ${nomOf(u)} ?`, suspendu ? `Reactivate ${nomOf(u)}'s account?` : `Suspend ${nomOf(u)}'s account?`))) return;
+    const confirme = await adminDialogs.confirm(
+      tr(suspendu ? `Réactiver le compte de ${nomOf(u)} ?` : `Suspendre le compte de ${nomOf(u)} ?`, suspendu ? `Reactivate ${nomOf(u)}'s account?` : `Suspend ${nomOf(u)}'s account?`),
+      {
+        title: tx(suspendu ? "Confirmer la réactivation" : "Confirmer la suspension"),
+        confirmLabel: tx(suspendu ? "Réactiver" : "Suspendre"),
+        danger: !suspendu,
+      },
+    );
+    if (!confirme) return;
     try {
       await adminApi.updateUser(Number(u.id), { statut: suspendu ? 'actif' : 'suspendu' });
       toast.success(suspendu ? tx("Compte réactivé.") : tx("Compte suspendu."));

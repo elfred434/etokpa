@@ -8,6 +8,7 @@ import { statutLivreur } from '../../utils/riderStatus';
 import { absImageUrl } from '../../utils/imageUrl';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 
@@ -160,7 +161,11 @@ export default function AdminLivreursPage() {
 
   const desactiver = async (l: any) => {
     const nom = l.nom_complet ?? '—';
-    if (!confirm(tr(`Désactiver le compte du livreur ${nom} ? Il ne pourra plus se connecter.`, `Deactivate rider ${nom}? They will no longer be able to log in.`))) return;
+    const confirme = await adminDialogs.confirm(
+      tr(`Désactiver le compte du livreur ${nom} ? Il ne pourra plus se connecter.`, `Deactivate rider ${nom}? They will no longer be able to log in.`),
+      { title: tx("Confirmer la désactivation"), confirmLabel: tx("Désactiver"), danger: true },
+    );
+    if (!confirme) return;
     try {
       const r = await adminApi.deleteUser(Number(l.id));
       toast.success(r?.message ?? tx("Utilisateur désactivé."));

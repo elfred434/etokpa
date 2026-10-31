@@ -7,6 +7,7 @@ import { extractApiError, formatApiError } from '../../utils/apiError';
 import DESIGN_SCRIPT from './_scripts/AdminCategoriesPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 
@@ -100,7 +101,7 @@ export default function AdminCategoriesPage() {
   };
   const saveCat = async () => {
     if (!fNom.trim()) {
-      window.alert(tx("Le nom de la catégorie est obligatoire."));
+      await adminDialogs.alert(tx("Le nom de la catégorie est obligatoire."), { title: tx("Vérifiez les champs") });
       return;
     }
     const payload = {
@@ -117,11 +118,15 @@ export default function AdminCategoriesPage() {
       showToast();
       reload();
     } catch (e) {
-      window.alert(formatApiError(extractApiError(e)));
+      await adminDialogs.alert(formatApiError(extractApiError(e)), { title: tx("Erreur API"), danger: true });
     }
   };
   const delCat = async (c: any) => {
-    if (!window.confirm(tr(`Supprimer la catégorie « ${c.nom} » ?`, `Delete category “${c.nom}”?`))) return;
+    const confirme = await adminDialogs.confirm(
+      tr(`Supprimer la catégorie « ${c.nom} » ?`, `Delete category “${c.nom}”?`),
+      { title: tx("Confirmer la suppression"), confirmLabel: tx("Supprimer"), danger: true },
+    );
+    if (!confirme) return;
     try {
       await adminApi.deleteCategory(c.id);
       setRefus('');
@@ -129,7 +134,7 @@ export default function AdminCategoriesPage() {
     } catch (e) {
       const msg = formatApiError(extractApiError(e));
       setRefus(msg);
-      window.alert(msg);
+      await adminDialogs.alert(msg, { title: tx("Suppression refusée"), danger: true });
     }
   };
 

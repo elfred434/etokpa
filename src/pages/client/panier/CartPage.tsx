@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
+import CartProductRemovalNotice from '../../../components/client/CartProductRemovalNotice';
 import MIcon from '../../../components/shared/MIcon';
 import { alertApiError, extractApiError } from '../../../utils/apiError';
 import EmptyState from '../../../components/shared/EmptyState';
@@ -444,6 +445,7 @@ export default function CartPage() {
 
       {/* Main Content Container */}
       <main className="mt-[52px] md:mt-[64px] flex-grow w-full max-w-[1200px] mx-auto px-md md:px-lg py-xl pb-24">
+        <CartProductRemovalNotice />
         {/* Progress Bar Stepper */}
         <div className="mb-xl w-full">
           <div className="relative flex items-start justify-between gap-1 px-1 py-2 sm:px-xl">

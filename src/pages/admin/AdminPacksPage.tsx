@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { adminApi } from '../../services/api';
@@ -256,9 +257,14 @@ export default function AdminPacksPage() {
     navigate({ to: '/admin/packs', search: { pack: undefined, edit: undefined, nouveau: undefined, ...params } });
   }
 
-  function retour() {
+  async function retour() {
     if (vue === 'composer' && (nom.trim() || lignes.length > 0)) {
-      if (!window.confirm(tr('Quitter sans enregistrer ?', 'Leave without saving?'))) return;
+      const confirme = await adminDialogs.confirm(tr('Quitter sans enregistrer ?', 'Leave without saving?'), {
+        title: tx("Modifications non enregistrées"),
+        confirmLabel: tx("Quitter"),
+        danger: true,
+      });
+      if (!confirme) return;
     }
     setGhost(null);
     aller({});
@@ -358,19 +364,19 @@ export default function AdminPacksPage() {
 
   async function enregistrer() {
     if (!nom.trim()) {
-      window.alert(tx("Le nom du pack est obligatoire."));
+      await adminDialogs.alert(tx("Le nom du pack est obligatoire."), { title: tx("Vérifiez les champs") });
       return;
     }
     if (prixTotal.trim() === '' || !Number.isFinite(Number(prixTotal)) || Number(prixTotal) < 0) {
-      window.alert(tx("Le prix total est obligatoire."));
+      await adminDialogs.alert(tx("Le prix total est obligatoire."), { title: tx("Vérifiez les champs") });
       return;
     }
     if (lignes.length === 0) {
-      window.alert(tx("Ajoutez au moins un produit sur la page."));
+      await adminDialogs.alert(tx("Ajoutez au moins un produit sur la page."), { title: tx("Vérifiez les champs") });
       return;
     }
     if (prixMinimum.trim() !== '' && Number(prixMinimum) > Number(prixTotal)) {
-      window.alert(tx("Le prix minimum ne peut pas dépasser le prix total."));
+      await adminDialogs.alert(tx("Le prix minimum ne peut pas dépasser le prix total."), { title: tx("Vérifiez les champs") });
       return;
     }
     const payload = {
@@ -394,7 +400,7 @@ export default function AdminPacksPage() {
       hydrate.current = '';
       aller(id ? { pack: id } : {});
     } catch (e) {
-      window.alert(formatApiError(extractApiError(e)));
+      await adminDialogs.alert(formatApiError(extractApiError(e)), { title: tx("Erreur API"), danger: true });
     } finally {
       setSauve(false);
     }
@@ -410,7 +416,7 @@ export default function AdminPacksPage() {
       setASupprimer(null);
       if (Number(search.pack) === Number(aSupprimer.id) || Number(search.edit) === Number(aSupprimer.id)) aller({});
     } catch (e) {
-      window.alert(formatApiError(extractApiError(e)));
+      await adminDialogs.alert(formatApiError(extractApiError(e)), { title: tx("Erreur API"), danger: true });
     } finally {
       setSupprime(false);
     }

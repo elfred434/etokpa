@@ -6,6 +6,7 @@ import { alertApiError, messageApi } from '../../utils/apiError';
 import { absImageUrl } from '../../utils/imageUrl';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { landmarkFromProposal } from '../../utils/negotiationLandmark';
@@ -154,10 +155,14 @@ export default function AdminValidationsPage() {
       setBusy(false);
     }
   };
-  const refuserEtNotifier = (pr: any) => {
-    const message = window.prompt(tx("Message envoyé au client (motif du refus) :"), tx("Votre proposition est trop éloignée du prix minimum."));
+  const refuserEtNotifier = async (pr: any) => {
+    const message = await adminDialogs.prompt(
+      tx("Message envoyé au client (motif du refus) :"),
+      tx("Votre proposition est trop éloignée du prix minimum."),
+      { title: tx("Motif du refus"), confirmLabel: tx("Envoyer"), multiline: true },
+    );
     if (message === null) return;
-    void decider(pr, 'refuse', message.trim() || undefined);
+    await decider(pr, 'refuse', message.trim() || undefined);
   };
 
   const selEnAttente = selected?.statut === "en_attente";
