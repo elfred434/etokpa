@@ -8,6 +8,7 @@ import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 import { useGlobalRefreshTick } from '../../hooks/useRefresh';
+import { filterLivreursDisponiblesDansZone } from '../../utils/managerAssignment';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -39,7 +40,7 @@ export default function ManagerOrdersPage() {
   }, [refreshTick]);
 
   const zoneCommande = assignation ? zoneIdOf(assignation.landmark?.zone_id) : null;
-  const livreursZone = zoneCommande ? livreurs.filter((l) => livreurZoneId(l) === zoneCommande) : [];
+  const livreursZone = filterLivreursDisponiblesDansZone(livreurs, zoneCommande);
   const nomZone = livreurs.find((l) => livreurZoneId(l) === zoneCommande)?.profil?.zone?.nom as string | undefined;
 
   const confirmerAssignation = async () => {

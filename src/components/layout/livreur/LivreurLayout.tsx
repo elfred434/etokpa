@@ -13,9 +13,10 @@ import { tx } from '../../../i18n/tx';
 import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 
 
-const NAV: { to: '/livreur' | '/livreur/course' | '/livreur/historique' | '/livreur/parametres'; icon: string; label: string; short: string; exact: boolean }[] = [
+const NAV: { to: '/livreur' | '/livreur/course' | '/livreur/messagerie' | '/livreur/historique' | '/livreur/parametres'; icon: string; label: string; short: string; exact: boolean }[] = [
   { to: '/livreur', icon: 'dashboard', label: 'Tableau de bord', short: 'Accueil', exact: true },
   { to: '/livreur/course', icon: 'local_shipping', label: 'Livraisons en cours', short: 'En cours', exact: false },
+  { to: '/livreur/messagerie', icon: 'chat', label: 'Messagerie', short: 'Chat', exact: false },
   { to: '/livreur/historique', icon: 'history', label: 'Historique', short: 'Historique', exact: false },
   { to: '/livreur/parametres', icon: 'settings', label: 'Paramètres', short: 'Paramètres', exact: false },
 ];

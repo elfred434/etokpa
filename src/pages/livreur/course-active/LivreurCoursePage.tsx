@@ -29,8 +29,8 @@ type GpsState = 'off' | 'waiting' | 'on' | 'denied' | 'unavailable';
  * Course active — design Stitch « course_active_tokpa_desktop » (carte 70 % + détails 30 %), données
  * réelles : GET /livreur/deliveries, PATCH /livreur/deliveries/{id}/status, POST /livreur/position.
  * Point de retrait = repère fixe « Marché Dantokpa » de la carte (conservé sur décision utilisateur).
- * Non disponibles dans l'API : nom/téléphone du client et coordonnées du point de repère (B-25),
- * messagerie livreur (B-21) — boutons Appeler/Chat affichés désactivés, avec leur explication.
+ * Non disponibles dans l'API : nom/téléphone du client et coordonnées du point de repère (B-25).
+ * L'écran de chat livreur est branché côté frontend; les routes backend doivent encore l'autoriser (403 aujourd'hui).
  */
 export default function LivreurCoursePage() {
   useLanguage();
@@ -263,18 +263,18 @@ export default function LivreurCoursePage() {
                   <MIcon name="call" className="text-on-surface-variant" />
                   <span className="text-sm font-medium">{tx("Appeler")}</span>
                 </button>
-                <button
-                  type="button"
-                  disabled
-                  title={tx("Messagerie non ouverte aux livreurs par le backend")}
-                  className="flex cursor-not-allowed items-center justify-center gap-sm rounded-lg border border-border-default bg-bg-card py-sm opacity-50"
+                <Link
+                  to="/livreur/messagerie"
+                  search={{ commande: order.id }}
+                  title={tx("Ouvrir la messagerie avec le client")}
+                  className="flex items-center justify-center gap-sm rounded-lg border border-border-default bg-bg-card py-sm transition-colors hover:border-primary hover:bg-primary-tint"
                 >
-                  <MIcon name="chat_bubble" className="text-on-surface-variant" />
+                  <MIcon name="chat_bubble" className="text-primary" />
                   <span className="text-sm font-medium">{tx("Chat")}</span>
-                </button>
+                </Link>
               </div>
               <p className="mt-sm text-[11px] text-on-surface-variant">
-                {tx("Coordonnées du client et messagerie livreur non encore fournies par l’API.")}
+                {tx("Utilisez le chat pour préciser le lieu de livraison avec le client.")}
               </p>
             </div>
 

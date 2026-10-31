@@ -45,6 +45,7 @@ import ManagerParametresPage from '../pages/manager/ManagerParametresPage';
 import ManagerZonePrefsPage from '../pages/manager/ManagerZonePrefsPage';
 import LivreurDashboardPage from '../pages/livreur/dashboard/LivreurDashboardPage';
 import LivreurCoursePage from '../pages/livreur/course-active/LivreurCoursePage';
+import LivreurMessagingPage from '../pages/livreur/messagerie/LivreurMessagingPage';
 import LivreurRecapPage from '../pages/livreur/recap-fin-course/LivreurRecapPage';
 import LivreurHistoryPage from '../pages/livreur/historique-livraisons/LivreurHistoryPage';
 import LivreurSettingsPage from '../pages/livreur/parametres/LivreurSettingsPage';
@@ -202,6 +203,7 @@ const commandeSearch = (search: Record<string, unknown>): { commande?: number } 
 };
 const livreurRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur', component: LivreurDashboardPage });
 const livreurCourseRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/course', component: LivreurCoursePage, validateSearch: commandeSearch });
+const livreurMessagingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/messagerie', component: LivreurMessagingPage, validateSearch: commandeSearch });
 const livreurRecapRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/recapitulatif', component: LivreurRecapPage, validateSearch: commandeSearch });
 const livreurHistoriqueRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/historique', component: LivreurHistoryPage });
 const livreurParametresRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/parametres', component: LivreurSettingsPage });
@@ -253,6 +255,7 @@ const routeTree = rootRoute.addChildren([
   managerZonePrefsRoute,
   livreurRoute,
   livreurCourseRoute,
+  livreurMessagingRoute,
   livreurRecapRoute,
   livreurHistoriqueRoute,
   livreurParametresRoute,
