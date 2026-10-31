@@ -32,13 +32,11 @@ import {
  *
  * Différences client :
  * - le rayon produits vient de l'API PUBLIQUE (GET /products), pas de l'API admin ;
- * - la création serveur vise POST /api/bundles (route client ajoutée par le
- *   backend `d8996cf` « packs privés ») avec SON contrat exact — mais elle est
- *   aujourd'hui cassée côté serveur (500 « relation "produits" does not exist »,
- *   bugs détaillés : A_FAIRE_BACKEND.txt note 20). À la première erreur, quelle
- *   qu'elle soit, le pack est conservé sur l'appareil (utils/packDrafts) et
- *   reste ajoutable au panier — aucun travail perdu. Dès que le backend est
- *   corrigé, l'enregistrement serveur passe tout seul (201 → badge « Publié ») ;
+ * - la création serveur vise POST /api/bundles et mappe les quantités locales
+ *   vers `products[].qte`, le champ validé par le backend actuel. À la première
+ *   erreur réseau/serveur, le pack est conservé sur l'appareil (utils/packDrafts)
+ *   et reste ajoutable au panier — aucun travail perdu. La correction du contrat
+ *   ne règle pas les contrôles de propriété/IDOR qui restent à faire côté backend ;
  * - « Ajouter au panier » décompose le pack en produits (le panier ne connaît
  *   que des produits — même règle que la fiche pack /pack/$packId).
  */
@@ -374,16 +372,15 @@ export default function MesPacksPage() {
       setErreurForm(tx("Le prix minimum ne peut pas dépasser le prix total."));
       return;
     }
-    // Payload EXACT de BundleController@store (backend d8996cf) — voir
-    // services/api/packs.ts. prix_minimum et img_url ne sont pas (encore)
-    // acceptés par le serveur : ils restent dans le brouillon local.
+    // Payload BundleController@store — products[].qte suit la validation
+    // du backend actuel. prix_minimum et img_url restent des champs locaux.
     const payload: PackPayload = {
       nom: nom.trim(),
       description: description.trim() || null,
       prix_totale: Math.round(somme),
       disponible,
       user_id: currentUserId(),
-      products: lignes.map((l) => ({ id: l.id, quantite: l.qte })),
+      products: lignes.map((l) => ({ id: l.id, qte: l.qte })),
     };
     const draft: PackDraft = {
       localId: enEdition?.localId ?? `d${Date.now()}${Math.round(Math.random() * 1000)}`,
@@ -427,11 +424,9 @@ export default function MesPacksPage() {
       toast.success(tx("Pack enregistré."));
       setVue('galerie');
     } catch {
-      // Le serveur n'accepte pas (encore) la création/mise à jour client :
-      // POST /bundles → 500 « relation "produits" does not exist »,
-      // PUT /bundles/{id} → 500 « Method …::update does not exist »
-      // (bugs amont documentés, A_FAIRE_BACKEND.txt note 20). On ne perd rien :
-      // le pack part en brouillon local, ajoutable au panier.
+      // En cas d'erreur réseau/validation/serveur, garder le brouillon local :
+      // la correction du contrat `qte` ne doit jamais faire perdre le pack.
+      // Les autorisations de propriété restent à garantir côté backend.
       savePackDraft(draft);
       setDrafts(listPackDrafts());
       setInfoSync(tx("Le serveur n'a pas pu enregistrer ce pack : il est conservé sur cet appareil et peut être ajouté au panier."));

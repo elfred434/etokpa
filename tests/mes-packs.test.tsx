@@ -7,11 +7,10 @@
  *  2. atelier : un clic sur un produit du rayon l'ajoute à la page (qte 1) ;
  *  3. prix total = somme automatique produits × quantités (jamais saisi) ;
  *  4. validation : nom obligatoire → erreur en ligne, AUCUN appel réseau ;
- *  5. contrat backend (d8996cf « packs privés ») : POST /bundles avec le payload
- *     EXACT de BundleController@store (nom, description, prix_totale, disponible,
- *     user_id, products[{id, quantite}]) ;
- *  6. repli TOUTE erreur serveur (réalité vérifiée en direct : 500 « relation
- *     "produits" does not exist », note backend 20) : le pack est conservé sur
+ *  5. contrat backend : POST /bundles avec le payload exact de
+ *     BundleController@store (nom, description, prix_totale, disponible,
+ *     user_id, products[{id, qte}]) ;
+ *  6. repli sur toute erreur serveur simulée : le pack reste conservé sur
  *     l'appareil (localStorage), badge « Brouillon », message clair, zéro perte ;
  *  7. succès 201 : badge « Publié » + toast ;
  *  8. panier : « Ajouter au panier » décompose le pack en produits (le panier
@@ -59,9 +58,8 @@ function httpError(status: number, message: string) {
 const TOMATE = { id: 1, nom: 'Tomate', prix: 600, stock: 50, disponible: true, image_url: null, description: null, categorie: { id: 2, nom: 'Légumes' } };
 const PIMENT = { id: 2, nom: 'Piment', prix: 300, stock: 20, disponible: true, image_url: null, description: null, categorie: { id: 2, nom: 'Légumes' } };
 
-/** GET publics (produits paginés + bundles) ; POST = le 500 RÉEL du backend
- *  d8996cf (validation `exists:produits,id` alors que la table s'appelle
- *  `products`) — vérifié en direct contre /opt/etokpa_back le 12/10/2026. */
+/** GET publics (produits paginés + bundles) ; POST par défaut simule une
+ *  erreur serveur pour vérifier la conservation du brouillon local. */
 function mockHttp(opts: { bundles?: unknown[]; postImpl?: () => Promise<unknown> } = {}) {
   get.mockImplementation((url: string) => {
     if (String(url).includes('/products')) {
@@ -76,7 +74,7 @@ function mockHttp(opts: { bundles?: unknown[]; postImpl?: () => Promise<unknown>
     opts.postImpl
       ? opts.postImpl()
       : Promise.reject(
-          httpError(500, 'SQLSTATE[42P01]: Undefined table: 7 ERROR:  relation "produits" does not exist'),
+          httpError(500, 'Erreur serveur simulée'),
         ),
   );
 }
@@ -188,7 +186,7 @@ describe('Mes packs (client) — atelier de création', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le pack' }));
 
-    // Payload EXACT de BundleController@store (backend d8996cf « packs privés »).
+    // Payload conforme au contrat BundleController@store actuel : products[].qte.
     await waitFor(() => expect(post).toHaveBeenCalled());
     expect(post.mock.calls[0][0]).toBe('/bundles');
     expect(post.mock.calls[0][1]).toEqual({
@@ -198,13 +196,13 @@ describe('Mes packs (client) — atelier de création', () => {
       disponible: true,
       user_id: 5,
       products: [
-        { id: 1, quantite: 1 },
-        { id: 2, quantite: 1 },
+        { id: 1, qte: 1 },
+        { id: 2, qte: 1 },
       ],
     });
 
-    // 500 amont (table « produits » inexistante) → retour galerie, pack conservé
-    // sur l'appareil avec son prix minimum et sa photo (champs locaux).
+    // L'erreur serveur simulée → retour galerie, pack conservé sur l'appareil
+    // avec son prix minimum et sa photo (champs locaux).
     expect(await screen.findByText('Brouillon — enregistré sur cet appareil')).toBeTruthy();
     expect(screen.getByRole('status').textContent).toContain(
       "Le serveur n'a pas pu enregistrer ce pack",

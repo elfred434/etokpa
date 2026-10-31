@@ -1,34 +1,21 @@
 import { apiClient } from './client';
 
 /**
- * Création de packs côté CLIENT.
+ * API des packs côté client.
  *
- * Backend `3531cc8` (commit amont `d8996cf` « Ajout de la possibilité de créé
- * des packs privé ») : la route client existe —
- * `Route::apiResource('bundles')->except(['show'])` dans routes/api.php :
- *   - GET  /api/bundles       : packs PUBLICS (disponible=true + user_id null) ;
- *   - POST /api/bundles       : création « privée » (user_id passé par le client) ;
- *   - PUT/DELETE              : routes déclarées mais MÉTHODES ABSENTES du
- *                               contrôleur (BundleController n'a que index/store).
+ * Contrat observé sur le backend `6a00098` : `POST`/`PUT /api/bundles`
+ * valident `products[].qte`; la couche UI mappe donc sa quantité locale vers
+ * `qte` ici. `prix_totale` reste le nom du champ reçu par le contrôleur.
  *
- * État vérifié EN DIRECT le 12/10/2026 (copie /opt/etokpa_back, PostgreSQL 17) :
- *   POST /api/bundles avec le contrat exact de BundleController@store →
- *   500 « SQLSTATE[42P01]: Undefined table: relation "produits" does not exist »
- *   (la validation dit `exists:produits,id` alors que la table s'appelle
- *   `products`) ; PUT /api/bundles/{id} → 500 « Method …::update does not
- *   exist ». Aucun orphelin en base (la validation plante avant l'INSERT).
- *   Bugs détaillés + correctifs proposés : A_FAIRE_BACKEND.txt note 20.
- *
- * Le front envoie donc le contrat amont EXACT (nom, description, prix_totale,
- * disponible, user_id, products[{id, quantite}]) — prêt pour le jour où le
- * backend est corrigé — et MesPacksPage retombe sur le brouillon local
- * (utils/packDrafts.ts) à la PREMIÈRE erreur serveur, quelle qu'elle soit :
- * le client ne perd jamais son pack et peut l'ajouter au panier.
+ * L’API conserve le brouillon local à la moindre erreur réseau/serveur, afin
+ * qu’un pack non synchronisé ne soit pas perdu. Ce repli frontend ne remplace
+ * pas les contrôles de propriété qui doivent être faits côté backend : les
+ * problèmes `user_id`/IDOR de la note 20 restent à corriger côté serveur.
  */
 export const ENDPOINT_PACKS = '/bundles';
 
-/** Ligne produit du payload — `quantite` comme dans BundleController@store (d8996cf). */
-export type PackProduitPayload = { id: number; quantite: number };
+/** Ligne produit du payload — `qte`, validé par `BundleController@store`. */
+export type PackProduitPayload = { id: number; qte: number };
 
 /** Payload de création — calqué sur la validation de BundleController@store. */
 export type PackPayload = {
@@ -49,7 +36,7 @@ export const packsApi = {
     return response.data;
   },
 
-  /** POST /api/bundles — création (aujourd'hui 500 : bugs amont, note 20). */
+  /** POST /api/bundles — création avec les quantités `products[].qte`. */
   createBundle: async (payload: PackPayload) => {
     const response = await apiClient.post(ENDPOINT_PACKS, payload);
     return response.data;
@@ -57,8 +44,8 @@ export const packsApi = {
 
   /**
    * PUT /api/bundles/{id} — mise à jour d'un pack déjà enregistré côté serveur.
-   * La route existe mais BundleController@update est absent (500 « Method does
-   * not exist ») — la page retombe sur le brouillon local en attendant.
+   * Transmet le même contrat `products[].qte`; l’autorisation de propriété doit
+   * être garantie par le backend (dette connue, non corrigée ici).
    */
   updateBundle: async (id: number, payload: PackPayload) => {
     const response = await apiClient.put(`${ENDPOINT_PACKS}/${id}`, payload);
