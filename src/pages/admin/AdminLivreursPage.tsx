@@ -11,6 +11,7 @@ import MIcon from '../../components/shared/MIcon';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -57,10 +58,11 @@ export default function AdminLivreursPage() {
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
   const reload = () => setReloadKey((k) => k + 1);
+  const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
+    if (!silentRefreshActive()) setLoading(true);
     setErr(null);
     const allPages = async (fetch: (page: number) => Promise<any>) => {
       const acc: any[] = [];
@@ -88,14 +90,14 @@ export default function AdminLivreursPage() {
     return () => {
       alive = false;
     };
-  }, [reloadKey]);
+  }, [reloadKey, refreshTick]);
 
   useEffect(() => {
     adminApi
       .getZones()
       .then((r: any) => setZones(listOf(unwrap(r)).map((z: any) => ({ id: Number(z.id), nom: String(z.nom ?? '—') }))))
-      .catch(() => setZones([]));
-  }, []);
+      .catch(() => undefined);
+  }, [refreshTick]);
 
   // Commandes par livreur (activité, taux de succès, course en cours)
   const parLivreur = useMemo(() => {

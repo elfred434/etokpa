@@ -46,6 +46,7 @@ const listeners = new Set<GlobalListener>();
 const stateListeners = new Set<StateListener>();
 
 let busyCount = 0;
+let backgroundBusyCount = 0;
 let lastRefreshAt: number | null = null;
 let lastOrigin: RefreshOrigin | null = null;
 let silent = false;
@@ -76,6 +77,11 @@ export function subscribeRefreshState(listener: StateListener): () => void {
  */
 export function silentRefreshActive(): boolean {
   return silent;
+}
+
+/** Vrai uniquement pendant un refresh automatique ou de reprise réseau (jamais le bouton manuel). */
+export function backgroundRefreshActive(): boolean {
+  return backgroundBusyCount > 0;
 }
 
 /** Le temps réel (Reverb) met à jour l'horodatage affiché sans passer par le bus complet. */
@@ -110,6 +116,7 @@ export async function requestRefresh(origin: RefreshOrigin = 'manual'): Promise<
   if (typeof window === 'undefined') return;
 
   busyCount += 1;
+  if (origin === 'auto' || origin === 'network') backgroundBusyCount += 1;
   silent = true;
   emitState();
   const started = Date.now();
@@ -142,7 +149,10 @@ export async function requestRefresh(origin: RefreshOrigin = 'manual'): Promise<
     if (restant > 0) await sleep(restant);
   } finally {
     busyCount = Math.max(0, busyCount - 1);
-    silent = false;
+    if (origin === 'auto' || origin === 'network') backgroundBusyCount = Math.max(0, backgroundBusyCount - 1);
+    // Un rafraîchissement concurrent ne doit pas réactiver les squelettes tant
+    // qu'un autre chargement global est encore en cours.
+    silent = busyCount > 0;
     lastRefreshAt = Date.now();
     lastOrigin = origin;
     emitState();

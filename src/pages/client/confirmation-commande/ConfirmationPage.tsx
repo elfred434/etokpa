@@ -8,6 +8,7 @@ import MIcon from '../../../components/shared/MIcon';
 import { alertApiError } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
+import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { loadConfirmation, statutFromFedaPayReturn, type ConfirmationMemory } from './confirmationMemory';
 
 /**
@@ -52,6 +53,7 @@ export default function ConfirmationPage() {
   const passed = useRouterState({ select: (s) => s.location.state as ConfirmationState | undefined });
   const remembered = !passed?.orderId ? loadConfirmation(fedapayId) : null;
   const [restored, setRestored] = useState<ConfirmationMemory | null>(remembered);
+  const refreshTick = useGlobalRefreshTick();
   const state = passed?.orderId ? passed : restored ?? passed;
 
   useEffect(() => {
@@ -139,7 +141,7 @@ export default function ConfirmationPage() {
       clearTimeout(timer);
       window.removeEventListener('focus', onFocus);
     };
-  }, [paymentId]);
+  }, [paymentId, refreshTick]);
 
   // Le webhook local n'est pas toujours joignable. Le retour FedaPay (?status=approved) fait foi
   // tant que l'API dit encore en_attente.

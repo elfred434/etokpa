@@ -7,6 +7,7 @@ import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 import { currentUserZone } from '../../routes/authGuard';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -23,10 +24,11 @@ export default function ManagerStatsPage() {
   const [stats, setStats] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
+    if (!silentRefreshActive()) setLoading(true);
     setErr(null);
     managerApi
       .getStats(periode)
@@ -36,7 +38,7 @@ export default function ManagerStatsPage() {
     return () => {
       alive = false;
     };
-  }, [periode]);
+  }, [periode, refreshTick]);
 
   const kpis = [
     { icon: 'trending_up', label: "Volume d'Affaires", value: stats?.ca ?? '—' },

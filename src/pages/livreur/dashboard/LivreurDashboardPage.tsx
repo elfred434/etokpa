@@ -10,6 +10,7 @@ import { alertApiError } from '../../../utils/apiError';
 import { currentUserName, initialsOf } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
+import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 
 import LivreurDecisionButtons from '../LivreurDecisionButtons';
 import {
@@ -43,11 +44,11 @@ export default function LivreurDashboardPage() {
   const [histErr, setHistErr] = useState<string | null>(null);
   const [profile, setProfile] = useState<LivreurProfile | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const refreshTick = useGlobalRefreshTick();
   const retry = () => setReloadKey((k) => k + 1);
 
   useEffect(() => {
     let alive = true;
-    setDeliveries(null);
     setDelivErr(null);
     setHistErr(null);
     fetchDeliveries()
@@ -65,13 +66,13 @@ export default function LivreurDashboardPage() {
         setHistTotal(Number(res?.meta?.total ?? 0));
       })
       .catch((e) => alive && setHistErr(alertApiError(e, 'livreur-load')));
-    fetchLivreurProfile()
+    fetchLivreurProfile(true)
       .then((p) => alive && setProfile(p))
-      .catch(() => alive && setProfile(null));
+      .catch(() => undefined);
     return () => {
       alive = false;
     };
-  }, [reloadKey]);
+  }, [reloadKey, refreshTick]);
 
   const active = deliveries?.find((o) => o.statut === 'en_livraison') ?? null;
   const pending = (deliveries ?? []).filter((o) => o.statut !== 'en_livraison');
@@ -160,7 +161,7 @@ export default function LivreurDashboardPage() {
               <MIcon name="speed" className="text-primary" />
               {tx("En livraison")}
             </h3>
-            {delivErr ? (
+            {delivErr && deliveries === null ? (
               <ApiErrorState
                 title={tx("Impossible de charger vos courses")}
                 message={delivErr}
@@ -226,7 +227,7 @@ export default function LivreurDashboardPage() {
               </Link>
             </h3>
             <div className="space-y-md">
-              {deliveries !== null && pending.length === 0 && !delivErr && (
+              {deliveries !== null && pending.length === 0 && (
                 <div className="rounded-lg border border-border-default bg-bg-card p-lg text-center text-secondary text-text-secondary shadow-sm">
                   {tx("Aucune course en attente.")}
                 </div>
@@ -269,7 +270,7 @@ export default function LivreurDashboardPage() {
             <MIcon name="event_available" className="text-success" />
             {tx("Dernières livraisons")}
           </h3>
-          {histErr ? (
+          {histErr && recent === null ? (
             <ApiErrorState
               title={tx("Impossible de charger l'historique")}
               message={histErr}

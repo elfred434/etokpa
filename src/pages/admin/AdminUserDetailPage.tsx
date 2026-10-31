@@ -6,6 +6,7 @@ import { unwrap, listOf, dateCourte } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -17,10 +18,11 @@ export default function AdminUserDetailPage() {
   const [user, setUser] = useState<any | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
+    if (!silentRefreshActive()) setLoading(true);
     setErr(null);
     // Pas de GET /admin/users/{id} (apiResource except show) → recherche paginée.
     (async () => {
@@ -48,7 +50,7 @@ export default function AdminUserDetailPage() {
     return () => {
       alive = false;
     };
-  }, [id]);
+  }, [id, refreshTick]);
 
   return (
     <AdminLayout currentPath="/admin/utilisateurs">

@@ -6,6 +6,7 @@ import MIcon from '../../components/shared/MIcon';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
+import { useGlobalRefreshTick } from '../../hooks/useRefresh';
 import { adminApi } from '../../services/api';
 import { fmtFcfa, listOf, unwrap } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -139,6 +140,7 @@ export default function AdminPacksPage() {
   const pageRef = useCanvasRef();
   const pressRef = useRef<Pression | null>(null);
   const hydrate = useRef('');
+  const refreshTick = useGlobalRefreshTick();
 
   const vue = search.edit || search.nouveau ? 'composer' : search.pack ? 'detail' : 'galerie';
   const packOuvert = packs.find((p) => Number(p.id) === Number(search.pack));
@@ -162,7 +164,7 @@ export default function AdminPacksPage() {
       }
     })();
     return () => { stop = true; };
-  }, []);
+  }, [refreshTick]);
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');

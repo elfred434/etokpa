@@ -10,6 +10,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { lookupProductName } from '../../utils/lookupProductName';
 import { orderLineGivenName, orderLineName, orderLineProductId } from '../../utils/orderLine';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
 
 /** Activité récente — données statiques du design Stitch (copie conforme). */
@@ -57,6 +58,7 @@ const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate(
 export default function AdminDashboardPage() {
   useLanguage();
   const { rows: commandes, err, loading } = useLiveRows(() => adminApi.getOrders({ page: 1 }));
+  const refreshTick = useGlobalRefreshTick();
   const [dash, setDash] = useState<any>(null);
   const SC = (s: string) => (s || '').includes('attente') ? 'bg-amber-light text-amber-text'
     : (s || '').includes('annul') || (s || '').includes('litige') ? 'bg-error-container text-error'
@@ -68,8 +70,8 @@ export default function AdminDashboardPage() {
     adminApi
       .getZones()
       .then((r: any) => setZoneNames(new Map(listOf(unwrap(r)).map((z: any) => [Number(z.id), String(z.nom ?? '—')]))))
-      .catch(() => setZoneNames(new Map()));
-  }, []);
+      .catch(() => undefined);
+  }, [refreshTick]);
   // OrderResource enveloppe chaque commande dans { success, message, data } : on déballe.
   const orders = commandes.map((r: any) => r?.data ?? r);
   const activities: Activity[] = orders.slice(0, 6).map((o: any) => ({
@@ -94,8 +96,8 @@ export default function AdminDashboardPage() {
     cta: tx("Voir la commande"),
   }));
   useEffect(() => {
-    adminApi.getDashboard().then((r: any) => setDash(unwrap(r))).catch(() => setDash(null));
-  }, []);
+    adminApi.getDashboard().then((r: any) => setDash(unwrap(r))).catch(() => undefined);
+  }, [refreshTick]);
   // KPI réels (AdminDashboardController : ca, commandes, utilisateurs_actifs, par_statut)
   const parStatut: Record<string, number> = dash?.par_statut ?? {};
   const nbLivrees = Number(parStatut.livre ?? 0);
@@ -115,9 +117,12 @@ export default function AdminDashboardPage() {
   }, [range]);
   useEffect(() => {
     let alive = true;
-    setPeriodOrders(null);
+    if (!silentRefreshActive()) {
+      setPeriodOrders(null);
+      setCapped(false);
+    }
     setChartErr(null);
-    setCapped(false);
+    let reachedPageCap = false;
     (async () => {
       const acc: any[] = [];
       for (let page = 1; page <= MAX_ORDER_PAGES; page++) {
@@ -126,16 +131,20 @@ export default function AdminDashboardPage() {
         acc.push(...rows);
         const oldest = rows[rows.length - 1]?.created_at;
         if (page >= Number(res?.meta?.last_page ?? 1) || !oldest || new Date(oldest) < since) return acc;
-        if (page === MAX_ORDER_PAGES && alive) setCapped(true);
+        if (page === MAX_ORDER_PAGES) reachedPageCap = true;
       }
       return acc;
     })()
-      .then((acc) => alive && setPeriodOrders(acc.filter((o) => o?.created_at && new Date(o.created_at) >= since)))
+      .then((acc) => {
+        if (!alive) return;
+        setPeriodOrders(acc.filter((o) => o?.created_at && new Date(o.created_at) >= since));
+        setCapped(reachedPageCap);
+      })
       .catch((e) => alive && setChartErr(formatApiError(extractApiError(e))));
     return () => {
       alive = false;
     };
-  }, [since]);
+  }, [since, refreshTick]);
   const series = useMemo(() => {
     if (!periodOrders) return null;
     const totals = new Map<string, number>();
@@ -198,7 +207,7 @@ export default function AdminDashboardPage() {
         ),
       )
       .catch((e) => setLowStockErr(formatApiError(extractApiError(e))));
-  }, []);
+  }, [refreshTick]);
   const [selected, setSelected] = useState<Activity | null>(null);
 
   useEffect(() => {

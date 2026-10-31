@@ -11,6 +11,7 @@ import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { clear, remove, setQuantity, selectCount, selectSubtotal, selectSavings } from '../../../store/slices/cart/cartSlice';
 import { authApi, catalogApi, landmarksApi, negotiationApi, ordersApi, paymentsApi, readCreatedOrder } from '../../../services/api';
 import { useLanguage } from '../../../context/LanguageContext';
+import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { tr, tx } from '../../../i18n/tx';
 import { saveConfirmation } from '../confirmation-commande/confirmationMemory';
 import {
@@ -170,6 +171,7 @@ export default function CartPage() {
   const [loading, setLoading] = useState(false);
   const [offres, setOffres] = useState<Map<number, number>>(new Map());
   const payLock = useRef(false);
+  const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
     if (!localStorage.getItem('tokpa_token')) return;
@@ -187,7 +189,7 @@ export default function CartPage() {
       })
       .catch(() => undefined);
     return () => { alive = false; };
-  }, []);
+  }, [refreshTick]);
 
   const selectedZone = zones.find((z) => z.id === zoneId) ?? null;
   const deliveryFee = selectedZone ? Number(selectedZone.km_prix) : 0;
@@ -206,15 +208,17 @@ export default function CartPage() {
         alertApiError(err, 'cart-zones');
       })
       .finally(() => setZonesLoading(false));
-  }, []);
+  }, [refreshTick]);
 
   // 2) Mes points de repère à MOI : lignes réelles (GET /landmarks) + entrées du profil (client.point_repere)
   useEffect(() => {
     let alive = true;
     (async () => {
       const list: MyLandmark[] = [];
+      let successfulSources = 0;
       try {
         const res = await landmarksApi.getLandmarks();
+        successfulSources += 1;
         const rows: Array<Record<string, unknown>> = Array.isArray(res) ? res : ((res?.data ?? []) as Array<Record<string, unknown>>);
         rows.forEach((r, i) => {
           list.push({
@@ -230,6 +234,7 @@ export default function CartPage() {
       }
       try {
         const res = await authApi.getProfile();
+        successfulSources += 1;
         const profil = ((res?.data ?? res) as { profil?: Record<string, unknown> })?.profil;
         const raw = profil?.point_repere;
         if (Array.isArray(raw)) {
@@ -247,12 +252,12 @@ export default function CartPage() {
       } catch {
         /* profil indisponible */
       }
-      if (alive) setMyLandmarks(list);
+      if (alive && successfulSources > 0) setMyLandmarks(list);
     })();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [refreshTick]);
 
   useEffect(() => {
     saveLieuDraft({ zoneId, landmarkId, landmarkSel, landmarkNomSel, descriptionLieu });

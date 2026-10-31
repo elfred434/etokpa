@@ -19,7 +19,8 @@ export function emitRealtimeRefresh(event: RealtimeRefreshEvent): void {
 export function subscribeRealtimeRefresh(scopes: RealtimeRefreshEvent['scope'][], callback: (e: RealtimeRefreshEvent) => void): () => void {
   const handler = (ev: Event) => {
     const detail = (ev as CustomEvent<RealtimeRefreshEvent>).detail;
-    if (detail && (scopes.includes('all') || scopes.includes(detail.scope))) {
+    // Le scope 'all' émis par Actualiser doit réveiller chaque abonnement ciblé.
+    if (detail && (detail.scope === 'all' || scopes.includes('all') || scopes.includes(detail.scope))) {
       callback(detail);
     }
   };

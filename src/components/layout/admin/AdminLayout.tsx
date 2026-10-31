@@ -5,6 +5,7 @@ import MIcon from '../../shared/MIcon';
 import AdminNotificationBell from './AdminNotificationBell';
 import RefreshButton from '../../shared/RefreshButton';
 import SettingsLink from '../../shared/SettingsLink';
+import LogoutButton from '../../shared/LogoutButton';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
@@ -71,6 +72,7 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
         <div className="ml-auto flex items-center gap-1 sm:gap-md">
           <RefreshButton withLabel />
           <SettingsLink to="/admin/parametres" />
+          <LogoutButton className="lg:hidden" />
           {/* Vraies notifications (GET /notifications) : compteur, liste, marquer comme lue */}
           <AdminNotificationBell
             className="cursor-pointer rounded-full p-2 text-text-secondary transition-all hover:bg-bg-app active:scale-[0.97]"

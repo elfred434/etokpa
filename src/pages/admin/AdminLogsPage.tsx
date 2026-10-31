@@ -7,6 +7,7 @@ import { alertApiError } from '../../utils/apiError';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -56,10 +57,11 @@ export default function AdminLogsPage() {
   const [applied, setApplied] = useState<{ action?: string; from?: string }>({});
   const [type, setType] = useState('');
   const [page, setPage] = useState(1);
+  const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
+    if (!silentRefreshActive()) setLoading(true);
     setErr(null);
     adminApi
       .getAuditLogs({ page, ...applied })
@@ -73,7 +75,7 @@ export default function AdminLogsPage() {
     return () => {
       alive = false;
     };
-  }, [page, applied]);
+  }, [page, applied, refreshTick]);
 
   const appliquer = () => {
     setApplied({ ...(search.trim() ? { action: search.trim() } : {}), ...(from ? { from } : {}) });

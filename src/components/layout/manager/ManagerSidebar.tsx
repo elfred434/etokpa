@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
+import LogoutButton from '../../shared/LogoutButton';
 import { currentRole, currentUserName, currentUserZone, initialsOf, isAdminRole } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
@@ -108,6 +109,7 @@ export default function ManagerSidebar({ currentPath, open = false, onClose }: P
             </p>
           </div>
         </div>
+        <LogoutButton withLabel tone="inverse" className="mt-3 w-full justify-start rounded-lg px-3 py-2 text-left text-white/80 hover:bg-white/10 hover:text-white" />
       </div>
     </aside>
   );

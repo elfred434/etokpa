@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
+import { backgroundRefreshActive, silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 import MIcon from '../shared/MIcon';
 import { adminApi, ordersApi, paymentsApi } from '../../services/api';
 import { currentUserId, currentUserName, isAdminRole } from '../../routes/authGuard';
@@ -98,7 +98,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
     return () => {
       alive = false;
     };
-  }, [source]);
+  }, [source, tick]);
 
   useEffect(() => {
     const orderId = selected ? selected.order?.id ?? selected.order_id : null;
@@ -107,8 +107,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
       return;
     }
     let alive = true;
-    setDetail(null);
-    setDetailLoading(true);
+    if (!silentRefreshActive()) setDetailLoading(true);
     ordersApi
       .getOrder(orderId)
       .then((res) => {
@@ -116,13 +115,13 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
         setDetail((((res as { data?: ReceiptOrder })?.data ?? res) as ReceiptOrder) ?? null);
       })
       .catch(() => {
-        if (alive) setDetail(null); // la modale reste utilisable sans le détail
+        // Conserver le dernier détail affiché pendant une actualisation sans réseau.
       })
       .finally(() => alive && setDetailLoading(false));
     return () => {
       alive = false;
     };
-  }, [selected]);
+  }, [selected, tick]);
 
   /**
    * Nom affiché pour « Client ».
@@ -153,16 +152,17 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
 
   useEffect(() => {
     let alive = true;
+    const background = backgroundRefreshActive();
     if (!silentRefreshActive()) setLoading(true);
-    setErr(null);
+    if (!background) setErr(null);
     LOADERS[source]()
       .then((res) => {
         if (!alive) return;
         setRows(listOf(unwrap(res)).map(asPayment).filter((p) => p?.id != null));
+        setErr(null);
       })
       .catch((e) => {
-        if (!alive) return;
-        setRows([]);
+        if (!alive || background) return;
         setErr(formatApiError(extractApiError(e)));
       })
       .finally(() => alive && setLoading(false));
@@ -206,7 +206,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                   const statut = p.statut ?? '';
                   const orderId = p.order?.id ?? p.order_id;
                   return (
-                    <tr key={p.id} className="cursor-pointer border-t border-border-default" onClick={() => setSelected(p)}>
+                    <tr key={p.id} className="cursor-pointer border-t border-border-default" onClick={() => { setDetail(null); setSelected(p); }}>
                       <td className="px-4 py-3">
                         <p className="font-semibold">#{p.id}</p>
                         <p className="text-text-secondary">{p.methode || '—'}</p>

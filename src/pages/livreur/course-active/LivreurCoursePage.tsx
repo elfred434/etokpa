@@ -14,6 +14,7 @@ import { alertApiError } from '../../../utils/apiError';
 import { currentUserName } from '../../../routes/authGuard';
 import { dateHeure, destination, fetchDeliveries, statutLabel, tokRef, type LivreurOrder } from '../livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { tr, tx } from '../../../i18n/tx';
 import { orderLineName } from '../../../utils/orderLine';
 import LivreurDecisionButtons from '../LivreurDecisionButtons';
@@ -38,6 +39,7 @@ export default function LivreurCoursePage() {
   const [deliveries, setDeliveries] = useState<LivreurOrder[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const refreshTick = useGlobalRefreshTick();
   const [busy, setBusy] = useState(false);
   const [coords, setCoords] = useState<[number, number] | null>(null);
   const [gps, setGps] = useState<GpsState>('off');
@@ -47,7 +49,7 @@ export default function LivreurCoursePage() {
 
   useEffect(() => {
     let alive = true;
-    setDeliveries(null);
+    if (!silentRefreshActive()) setDeliveries(null);
     setErr(null);
     fetchDeliveries()
       .then((l) => alive && setDeliveries(l))
@@ -55,7 +57,7 @@ export default function LivreurCoursePage() {
     return () => {
       alive = false;
     };
-  }, [reloadKey]);
+  }, [reloadKey, refreshTick]);
 
   // Course affichée : celle demandée (?commande=), sinon celle en livraison, sinon la première assignée.
   const order: LivreurOrder | null = deliveries
@@ -143,11 +145,11 @@ export default function LivreurCoursePage() {
         ? { title: tx("Commande en préparation"), sub: tx("Démarrez la livraison une fois la commande récupérée.") }
         : { title: tx("En attente de préparation"), sub: tx("La commande doit d’abord être mise en préparation.") };
 
-  if (err || deliveries === null || !order) {
+  if (deliveries === null || !order) {
     return (
       <LivreurLayout>
         <div className="mx-auto max-w-[640px] p-4 sm:p-lg">
-          {err ? (
+          {err && deliveries === null ? (
             <ApiErrorState
               title={tx("Impossible de charger vos courses")}
               message={err}

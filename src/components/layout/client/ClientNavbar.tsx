@@ -8,6 +8,7 @@ import { selectCount } from '../../../store/slices/cart/cartSlice';
 import { useLanguage } from '../../../context/LanguageContext';
 import SettingsLink from '../../shared/SettingsLink';
 import RefreshButton from '../../shared/RefreshButton';
+import LogoutButton from '../../shared/LogoutButton';
 import { currentRole, currentUserName, hasSession, staffSpace, useAuthRevision } from '../../../routes/authGuard';
 import UserAvatar from '../../shared/UserAvatar';
 import { tx } from '../../../i18n/tx';
@@ -148,6 +149,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
 
           {/* Actualisation globale : bouton + processus silencieux (30 s, onglet visible) */}
           <RefreshButton />
+          <LogoutButton className="hidden md:inline-flex" />
 
           <Link to="/notifications" className="scale-interaction" aria-label={tx("Notifications")}>
             <MIcon name="notifications" />
@@ -240,6 +242,11 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
               <span className="text-micro text-on-surface-variant opacity-70">{tx("Espace client")}</span>
             </span>
           </Link>
+          <LogoutButton
+            withLabel
+            onClick={() => setMenu(false)}
+            className="w-full justify-start rounded-lg px-4 py-3 text-on-surface-variant hover:bg-primary-lighter/70 hover:text-primary-shade"
+          />
         </div>
       </aside>
         </>,

@@ -1,16 +1,16 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
+import { Link, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
-import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
+import LogoutButton from '../../shared/LogoutButton';
 import RefreshButton from '../../shared/RefreshButton';
 import SettingsLink from '../../shared/SettingsLink';
-import { authApi } from '../../../services/api';
 import { currentUserName } from '../../../routes/authGuard';
 import UserAvatar from '../../shared/UserAvatar';
 import { fetchLivreurProfile } from '../../../pages/livreur/livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
+import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 
 
 const NAV: { to: '/livreur' | '/livreur/course' | '/livreur/historique' | '/livreur/parametres'; icon: string; label: string; short: string; exact: boolean }[] = [
@@ -28,28 +28,22 @@ const NAV: { to: '/livreur' | '/livreur/course' | '/livreur/historique' | '/livr
 export default function LivreurLayout({ children }: { children: ReactNode }) {
   useLanguage();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const navigate = useNavigate();
+  const refreshTick = useGlobalRefreshTick();
   const nom = currentUserName();
   const [disponible, setDisponible] = useState<boolean | null>(null);
 
   useEffect(() => {
     let alive = true;
-    fetchLivreurProfile()
+    fetchLivreurProfile(refreshTick > 0)
       .then((p) => alive && setDisponible(p.disponible))
-      .catch(() => alive && setDisponible(null)); // les pages affichent leurs propres erreurs d'API
+      .catch(() => undefined); // conserver le dernier état connu si l'API est temporairement indisponible
     return () => {
       alive = false;
     };
-  }, []);
+  }, [refreshTick]);
 
   const isActive = (to: string, exact: boolean) =>
     exact ? pathname === to || pathname === `${to}/` : pathname === to || pathname.startsWith(`${to}/`) || (to === '/livreur/course' && pathname.startsWith('/livreur/recapitulatif'));
-
-  const logout = async () => {
-    await authApi.logout();
-    toast.success(tx("Déconnexion effectuée"));
-    navigate({ to: '/connexion' });
-  };
 
   return (
     <div className="min-h-screen bg-bg-app font-body text-text-main">
@@ -84,14 +78,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
             <MIcon name="storefront" className="text-[20px]" />
             <span className="text-[14px] font-medium">{tx("Espace client")}</span>
           </Link>
-          <button
-            type="button"
-            onClick={logout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-white/80 transition-colors hover:text-white"
-          >
-            <MIcon name="logout" className="text-[20px]" />
-            <span className="text-[14px] font-medium">{tx("Déconnexion")}</span>
-          </button>
+          <LogoutButton withLabel tone="inverse" className="w-full justify-start rounded-lg px-3 py-2 text-white/80 hover:bg-white/10 hover:text-white" />
         </div>
       </aside>
 
@@ -101,6 +88,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
           <span className="font-h1 text-h1 font-bold text-primary">TOKPa</span>
           <div className="flex min-w-0 items-center gap-2 sm:gap-lg">
             <RefreshButton withLabel />
+            <LogoutButton className="shrink-0 lg:hidden" />
             <SettingsLink to="/livreur/parametres" />
             <Link to="/notifications" aria-label={tx("Notifications")} className="text-text-secondary transition-colors hover:text-primary">
               <MIcon name="notifications" />

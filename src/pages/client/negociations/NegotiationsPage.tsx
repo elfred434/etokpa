@@ -21,6 +21,7 @@ import {
   type RememberedLandmark,
 } from '../../../utils/negotiationLandmark';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
+import { silentRefreshActive } from '../../../hooks/useRefresh';
 import type { Product } from '../../../types/models';
 import { tx } from '../../../i18n/tx';
 
@@ -41,7 +42,7 @@ export default function NegotiationsPage() {
 
   // Load real budget proposals from Backend GET /api/budget-proposals
   const loadProposals = useCallback(() => {
-    setIsApiLoading(true);
+    if (!silentRefreshActive()) setIsApiLoading(true);
 
     negotiationApi.getProposals()
       .then(async (res) => {

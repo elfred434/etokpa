@@ -11,6 +11,7 @@ import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { currentUserId, currentUserZone, rememberUserZone } from '../../routes/authGuard';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -83,10 +84,11 @@ export default function AdminUsersPage() {
   const [capped, setCapped] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [zones, setZones] = useState<{ id: number; nom: string }[]>([]);
+  const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
+    if (!silentRefreshActive()) setLoading(true);
     setErr(null);
     (async () => {
       const acc: any[] = [];
@@ -107,14 +109,14 @@ export default function AdminUsersPage() {
     return () => {
       alive = false;
     };
-  }, [reloadKey]);
+  }, [reloadKey, refreshTick]);
 
   useEffect(() => {
     adminApi
       .getZones()
       .then((r: any) => setZones(listOf(unwrap(r)).map((z: any) => ({ id: Number(z.id), nom: String(z.nom ?? '—') }))))
-      .catch(() => setZones([]));
-  }, []);
+      .catch(() => undefined);
+  }, [refreshTick]);
 
   /* ---------- compteurs réels ---------- */
   const stats = useMemo(() => {

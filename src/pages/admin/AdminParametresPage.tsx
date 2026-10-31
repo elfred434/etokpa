@@ -10,6 +10,7 @@ import MIcon from '../../components/shared/MIcon';
 import ParametresPanel from '../../components/settings/ParametresPanel';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
+import { useGlobalRefreshTick } from '../../hooks/useRefresh';
 
 
 const DESIGN_CSS = `@layer base { html, body { margin: 0; padding: 0; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }`;
@@ -25,12 +26,13 @@ export default function AdminParametresPage() {
   // sans route, B-28) et reste tel quel (décision utilisateur P3).
   const [zonesGrille, setZonesGrille] = useState<any[] | null>(null);
   const [zonesErr, setZonesErr] = useState<string | null>(null);
+  const refreshTick = useGlobalRefreshTick();
   useEffect(() => {
     adminApi
       .getZones()
       .then((r: any) => setZonesGrille(listOf(unwrap(r))))
       .catch((e) => setZonesErr(formatApiError(extractApiError(e))));
-  }, []);
+  }, [refreshTick]);
 
   return (
     <AdminLayout currentPath="/admin/parametres">

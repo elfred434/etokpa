@@ -14,6 +14,7 @@ import MIcon from '../../components/shared/MIcon';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
+import { useGlobalRefreshTick } from '../../hooks/useRefresh';
 
 
 const DESIGN_CSS = `
@@ -32,6 +33,7 @@ const PER_PAGE = 8;
 export default function AdminCatalogPage() {
   useLanguage();
   useDesignScript(DESIGN_SCRIPT);
+  const refreshTick = useGlobalRefreshTick();
   // Tous les produits (100 par page, au plus 10 pages) : filtres et pagination portent sur le catalogue entier
   const { rows: produits, err, loading, reload } = useLiveRows(async () => {
     const acc: any[] = [];
@@ -119,12 +121,12 @@ export default function AdminCatalogPage() {
     setImagePreview(absImageUrl(edition?.image_url ?? edition?.img_url));
   };
   const loadCats = useCallback(
-    () => adminApi.getCategories().then((r: any) => setCats(listOf(unwrap(r)))).catch(() => setCats([])),
+    () => adminApi.getCategories().then((r: any) => setCats(listOf(unwrap(r)))).catch(() => undefined),
     [],
   );
   useEffect(() => {
     void loadCats();
-  }, [loadCats]);
+  }, [loadCats, refreshTick]);
   const ouvrir = (pr: any) => {
     revokeObjectUrl();
     setEdition(pr ?? {});

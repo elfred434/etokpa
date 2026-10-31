@@ -188,11 +188,11 @@ export default function MesPacksPage() {
       try {
         const [shelf, liste] = await Promise.all([
           chargerProduits(),
-          packsApi.getBundles().then((r) => listOf(r?.data ?? r) as ApiBundle[]).catch(() => [] as ApiBundle[]),
+          packsApi.getBundles().then((r) => listOf(r?.data ?? r) as ApiBundle[]).catch(() => null),
         ]);
         if (stop) return;
         setProduits(shelf);
-        setPublics(liste);
+        if (liste !== null) setPublics(liste);
       } catch (e) {
         if (!stop) setErr(formatApiError(extractApiError(e)));
       } finally {

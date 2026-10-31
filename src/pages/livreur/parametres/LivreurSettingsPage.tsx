@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import LivreurLayout from '../../../components/layout/livreur/LivreurLayout';
@@ -15,6 +15,7 @@ import { displayPhoto, writeLocalPhoto } from '../../../utils/profilePhoto';
 import { fetchLivreurProfile, forgetLivreurProfile, type LivreurProfile } from '../livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
+import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 
 
 /**
@@ -29,6 +30,8 @@ export default function LivreurSettingsPage() {
   const [profile, setProfile] = useState<LivreurProfile | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const refreshTick = useGlobalRefreshTick();
+  const dirtyRef = useRef(false);
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
   const [email, setEmail] = useState('');
@@ -43,17 +46,19 @@ export default function LivreurSettingsPage() {
       .then((p) => {
         if (!alive) return;
         setProfile(p);
-        setPrenom(p.prenom ?? '');
-        setNom(p.nom ?? '');
-        setEmail(p.email ?? '');
-        setTelephone(p.telephone ?? '');
-        setPhoto(displayPhoto(p.image_profil));
+        if (!dirtyRef.current) {
+          setPrenom(p.prenom ?? '');
+          setNom(p.nom ?? '');
+          setEmail(p.email ?? '');
+          setTelephone(p.telephone ?? '');
+          setPhoto(displayPhoto(p.image_profil));
+        }
       })
       .catch((e) => alive && setErr(alertApiError(e, 'livreur-load')));
     return () => {
       alive = false;
     };
-  }, [reloadKey]);
+  }, [reloadKey, refreshTick]);
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
@@ -86,6 +91,7 @@ export default function LivreurSettingsPage() {
         image_profil: updated?.image_profil ?? serverPhoto ?? null,
       });
       forgetLivreurProfile();
+      dirtyRef.current = false;
       toast.success(res?.message ?? tx("Profil mis à jour avec succès."));
       if (mail && updated?.email && updated.email !== mail) {
         toast.error(tx("L’adresse e-mail saisie n’a pas été conservée par le serveur."));
@@ -146,7 +152,7 @@ export default function LivreurSettingsPage() {
             <ParametresPanel desktopColumns />
           </div>
 
-          {err ? (
+          {err && !profile ? (
             <ApiErrorState
               title={tx("Impossible de charger votre profil")}
               message={err}
@@ -173,8 +179,8 @@ export default function LivreurSettingsPage() {
                 <ProfilePhotoField
                   name={nomAffiche}
                   photo={photo}
-                  onChange={setPhoto}
-                  onClear={() => setPhoto(null)}
+                  onChange={(value) => { dirtyRef.current = true; setPhoto(value); }}
+                  onClear={() => { dirtyRef.current = true; setPhoto(null); }}
                 />
                 <div className="flex items-center gap-md rounded-xl bg-bg-secondary p-md">
                   <div className="flex flex-1 flex-col gap-xs">
@@ -188,19 +194,19 @@ export default function LivreurSettingsPage() {
                 <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
                   <label className="flex flex-col gap-xs">
                     <span className="font-secondary text-secondary text-text-secondary">{tx("Prénom")}</span>
-                    <input className={inputCls} type="text" value={prenom} onChange={(e) => setPrenom(e.target.value)} maxLength={80} />
+                    <input className={inputCls} type="text" value={prenom} onChange={(e) => { dirtyRef.current = true; setPrenom(e.target.value); }} maxLength={80} />
                   </label>
                   <label className="flex flex-col gap-xs">
                     <span className="font-secondary text-secondary text-text-secondary">{tx("Nom")}</span>
-                    <input className={inputCls} type="text" value={nom} onChange={(e) => setNom(e.target.value)} maxLength={80} />
+                    <input className={inputCls} type="text" value={nom} onChange={(e) => { dirtyRef.current = true; setNom(e.target.value); }} maxLength={80} />
                   </label>
                   <label className="flex flex-col gap-xs">
                     <span className="font-secondary text-secondary text-text-secondary">{tx("Téléphone direct")}</span>
-                    <input className={inputCls} type="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)} maxLength={20} />
+                    <input className={inputCls} type="tel" value={telephone} onChange={(e) => { dirtyRef.current = true; setTelephone(e.target.value); }} maxLength={20} />
                   </label>
                   <label className="flex flex-col gap-xs">
                     <span className="font-secondary text-secondary text-text-secondary">{tx("Adresse e-mail")}</span>
-                    <input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" maxLength={150} />
+                    <input className={inputCls} type="email" value={email} onChange={(e) => { dirtyRef.current = true; setEmail(e.target.value); }} autoComplete="email" maxLength={150} />
                   </label>
                   <label className="flex flex-col gap-xs sm:col-span-2">
                     <span className="font-secondary text-secondary text-text-secondary">{tx("Zone principale assignée")}</span>

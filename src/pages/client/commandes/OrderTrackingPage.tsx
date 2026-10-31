@@ -10,6 +10,7 @@ import { useRiderLocation } from '../../../hooks/useRiderLocation';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { catalogApi, ordersApi } from '../../../services/api';
 import { isOwnOrder } from '../../../utils/ownOrder';
 import { alertApiError } from '../../../utils/apiError';
@@ -85,6 +86,7 @@ export default function OrderTrackingPage() {
   const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
   const navigate = useNavigate();
   const search = useSearch({ from: '/commandes/suivi' }) as unknown as { order?: string; simu?: string };
+  const refreshTick = useGlobalRefreshTick();
 
   const [allOrders, setAllOrders] = useState<ApiOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
@@ -103,6 +105,7 @@ export default function OrderTrackingPage() {
       .then((res) => {
         const list: ApiOrder[] = (res?.data ?? res ?? []).map((o: Record<string, unknown> & { data?: ApiOrder }) => o.data ?? o);
         setAllOrders(list);
+        setFetchError(null);
         if (!selectedId && list.length > 0) {
           // sans ?order= : seulement une commande encore en cours. Une commande annulée n'est pas suivie.
           const active = list.find((o) => ['en_attente', 'en_preparation', 'en_livraison'].includes(o.statut));
@@ -114,7 +117,7 @@ export default function OrderTrackingPage() {
       })
       .finally(() => setOrdersLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
+  }, [isAuthenticated, refreshTick]);
 
   // Sync URL (?order=) → sélection (édition manuelle de l'URL incluse — le garde-fou ci-dessous s'applique)
   useEffect(() => {
@@ -127,8 +130,10 @@ export default function OrderTrackingPage() {
     if (!isAuthenticated || !selectedId) return;
     let alive = true;
     setAccessDenied(false);
-    setOrder(null);
-    setTracking(null);
+    if (!silentRefreshActive()) {
+      setOrder(null);
+      setTracking(null);
+    }
     (async () => {
       try {
         const mine = await isOwnOrder(selectedId);
@@ -142,6 +147,7 @@ export default function OrderTrackingPage() {
         if (!alive) return;
         const full = (res?.data ?? res) as ApiOrder;
         setOrder(full);
+        setFetchError(null);
         if (full.statut === 'annule') return;
         const t = await ordersApi.getTracking(selectedId);
         if (alive) setTracking(t as TrackingInfo);
@@ -152,7 +158,7 @@ export default function OrderTrackingPage() {
     return () => {
       alive = false;
     };
-  }, [isAuthenticated, selectedId]);
+  }, [isAuthenticated, selectedId, refreshTick]);
 
   // Destination RÉELLE de la commande : landmark (point_reperes) → GPS via GET /zones.points_repere
   useEffect(() => {

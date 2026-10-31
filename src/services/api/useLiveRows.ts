@@ -3,7 +3,7 @@ import type { MouseEvent } from 'react';
 import { invokeDesign } from '../../utils/designRuntime';
 import { unwrap, listOf } from './unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
-import { onGlobalRefresh } from '../refresh/refreshBus';
+import { backgroundRefreshActive, onGlobalRefresh, silentRefreshActive } from '../refresh/refreshBus';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -17,13 +17,24 @@ export function useLiveRows(fetcher: () => Promise<unknown>, deps: unknown[] = [
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const reload = () => {
-    setLoading(true);
-    setErr(null);
-    fetcher()
-      .then((r) => setRows(listOf(unwrap(r))))
-      .catch((e) => setErr(formatApiError(extractApiError(e))))
-      .finally(() => setLoading(false));
+  const reload = (): Promise<void> => {
+    const silent = silentRefreshActive();
+    const background = backgroundRefreshActive();
+    if (!silent) {
+      setLoading(true);
+      setErr(null);
+    }
+    return fetcher()
+      .then((r) => {
+        setRows(listOf(unwrap(r)));
+        setErr(null);
+      })
+      .catch((e) => {
+        if (!background) setErr(formatApiError(extractApiError(e)));
+      })
+      .finally(() => {
+        if (!silent) setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -45,9 +56,7 @@ export function useLiveRows(fetcher: () => Promise<unknown>, deps: unknown[] = [
   reloadRef.current = reload;
   useEffect(
     () =>
-      onGlobalRefresh(() => {
-        reloadRef.current();
-      }),
+      onGlobalRefresh(() => reloadRef.current()),
     [],
   );
 

@@ -7,6 +7,7 @@ import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 import { currentUserZone } from '../../routes/authGuard';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -20,9 +21,12 @@ export default function ManagerEquipePage() {
   const [loading, setLoading] = useState(true);
   const [statut, setStatut] = useState(STATUSES[0]);
   const [ajout, setAjout] = useState(false);
+  const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
     let alive = true;
+    if (!silentRefreshActive()) setLoading(true);
+    setErr(null);
     managerApi
       .getLivreurs()
       .then((r) => alive && setLivreurs(listOf(unwrap(r))))
@@ -31,7 +35,7 @@ export default function ManagerEquipePage() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [refreshTick]);
 
   const livs = useMemo(
     () => livreurs.filter((l) => statut === STATUSES[0] || String(l.statut ?? '').toLowerCase() === statut),

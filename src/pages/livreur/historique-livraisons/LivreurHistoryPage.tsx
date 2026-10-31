@@ -9,6 +9,7 @@ import { alertApiError } from '../../../utils/apiError';
 import { articlesCount, dateHeure, fetchAllHistory, fetchZoneNames, statutLabel, tokRef, type LivreurOrder } from '../livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { orderLineName } from '../../../utils/orderLine';
 
 
@@ -44,21 +45,26 @@ export default function LivreurHistoryPage() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<LivreurOrder | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
     let alive = true;
-    setData(null);
+    if (!silentRefreshActive()) setData(null);
     setErr(null);
     fetchAllHistory()
-      .then((d) => alive && setData(d))
+      .then((d) => {
+        if (!alive) return;
+        setData(d);
+        setSelected((prev) => prev ? d.orders.find((o) => o.id === prev.id) ?? prev : null);
+      })
       .catch((e) => alive && setErr(alertApiError(e, 'livreur-load')));
     fetchZoneNames()
       .then((z) => alive && setZones(z))
-      .catch(() => alive && setZones(new Map()));
+      .catch(() => undefined);
     return () => {
       alive = false;
     };
-  }, [reloadKey]);
+  }, [reloadKey, refreshTick]);
 
   const weekStart = useMemo(startOfWeek, []);
   const monthStart = useMemo(startOfMonth, []);
@@ -115,7 +121,7 @@ export default function LivreurHistoryPage() {
             </div>
           </div>
 
-          {err ? (
+          {err && data === null ? (
             <ApiErrorState
               title={tx("Impossible de charger l'historique")}
               message={err}

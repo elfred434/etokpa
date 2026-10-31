@@ -18,12 +18,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import RefreshButton from '../src/components/shared/RefreshButton';
 import { useAutoRefresh, useGlobalRefreshTick, useRefreshState } from '../src/hooks/useRefresh';
+import { subscribeRealtimeRefresh } from '../src/hooks/useRealtimeNotifications';
 import {
+  backgroundRefreshActive,
   onGlobalRefresh,
   refreshState,
   requestRefresh,
   silentRefreshActive,
 } from '../src/services/refresh/refreshBus';
+import { useLiveRows } from '../src/services/api/useLiveRows';
+import { alertApiError } from '../src/utils/apiError';
+import toast from 'react-hot-toast';
 import { tx } from '../src/i18n/tx';
 
 /** Espionne l'événement temps réel existant (scope 'all' attendu). */
@@ -72,6 +77,17 @@ describe('bus de rafraîchissement', () => {
     off();
   });
 
+  it('un événement « all » réveille aussi les abonnés temps réel ciblés', () => {
+    const callback = vi.fn();
+    const off = subscribeRealtimeRefresh(['orders'], callback);
+
+    window.dispatchEvent(new CustomEvent('tokpa:realtime-refresh', { detail: { scope: 'all' } }));
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledWith({ scope: 'all' });
+    off();
+  });
+
   it('expose busy pendant l’appel puis lastRefreshAt à la fin', async () => {
     expect(refreshState().busy).toBe(false);
 
@@ -87,6 +103,34 @@ describe('bus de rafraîchissement', () => {
     expect(silentRefreshActive()).toBe(false);
     expect(refreshState().lastRefreshAt).toBeTypeOf('number');
     expect(refreshState().origin).toBe('auto');
+    expect(backgroundRefreshActive()).toBe(false);
+  });
+
+  it('distingue le bouton manuel du rafraîchissement automatique silencieux', async () => {
+    const vuPendantAppel: boolean[] = [];
+    const off = onGlobalRefresh(() => {
+      vuPendantAppel.push(backgroundRefreshActive());
+    });
+
+    await requestRefresh('manual');
+    expect(backgroundRefreshActive()).toBe(false);
+    await requestRefresh('auto');
+    expect(backgroundRefreshActive()).toBe(false);
+    expect(vuPendantAppel).toEqual([false, true]);
+    off();
+  });
+
+  it('n’affiche pas de toast réseau pendant un rafraîchissement automatique', async () => {
+    const erreurToast = vi.spyOn(toast, 'error');
+    const off = onGlobalRefresh(() => {
+      alertApiError({ response: { status: 503, data: { message: 'API indisponible' } } });
+    });
+
+    await requestRefresh('auto');
+
+    expect(erreurToast).not.toHaveBeenCalled();
+    off();
+    erreurToast.mockRestore();
   });
 
   it('attend les abonnés qui renvoient une promesse', async () => {
@@ -256,6 +300,65 @@ describe('useGlobalRefreshTick', () => {
       await requestRefresh('auto');
     });
     await waitFor(() => expect(screen.getByTestId('tick').textContent).toBe('2'));
+  });
+});
+
+describe('useLiveRows — actualisation des données API', () => {
+  it('relit les données sur le bouton global sans afficher de chargement plein écran', async () => {
+    let version = 0;
+    const fetcher = vi.fn(async () => ({ data: [{ id: ++version }] }));
+
+    function Hote() {
+      const { rows, loading } = useLiveRows(fetcher);
+      return createElement(
+        'div',
+        null,
+        createElement('span', { 'data-testid': 'row-id' }, String(rows[0]?.id ?? 'vide')),
+        createElement('span', { 'data-testid': 'rows-loading' }, String(loading)),
+      );
+    }
+
+    render(createElement(Hote));
+    await waitFor(() => expect(screen.getByTestId('row-id').textContent).toBe('1'));
+    expect(screen.getByTestId('rows-loading').textContent).toBe('false');
+
+    await act(async () => {
+      await requestRefresh('manual');
+    });
+
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('row-id').textContent).toBe('2');
+    expect(screen.getByTestId('rows-loading').textContent).toBe('false');
+  });
+
+  it('conserve les anciennes lignes si un rafraîchissement silencieux échoue', async () => {
+    let calls = 0;
+    const fetcher = vi.fn(async () => {
+      calls += 1;
+      if (calls > 1) throw new Error('réseau indisponible');
+      return { data: [{ id: 42 }] };
+    });
+
+    function Hote() {
+      const { rows, loading, err } = useLiveRows(fetcher);
+      return createElement(
+        'div',
+        null,
+        createElement('span', { 'data-testid': 'row-id' }, String(rows[0]?.id ?? 'vide')),
+        createElement('span', { 'data-testid': 'rows-loading' }, String(loading)),
+        createElement('span', { 'data-testid': 'rows-error' }, err ?? ''),
+      );
+    }
+
+    render(createElement(Hote));
+    await waitFor(() => expect(screen.getByTestId('row-id').textContent).toBe('42'));
+    await act(async () => {
+      await requestRefresh('auto');
+    });
+
+    expect(screen.getByTestId('row-id').textContent).toBe('42');
+    expect(screen.getByTestId('rows-loading').textContent).toBe('false');
+    expect(screen.getByTestId('rows-error').textContent).toBe('');
   });
 });
 

@@ -4,8 +4,10 @@ import MobileTableBridge from '../../shared/MobileTableBridge';
 import ManagerSidebar from './ManagerSidebar';
 import RefreshButton from '../../shared/RefreshButton';
 import SettingsLink from '../../shared/SettingsLink';
+import LogoutButton from '../../shared/LogoutButton';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
+import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { currentRole, currentUserId, currentUserName, currentUserZone, isAdminRole, rememberUserZone } from '../../../routes/authGuard';
 import UserAvatar from '../../shared/UserAvatar';
 import { adminApi, catalogApi } from '../../../services/api';
@@ -21,6 +23,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
   const zone = currentUserZone();
   const nom = currentUserName();
   const admin = isAdminRole(currentRole());
+  const refreshTick = useGlobalRefreshTick();
   const [open, setOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [zones, setZones] = useState<{ id: number; nom: string }[]>([]);
@@ -37,7 +40,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
         setZoneId(actuelle ? String(actuelle.id) : '');
       })
       .catch((e) => alertApiError(e, 'manager-zones'));
-  }, [open, zone]);
+  }, [open, zone, refreshTick]);
 
   const changerZone = async () => {
     const id = currentUserId();
@@ -90,6 +93,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <RefreshButton withLabel />
             <SettingsLink to="/manager/parametres" />
+          <LogoutButton className="lg:hidden" />
           <button
             type="button"
             className="hidden rounded-lg p-2 text-text-secondary hover:bg-bg-secondary hover:text-on-surface sm:block"

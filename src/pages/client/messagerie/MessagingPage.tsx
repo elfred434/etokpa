@@ -8,6 +8,7 @@ import { alertApiError } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
+import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { windowEcho } from '../../../services/realtime/echo';
 import { chatApi, ordersApi, type ConversationItem, type MessageItem } from '../../../services/api';
 import { tx } from '../../../i18n/tx';
@@ -74,6 +75,7 @@ const initials = (name: string) =>
 export default function MessagingPage() {
   const { isFr } = useLanguage();
   const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
+  const refreshTick = useGlobalRefreshTick();
 
   const [conversations, setConversations] = useState<UIConversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
@@ -129,9 +131,12 @@ export default function MessagingPage() {
     };
 
     load();
-    // Rafraîchir quand une assignation livreur arrive en temps réel
-    return subscribeRealtimeRefresh(['orders'], load);
-  }, [isAuthenticated, isFr]);
+    // Rafraîchir quand une assignation arrive en temps réel; le scope « all »
+    // est laissé au tick global ci-dessous pour ne lancer qu'une seule requête.
+    return subscribeRealtimeRefresh(['orders'], (event) => {
+      if (event.scope === 'orders') load();
+    });
+  }, [isAuthenticated, isFr, refreshTick]);
 
   // 2) Contexte commande active — GET /api/orders/{orderId} (livreur + total + statut)
   useEffect(() => {
@@ -157,16 +162,19 @@ export default function MessagingPage() {
           nbItems: items.length,
         };
         setActiveOrder(info);
-        setConversations((prev) =>
-          prev.map((c) =>
-            c.id === activeConvId
-              ? { ...c, riderName, riderInitials: initials(riderName) }
-              : c,
-          ),
-        );
+        const riderInitials = initials(riderName);
+        setConversations((prev) => {
+          let changed = false;
+          const next = prev.map((c) => {
+            if (c.id !== activeConvId || (c.riderName === riderName && c.riderInitials === riderInitials)) return c;
+            changed = true;
+            return { ...c, riderName, riderInitials };
+          });
+          return changed ? next : prev;
+        });
       })
       .catch((err) => alertApiError(err, 'chat-order'));
-  }, [isAuthenticated, activeConvId, conversations]);
+  }, [isAuthenticated, activeConvId, conversations, refreshTick]);
 
   // 3) Messages — GET /api/conversations/{id}/messages
   useEffect(() => {
@@ -191,7 +199,7 @@ export default function MessagingPage() {
         }
       })
       .catch((err) => alertApiError(err, 'chat-messages'));
-  }, [isAuthenticated, activeConvId, currentUserId]);
+  }, [isAuthenticated, activeConvId, currentUserId, refreshTick]);
 
   // 4) Temps réel — canal privé `chat.{conversationId}`, événement `message.sent`
   useEffect(() => {

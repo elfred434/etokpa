@@ -5,6 +5,7 @@ import {
   subscribeRefreshState,
   requestRefresh,
   silentRefreshActive,
+  backgroundRefreshActive,
   type RefreshOrigin,
   type RefreshState,
 } from '../services/refresh/refreshBus';
@@ -96,5 +97,5 @@ export function useGlobalRefreshTick(): number {
   return tick;
 }
 
-export { silentRefreshActive, requestRefresh };
+export { silentRefreshActive, backgroundRefreshActive, requestRefresh };
 export type { RefreshOrigin, RefreshState };

@@ -17,6 +17,7 @@ import { absImageUrl } from '../../../utils/imageUrl';
 import { categoryKind, type CategoryKind } from '../../../utils/categoryKind';
 import { alertApiError, apiErrorStatus } from '../../../utils/apiError';
 import { tx } from '../../../i18n/tx';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 
 
 /** Icônes de la maquette accueil (Categories Grid), par famille — icone non persistée côté backend (B-17). */
@@ -59,12 +60,13 @@ export default function HomePage() {
   const [negoProduct, setNegoProduct] = useState<SelectionItem | null>(null);
   // « Réessayer » : relance produits + catégories.
   const [reloadKey, setReloadKey] = useState(0);
+  const refreshTick = useGlobalRefreshTick();
   const retry = () => setReloadKey((k) => k + 1);
 
   // Connection API Backend GET /api/products — produits réels ET commandables uniquement
   useEffect(() => {
     let alive = true;
-    setSelLoading(true);
+    if (!silentRefreshActive()) setSelLoading(true);
     setSelError(null);
     setNeedsLogin(false);
     catalogApi
@@ -90,12 +92,10 @@ export default function HomePage() {
         const nego = items.find((it) => it.prixMinimum > 0 && it.prixMinimum < it.prix) ?? null;
         setNegoProduct(nego);
         // Offre suggérée : -10 % du prix (comme la fiche produit), jamais sous le prix minimum.
-        if (nego) setOffre(String(Math.max(nego.prixMinimum, Math.round(nego.prix * 0.9))));
+        if (nego) setOffre((current) => current || String(Math.max(nego.prixMinimum, Math.round(nego.prix * 0.9))));
       })
       .catch((err) => {
         if (!alive) return;
-        setSelection([]);
-        setNegoProduct(null);
         if (apiErrorStatus(err) === 401) setNeedsLogin(true);
         else setSelError(alertApiError(err, 'home-api'));
       })
@@ -105,7 +105,7 @@ export default function HomePage() {
     return () => {
       alive = false;
     };
-  }, [reloadKey]);
+  }, [reloadKey, refreshTick]);
 
   // Catégories réelles — GET /api/categories (F-07). Plus de tuiles de la maquette : échec → message de
   // l'API ; visiteur non connecté (401, B-1) → section masquée (l'invitation est dans la sélection).
@@ -114,7 +114,7 @@ export default function HomePage() {
   const [catsNeedLogin, setCatsNeedLogin] = useState(false);
   useEffect(() => {
     let alive = true;
-    setApiCats(null);
+    if (!silentRefreshActive()) setApiCats(null);
     setCatsError(null);
     setCatsNeedLogin(false);
     catalogApi
@@ -131,7 +131,7 @@ export default function HomePage() {
     return () => {
       alive = false;
     };
-  }, [reloadKey]);
+  }, [reloadKey, refreshTick]);
 
   // Bandeau « Propose ton prix » — démonstration : aucun envoi au serveur.
   // La vraie offre se fait depuis la fiche du produit (module de négociation F-10).

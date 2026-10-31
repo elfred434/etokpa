@@ -165,7 +165,6 @@ export default function CatalogPage() {
       })
       .catch((err) => {
         if (!alive) return;
-        setApiPacks([]);
         setPacksError(alertApiError(err, 'catalog-packs'));
       });
     return () => {
@@ -237,7 +236,6 @@ export default function CatalogPage() {
         })
         .catch((err) => {
           if (!alive) return;
-          setProductsList([]);
           setProductsError(alertApiError(err, 'catalog-products'));
         })
         .finally(() => {

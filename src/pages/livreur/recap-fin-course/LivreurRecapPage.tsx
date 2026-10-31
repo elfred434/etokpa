@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useRouterState, useSearch } from '@tanstack/react-router';
 import LivreurLayout from '../../../components/layout/livreur/LivreurLayout';
 import MIcon from '../../../components/shared/MIcon';
@@ -11,6 +11,7 @@ import { currentUserName } from '../../../routes/authGuard';
 import { articlesCount, destination, tokRef, unwrapOrder, type LivreurOrder } from '../livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
+import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { orderLineName } from '../../../utils/orderLine';
 
 
@@ -26,12 +27,17 @@ export default function LivreurRecapPage() {
   const [order, setOrder] = useState<LivreurOrder | null>(navState?.order && navState.order.id === commande ? navState.order : null);
   const [err, setErr] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const refreshTick = useGlobalRefreshTick();
+  const lastFetchKey = useRef<string | null>(null);
   const deliveredAt = navState?.order?.id === commande ? (navState?.deliveredAt ?? null) : null;
   const prenom = (currentUserName() ?? '').split(' ')[0];
 
   // Rechargement de la page (plus d'état de navigation) → commande relue dans l'historique réel.
   useEffect(() => {
-    if (order || !commande) return;
+    if (!commande || (order && refreshTick === 0)) return;
+    const fetchKey = `${commande}:${reloadKey}:${refreshTick}`;
+    if (lastFetchKey.current === fetchKey) return;
+    lastFetchKey.current = fetchKey;
     let alive = true;
     setErr(null);
     livreurApi
@@ -46,7 +52,7 @@ export default function LivreurRecapPage() {
     return () => {
       alive = false;
     };
-  }, [order, commande, reloadKey]);
+  }, [order, commande, reloadKey, refreshTick]);
 
   const heure = deliveredAt
     ? new Date(deliveredAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })

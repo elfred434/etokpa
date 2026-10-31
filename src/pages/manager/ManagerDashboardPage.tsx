@@ -8,6 +8,7 @@ import { extractApiError, formatApiError } from '../../utils/apiError';
 import { currentUserZone } from '../../routes/authGuard';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -37,9 +38,12 @@ export default function ManagerDashboardPage() {
   const [commandes, setCommandes] = useState<any[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
     let alive = true;
+    if (!silentRefreshActive()) setLoading(true);
+    setErr(null);
     Promise.all([managerApi.getStats('jour'), managerApi.getOrders({ page: 1 })])
       .then(([s, o]) => {
         if (!alive) return;
@@ -54,7 +58,7 @@ export default function ManagerDashboardPage() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [refreshTick]);
 
   const kpis = [
     {

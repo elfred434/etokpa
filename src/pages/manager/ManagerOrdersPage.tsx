@@ -7,6 +7,7 @@ import { listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
+import { useGlobalRefreshTick } from '../../hooks/useRefresh';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -27,14 +28,15 @@ export default function ManagerOrdersPage() {
   const [info, setInfo] = useState<string | null>(null);
   const [assignation, setAssignation] = useState<PlatformOrder | null>(null);
   const [livreurChoisi, setLivreurChoisi] = useState('');
+  const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
     let alive = true;
     managerApi.getLivreurs()
       .then((r) => alive && setLivreurs(listOf(r)))
-      .catch(() => alive && setLivreurs([]));
+      .catch(() => undefined);
     return () => { alive = false; };
-  }, []);
+  }, [refreshTick]);
 
   const zoneCommande = assignation ? zoneIdOf(assignation.landmark?.zone_id) : null;
   const livreursZone = zoneCommande ? livreurs.filter((l) => livreurZoneId(l) === zoneCommande) : [];

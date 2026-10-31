@@ -126,6 +126,24 @@ export default function OrdersListPage() {
       .finally(() => setLoading(false));
   }, [isAuthenticated, page, statusFilter, tick]);
 
+  // Si la fiche d'une commande est ouverte pendant le refresh, relire aussi son détail complet.
+  useEffect(() => {
+    const id = selected?.id;
+    if (!isAuthenticated || !id || tick === 0) return;
+    let alive = true;
+    ordersApi
+      .getOrder(id)
+      .then((res) => {
+        if (!alive) return;
+        const full = (res?.data ?? res) as ApiOrder;
+        setSelected((current) => current?.id === id ? full : current);
+      })
+      .catch((err) => {
+        if (alive) alertApiError(err, 'order-detail');
+      });
+    return () => { alive = false; };
+  }, [isAuthenticated, selected?.id, tick]);
+
   const payLock = useRef(false);
   const handlePayer = async (order: ApiOrder) => {
     if (payLock.current || paying) return;

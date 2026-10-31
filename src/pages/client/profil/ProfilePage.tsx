@@ -11,6 +11,7 @@ import { currentRole, hasSession } from '../../../routes/authGuard';
 import { authApi, ordersApi, paymentsApi, type UserProfile } from '../../../services/api';
 import { dateCourte, fmtFcfa, listOf, unwrap } from '../../../services/api/unwrap';
 import { tx } from '../../../i18n/tx';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { rememberSessionUser } from '../../../routes/authGuard';
 import ProfilePhotoField from '../../../components/shared/ProfilePhotoField';
 import UserAvatar from '../../../components/shared/UserAvatar';
@@ -81,6 +82,7 @@ export default function ProfilePage() {
   const [dashCount, setDashCount] = useState<number | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const refreshTick = useGlobalRefreshTick();
 
   // Modals
   const [editProfileOpen, setEditProfileOpen] = useState(false);
@@ -111,7 +113,7 @@ export default function ProfilePage() {
   // Chargement initial : profil + commandes
   useEffect(() => {
     if (!isAuthenticated) return;
-    setIsDataLoading(true);
+    if (!silentRefreshActive()) setIsDataLoading(true);
 
     const p1 = loadProfile();
 
@@ -181,7 +183,7 @@ export default function ProfilePage() {
       .catch((err) => alertApiError(err, 'profile-payments'));
 
     Promise.allSettled([p1, p2, p3, p4]).then(() => setIsDataLoading(false));
-  }, [isAuthenticated]);
+  }, [isAuthenticated, refreshTick]);
 
   if (!isAuthenticated) {
     return (

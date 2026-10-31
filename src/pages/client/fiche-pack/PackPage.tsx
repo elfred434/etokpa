@@ -15,6 +15,7 @@ import { absImageUrl } from '../../../utils/imageUrl';
 import { alertApiError, apiErrorStatus } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 
 /* ---- Fiche pack 100 % API (route /pack/$packId) ----
  * Le backend n'expose pas GET /bundles/{id} : la fiche lit la liste publique
@@ -64,11 +65,12 @@ export default function PackPage() {
   // Échec autre que 404 : message de l'API + Réessayer (pas de pack factice).
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const refreshTick = useGlobalRefreshTick();
 
   // GET /api/bundles → le pack demandé
   useEffect(() => {
     let alive = true;
-    setIsLoading(true);
+    if (!silentRefreshActive()) setIsLoading(true);
     setNotFound(false);
     setLoadError(null);
     catalogApi
@@ -84,7 +86,10 @@ export default function PackPage() {
         if (!alive) return;
         // 404 = pack inexistant ; tout autre échec = message exact de l'API
         if (apiErrorStatus(err) === 404) setNotFound(true);
-        else setLoadError(alertApiError(err, 'pack-load'));
+        else {
+          const message = alertApiError(err, 'pack-load');
+          if (!pack) setLoadError(message);
+        }
       })
       .finally(() => {
         if (alive) setIsLoading(false);
@@ -92,7 +97,7 @@ export default function PackPage() {
     return () => {
       alive = false;
     };
-  }, [packId, reloadKey]);
+  }, [packId, reloadKey, refreshTick]);
 
   /* ---------- États de chargement / erreur ---------- */
   if (isLoading) {

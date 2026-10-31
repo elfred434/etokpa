@@ -9,6 +9,7 @@ import MIcon from '../../components/shared/MIcon';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 import { landmarkFromProposal } from '../../utils/negotiationLandmark';
 
 
@@ -69,10 +70,11 @@ export default function AdminValidationsPage() {
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
   const reload = () => setReloadKey((k) => k + 1);
+  const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
+    if (!silentRefreshActive()) setLoading(true);
     setErr(null);
     (async () => {
       const acc: any[] = [];
@@ -89,7 +91,7 @@ export default function AdminValidationsPage() {
     return () => {
       alive = false;
     };
-  }, [reloadKey]);
+  }, [reloadKey, refreshTick]);
 
   useEffect(() => {
     adminApi
@@ -103,8 +105,8 @@ export default function AdminValidationsPage() {
         listOf(unwrap(r)).forEach(walk);
         setCats(m);
       })
-      .catch(() => setCats(new Map()));
-  }, []);
+      .catch(() => undefined);
+  }, [refreshTick]);
 
   const [filtre, setFiltre] = useState<Filtre>('all');
   const [page, setPage] = useState(1);

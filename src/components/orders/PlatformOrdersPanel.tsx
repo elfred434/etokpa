@@ -8,6 +8,7 @@ import { lookupProductName } from '../../utils/lookupProductName';
 import { orderLineGivenName, orderLineName, orderLineProductId } from '../../utils/orderLine';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
+import { backgroundRefreshActive, silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -72,6 +73,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<PlatformOrder | null>(null);
+  const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
     if (!selected?.items?.length) return;
@@ -108,8 +110,8 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
   useEffect(() => {
     catalogApi.getZones()
       .then((res) => setZones(listOf(res).map((z: any) => ({ id: Number(z.id), nom: String(z.nom ?? '') }))))
-      .catch(() => setZones([]));
-  }, []);
+      .catch(() => undefined);
+  }, [refreshTick]);
 
   useEffect(() => {
     setPage(1);
@@ -117,8 +119,9 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
-    setErr(null);
+    const background = backgroundRefreshActive();
+    if (!silentRefreshActive()) setLoading(true);
+    if (!background) setErr(null);
     const params = {
       page,
       ...(statut ? { statut } : {}),
@@ -128,18 +131,20 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
     call
       .then((res) => {
         if (!alive) return;
-        setOrders(listOf(res).map(asOrder));
+        const nextOrders = listOf(res).map(asOrder);
+        setOrders(nextOrders);
+        setSelected((current) => current ? nextOrders.find((order) => order.id === current.id) ?? current : null);
         setLastPage(Number(res?.meta?.last_page ?? res?.last_page ?? 1));
         setTotal(Number(res?.meta?.total ?? res?.total ?? 0));
+        setErr(null);
       })
       .catch((e) => {
-        if (!alive) return;
-        setOrders([]);
+        if (!alive || background) return;
         setErr(formatApiError(extractApiError(e)));
       })
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
-  }, [source, statut, zoneId, page, reloadKey]);
+  }, [source, statut, zoneId, page, reloadKey, refreshTick]);
 
   const zoneNom = (id?: number) => zones.find((z) => z.id === Number(id))?.nom ?? (id ? `#${id}` : '—');
 

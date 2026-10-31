@@ -18,6 +18,7 @@ import NegotiationLandmarkField from '../../../components/client/NegotiationLand
 import { readNegotiationLandmark, rememberNegotiationLandmark, type RememberedLandmark } from '../../../utils/negotiationLandmark';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
+import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 
 /* ---- Fiche produit 100 % API : GET /api/products/{id} (route /produit/$productId) ---- */
 
@@ -36,6 +37,7 @@ export default function ProductPage() {
   // Échec autre que 404 (500, serveur arrêté…) : message de l'API + Réessayer (avant : « Produit introuvable »).
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const refreshTick = useGlobalRefreshTick();
 
   const [quantity, setQuantity] = useState(1);
   const [offerInput, setOfferInput] = useState('');
@@ -50,7 +52,7 @@ export default function ProductPage() {
 
   // GET /api/products/{id}
   useEffect(() => {
-    setIsLoading(true);
+    if (!silentRefreshActive()) setIsLoading(true);
     setNotFound(false);
     setLoadError(null);
     catalogApi
@@ -60,7 +62,7 @@ export default function ProductPage() {
         if (p && p.id) {
           setApiProduct(p);
           // Suggestion d'offre : -10 % du prix, arrondi
-          setOfferInput(String(Math.max(1, Math.round(Number(p.prix) * 0.9))));
+          setOfferInput((current) => current || String(Math.max(1, Math.round(Number(p.prix) * 0.9))));
         } else {
           setNotFound(true);
         }
@@ -68,10 +70,13 @@ export default function ProductPage() {
       .catch((err) => {
         // 404 = produit inexistant ; tout autre échec = message exact de l'API (pas de produit factice)
         if (apiErrorStatus(err) === 404) setNotFound(true);
-        else setLoadError(alertApiError(err, 'product-load'));
+        else {
+          const message = alertApiError(err, 'product-load');
+          if (!apiProduct) setLoadError(message);
+        }
       })
       .finally(() => setIsLoading(false));
-  }, [productId, reloadKey]);
+  }, [productId, reloadKey, refreshTick]);
 
   const handleSendOffer = async () => {
     if (!product) return;

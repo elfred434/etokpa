@@ -215,7 +215,7 @@ export default function NotificationsPage() {
             </div>
 
             {/* Notification List */}
-            {loadError ? (
+            {loadError && notifications.length === 0 ? (
               <div className="bg-bg-card border border-border-default rounded-xl">
                 <ApiErrorState
                   title={tx("Impossible de charger les notifications")}
