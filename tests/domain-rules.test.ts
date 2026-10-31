@@ -100,6 +100,21 @@ describe('product page mapping', () => {
     expect(product.categorie).toBe('vegetable');
     expect(product.image).toBeUndefined();
   });
+
+  it('uses the legacy img_url field when image_url is absent', () => {
+    const product = mapApiProduct({
+      id: 12,
+      nom: 'Tomates',
+      prix: 500,
+      prix_minimum: 400,
+      devise: 'XOF',
+      stock: 10,
+      disponible: true,
+      image_url: null,
+      img_url: 'https://cdn.test/tomates.webp',
+    });
+    expect(product.image).toBe('https://cdn.test/tomates.webp');
+  });
 });
 
 describe('profile landmarks', () => {

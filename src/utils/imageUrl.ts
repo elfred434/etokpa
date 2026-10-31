@@ -1,14 +1,23 @@
 /**
  * Résout une image produit renvoyée par l'API :
  * - URL absolue (Cloudinary) → telle quelle ;
- * - chemin relatif `/storage/uploads/…` (fallback local du backend) → préfixé de l'origine API
- *   (ex. http://localhost:8000/storage/…), car le front n'est pas servi par le même hôte.
+ * - chemin relatif `/storage/uploads/…` → origine API si elle est absolue,
+ *   ou même origine si `/api` est proxyfié par Vite (voir vite.config.js).
  * `null`/vide → null (l'appelant gère le placeholder).
  */
-const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api').replace(/\/api\/?$/, '');
+import { apiOriginFromBase } from './apiBaseUrl';
+
+export function resolveImageUrl(
+  u?: string | null,
+  apiBaseUrl?: string | null,
+): string | null {
+  const imageUrl = u?.trim();
+  if (!imageUrl) return null;
+  if (/^(https?:|data:|blob:)/i.test(imageUrl)) return imageUrl;
+  const apiOrigin = apiOriginFromBase(apiBaseUrl);
+  return `${apiOrigin}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+}
 
 export function absImageUrl(u?: string | null): string | null {
-  if (!u) return null;
-  if (/^(https?:|data:|blob:)/i.test(u)) return u;
-  return `${API_ORIGIN}${u.startsWith('/') ? '' : '/'}${u}`;
+  return resolveImageUrl(u, import.meta.env.VITE_API_BASE_URL);
 }

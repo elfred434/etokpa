@@ -1,5 +1,6 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import { apiOriginFromBase } from '../../utils/apiBaseUrl';
 
 declare global {
   interface Window {
@@ -34,8 +35,7 @@ const env = import.meta.env as Record<string, string | undefined>;
 
 /** Origine de l'API sans le préfixe /api (ex. http://localhost:8000). */
 export function getApiOrigin(): string {
-  const base = env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-  return base.replace(/\/api\/?$/, '');
+  return apiOriginFromBase(env.VITE_API_BASE_URL);
 }
 
 export interface ReverbConfig {

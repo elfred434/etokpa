@@ -9,10 +9,18 @@ export default defineConfig({
     host: true, // accessible depuis le réseau (preview distante)
     port: 5173,
     allowedHosts: true,
-    // Proxy same-origin pour les environnements preview : avec VITE_API_BASE_URL=/api,
-    // le navigateur appelle /api sur l'origine du dev server, qui relaie vers Laravel.
+    // Proxy same-origin : quand VITE_API_BASE_URL=/api, les appels API, les images locales
+    // /storage et l'auth Reverb sont relayés vers Laravel depuis le dev server.
     proxy: {
       '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/storage': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/broadcasting': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },

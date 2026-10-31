@@ -118,4 +118,28 @@ describe('livreur, payment and notification adapters', () => {
     await adminApi.getProducts(3);
     expect(apiClient.get).toHaveBeenCalledWith('/admin/products', { params: { page: 3 } });
   });
+
+  it('uploads product images as multipart on create and update', async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({ data: { id: 10 } });
+    const createForm = new FormData();
+    createForm.append('image', new File(['webp'], 'tomate.webp', { type: 'image/webp' }));
+    await adminApi.createProduct(createForm);
+    expect(apiClient.post).toHaveBeenNthCalledWith(
+      1,
+      '/admin/products',
+      createForm,
+      expect.objectContaining({ adapter: 'fetch', timeout: 60000 }),
+    );
+
+    const updateForm = new FormData();
+    updateForm.append('image', new File(['webp'], 'tomate.webp', { type: 'image/webp' }));
+    await adminApi.updateProduct(10, updateForm);
+    expect(updateForm.get('_method')).toBe('PUT');
+    expect(apiClient.post).toHaveBeenNthCalledWith(
+      2,
+      '/admin/products/10',
+      updateForm,
+      expect.objectContaining({ adapter: 'fetch', timeout: 60000 }),
+    );
+  });
 });

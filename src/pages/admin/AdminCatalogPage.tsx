@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useDesignScript } from '../../utils/designRuntime';
 import { adminApi } from '../../services/api';
@@ -6,6 +6,7 @@ import { useLiveRows } from '../../services/api/useLiveRows';
 import { unwrap, listOf, fmtFcfa } from '../../services/api/unwrap';
 import { absImageUrl } from '../../utils/imageUrl';
 import { fichierEnWebp, ImageWebpError } from '../../utils/toWebp';
+import { buildProductMutationPayload } from '../../utils/productPayload';
 import { extractApiError, formatApiError, messageApi } from '../../utils/apiError';
 import DESIGN_SCRIPT from './_scripts/AdminCatalogPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
@@ -61,6 +62,7 @@ export default function AdminCatalogPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageBusy, setImageBusy] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageRemoved, setImageRemoved] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const objectUrlRef = useRef<string | null>(null);
   const revokeObjectUrl = () => {
@@ -93,35 +95,54 @@ export default function AdminCatalogPage() {
     }
   };
   const clearImage = () => {
+    const hadSelectedFile = Boolean(imageFile);
+    const originalImage = absImageUrl(edition?.image_url ?? edition?.img_url);
     revokeObjectUrl();
     setImageFile(null);
+
+    if (hadSelectedFile) {
+      // Annule le nouveau fichier; si l'image enregistrée avait été marquée pour retrait,
+      // ne la réaffiche pas et conserve ce choix.
+      setImagePreview(imageRemoved ? null : originalImage);
+      return;
+    }
+    if (edition?.id && originalImage) {
+      setImageRemoved(true);
+      setImagePreview(null);
+      return;
+    }
+    setImagePreview(originalImage);
+  };
+  const restoreImage = () => {
+    setImageRemoved(false);
     setImagePreview(absImageUrl(edition?.image_url ?? edition?.img_url));
   };
-  const loadCats = () => adminApi.getCategories().then((r: any) => setCats(listOf(unwrap(r)))).catch(() => setCats([]));
-  useState(() => {
-    loadCats();
-    return null;
-  });
+  const loadCats = useCallback(
+    () => adminApi.getCategories().then((r: any) => setCats(listOf(unwrap(r)))).catch(() => setCats([])),
+    [],
+  );
+  useEffect(() => {
+    void loadCats();
+  }, [loadCats]);
   const ouvrir = (pr: any) => {
     revokeObjectUrl();
     setEdition(pr ?? {});
     setImageFile(null);
+    setImageRemoved(false);
     setImagePreview(absImageUrl(pr?.image_url ?? pr?.img_url));
     setForm({ nom: pr?.nom ?? '', description: pr?.description ?? '', prix: String(pr?.prix ?? ''), prix_minimum: String(pr?.prix_minimum ?? ''), stock: String(pr?.stock ?? ''), categorie_id: String(pr?.categorie?.id ?? '') });
   };
-  const fermer = () => { revokeObjectUrl(); setImageFile(null); setEdition(null); };
+  const fermer = () => { revokeObjectUrl(); setImageFile(null); setImageRemoved(false); setImagePreview(null); setEdition(null); };
   const enregistrer = async () => {
     try {
       const champs = { nom: form.nom, description: form.description, prix: Number(form.prix), prix_minimum: Number(form.prix_minimum), stock: Number(form.stock), categorie_id: Number(form.categorie_id) };
-      if (imageFile) {
-        // Multipart uniquement si fichier : champs en string (validations Laravel OK) + image.
-        const fd = new FormData();
-        Object.entries(champs).forEach(([k, v]) => fd.append(k, String(v)));
-        fd.append('image', imageFile);
-        if (edition?.id) await adminApi.updateProduct(edition.id, fd);
-        else await adminApi.createProduct(fd);
-      } else if (edition?.id) await adminApi.updateProduct(edition.id, champs);
-      else await adminApi.createProduct(champs);
+      const payload = buildProductMutationPayload(
+        champs,
+        imageFile,
+        Boolean(edition?.id && imageRemoved),
+      );
+      if (edition?.id) await adminApi.updateProduct(edition.id, payload);
+      else await adminApi.createProduct(payload);
       fermer(); reload();
     } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
   };
@@ -214,12 +235,23 @@ export default function AdminCatalogPage() {
                 {cats.map((c: any) => (
                   <option key={c.id} value={String(c.id)}>{c.nom}</option>
                 ))}
-              </select> <select className="px-md py-2 text-label bg-bg-card border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" value={dispoF} onChange={(e) => setDispoF(e.target.value)}> <option value="">{tx("Disponibilité")}</option> <option value="stock">{tx("En stock")}</option> <option value="rupture">{tx("Rupture")}</option> </select> <div className="flex border border-border-default rounded-lg overflow-hidden"> <button className="p-2 bg-bg-secondary text-primary"><MIcon name="format_list_bulleted" /></button> <button className="p-2 hover:bg-bg-secondary text-text-tertiary"><MIcon name="grid_view" /></button> </div> </div>  <div className="bg-bg-card rounded-lg shadow-sm border border-border-default overflow-hidden"> <table className="w-full text-left border-collapse" data-mobile-detail="native"> <thead> <tr className="bg-bg-secondary border-b border-border-default"> <th className="py-md px-lg w-10"> <input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /> </th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Produit")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Catégorie")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Prix")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Statut")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider text-right">{tx("Actions")}</th> </tr> </thead> <tbody>
+              </select> <select className="px-md py-2 text-label bg-bg-card border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" value={dispoF} onChange={(e) => setDispoF(e.target.value)}> <option value="">{tx("Disponibilité")}</option> <option value="stock">{tx("En stock")}</option> <option value="rupture">{tx("Rupture")}</option> </select> <div className="flex border border-border-default rounded-lg overflow-hidden"> <button className="p-2 bg-bg-secondary text-primary"><MIcon name="format_list_bulleted" /></button> <button className="p-2 hover:bg-bg-secondary text-text-tertiary"><MIcon name="grid_view" /></button> </div> </div>  <div className="bg-bg-card rounded-lg shadow-sm border border-border-default overflow-hidden"> <table className="w-full text-left border-collapse" data-mobile-detail="native">
+<thead>
+<tr className="bg-bg-secondary border-b border-border-default">
+<th className="py-md px-lg w-10"> <input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /> </th>
+<th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Produit")}</th>
+<th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Catégorie")}</th>
+<th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Prix")}</th>
+<th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Statut")}</th>
+<th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider text-right">{tx("Actions")}</th>
+</tr>
+</thead>
+<tbody>
                 {tab === 'produits' && slicePage(produitsF).map((pr: any) => (
                   <tr key={pr.id} tabIndex={0} title={tx("Voir le détail")} className="cursor-pointer hover:bg-bg-secondary/50 transition-colors" onClick={() => ouvrirFicheProduit(pr)} onKeyDown={(e) => { if (e.key === 'Enter') ouvrirFicheProduit(pr); }}>
                     <td className="py-4 px-lg" onClick={(e) => e.stopPropagation()}><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /></td>
-                    <td className="py-4 px-md"> <div className="flex items-center gap-3"> {pr.image_url ? (
-                      <img src={absImageUrl(pr.image_url) ?? undefined} alt="" className="h-10 w-10 rounded-lg bg-bg-secondary object-cover" />
+                    <td className="py-4 px-md"> <div className="flex items-center gap-3"> {(pr.image_url ?? pr.img_url) ? (
+                      <img src={absImageUrl(pr.image_url ?? pr.img_url) ?? undefined} alt="" className="h-10 w-10 rounded-lg bg-bg-secondary object-cover" />
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center text-primary"><MIcon name="inventory_2" className="text-[20px]" /></div>
                     )} <span className="font-body font-semibold">{pr.nom}</span> </div> </td>
@@ -242,7 +274,9 @@ export default function AdminCatalogPage() {
                 {((tab === 'produits' && produitsF.length === 0) || (tab === 'categories' && catsF.length === 0)) && (
                   <tr><td className="py-6 px-lg text-text-secondary" colSpan={6}>{tx("Aucun résultat pour ces filtres.")}</td></tr>
                 )}
-              </tbody> </table>  <div className="py-md px-lg flex items-center justify-between border-t border-border-default bg-bg-secondary/30"> <span className="text-label text-text-secondary">{tabList.length === 0 ? `Aucun résultat` : `Affichage de ${(current - 1) * PER_PAGE + 1} à ${Math.min(current * PER_PAGE, tabList.length)} sur ${tabList.length} ${tabNoun}`}</span> <div className="flex items-center gap-2"> <button type="button" disabled={current <= 1} onClick={() => setPage(current - 1)} className="w-8 h-8 flex items-center justify-center rounded border border-border-default bg-bg-card text-text-tertiary hover:bg-bg-secondary disabled:opacity-40"><MIcon name="chevron_left" className="text-[18px]" /></button> {Array.from({ length: pages }, (_, i) => i + 1).filter((n) => n === 1 || n === pages || Math.abs(n - current) <= 1).map((n) => (<button key={n} type="button" onClick={() => setPage(n)} className={n === current ? 'w-8 h-8 flex items-center justify-center rounded bg-primary-container text-white font-bold' : 'w-8 h-8 flex items-center justify-center rounded border border-border-default bg-bg-card hover:bg-bg-secondary'}>{n}</button>))} <button type="button" disabled={current >= pages} onClick={() => setPage(current + 1)} className="w-8 h-8 flex items-center justify-center rounded border border-border-default bg-bg-card text-text-tertiary hover:bg-bg-secondary disabled:opacity-40"><MIcon name="chevron_right" className="text-[18px]" /></button> </div> </div> </div> </div> 
+              </tbody>
+</table>
+<div className="py-md px-lg flex items-center justify-between border-t border-border-default bg-bg-secondary/30"> <span className="text-label text-text-secondary">{tabList.length === 0 ? `Aucun résultat` : `Affichage de ${(current - 1) * PER_PAGE + 1} à ${Math.min(current * PER_PAGE, tabList.length)} sur ${tabList.length} ${tabNoun}`}</span> <div className="flex items-center gap-2"> <button type="button" disabled={current <= 1} onClick={() => setPage(current - 1)} className="w-8 h-8 flex items-center justify-center rounded border border-border-default bg-bg-card text-text-tertiary hover:bg-bg-secondary disabled:opacity-40"><MIcon name="chevron_left" className="text-[18px]" /></button> {Array.from({ length: pages }, (_, i) => i + 1).filter((n) => n === 1 || n === pages || Math.abs(n - current) <= 1).map((n) => (<button key={n} type="button" onClick={() => setPage(n)} className={n === current ? 'w-8 h-8 flex items-center justify-center rounded bg-primary-container text-white font-bold' : 'w-8 h-8 flex items-center justify-center rounded border border-border-default bg-bg-card hover:bg-bg-secondary'}>{n}</button>))} <button type="button" disabled={current >= pages} onClick={() => setPage(current + 1)} className="w-8 h-8 flex items-center justify-center rounded border border-border-default bg-bg-card text-text-tertiary hover:bg-bg-secondary disabled:opacity-40"><MIcon name="chevron_right" className="text-[18px]" /></button> </div> </div> </div> </div>
       {detail && (
         <CatalogueDetailModal
           detail={detail}
@@ -290,9 +324,19 @@ export default function AdminCatalogPage() {
                   <p className="mt-1 text-xs text-text-tertiary">{tx("PNG ou JPG, converti en WebP avant l'envoi (max. 4 Mo)")}</p>
                   {imageFile && <p className="mt-1 text-xs font-semibold text-primary">{imageFile.name} · {Math.max(1, Math.round(imageFile.size / 1024))} Ko</p>}
                 </div>
+                {imageRemoved && !imageFile && (
+                  <p className="mt-1 text-xs text-text-secondary" role="status">
+                    {tx("L’image actuelle sera supprimée à l’enregistrement.")}
+                  </p>
+                )}
                 {imagePreview && (
                   <button type="button" className="mt-1 text-xs text-text-secondary underline" onClick={clearImage}>
                     {imageFile ? tx("Retirer l'image choisie") : tx("Retirer l'image")}
+                  </button>
+                )}
+                {imageRemoved && !imageFile && edition?.id && absImageUrl(edition?.image_url ?? edition?.img_url) && (
+                  <button type="button" className="mt-1 ml-3 text-xs text-text-secondary underline" onClick={restoreImage}>
+                    {tx("Restaurer l’image actuelle")}
                   </button>
                 )}
                 <input

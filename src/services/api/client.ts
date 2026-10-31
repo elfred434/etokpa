@@ -1,7 +1,9 @@
 import axios from 'axios';
+import { normalizeApiBaseUrl } from '../../utils/apiBaseUrl';
 
-// Base URL vers l'API Laravel (default: http://localhost:8000/api ou variable d'environnement VITE_API_BASE_URL)
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+// Base URL vers l'API Laravel (default: http://localhost:8000/api ou variable d'environnement VITE_API_BASE_URL).
+// Le trim évite qu'un espace final dans .env ou la commande de lancement crée `/api%20/...`.
+export const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
