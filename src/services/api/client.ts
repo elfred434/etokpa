@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { backgroundRefreshActive } from '../refresh/refreshBus';
+import { markBackgroundRefreshRequest } from '../refresh/refreshRequestContext';
 import { normalizeApiBaseUrl } from '../../utils/apiBaseUrl';
 
 // Base URL vers l'API Laravel (default: http://localhost:8000/api ou variable d'environnement VITE_API_BASE_URL).
@@ -17,6 +19,7 @@ export const apiClient = axios.create({
 // Intercepteur pour injecter le token Sanctum Bearer s'il existe
 apiClient.interceptors.request.use(
   (config) => {
+    if (backgroundRefreshActive()) markBackgroundRefreshRequest(config);
     const token = localStorage.getItem('tokpa_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;

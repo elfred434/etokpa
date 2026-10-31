@@ -2,6 +2,7 @@ import toast from 'react-hot-toast';
 import { tr, tx } from '../i18n/tx';
 import { API_BASE_URL } from '../services/api/client';
 import { backgroundRefreshActive } from '../services/refresh/refreshBus';
+import { isBackgroundRefreshApiError } from '../services/refresh/refreshRequestContext';
 
 /**
  * Extraction & mise en forme des erreurs API Laravel pour l'UX.
@@ -103,6 +104,8 @@ export function apiErrorStatus(err: unknown): number | null {
 export function alertApiError(err: unknown, toastId?: string): string {
   const info = extractApiError(err);
   const text = formatApiError(info);
-  if (info.status !== 401 && !backgroundRefreshActive()) toast.error(text, toastId ? { id: toastId } : undefined);
+  if (info.status !== 401 && !backgroundRefreshActive() && !isBackgroundRefreshApiError(err)) {
+    toast.error(text, toastId ? { id: toastId } : undefined);
+  }
   return text;
 }

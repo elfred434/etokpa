@@ -133,6 +133,18 @@ describe('bus de rafraîchissement', () => {
     erreurToast.mockRestore();
   });
 
+  it('garde le silence pour une erreur tardive d’une requête lancée en arrière-plan', () => {
+    const erreurToast = vi.spyOn(toast, 'error');
+
+    alertApiError({
+      config: { __tokpaBackgroundRefresh: true },
+      response: { status: 503, data: { message: 'API indisponible' } },
+    });
+
+    expect(erreurToast).not.toHaveBeenCalled();
+    erreurToast.mockRestore();
+  });
+
   it('attend les abonnés qui renvoient une promesse', async () => {
     let fini = false;
     const off = onGlobalRefresh(async () => {
