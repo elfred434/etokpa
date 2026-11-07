@@ -6,14 +6,14 @@ import { tx } from '../../i18n/tx';
 interface ApiErrorStateProps {
   /** Ce qui n'a pas pu être chargé, ex. « Impossible de charger les produits ». */
   title: string;
-  /** Message utilisateur sûr (statut + résumé; validations 422 gardent les détails utiles). */
+  /** Message formaté : détails bornés en développement, résumé filtré en production. */
   message: string;
   /** Relance l'appel ; absent = pas de bouton. */
   onRetry?: () => void;
   className?: string;
 }
 
-/** Échec d'un appel API : message utilisateur sûr + « Réessayer » (jamais de données factices). */
+/** Échec API : message formaté selon l'environnement + « Réessayer » (sans données factices). */
 export default function ApiErrorState({ title, message, onRetry, className }: ApiErrorStateProps) {
   useLanguage();
   return (

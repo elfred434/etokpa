@@ -20,10 +20,11 @@ afterEach(() => {
   clearFrontendErrorReports();
   sessionStorage.clear();
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
 });
 
 describe('safe application error fallbacks', () => {
-  it('replaces a React crash with a generic page and a safe reference', () => {
+  it('shows a redacted React error message in development with a safe reference', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     render(
@@ -34,21 +35,32 @@ describe('safe application error fallbacks', () => {
 
     expect(screen.getByRole('alert')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Une erreur inattendue est survenue.' })).toBeTruthy();
-    expect(screen.queryByText(/SQLSTATE|internal\.php|private-value/)).toBeNull();
+    expect(screen.getByText(/SQLSTATE \/srv\/internal\.php/)).toBeTruthy();
+    expect(screen.queryByText(/private-value/)).toBeNull();
     expect(getFrontendErrorReports().some((report) => report.source === 'react-boundary')).toBe(true);
   });
 
-  it('uses the safe route fallback, records the route error and supports retry', async () => {
+  it('shows the route error message in development and supports retry', async () => {
     const reset = vi.fn();
     render(<RouterErrorFallback error={new Error('private route stack')} reset={reset} />);
 
     expect(screen.getByRole('alert')).toBeTruthy();
-    expect(screen.queryByText(/private route stack/)).toBeNull();
+    expect(screen.getByText('private route stack')).toBeTruthy();
     await waitFor(() => {
       expect(getFrontendErrorReports().some((report) => report.source === 'router')).toBe(true);
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
     expect(reset).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the router fallback generic outside development', async () => {
+    vi.stubEnv('DEV', false);
+    render(<RouterErrorFallback error={new Error('private route stack')} reset={vi.fn()} />);
+
+    expect(screen.queryByText('private route stack')).toBeNull();
+    await waitFor(() => {
+      expect(getFrontendErrorReports().some((report) => report.source === 'router')).toBe(true);
+    });
   });
 });

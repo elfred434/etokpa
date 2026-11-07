@@ -3,15 +3,16 @@ import { tr, tx } from '../i18n/tx';
 import { backgroundRefreshActive } from '../services/refresh/refreshBus';
 import { isBackgroundRefreshApiError } from '../services/refresh/refreshRequestContext';
 import { captureFrontendError } from '../services/errors/frontendErrorReporter';
+import { getDevelopmentErrorMessage } from './developmentErrorMessage';
 
 /**
- * Error extraction for the UI. Server failures and network details are deliberately
- * reduced to safe text; detailed diagnostics stay in the local, redacted reporter.
+ * Error extraction for the UI. Development may show a bounded, redacted message;
+ * production uses safe summaries. The local reporter stores metadata only.
  */
 export interface ApiErrorInfo {
   /** HTTP status, or null if the request did not receive an HTTP response. */
   status: number | null;
-  /** Safe user-facing message. Never contains a server stack or raw network URL. */
+  /** Bounded message; credentials, stacks and full URLs are excluded in all modes. */
   message: string;
   /** Laravel validation errors (422), retained for field-level feedback. */
   fieldErrors: Record<string, string[]>;
@@ -64,7 +65,7 @@ function validationErrors(value: unknown): Record<string, string[]> {
     const values = Array.isArray(rawMessages) ? rawMessages : [rawMessages];
     const messages = values
       .filter((message): message is string => typeof message === 'string')
-      .map((message) => safeText(message))
+      .map((message) => getDevelopmentErrorMessage(message) ?? safeText(message))
       .filter(Boolean)
       .slice(0, 3);
     if (messages.length) result[safeField] = messages;
@@ -94,7 +95,8 @@ export function extractApiError(err: unknown): ApiErrorInfo {
   const status = typeof rawStatus === 'number' && Number.isInteger(rawStatus) && rawStatus >= 100 && rawStatus <= 599
     ? rawStatus
     : null;
-  const rawMessage = safeText(response?.data?.message);
+  const developmentMessage = getDevelopmentErrorMessage(response?.data?.message);
+  const rawMessage = developmentMessage ?? safeText(response?.data?.message);
   const timeout = status === null && isTimeout(error);
   const cancelled = status === null && isExpectedCancellation(error);
 
@@ -102,7 +104,7 @@ export function extractApiError(err: unknown): ApiErrorInfo {
     const reference = captureFrontendError(err, { source: 'api', status }).reference;
     return {
       status,
-      message: tr('Une erreur interne est survenue. Réessayez plus tard.', 'An internal error occurred. Please try again later.'),
+      message: developmentMessage ?? tr('Une erreur interne est survenue. Réessayez plus tard.', 'An internal error occurred. Please try again later.'),
       fieldErrors: {},
       reference,
     };
@@ -110,11 +112,12 @@ export function extractApiError(err: unknown): ApiErrorInfo {
 
   if (status === null) {
     const reference = cancelled ? undefined : captureFrontendError(err, { source: 'api' }).reference;
+    const developmentNetworkMessage = cancelled ? undefined : getDevelopmentErrorMessage(err);
     return {
       status: null,
-      message: timeout
+      message: developmentNetworkMessage ?? (timeout
         ? tr('Le service met trop de temps à répondre.', 'The service is taking too long to respond.')
-        : tr('Le service est momentanément indisponible.', 'The service is temporarily unavailable.'),
+        : tr('Le service est momentanément indisponible.', 'The service is temporarily unavailable.')),
       fieldErrors: {},
       reference,
       timeout,

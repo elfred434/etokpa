@@ -2,11 +2,12 @@ import { tr } from '../../i18n/tx';
 
 interface UnexpectedErrorViewProps {
   reference?: string;
+  developmentMessage?: string;
   onRetry?: () => void;
 }
 
-/** Safe last-resort UI: never render an exception message, stack or server payload. */
-export default function UnexpectedErrorView({ reference, onRetry }: UnexpectedErrorViewProps) {
+/** Production fallback is generic; development may show one bounded, redacted message, never a stack. */
+export default function UnexpectedErrorView({ reference, developmentMessage, onRetry }: UnexpectedErrorViewProps) {
   const retry = onRetry ?? (() => window.location.reload());
 
   return (
@@ -30,6 +31,19 @@ export default function UnexpectedErrorView({ reference, onRetry }: UnexpectedEr
           <p className="mb-6 text-sm text-text-secondary">
             {tr('Référence de diagnostic :', 'Diagnostic reference:')} <code>{reference}</code>
           </p>
+        )}
+        {import.meta.env.DEV && developmentMessage && (
+          <div className="mb-6 text-left">
+            <p className="mb-2 text-sm font-semibold text-text-secondary">
+              {tr('Détail de développement :', 'Development detail:')}
+            </p>
+            <pre
+              className="w-full overflow-auto rounded-lg bg-surface p-3 text-sm text-on-surface"
+              style={{ maxHeight: '12rem', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+            >
+              {developmentMessage}
+            </pre>
+          </div>
         )}
         <div className="flex flex-col justify-center gap-3 sm:flex-row">
           <button

@@ -44,7 +44,7 @@ export default function ConnexionPage() {
     } catch (err: unknown) {
       const info = extractApiError(err);
       setAuthError(
-        info.status === 401
+        info.status === 401 && !import.meta.env.DEV
           ? tx("Email ou mot de passe incorrect.")
           : formatApiError(info),
       );
