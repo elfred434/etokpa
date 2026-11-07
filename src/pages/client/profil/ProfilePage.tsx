@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
-import { alertApiError } from '../../../utils/apiError';
+import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
 import { currentRole, hasSession } from '../../../routes/authGuard';
 import { authApi, ordersApi, paymentsApi, type UserProfile } from '../../../services/api';
@@ -269,8 +269,7 @@ export default function ProfilePage() {
       setEditProfileOpen(false);
       await loadProfile();
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { message?: string } } })?.response?.data;
-      toast.error(detail?.message || (isFr ? tx("Erreur lors de la mise à jour") : 'Update error'));
+      toast.error(formatApiError(extractApiError(err)));
     } finally {
       setSaving(false);
     }
@@ -301,8 +300,7 @@ export default function ProfilePage() {
       setPwNew('');
       setPwConfirm('');
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { message?: string } } })?.response?.data;
-      setPwError(detail?.message || (isFr ? tx("Mot de passe actuel incorrect.") : 'Current password incorrect.'));
+      setPwError(formatApiError(extractApiError(err)));
     } finally {
       setSaving(false);
     }

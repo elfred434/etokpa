@@ -24,6 +24,7 @@ import { tx } from '../../../i18n/tx';
 import { orderLineName } from '../../../utils/orderLine';
 import { isCancelledStatut } from '../../../utils/orderStatus';
 import { loadPayment, paymentIdempotencyKey, rememberPayment } from '../../../utils/idempotence';
+import { captureFrontendError } from '../../../services/errors/frontendErrorReporter';
 
 interface ApiOrderItem {
   id: number;
@@ -215,7 +216,10 @@ export default function OrdersListPage() {
     (async () => {
       const inList = orders.some((o) => Number(o.id) === id);
       if (!inList && !(await isOwnOrder(id))) {
-        console.warn(`[anti-IDOR] ?detail=${id} refusé (commande absente de GET /orders)`);
+        captureFrontendError(new Error('Order ownership check denied detail access'), {
+          source: 'security-guard',
+          status: 403,
+        });
         return;
       }
       try {

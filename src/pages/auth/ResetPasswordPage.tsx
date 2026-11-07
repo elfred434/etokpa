@@ -6,6 +6,7 @@ import MIcon from '../../components/shared/MIcon';
 import LangToggle from '../../components/shared/LangToggle';
 import PasswordInput from '../../components/auth/PasswordInput';
 import { authApi } from '../../services/api';
+import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
@@ -52,9 +53,7 @@ export default function ResetPasswordPage() {
       toast.success(res.message || tx("Mot de passe réinitialisé avec succès."));
       navigate({ to: '/connexion' });
     } catch (err: unknown) {
-      console.warn('Reset password error:', err);
-      const detail = (err as { response?: { data?: { message?: string } } })?.response?.data;
-      setError(detail?.message || tx("Lien de réinitialisation invalide ou expiré."));
+      setError(formatApiError(extractApiError(err)));
     } finally {
       setLoading(false);
     }

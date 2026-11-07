@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import { tx } from '../i18n/tx';
+import { captureFrontendError } from '../services/errors/frontendErrorReporter';
 
 export interface AuthUser {
   id?: number;
@@ -40,8 +41,8 @@ export function useAuthGuard(redirectTo = '/connexion') {
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error('Failed to parse tokpa_user:', e);
+      } catch (error) {
+        captureFrontendError(error, { source: 'auth-storage' });
       }
     }
     setIsLoading(false);

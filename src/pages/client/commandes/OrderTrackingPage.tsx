@@ -15,6 +15,7 @@ import { catalogApi, ordersApi } from '../../../services/api';
 import { isOwnOrder } from '../../../utils/ownOrder';
 import { alertApiError } from '../../../utils/apiError';
 import { tx } from '../../../i18n/tx';
+import { captureFrontendError } from '../../../services/errors/frontendErrorReporter';
 
 interface ApiRider {
   id: number;
@@ -139,7 +140,10 @@ export default function OrderTrackingPage() {
         const mine = await isOwnOrder(selectedId);
         if (!alive) return;
         if (!mine) {
-          console.warn(`[anti-IDOR] commande #${selectedId} absente de GET /orders (pas à cet utilisateur) → affichage bloqué`);
+          captureFrontendError(new Error('Order ownership check denied detail access'), {
+            source: 'security-guard',
+            status: 403,
+          });
           setAccessDenied(true);
           return;
         }

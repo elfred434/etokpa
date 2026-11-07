@@ -53,6 +53,7 @@ import ParametresPage from '../pages/client/parametres/ParametresPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import SystemBridge from '../components/system/SystemBridge';
 import { AdminActionDialogHost } from '../components/shared/AdminActionDialogs';
+import RouterErrorFallback from '../components/errors/RouterErrorFallback';
 
 const rootRoute = createRootRoute({
   // Garde globale (authGuard.ts) : non connecté → /connexion sur toute page hors accueil et écrans
@@ -261,7 +262,7 @@ const routeTree = rootRoute.addChildren([
   livreurParametresRoute,
 ]);
 
-export const router = createRouter({ routeTree });
+export const router = createRouter({ routeTree, defaultErrorComponent: RouterErrorFallback });
 
 // Session perdue en cours de navigation (401 de l'API) → /connexion hors pages publiques (authGuard.ts).
 redirectOnSessionExpired(router);

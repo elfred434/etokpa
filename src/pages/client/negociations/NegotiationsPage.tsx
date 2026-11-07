@@ -12,7 +12,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { negotiationApi, ordersApi } from '../../../services/api';
 import { absImageUrl } from '../../../utils/imageUrl';
-import { alertApiError } from '../../../utils/apiError';
+import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
 import NegotiationLandmarkField from '../../../components/client/NegotiationLandmarkField';
 import {
   landmarkFromProposal,
@@ -231,8 +231,7 @@ export default function NegotiationsPage() {
       setEditModal(null);
       loadProposals();
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { message?: string } } })?.response?.data;
-      setEditError(detail?.message || (isFr ? tx("Impossible de modifier l’offre.") : 'Could not update the offer.'));
+      setEditError(formatApiError(extractApiError(err)) || (isFr ? tx("Impossible de modifier l’offre.") : 'Could not update the offer.'));
     } finally {
       setEditSaving(false);
     }

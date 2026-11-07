@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { captureFrontendError } from '../services/errors/frontendErrorReporter';
 import { tx } from '../i18n/tx';
 
 /**
@@ -112,13 +113,13 @@ let currentRuntime: Runtime | null = null;
 /** Dispatche un handler `data-on*` dans le scope du script du design (lignes dynamiques). */
 export function invokeDesign(code: string, el: Element, event: Event): void {
   if (!currentRuntime) {
-    console.warn('[designScript] runtime non initialisé pour :', code);
+    captureFrontendError(new Error('Design runtime unavailable'), { source: 'design-runtime' });
     return;
   }
   try {
     currentRuntime.invoke.call(el, code.replace(/\bthis\b/g, 'el'), el, event);
-  } catch (err) {
-    console.warn('[designScript] action', code, err);
+  } catch (error) {
+    captureFrontendError(error, { source: 'design-runtime' });
   }
 }
 
@@ -129,8 +130,8 @@ export function useDesignScript(script: string) {
     try {
       rt = build(script);
       currentRuntime = rt;
-    } catch (err) {
-      console.warn('[designScript] erreur à la lecture du script du design :', err);
+    } catch (error) {
+      captureFrontendError(error, { source: 'design-runtime' });
       return;
     }
     const offs: Array<() => void> = [];
@@ -140,8 +141,8 @@ export function useDesignScript(script: string) {
         const handler = (e: Event) => {
           try {
             rt.invoke.call(el, code.replace(/\bthis\b/g, 'el'), el, e);
-          } catch (err) {
-            console.warn('[designScript] action', code, err);
+          } catch (error) {
+            captureFrontendError(error, { source: 'design-runtime' });
           }
         };
         el.addEventListener(evt, handler);

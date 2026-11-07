@@ -42,11 +42,10 @@ export default function ConnexionPage() {
       localStorage.setItem('tokpa_pending_email', email);
       navigate({ to: '/verification-2fa' });
     } catch (err: unknown) {
-      console.warn('API login error:', err);
       const info = extractApiError(err);
       setAuthError(
         info.status === 401
-          ? info.message || tx("Email ou mot de passe incorrect.")
+          ? tx("Email ou mot de passe incorrect.")
           : formatApiError(info),
       );
     } finally {
@@ -149,7 +148,6 @@ export default function ConnexionPage() {
                         const res = await authApi.forgotPassword(email.trim());
                         toast.success(res?.message || tx("Si un compte existe, un lien de réinitialisation a été envoyé."));
                       } catch (err) {
-                        console.warn('Forgot password error:', err);
                         toast.error(formatApiError(extractApiError(err)));
                       }
                     }}

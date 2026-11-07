@@ -13,7 +13,7 @@ import { submitOffer, acceptCounterOffer, cancelNegotiation } from '../../../sto
 import type { Product } from '../../../types/models';
 import { catalogApi, negotiationApi, type ApiProduct } from '../../../services/api';
 import { mapApiProduct } from '../../../utils/productMap';
-import { alertApiError, apiErrorStatus } from '../../../utils/apiError';
+import { alertApiError, apiErrorStatus, extractApiError, formatApiError } from '../../../utils/apiError';
 import NegotiationLandmarkField from '../../../components/client/NegotiationLandmarkField';
 import { readNegotiationLandmark, rememberNegotiationLandmark, type RememberedLandmark } from '../../../utils/negotiationLandmark';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -68,7 +68,7 @@ export default function ProductPage() {
         }
       })
       .catch((err) => {
-        // 404 = produit inexistant ; tout autre échec = message exact de l'API (pas de produit factice)
+        // 404 = produit inexistant ; les autres échecs sont présentés via le formateur sûr (pas de produit factice)
         if (apiErrorStatus(err) === 404) setNotFound(true);
         else {
           const message = alertApiError(err, 'product-load');
@@ -118,8 +118,7 @@ export default function ProductPage() {
       );
       toast.success(tx("Offre envoyée au marché ! Vous serez notifié de sa réponse."));
     } catch (e: unknown) {
-      const detail = (e as { response?: { data?: { message?: string } } })?.response?.data;
-      toast.error(detail?.message || tx('Impossible d’envoyer l’offre (serveur inaccessible ?)'));
+      toast.error(formatApiError(extractApiError(e)));
     } finally {
       setIsSubmitting(false);
     }

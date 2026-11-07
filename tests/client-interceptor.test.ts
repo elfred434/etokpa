@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../src/services/api/client';
+import { clearFrontendErrorReports, getFrontendErrorReports } from '../src/services/errors/frontendErrorReporter';
 
 type Rejected = (error: unknown) => Promise<unknown>;
 
@@ -11,6 +12,8 @@ function responseRejected(): Rejected {
 describe('API client session interceptor', () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
+    clearFrontendErrorReports();
     vi.stubGlobal('window', { dispatchEvent: vi.fn() });
   });
 
@@ -36,9 +39,12 @@ describe('API client session interceptor', () => {
     expect(window.dispatchEvent).not.toHaveBeenCalled();
   });
 
-  it('leaves other errors untouched', async () => {
+  it('leaves the session intact and captures a safe summary for server failures', async () => {
     localStorage.setItem('tokpa_token', 'abc');
-    await expect(responseRejected()({ response: { status: 500 } })).rejects.toBeTruthy();
+    const error = { response: { status: 500, data: { message: 'SQLSTATE private backend detail' } } };
+    await expect(responseRejected()(error)).rejects.toBeTruthy();
     expect(localStorage.getItem('tokpa_token')).toBe('abc');
+    expect(getFrontendErrorReports()).toMatchObject([{ source: 'api', status: 500 }]);
+    expect(JSON.stringify(getFrontendErrorReports())).not.toContain('SQLSTATE');
   });
 });

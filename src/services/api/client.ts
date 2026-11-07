@@ -2,6 +2,7 @@ import axios from 'axios';
 import { backgroundRefreshActive } from '../refresh/refreshBus';
 import { markBackgroundRefreshRequest } from '../refresh/refreshRequestContext';
 import { normalizeApiBaseUrl } from '../../utils/apiBaseUrl';
+import { captureFrontendError } from '../errors/frontendErrorReporter';
 
 // Base URL vers l'API Laravel (default: http://localhost:8000/api ou variable d'environnement VITE_API_BASE_URL).
 // Le trim évite qu'un espace final dans .env ou la commande de lancement crée `/api%20/...`.
@@ -33,6 +34,12 @@ function messageOf(error: { response?: { data?: { message?: string } } }): strin
   return String(error.response?.data?.message ?? '');
 }
 
+function isRequestCancellation(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const value = error as { name?: unknown; code?: unknown };
+  return value.name === 'AbortError' || value.name === 'CanceledError' || value.code === 'ERR_CANCELED';
+}
+
 function sessionRejected(error: { response?: { status?: number; data?: { message?: string } } }): boolean {
   const status = error.response?.status;
   if (status === 401) return true;
@@ -44,6 +51,11 @@ function sessionRejected(error: { response?: { status?: number; data?: { message
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    const status = (error as { response?: { status?: number } } | null)?.response?.status;
+    if (!isRequestCancellation(error) && (status == null || status >= 500)) {
+      captureFrontendError(error, { source: 'api', status });
+    }
+
     if (sessionRejected(error)) {
       const hadSession = !!localStorage.getItem('tokpa_token');
       localStorage.removeItem('tokpa_token');

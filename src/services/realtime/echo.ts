@@ -1,6 +1,7 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { apiOriginFromBase } from '../../utils/apiBaseUrl';
+import { captureFrontendError } from '../errors/frontendErrorReporter';
 
 declare global {
   interface Window {
@@ -110,9 +111,9 @@ export function initEcho(): Echo<'pusher'> | null {
     } as ConstructorParameters<typeof Echo<'pusher'>>[0]);
     boundToken = token;
     return window.Echo;
-  } catch (err) {
+  } catch (error) {
     // Le temps réel est un confort : un échec ne doit JAMAIS bloquer le rendu de l'app.
-    console.warn('TOKPa Reverb: initialisation impossible — mode dégradé (sans WebSocket).', err);
+    captureFrontendError(error, { source: 'realtime' });
     shutdownEcho();
     return null;
   }

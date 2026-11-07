@@ -84,7 +84,7 @@ export default function PackPage() {
       })
       .catch((err) => {
         if (!alive) return;
-        // 404 = pack inexistant ; tout autre échec = message exact de l'API
+        // 404 = pack inexistant ; les autres échecs passent par le formateur sûr
         if (apiErrorStatus(err) === 404) setNotFound(true);
         else {
           const message = alertApiError(err, 'pack-load');

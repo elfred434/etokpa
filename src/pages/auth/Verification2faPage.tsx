@@ -69,7 +69,6 @@ export default function Verification2faPage() {
       // Ouverture directe de /connexion : espace du rôle. Sinon, la page demandée avant le login.
       navigate({ href: postLoginTarget(currentRole()), replace: true });
     } catch (err: unknown) {
-      console.warn('API 2FA verification error:', err);
       // Pas de fallback factice : sans token réel du backend, on ne « connecte » personne.
       setError(formatApiError(extractApiError(err)));
       setAttemptsLeft((a) => a - 1);

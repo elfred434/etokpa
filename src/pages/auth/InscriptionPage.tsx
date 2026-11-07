@@ -128,7 +128,6 @@ export default function InscriptionPage() {
       localStorage.setItem('tokpa_pending_email', profil.email);
       navigate({ to: '/verification-2fa' });
     } catch (err: unknown) {
-      console.warn('API Register error:', err);
       const info = extractApiError(err);
       const text = formatApiError(info);
       setApiError(text);
