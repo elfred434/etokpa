@@ -86,6 +86,38 @@ export function describeNotification(n: ApiNotification, isFr: boolean): { type:
   }
 }
 
+export type DeliveryAssignmentRecipient = 'livreur' | 'client' | 'manager' | 'admin' | 'super_admin' | null;
+
+/** Extrait l’identifiant de commande des formes d’événement broadcastées connues. */
+export function assignedOrderId(payload: unknown): number | undefined {
+  if (!payload || typeof payload !== 'object') return undefined;
+  const row = payload as { id?: unknown; order_id?: unknown; order?: { id?: unknown } | null };
+  const id = Number(row.order_id ?? row.order?.id ?? row.id);
+  return Number.isInteger(id) && id > 0 ? id : undefined;
+}
+
+/** Texte du toast `delivery.assigned`, adapté au rôle qui reçoit le broadcast. */
+export function deliveryAssignmentToastMessage(
+  recipient: string | null,
+  orderId: number | undefined,
+  isFr: boolean,
+): string {
+  const suffix = orderId ? ` #${orderId}` : '';
+  if (recipient === 'livreur') {
+    return isFr
+      ? `Nouvelle course assignée${orderId ? ` — commande${suffix}` : ''}.`
+      : `New delivery assigned${orderId ? ` — order${suffix}` : ''}.`;
+  }
+  if (recipient === 'manager' || recipient === 'admin' || recipient === 'super_admin') {
+    return isFr
+      ? `Un livreur a été assigné${orderId ? ` à la commande${suffix}` : ' à une commande'}.`
+      : `A rider was assigned${orderId ? ` to order${suffix}` : ' to an order'}.`;
+  }
+  return isFr
+    ? `Un livreur a été assigné${orderId ? ` à votre commande${suffix}` : ' à votre commande'}.`
+    : `A rider was assigned${orderId ? ` to your order${suffix}` : ' to your order'}.`;
+}
+
 export function formatTime(iso: string, isFr: boolean): string {
   const date = new Date(iso);
   if (isNaN(date.getTime())) return '—';
