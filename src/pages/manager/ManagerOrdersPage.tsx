@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
 import PlatformOrdersPanel, { type PlatformOrder } from '../../components/orders/PlatformOrdersPanel';
@@ -6,7 +7,7 @@ import { managerApi } from '../../services/api';
 import { listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
-import { tx } from '../../i18n/tx';
+import { tr, tx } from '../../i18n/tx';
 import { useGlobalRefreshTick } from '../../hooks/useRefresh';
 import { filterLivreursDisponiblesDansZone } from '../../utils/managerAssignment';
 
@@ -26,7 +27,6 @@ export default function ManagerOrdersPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [livreurs, setLivreurs] = useState<any[]>([]);
   const [err, setErr] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
   const [assignation, setAssignation] = useState<PlatformOrder | null>(null);
   const [livreurChoisi, setLivreurChoisi] = useState('');
   const refreshTick = useGlobalRefreshTick();
@@ -46,10 +46,12 @@ export default function ManagerOrdersPage() {
   const confirmerAssignation = async () => {
     if (!assignation || !livreurChoisi) return;
     setErr(null);
-    setInfo(null);
     try {
       await managerApi.assignLivreur(assignation.id, Number(livreurChoisi));
-      setInfo(`Commande #${assignation.id} assignée avec succès.`);
+      toast.success(tr(
+        `Commande #${assignation.id} assignée avec succès.`,
+        `Order #${assignation.id} assigned successfully.`,
+      ));
       setAssignation(null);
       setLivreurChoisi('');
       setReloadKey((k) => k + 1);
@@ -66,9 +68,6 @@ export default function ManagerOrdersPage() {
             <p className="font-bold">{tx("Erreur API")}</p>
             <p>{err}</p>
           </div>
-        )}
-        {info && (
-          <div className="rounded-lg border border-success bg-success-container p-4 text-label">{info}</div>
         )}
         <PlatformOrdersPanel
           source="zone"
