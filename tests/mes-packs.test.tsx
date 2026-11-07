@@ -11,7 +11,7 @@
  *     BundleController@store (nom, description, prix_totale, disponible,
  *     user_id, products[{id, qte}]) ;
  *  6. repli sur toute erreur serveur simulée : le pack reste conservé sur
- *     l'appareil (localStorage), badge « Brouillon », message clair, zéro perte ;
+ *     l'appareil (localStorage), badge « Brouillon », erreur en bandeau, toast de succès local ;
  *  7. succès 201 : badge « Publié » + toast ;
  *  8. panier : « Ajouter au panier » décompose le pack en produits (le panier
  *     ne connaît que des produits — même règle que la fiche /pack/$packId).
@@ -28,6 +28,19 @@ import {
 } from '@tanstack/react-router';
 import { Provider } from 'react-redux';
 import toast from 'react-hot-toast';
+
+const toastMocks = vi.hoisted(() => ({
+  call: vi.fn(),
+  success: vi.fn(),
+  error: vi.fn(),
+}));
+
+vi.mock('react-hot-toast', () => ({
+  default: Object.assign(toastMocks.call, {
+    success: toastMocks.success,
+    error: toastMocks.error,
+  }),
+}));
 
 vi.mock('../src/services/api/client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -202,12 +215,13 @@ describe('Mes packs (client) — atelier de création', () => {
     });
 
     // L'erreur serveur simulée → retour galerie, pack conservé sur l'appareil
-    // avec son prix minimum et sa photo (champs locaux).
+    // avec son prix minimum et sa photo; l'erreur API reste visible en bandeau.
     expect(await screen.findByText('Brouillon — enregistré sur cet appareil')).toBeTruthy();
     expect(screen.getByRole('status').textContent).toContain(
       "Le serveur n'a pas pu enregistrer ce pack",
     );
     expect(success).toHaveBeenCalledWith('Pack enregistré sur cet appareil.');
+    expect(toast).not.toHaveBeenCalled();
     const drafts = listPackDrafts();
     expect(drafts).toHaveLength(1);
     expect(drafts[0].nom).toBe('Mon pack');
@@ -254,6 +268,13 @@ describe('Mes packs (client) — atelier de création', () => {
       syncedAt: null,
     });
     renderMesPacks();
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith(
+        "Vos packs sont conservés sur cet appareil tant que le serveur ne les accepte pas.",
+        { icon: 'ℹ️', duration: 6000, id: 'mes-packs-local-drafts' },
+      );
+    });
+    expect(screen.queryByText('Vos packs sont conservés sur cet appareil tant que le serveur ne les accepte pas.')).toBeNull();
 
     fireEvent.click(await screen.findByRole('button', { name: /Ajouter au panier/ }));
 

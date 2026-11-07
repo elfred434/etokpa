@@ -178,6 +178,18 @@ export default function MesPacksPage() {
   const [large, setLarge] = useState(() => mediaGrandEcran()?.matches ?? false);
   const pageRef = useRef<HTMLDivElement>(null);
   const pressRef = useRef<Pression | null>(null);
+  const brouillonsLocauxAuMontage = useRef(drafts.some((draft) => !draft.serverId));
+
+  // Un toast ponctuel remplace le bandeau d'état; chaque brouillon garde aussi son badge.
+  useEffect(() => {
+    if (!brouillonsLocauxAuMontage.current) return;
+    brouillonsLocauxAuMontage.current = false;
+    toast(tx("Vos packs sont conservés sur cet appareil tant que le serveur ne les accepte pas."), {
+      icon: 'ℹ️',
+      duration: 6000,
+      id: 'mes-packs-local-drafts',
+    });
+  }, []);
 
   // Actualisation globale : rejoue le chargement (produits + packs) en place.
   const tick = useGlobalRefreshTick();
@@ -470,7 +482,6 @@ export default function MesPacksPage() {
   }, [produits]);
 
   const idPublics = useMemo(() => new Set(publics.map((p) => Number(p.id))), [publics]);
-  const aDesBrouillons = drafts.some((d) => !d.serverId);
   const hauteurPage = Math.max(560, ...lignes.map((l) => l.y + CARD_H + 36));
   const ghostProduit = ghost ? produitDe(ghost.id) : null;
 
@@ -547,11 +558,6 @@ export default function MesPacksPage() {
               {infoSync && (
                 <div className="rounded-xl border border-amber-text/30 bg-amber-light px-4 py-3 text-sm text-amber-text" role="status">
                   {infoSync}
-                </div>
-              )}
-              {!infoSync && aDesBrouillons && (
-                <div className="rounded-xl border border-amber-text/30 bg-amber-light px-4 py-3 text-xs text-amber-text">
-                  {tx("Vos packs sont conservés sur cet appareil tant que le serveur ne les accepte pas.")}
                 </div>
               )}
 
