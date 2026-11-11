@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import AdminSidebar from './AdminSidebar';
 import MobileTableBridge from '../../shared/MobileTableBridge';
 import MIcon from '../../shared/MIcon';
@@ -7,7 +8,7 @@ import RefreshButton from '../../shared/RefreshButton';
 import SettingsLink from '../../shared/SettingsLink';
 import LogoutButton from '../../shared/LogoutButton';
 import { useLanguage } from '../../../context/LanguageContext';
-import { tx } from '../../../i18n/tx';
+import { tr, tx } from '../../../i18n/tx';
 
 
 interface AdminLayoutProps {
@@ -33,7 +34,24 @@ function responsiveMain(mainClassName?: string) {
  */
 export default function AdminLayout({ children, currentPath, mainClassName }: AdminLayoutProps) {
   useLanguage();
+  const navigate = useNavigate();
   const [navOpen, setNavOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const goToGlobalSearch = (scope: 'orders' | 'users') => {
+    const q = globalSearch.trim();
+    if (!q) return;
+    setSearchOpen(false);
+    setGlobalSearch('');
+    void navigate({
+      to: scope === 'orders' ? '/admin/commandes' : '/admin/utilisateurs',
+      search: { q },
+    });
+  };
+  const submitGlobalSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    goToGlobalSearch('orders');
+  };
   return (
     <div className="bg-bg-app text-on-surface font-body min-h-screen">
       {navOpen && (
@@ -57,16 +75,61 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
           <MIcon name="menu" />
         </button>
         <div className="hidden min-w-0 flex-1 items-center md:flex md:max-w-xl">
-          <div className="relative w-full">
-            <MIcon
-              name="search"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
-            />
-            <input
-              type="text"
-              placeholder={tx("Rechercher une commande, un utilisateur...")}
-              className="w-full rounded-lg border-none bg-bg-app py-1.5 pl-10 pr-4 text-label text-secondary placeholder:text-text-tertiary focus:ring-2 focus:ring-primary-container focus:ring-opacity-20"
-            />
+          <div
+            className="relative w-full"
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSearchOpen(false);
+            }}
+          >
+            <form onSubmit={submitGlobalSearch} className="relative">
+              <MIcon
+                name="search"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
+              />
+              <input
+                type="text"
+                aria-label={tr('Rechercher une commande ou un utilisateur', 'Search orders or users')}
+                aria-autocomplete="list"
+                aria-controls="admin-global-search-options"
+                aria-expanded={searchOpen && Boolean(globalSearch.trim())}
+                placeholder={tr('Rechercher une commande ou un utilisateur…', 'Search orders or users…')}
+                className="w-full rounded-lg border-none bg-bg-app py-1.5 pl-10 pr-4 text-label text-secondary placeholder:text-text-tertiary focus:ring-2 focus:ring-primary-container focus:ring-opacity-20"
+                value={globalSearch}
+                onChange={(event) => {
+                  setGlobalSearch(event.target.value);
+                  setSearchOpen(true);
+                }}
+                onFocus={() => setSearchOpen(true)}
+                onKeyDown={(event) => event.key === 'Escape' && setSearchOpen(false)}
+              />
+            </form>
+            {searchOpen && globalSearch.trim() && (
+              <div
+                id="admin-global-search-options"
+                role="group"
+                aria-label={tr('Choisir le type de résultat', 'Choose a search scope')}
+                className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-lg border border-border-default bg-bg-card p-1 shadow-xl"
+              >
+                <button
+                  type="button"
+                  aria-label={tr('Rechercher dans les commandes', 'Search orders')}
+                  onClick={() => goToGlobalSearch('orders')}
+                  className="block w-full rounded-md px-3 py-2 text-left hover:bg-bg-app focus:bg-bg-app focus:outline-none"
+                >
+                  <span className="block text-label font-semibold">{tr('Commandes', 'Orders')}</span>
+                  <span className="block truncate text-secondary text-text-secondary">{tr(`Rechercher « ${globalSearch.trim()} » dans les commandes`, `Search “${globalSearch.trim()}” in orders`)}</span>
+                </button>
+                <button
+                  type="button"
+                  aria-label={tr('Rechercher dans les utilisateurs', 'Search users')}
+                  onClick={() => goToGlobalSearch('users')}
+                  className="block w-full rounded-md px-3 py-2 text-left hover:bg-bg-app focus:bg-bg-app focus:outline-none"
+                >
+                  <span className="block text-label font-semibold">{tr('Utilisateurs', 'Users')}</span>
+                  <span className="block truncate text-secondary text-text-secondary">{tr(`Rechercher « ${globalSearch.trim()} » dans les utilisateurs`, `Search “${globalSearch.trim()}” in users`)}</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
         <div className="ml-auto flex items-center gap-1 sm:gap-md">

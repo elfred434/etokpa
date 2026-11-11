@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
+import ImageWithFallback from '../../../components/shared/ImageWithFallback';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import type { Product } from '../../../types/models';
@@ -127,7 +128,18 @@ function Vignette({ produit, className }: { produit?: Produit | PackDraftProduit
       </div>
     );
   }
-  return <img src={src} alt="" className={`object-cover ${className ?? ''}`} />;
+  return (
+    <ImageWithFallback
+      src={src}
+      alt=""
+      className={`object-cover ${className ?? ''}`}
+      fallback={(
+        <div className={`flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-200 text-primary ${className ?? ''}`}>
+          <MIcon name="inventory_2" />
+        </div>
+      )}
+    />
+  );
 }
 
 /** Ligne de pack → modèle du panier (mêmes règles que la fiche pack). */
@@ -587,7 +599,12 @@ export default function MesPacksPage() {
                     <article key={draft.localId} className="overflow-hidden rounded-xl border-[0.5px] border-line bg-bg-card shadow-sm transition hover:shadow-md">
                       <div className="relative h-40 overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
                         {cover ? (
-                          <img src={cover} alt="" className="h-full w-full object-cover" />
+                          <ImageWithFallback
+                            src={cover}
+                            alt=""
+                            className="h-full w-full object-cover"
+                            fallback={<div className="flex h-full items-center justify-center text-primary/70"><MIcon name="package_2" className="text-5xl" /></div>}
+                          />
                         ) : draft.produits.length === 0 ? (
                           <div className="flex h-full items-center justify-center text-primary/70"><MIcon name="package_2" className="text-5xl" /></div>
                         ) : null}
@@ -787,7 +804,14 @@ export default function MesPacksPage() {
                       )}
                     </div>
                     <div className="mt-2 flex items-center gap-2 overflow-x-auto">
-                      {couverture && <img src={couverture} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover ring-2 ring-primary" />}
+                      {couverture && (
+                        <ImageWithFallback
+                          src={couverture}
+                          alt=""
+                          className="h-12 w-12 shrink-0 rounded-xl object-cover ring-2 ring-primary"
+                          fallback={<span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-bg-secondary text-primary"><MIcon name="image" /></span>}
+                        />
+                      )}
                       {lignes.map((ligne) => {
                         const photo = imageDe(ligne.id);
                         if (!photo || photo === couverture) return null;

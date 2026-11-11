@@ -6,6 +6,7 @@ import { alertApiError, messageApi } from '../../utils/apiError';
 import { absImageUrl } from '../../utils/imageUrl';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import ImageWithFallback from '../../components/shared/ImageWithFallback';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
@@ -313,7 +314,12 @@ export default function AdminValidationsPage() {
                 </button>
               </div>
               <div className="rounded-xl overflow-hidden aspect-[4/3] bg-gray-100 flex items-center justify-center">
-                {selImage ? <img className="h-full w-full object-cover" src={selImage} alt={selected.product?.nom ?? 'Produit'} /> : <MIcon name="image" className="text-4xl text-gray-300" />}
+                <ImageWithFallback
+                  src={selImage}
+                  alt={selected.product?.nom ?? 'Produit'}
+                  className="h-full w-full object-cover"
+                  fallback={<MIcon name="image" className="text-4xl text-gray-300" />}
+                />
               </div>
               <div>
                 <h3 className="text-base font-bold">{selected.product?.nom ?? '—'}</h3>

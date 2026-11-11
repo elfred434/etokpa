@@ -6,8 +6,8 @@ import { captureFrontendError } from '../services/errors/frontendErrorReporter';
 import { getDevelopmentErrorMessage } from './developmentErrorMessage';
 
 /**
- * Error extraction for the UI. Development may show a bounded, redacted message;
- * production uses safe summaries. The local reporter stores metadata only.
+ * Error extraction for the UI. Development may show bounded, redacted 4xx messages;
+ * 5xx responses always use a generic summary. The local reporter stores metadata only.
  */
 export interface ApiErrorInfo {
   /** HTTP status, or null if the request did not receive an HTTP response. */
@@ -104,7 +104,8 @@ export function extractApiError(err: unknown): ApiErrorInfo {
     const reference = captureFrontendError(err, { source: 'api', status }).reference;
     return {
       status,
-      message: developmentMessage ?? tr('Une erreur interne est survenue. Réessayez plus tard.', 'An internal error occurred. Please try again later.'),
+      // Ne jamais afficher le corps brut d'une erreur serveur (PHP/SQL/stack trace), même en développement.
+      message: tr('Une erreur interne est survenue. Réessayez plus tard.', 'An internal error occurred. Please try again later.'),
       fieldErrors: {},
       reference,
     };

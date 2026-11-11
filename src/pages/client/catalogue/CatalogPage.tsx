@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
+import ImageWithFallback from '../../../components/shared/ImageWithFallback';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
 import { useAppDispatch } from '../../../hooks/useStore';
@@ -645,11 +646,12 @@ export default function CatalogPage() {
                   className="group cursor-pointer overflow-hidden rounded-xl border-[0.5px] border-line bg-bg-card transition-all hover:shadow-md"
                 >
                   <div className="relative flex h-[110px] items-center justify-center bg-gradient-to-br from-primary-lighter to-primary-light">
-                    {p.image ? (
-                      <img src={p.image} alt={p.nom} className="absolute inset-0 h-full w-full object-cover" />
-                    ) : (
-                      <MIcon name={p.icon} className="text-[40px] text-primary-hover" />
-                    )}
+                    <ImageWithFallback
+                      src={p.image}
+                      alt={p.nom}
+                      className="absolute inset-0 h-full w-full object-cover"
+                      fallback={<MIcon name={p.icon} className="text-[40px] text-primary-hover" />}
+                    />
                     {badges(p)}
                   </div>
                   <div className="p-md">
@@ -691,11 +693,12 @@ export default function CatalogPage() {
                 >
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className="relative flex h-[70px] w-[90px] sm:h-[80px] sm:w-[110px] shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary-lighter to-primary-light">
-                      {p.image ? (
-                        <img src={p.image} alt={p.nom} className="absolute inset-0 h-full w-full rounded-lg object-cover" />
-                      ) : (
-                        <MIcon name={p.icon} className="text-[28px] sm:text-[32px] text-primary-hover" />
-                      )}
+                      <ImageWithFallback
+                        src={p.image}
+                        alt={p.nom}
+                        className="absolute inset-0 h-full w-full rounded-lg object-cover"
+                        fallback={<MIcon name={p.icon} className="text-[28px] sm:text-[32px] text-primary-hover" />}
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <h4 className="text-xs sm:text-label font-semibold text-ink line-clamp-1">{p.nom}</h4>

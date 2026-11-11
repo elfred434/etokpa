@@ -168,11 +168,25 @@ const adminPacksRoute = createRoute({
   },
 });
 const adminDashboardRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin', component: AdminDashboardPage });
-const adminOrdersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/commandes', component: AdminOrdersPage });
+const adminOrdersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/commandes',
+  component: AdminOrdersPage,
+  validateSearch: (search: Record<string, unknown>): { q?: string } => ({
+    q: typeof search.q === 'string' ? search.q : undefined,
+  }),
+});
 const adminPaymentsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/paiements', component: AdminPaymentsPage });
 const adminCategoriesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/categories', component: AdminCategoriesPage });
 const adminZonesPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/zones', component: AdminZonesPage });
-const adminUsersPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/utilisateurs', component: AdminUsersPage });
+const adminUsersPageRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/utilisateurs',
+  component: AdminUsersPage,
+  validateSearch: (search: Record<string, unknown>): { q?: string } => ({
+    q: typeof search.q === 'string' ? search.q : undefined,
+  }),
+});
 const adminUserDetailPageRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin/utilisateurs/detail',

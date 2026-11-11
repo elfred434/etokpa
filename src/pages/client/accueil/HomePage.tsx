@@ -5,6 +5,7 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import DarkFooter from '../../../components/layout/client/DarkFooter';
 import MIcon from '../../../components/shared/MIcon';
+import ImageWithFallback from '../../../components/shared/ImageWithFallback';
 import EmptyState from '../../../components/shared/EmptyState';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
@@ -40,7 +41,7 @@ interface SelectionItem {
   /** Vrai prix minimum négociable (ProductResource.prix_minimum). */
   prixMinimum: number;
   image: string | null;
-  badge: 'Disponible' | 'Stock Limité';
+  badge: string;
 }
 
 /** Accueil TOKPa — Connecté au Backend API Laravel + UI Stitch */
@@ -315,17 +316,12 @@ export default function HomePage() {
                   className="bento-hover group cursor-pointer overflow-hidden rounded-[14px] border border-line bg-bg-card p-md shadow-xs"
                 >
                   <div className="relative mb-md h-48 sm:h-40 overflow-hidden rounded-[10px] bg-page flex items-center justify-center">
-                    {!item.image ? (
-                      <div className="w-full h-full bg-gradient-to-br from-primary-lighter to-primary-light flex items-center justify-center">
-                        <MIcon name="shopping_bag" className="text-4xl text-primary" />
-                      </div>
-                    ) : (
-                      <img
-                        src={item.image}
-                        alt={item.nom}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    )}
+                    <ImageWithFallback
+                      src={item.image}
+                      alt={item.nom}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      fallback={<MIcon name="shopping_bag" className="text-4xl text-primary" />}
+                    />
                     <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-success px-2 py-0.5 text-micro text-white">
                       <span className="h-1.5 w-1.5 rounded-full bg-bg-card" /> {item.badge}
                     </span>

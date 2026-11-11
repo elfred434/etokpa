@@ -5,6 +5,7 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import CartProductRemovalNotice from '../../../components/client/CartProductRemovalNotice';
 import MIcon from '../../../components/shared/MIcon';
+import ImageWithFallback from '../../../components/shared/ImageWithFallback';
 import { alertApiError, extractApiError } from '../../../utils/apiError';
 import EmptyState from '../../../components/shared/EmptyState';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
@@ -112,6 +113,7 @@ async function findRecentMatchingOrder(lines: CartLine[], landmarkId: number, de
     if (createdAt && Date.now() - createdAt > 2 * 60 * 1000) continue;
     if (order?.statut && order.statut !== 'en_attente') continue;
     const detail = asOrderRow(await ordersApi.getOrder(orderId)) ?? order;
+    if (!detail) continue;
     const items = Array.isArray(detail.items) ? detail.items : [];
     const landmark = detail.landmark as { id?: number } | undefined;
     const got = checkoutFingerprint(
@@ -345,7 +347,7 @@ export default function CartPage() {
         finish(known.orderId, Number(known.total ?? grandTotal), paymentId, paymentRef, paymentCurrency, redirectUrl);
         return;
       }
-      if (attemptStillPending(known, fingerprint)) {
+      if (known && attemptStillPending(known, fingerprint)) {
         const reused = await findRecentMatchingOrder(lines, landmarkId, descriptionLieu);
         if (!reused) {
           toast.error(tx("Cette commande est déjà en cours d'envoi. On ne la recrée pas."));
@@ -550,15 +552,12 @@ export default function CartPage() {
                       >
                         {/* Thumbnail */}
                         <div className="w-20 h-20 rounded-lg flex-shrink-0 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center relative overflow-hidden">
-                          {item.product.image ? (
-                            <img
-                              src={item.product.image}
-                              alt={item.product.nom}
-                              className="w-full h-full object-cover rounded-lg"
-                            />
-                          ) : (
-                            <MIcon name="psychiatry" className="text-primary-container text-[32px]" />
-                          )}
+                          <ImageWithFallback
+                            src={item.product.image}
+                            alt={item.product.nom}
+                            className="w-full h-full rounded-lg object-cover"
+                            fallback={<MIcon name="psychiatry" className="text-primary-container text-[32px]" />}
+                          />
                         </div>
 
                         {/* Info */}

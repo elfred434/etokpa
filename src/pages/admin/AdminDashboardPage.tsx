@@ -211,8 +211,8 @@ export default function AdminDashboardPage() {
   const [selected, setSelected] = useState<Activity | null>(null);
 
   useEffect(() => {
-    const lines = selected?.lineItems;
-    if (!lines?.length) return;
+    if (!selected?.lineItems?.length) return;
+    const lines = selected.lineItems;
     const activityId = selected.id;
     const missing = [...new Set(
       lines

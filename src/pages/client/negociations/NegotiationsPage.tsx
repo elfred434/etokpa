@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
+import ImageWithFallback from '../../../components/shared/ImageWithFallback';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import { acceptCounterOffer, setProposals, type NegotiationItem } from '../../../store/slices/negotiation/negotiationSlice';
@@ -360,15 +361,12 @@ export default function NegotiationsPage() {
                   >
                     {/* Thumbnail matching code.html */}
                     <div className="w-24 h-24 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0">
-                      {neg.productImage ? (
-                        <img
-                          src={neg.productImage}
-                          alt={neg.productName}
-                          className="h-full w-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <MIcon name={iconName} className="text-outline text-4xl" />
-                      )}
+                      <ImageWithFallback
+                        src={neg.productImage}
+                        alt={neg.productName}
+                        className="h-full w-full rounded-lg object-cover"
+                        fallback={<MIcon name={iconName} className="text-outline text-4xl" />}
+                      />
                     </div>
 
                     {/* Content Block */}

@@ -11,6 +11,7 @@ import { extractApiError, formatApiError, messageApi } from '../../utils/apiErro
 import DESIGN_SCRIPT from './_scripts/AdminCatalogPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import ImageWithFallback from '../../components/shared/ImageWithFallback';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
@@ -270,11 +271,12 @@ export default function AdminCatalogPage() {
                 {tab === 'produits' && slicePage(produitsF).map((pr: any) => (
                   <tr key={pr.id} tabIndex={0} title={tx("Voir le détail")} className="cursor-pointer hover:bg-bg-secondary/50 transition-colors" onClick={() => ouvrirFicheProduit(pr)} onKeyDown={(e) => { if (e.key === 'Enter') ouvrirFicheProduit(pr); }}>
                     <td className="py-4 px-lg" onClick={(e) => e.stopPropagation()}><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /></td>
-                    <td className="py-4 px-md"> <div className="flex items-center gap-3"> {(pr.image_url ?? pr.img_url) ? (
-                      <img src={absImageUrl(pr.image_url ?? pr.img_url) ?? undefined} alt="" className="h-10 w-10 rounded-lg bg-bg-secondary object-cover" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center text-primary"><MIcon name="inventory_2" className="text-[20px]" /></div>
-                    )} <span className="font-body font-semibold">{pr.nom}</span> </div> </td>
+                    <td className="py-4 px-md"> <div className="flex items-center gap-3"> <ImageWithFallback
+                      src={absImageUrl(pr.image_url ?? pr.img_url)}
+                      alt=""
+                      className="h-10 w-10 rounded-lg bg-bg-secondary object-cover"
+                      fallback={<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 text-primary"><MIcon name="inventory_2" className="text-[20px]" /></div>}
+                    /> <span className="font-body font-semibold">{pr.nom}</span> </div> </td>
                     <td className="py-4 px-md text-text-secondary">{pr.categorie?.nom ?? '—'}</td>
                     <td className="py-4 px-md font-price text-primary">{fmtFcfa(pr.prix)}</td>
                     <td className="py-4 px-md"> <span className={`px-2 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 w-fit ${pr.disponible !== false && Number(pr.stock) > 0 ? 'bg-success-light text-success-dark' : 'bg-bg-secondary text-text-secondary'}`}> <span className={`w-1.5 h-1.5 rounded-full ${pr.disponible !== false && Number(pr.stock) > 0 ? 'bg-success' : 'bg-text-tertiary'}`}></span> {pr.disponible !== false && Number(pr.stock) > 0 ? tx("Disponible") : 'Rupture'} </span> </td>
@@ -336,7 +338,13 @@ export default function AdminCatalogPage() {
                   onDrop={(e) => { e.preventDefault(); if (!imageBusy) void pickImage(e.dataTransfer.files?.[0]); }}
                 >
                   {imagePreview ? (
-                    <img src={imagePreview} alt="" className="mx-auto max-h-36 rounded-lg object-contain" />
+                    <ImageWithFallback
+                      src={imagePreview}
+                      alt=""
+                      className="mx-auto max-h-36 rounded-lg object-contain"
+                      loading="eager"
+                      fallback={<MIcon name="image" className="text-3xl text-primary" />}
+                    />
                   ) : (
                     <MIcon name="cloud_upload" className="mb-2 text-3xl text-primary transition-transform group-hover:scale-110" />
                   )}
@@ -426,7 +434,12 @@ function CatalogueDetailModal({
         </div>
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
           {image && (
-            <img src={image} alt="" className="mx-auto max-h-48 rounded-lg bg-bg-secondary object-contain" />
+            <ImageWithFallback
+              src={image}
+              alt=""
+              className="mx-auto max-h-48 rounded-lg bg-bg-secondary object-contain"
+              fallback={<MIcon name="image" className="mx-auto text-3xl text-primary" />}
+            />
           )}
           <FicheLigne label={tx("Identifiant")} value={item.id} />
           <FicheLigne label={tx("Nom")} value={item.nom} />

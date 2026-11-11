@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
+import ImageWithFallback from '../../../components/shared/ImageWithFallback';
 import EmptyState from '../../../components/shared/EmptyState';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
@@ -239,23 +240,28 @@ export default function ProductPage() {
                     {unavailable ? 'Rupture de stock' : tx("Disponible")}
                   </span>
                 </div>
-                {product.image ? (
-                  <img
-                    src={product.image}
-                    alt={product.nom}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center gap-4 text-primary-hover">
-                    <MIcon name="flag_2" style={{ fontSize: 64 }} />
-                    <span className="text-xs font-medium opacity-70">{tx("Photo bientôt disponible")}</span>
-                  </div>
-                )}
+                <ImageWithFallback
+                  src={product.image}
+                  alt={product.nom}
+                  className="h-full w-full object-cover"
+                  loading="eager"
+                  fallback={(
+                    <div className="flex flex-col items-center gap-4 text-primary-hover">
+                      <MIcon name="flag_2" style={{ fontSize: 64 }} />
+                      <span className="text-xs font-medium opacity-70">{tx("Photo bientôt disponible")}</span>
+                    </div>
+                  )}
+                />
               </div>
               {product.image && (
                 <div className="flex gap-2.5 overflow-x-auto pb-1 sm:gap-4">
                   <div className="flex h-[54px] w-[54px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-primary sm:h-[60px] sm:w-[60px]">
-                    <img src={product.image} alt="" className="h-full w-full object-cover" />
+                    <ImageWithFallback
+                      src={product.image}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      fallback={<MIcon name="image" className="text-primary" />}
+                    />
                   </div>
                 </div>
               )}

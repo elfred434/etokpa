@@ -162,6 +162,7 @@ export default function AdminLivreursPage() {
   };
 
   const desactiver = async (l: any) => {
+    if (String(l?.statut ?? '').toLowerCase() === 'inactif') return;
     const nom = l.nom_complet ?? '—';
     const confirme = await adminDialogs.confirm(
       tr(`Désactiver le compte du livreur ${nom} ? Il ne pourra plus se connecter.`, `Deactivate rider ${nom}? They will no longer be able to log in.`),
@@ -256,17 +257,20 @@ export default function AdminLivreursPage() {
                       >
                         <MIcon name="edit" className="text-[20px]" />
                       </button>
-                      <button
-                        type="button"
-                        className="p-2 hover:text-error transition-colors"
-                        title={tx("Désactiver")}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void desactiver(l);
-                        }}
-                      >
-                        <MIcon name="delete" className="text-[20px]" />
-                      </button>
+                      {String(l.statut ?? '').toLowerCase() !== 'inactif' && (
+                        <button
+                          type="button"
+                          className="p-2 transition-colors hover:text-error"
+                          title={tx("Désactiver")}
+                          aria-label={`${tx("Désactiver")} ${nom}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void desactiver(l);
+                          }}
+                        >
+                          <MIcon name="delete" className="text-[20px]" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );

@@ -52,18 +52,60 @@ function asOrder(row: any): PlatformOrder {
   return inner as PlatformOrder;
 }
 
+const SEARCH_PAGE_SIZE = 20;
+const SEARCH_BATCH_SIZE = 5;
+
+function normalizeSearch(value: unknown): string {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function matchesOrderSearch(order: PlatformOrder, query: string): boolean {
+  const client = order.client ?? order.user;
+  const fields = [
+    order.id,
+    `#${order.id}`,
+    order.statut,
+    order.montant_total,
+    fmtFcfa(order.montant_total),
+    order.frais_livraison,
+    order.description_lieu,
+    order.created_at,
+    dateCourte(order.created_at),
+    client?.nom_complet,
+    client?.telephone,
+    order.livreur?.nom_complet,
+    order.livreur?.telephone,
+    order.landmark?.nom,
+    ...(order.items ?? []).map((item) => orderLineName(item)),
+  ];
+  return normalizeSearch(fields.join(' ')).includes(normalizeSearch(query.trim()));
+}
+
+function lastPageOf(response: any): number {
+  const value = Number(response?.meta?.last_page ?? response?.last_page ?? 1);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : 1;
+}
+
 type Props = {
   source: 'admin' | 'zone';
   title: string;
   hint?: string;
   reloadKey?: number;
+  initialSearch?: string;
+  onSearchCommit?: (query: string) => void;
   renderActions?: (order: PlatformOrder) => ReactNode;
 };
 
 /** Liste paginée des commandes. `admin` = toute la plateforme. `zone` = ce que GET /manager/orders renvoie. */
-export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0, renderActions }: Props) {
+export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0, initialSearch, onSearchCommit, renderActions }: Props) {
   useLanguage();
   const [statut, setStatut] = useState('');
+  const [search, setSearch] = useState(initialSearch?.trim() ?? '');
+  const [appliedSearch, setAppliedSearch] = useState(initialSearch?.trim() ?? '');
+  const [searchResults, setSearchResults] = useState<PlatformOrder[] | null>(null);
   const [zoneId, setZoneId] = useState('');
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
@@ -114,10 +156,19 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
   }, [refreshTick]);
 
   useEffect(() => {
+    const nextSearch = initialSearch?.trim() ?? '';
+    setSearch(nextSearch);
+    setAppliedSearch(nextSearch);
+    setSelected(null);
     setPage(1);
-  }, [statut, zoneId, source]);
+  }, [initialSearch]);
 
   useEffect(() => {
+    setPage(1);
+  }, [statut, zoneId, source, appliedSearch]);
+
+  useEffect(() => {
+    if (appliedSearch) return;
     let alive = true;
     const background = backgroundRefreshActive();
     if (!silentRefreshActive()) setLoading(true);
@@ -144,16 +195,77 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
       })
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
-  }, [source, statut, zoneId, page, reloadKey, refreshTick]);
+  }, [source, statut, zoneId, page, reloadKey, refreshTick, appliedSearch]);
+
+  useEffect(() => {
+    if (!appliedSearch) {
+      setSearchResults(null);
+      return;
+    }
+    let alive = true;
+    setLoading(true);
+    setErr(null);
+    setSearchResults(null);
+    const getPage = (requestedPage: number) => {
+      const params = {
+        page: requestedPage,
+        ...(statut ? { statut } : {}),
+        ...(source === 'admin' && zoneId ? { zone_id: Number(zoneId) } : {}),
+      };
+      return source === 'admin' ? adminApi.getOrders(params) : managerApi.getOrders(params);
+    };
+    void (async () => {
+      const first = await getPage(1);
+      const all = listOf(first).map(asOrder);
+      const pages = lastPageOf(first);
+      for (let start = 2; start <= pages; start += SEARCH_BATCH_SIZE) {
+        const pageNumbers = Array.from(
+          { length: Math.min(SEARCH_BATCH_SIZE, pages - start + 1) },
+          (_, index) => start + index,
+        );
+        const batch = await Promise.all(pageNumbers.map(async (requestedPage) => {
+          const result = await getPage(requestedPage);
+          return listOf(result).map(asOrder);
+        }));
+        batch.forEach((rows) => all.push(...rows));
+      }
+      if (!alive) return;
+      const matches = all.filter((order) => matchesOrderSearch(order, appliedSearch));
+      setSearchResults(matches);
+      setLastPage(Math.max(1, Math.ceil(matches.length / SEARCH_PAGE_SIZE)));
+      setTotal(matches.length);
+      setSelected(null);
+    })()
+      .catch((e) => {
+        if (alive) setErr(formatApiError(extractApiError(e)));
+      })
+      .finally(() => alive && setLoading(false));
+    return () => { alive = false; };
+  }, [source, statut, zoneId, appliedSearch, reloadKey, refreshTick]);
 
   const zoneNom = (id?: number) => zones.find((z) => z.id === Number(id))?.nom ?? (id ? `#${id}` : '—');
+  const searchMode = Boolean(appliedSearch);
+  const visibleOrders = searchMode
+    ? (searchResults ?? []).slice((page - 1) * SEARCH_PAGE_SIZE, page * SEARCH_PAGE_SIZE)
+    : orders;
+  const visibleTotal = searchMode ? searchResults?.length ?? 0 : total;
+  const visibleLastPage = searchMode ? Math.max(1, Math.ceil(visibleTotal / SEARCH_PAGE_SIZE)) : lastPage;
+
+  const appliquerRecherche = () => {
+    const query = search.trim();
+    setSearch(query);
+    setAppliedSearch(query);
+    setSelected(null);
+    setPage(1);
+    onSearchCommit?.(query);
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-h2 font-h2 font-bold">{title}</h1>
         {hint && <p className="text-text-secondary">{hint}</p>}
-        <p className="text-label text-text-secondary">{total} {tx("commandes")}</p>
+        <p className="text-label text-text-secondary">{visibleTotal} {tx("commandes")}</p>
       </div>
 
       {err && (
@@ -192,12 +304,54 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
         )}
       </div>
 
+      <form
+        className="flex flex-col gap-2 sm:flex-row sm:items-center"
+        onSubmit={(event) => {
+          event.preventDefault();
+          appliquerRecherche();
+        }}
+      >
+        <input
+          type="search"
+          aria-label={tx("Rechercher une commande, un client ou un article")}
+          placeholder={tx("Rechercher une commande, un client ou un article…")}
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          className="min-w-0 flex-1 rounded-lg border border-border-default bg-bg-card px-3 py-2 text-label"
+        />
+        <button type="submit" className="btn btn-primary px-4 py-2 text-label">
+          {tx("Rechercher")}
+        </button>
+        {(search || appliedSearch) && (
+          <button
+            type="button"
+            className="btn btn-ghost px-3 py-2 text-label"
+            onClick={() => {
+              setSearch('');
+              setAppliedSearch('');
+              setSelected(null);
+              setPage(1);
+              onSearchCommit?.('');
+            }}
+          >
+            {tx("Effacer")}
+          </button>
+        )}
+      </form>
+      {searchMode && !loading && (
+        <p className="text-label text-text-secondary" role="status">
+          {tx("Résultats pour")} « {appliedSearch} » : {visibleTotal}
+        </p>
+      )}
+
       <div className="overflow-hidden rounded-lg border border-border-default bg-bg-card shadow-sm">
         {loading && <p className="p-lg text-label text-text-secondary">{tx("Chargement…")}</p>}
-        {!loading && orders.length === 0 && (
-          <p className="p-lg text-label text-text-secondary">{tx("Aucune commande.")}</p>
+        {!loading && visibleOrders.length === 0 && (
+          <p className="p-lg text-label text-text-secondary">
+            {searchMode ? tx("Aucune commande ne correspond à cette recherche.") : tx("Aucune commande.")}
+          </p>
         )}
-        {!loading && orders.length > 0 && (
+        {!loading && visibleOrders.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-label" data-mobile-detail="native">
               <thead>
@@ -212,7 +366,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
                 </tr>
               </thead>
               <tbody>
-                {orders.map((o) => {
+                {visibleOrders.map((o) => {
                   const client = o.client ?? o.user;
                   return (
                     <tr key={o.id} className="cursor-pointer border-t border-border-default" onClick={() => setSelected(o)}>
@@ -252,7 +406,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
         )}
       </div>
 
-      {lastPage > 1 && <Pagination page={page} pageCount={lastPage} onChange={setPage} />}
+      {visibleLastPage > 1 && <Pagination page={page} pageCount={visibleLastPage} onChange={setPage} />}
 
       {selected && (
         <ModalShell

@@ -4,6 +4,7 @@ import { listOf } from '../../services/api/unwrap';
 import { initials } from '../../services/api/useLiveRows';
 import { acteur, categorie, detail, quand, titre } from '../../utils/auditLog';
 import { alertApiError } from '../../utils/apiError';
+import { exportAuditLogsPdf } from '../../utils/auditPdf';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
@@ -43,8 +44,8 @@ const TYPES: [string, string][] = [
 /**
  * AdminLogsPage — design Stitch (code.html) conservé, données RÉELLES : GET /admin/audit-logs
  * (30 par page, filtres serveur `action` et `from`). Catégorie, titre et détail sont déduits de
- * chaque entrée (middleware d'audit et événements critiques). Laissés tels quels (décision
- * utilisateur P3, aucune API) : filtre « Rôle », choix 10 / 25 / 50 par page, « Exporter PDF ».
+ * chaque entrée (middleware d'audit et événements critiques). Le filtre « Rôle » et le choix
+ * 10 / 25 / 50 par page restent décoratifs : aucun paramètre/API n'est disponible pour eux.
  */
 export default function AdminLogsPage() {
   useLanguage();
@@ -52,6 +53,7 @@ export default function AdminLogsPage() {
   const [meta, setMeta] = useState({ page: 1, last: 1, total: 0 });
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [search, setSearch] = useState('');
   const [from, setFrom] = useState('');
   const [applied, setApplied] = useState<{ action?: string; from?: string }>({});
@@ -83,20 +85,38 @@ export default function AdminLogsPage() {
   };
   const visibles = type ? logs.filter((l) => categorie(l) === type) : logs;
 
-  const exporterCsv = async () => {
+  const chargerLogsPourExport = async () => {
+    const acc: any[] = [];
+    let lastPage = 1;
+    for (let p = 1; p <= lastPage; p++) {
+      const res: any = await adminApi.getAuditLogs({ page: p, ...applied });
+      acc.push(...listOf(res));
+      const reportedLast = Number(res?.meta?.last_page ?? res?.last_page ?? 1);
+      if (Number.isFinite(reportedLast) && reportedLast > 0) lastPage = Math.floor(reportedLast);
+    }
+    return acc.filter((log) => !type || categorie(log) === type);
+  };
+
+  const exporterPdf = async () => {
+    setExporting(true);
     try {
-      const acc: any[] = [];
-      for (let p = 1; p <= 20; p++) {
-        const res: any = await adminApi.getAuditLogs({ page: p, ...applied });
-        acc.push(...listOf(res));
-        if (p >= Number(res?.last_page ?? 1)) break;
-      }
+      const rows = await chargerLogsPourExport();
+      exportAuditLogsPdf(rows, `journal-audit-tokpa-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (e) {
+      alertApiError(e, 'admin-logs-export-pdf');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const exporterCsv = async () => {
+    setExporting(true);
+    try {
+      const acc = await chargerLogsPourExport();
       const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
       const lignes = [
         [tx("Date"), tx("Catégorie"), tx("Titre"), tx("Action brute"), tx("Utilisateur"), tx("IP"), tx("Détail")].map(cell).join(';'),
-        ...acc
-          .filter((l) => !type || categorie(l) === type)
-          .map((l) => [l.created_at, categorie(l), titre(l), l.action, acteur(l).nom, l.ip_address, detail(l)].map(cell).join(';')),
+        ...acc.map((l) => [l.created_at, categorie(l), titre(l), l.action, acteur(l).nom, l.ip_address, detail(l)].map(cell).join(';')),
       ];
       const blob = new Blob([`\uFEFF${lignes.join('\n')}`], { type: 'text/csv;charset=utf-8' });
       const a = document.createElement('a');
@@ -105,7 +125,9 @@ export default function AdminLogsPage() {
       a.click();
       URL.revokeObjectURL(a.href);
     } catch (e) {
-      alertApiError(e, 'admin-logs-export');
+      alertApiError(e, 'admin-logs-export-csv');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -125,15 +147,23 @@ export default function AdminLogsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button className="flex items-center gap-2 bg-bg-card border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97">
-            <i className="ti ti-download"></i> {tx("Exporter PDF")}
+          <button
+            type="button"
+            onClick={() => void exporterPdf()}
+            disabled={exporting}
+            aria-busy={exporting}
+            className="flex items-center gap-2 rounded-[10px] border border-border-default bg-bg-card px-md py-sm font-label text-label transition-all hover:bg-surface-container-low active:scale-97 disabled:cursor-wait disabled:opacity-60"
+          >
+            <i className="ti ti-download"></i> {exporting ? tx("Génération…") : tx("Exporter PDF")}
           </button>
           <button
             type="button"
-            onClick={exporterCsv}
-            className="flex items-center gap-2 bg-bg-card border border-border-default px-md py-sm rounded-[10px] hover:bg-surface-container-low transition-all font-label text-label active:scale-97"
+            onClick={() => void exporterCsv()}
+            disabled={exporting}
+            aria-busy={exporting}
+            className="flex items-center gap-2 rounded-[10px] border border-border-default bg-bg-card px-md py-sm font-label text-label transition-all hover:bg-surface-container-low active:scale-97 disabled:cursor-wait disabled:opacity-60"
           >
-            <i className="ti ti-download"></i> {tx("Exporter CSV")}
+            <i className="ti ti-download"></i> {exporting ? tx("Génération…") : tx("Exporter CSV")}
           </button>
         </div>
       </header>

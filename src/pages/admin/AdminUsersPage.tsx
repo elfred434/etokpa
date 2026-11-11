@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import { adminApi, authApi } from '../../services/api';
 import { listOf, unwrap } from '../../services/api/unwrap';
@@ -77,6 +77,7 @@ const randomPassword = () => {
 
 export default function AdminUsersPage() {
   useLanguage();
+  const { q: querySearch } = useSearch({ from: '/admin/utilisateurs' });
   /* ---------- données réelles ---------- */
   const [users, setUsers] = useState<any[]>([]);
   const [err, setErr] = useState<string | null>(null);
@@ -136,11 +137,15 @@ export default function AdminUsersPage() {
   }, [users]);
 
   /* ---------- filtres + pagination (côté écran, sur tous les comptes chargés) ---------- */
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(querySearch ?? '');
   const [roleTab, setRoleTab] = useState<RoleTab>('all');
   const [statusF, setStatusF] = useState('all');
   const [zoneF, setZoneF] = useState('all');
   const [page, setPage] = useState(1);
+  useEffect(() => {
+    setSearch(querySearch ?? '');
+    setPage(1);
+  }, [querySearch]);
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return users.filter((u) => {

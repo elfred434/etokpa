@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import ImageWithFallback from '../../components/shared/ImageWithFallback';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
@@ -39,8 +40,8 @@ type Pack = {
   prix_minimum?: number | string | null;
   disponible?: boolean;
   img_url?: string | null;
-  produits?: Produit & { pivot?: { qte?: number } }[];
-  products?: Produit & { pivot?: { qte?: number } }[];
+  produits?: (Produit & { pivot?: { qte?: number } })[];
+  products?: (Produit & { pivot?: { qte?: number } })[];
 };
 
 type Recherche = { pack?: number; edit?: number; nouveau?: number };
@@ -107,7 +108,18 @@ function Vignette({ produit, className }: { produit?: Produit | null; className?
       </div>
     );
   }
-  return <img src={src} alt="" className={`object-cover ${className ?? ''}`} />;
+  return (
+    <ImageWithFallback
+      src={src}
+      alt=""
+      className={`object-cover ${className ?? ''}`}
+      fallback={(
+        <div className={`flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-200 text-primary ${className ?? ''}`}>
+          <MIcon name="inventory_2" />
+        </div>
+      )}
+    />
+  );
 }
 
 export default function AdminPacksPage() {
@@ -502,7 +514,12 @@ export default function AdminPacksPage() {
                 <article key={pack.id} className="group cursor-pointer overflow-hidden rounded-3xl bg-bg-card shadow-sm ring-1 ring-black/5 transition hover:-translate-y-1 hover:shadow-xl" onClick={() => aller({ pack: Number(pack.id) })}>
                   <div className="relative h-44 overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
                     {cover ? (
-                      <img src={cover} alt="" className="h-full w-full object-cover" />
+                      <ImageWithFallback
+                        src={cover}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        fallback={<div className="flex h-full items-center justify-center text-primary/70"><MIcon name="package_2" className="text-5xl" /></div>}
+                      />
                     ) : inclus.length === 0 ? (
                       <div className="flex h-full items-center justify-center text-primary/70"><MIcon name="package_2" className="text-5xl" /></div>
                     ) : null}
@@ -726,7 +743,14 @@ export default function AdminPacksPage() {
                   )}
                 </div>
                 <div className="mt-2 flex items-center gap-2 overflow-x-auto">
-                  {couverture && <img src={couverture} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover ring-2 ring-primary" />}
+                  {couverture && (
+                    <ImageWithFallback
+                      src={couverture}
+                      alt=""
+                      className="h-12 w-12 shrink-0 rounded-xl object-cover ring-2 ring-primary"
+                      fallback={<span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-bg-secondary text-primary"><MIcon name="image" /></span>}
+                    />
+                  )}
                   {lignes.map((ligne) => {
                     const photo = imageDe(ligne.id);
                     if (!photo || photo === couverture) return null;
@@ -895,7 +919,12 @@ function DetailPack({
         <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[320px_1fr]">
           <aside className="space-y-4 overflow-y-auto border-b border-black/5 bg-bg-card p-5 lg:border-b-0 lg:border-r">
             {absImageUrl(pack.img_url) && (
-              <img src={absImageUrl(pack.img_url) ?? ''} alt="" className="h-40 w-full rounded-2xl object-cover" />
+              <ImageWithFallback
+                src={absImageUrl(pack.img_url)}
+                alt=""
+                className="h-40 w-full rounded-2xl object-cover"
+                fallback={<div className="flex h-40 w-full items-center justify-center rounded-2xl bg-bg-secondary text-primary"><MIcon name="package_2" className="text-5xl" /></div>}
+              />
             )}
             <p className="text-3xl font-black text-primary">{fmtFcfa(Number(pack.prix_total ?? 0))}</p>
             <p className="text-sm text-text-secondary">{pack.description || tx("Aucune description.")}</p>

@@ -38,7 +38,7 @@ function sheetFromRow(row: HTMLTableRowElement): Sheet | null {
   const table = row.closest('table');
   if (!table || table.dataset.mobileDetail === 'native') return null;
   const headers = [...table.querySelectorAll('thead th')].map((th) => cellText(th));
-  const cells = [...row.querySelectorAll(':scope > td')].filter((td) => td.colSpan <= 1);
+  const cells = [...row.querySelectorAll<HTMLTableCellElement>(':scope > td')].filter((td) => td.colSpan <= 1);
   if (cells.length < 2) return null;
   const rows = cells
     .map((td, index) => ({ label: headers[index] || `Info ${index + 1}`, value: cellText(td) }))
@@ -62,7 +62,7 @@ export default function MobileTableBridge({ rootId }: { rootId: string }) {
       if (!window.matchMedia('(max-width: 767px)').matches) return;
       const target = event.target as HTMLElement | null;
       if (!target || target.closest('button, a, input, select, textarea, label')) return;
-      const row = target.closest('tbody tr');
+      const row = target.closest<HTMLTableRowElement>('tbody tr');
       if (!row || !root.contains(row)) return;
       const next = sheetFromRow(row);
       if (!next) return;

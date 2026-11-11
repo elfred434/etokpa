@@ -33,7 +33,7 @@ describe('API error handling', () => {
     expect(info.reference).toMatch(/^TKP-/);
   });
 
-  it('shows a redacted server message in development while storing only a safe summary', () => {
+  it('never exposes PHP, SQL or stack diagnostics from 500 responses, even in development', () => {
     const info = extractApiError({
       response: {
         status: 500,
@@ -45,8 +45,9 @@ describe('API error handling', () => {
     });
     const text = formatApiError(info);
     expect(text).toContain('[HTTP 500]');
-    expect(text).toContain('SQLSTATE[08006]');
+    expect(text).toContain('erreur interne');
     expect(text).toContain(info.reference);
+    expect(text).not.toContain('SQLSTATE');
     expect(text).not.toContain('private-token-value');
     expect(text).not.toContain('/srv/stack.php:99');
     expect(text).not.toContain('vendor/Database.php');

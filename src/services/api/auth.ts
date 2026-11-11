@@ -33,7 +33,7 @@ export interface UserProfile {
   nom_complet: string;
   email: string;
   telephone: string;
-  image_profil?: string;
+  image_profil?: string | null;
   id_role: number;
   role?: {
     id: number;

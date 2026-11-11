@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
+import ImageWithFallback from '../../../components/shared/ImageWithFallback';
 import EmptyState from '../../../components/shared/EmptyState';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import { useAppDispatch } from '../../../hooks/useStore';
@@ -229,14 +230,18 @@ export default function PackPage() {
                     {disponible ? tx("Disponible") : tx("Rupture de stock")}
                   </span>
                 </div>
-                {image ? (
-                  <img src={image} alt={pack.nom} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex flex-col items-center gap-4 text-primary-hover">
-                    <MIcon name="shopping_basket" style={{ fontSize: 64 }} />
-                    <span className="text-xs font-medium opacity-70">{tx("Photo bientôt disponible")}</span>
-                  </div>
-                )}
+                <ImageWithFallback
+                  src={image}
+                  alt={pack.nom}
+                  className="h-full w-full object-cover"
+                  loading="eager"
+                  fallback={(
+                    <div className="flex flex-col items-center gap-4 text-primary-hover">
+                      <MIcon name="shopping_basket" style={{ fontSize: 64 }} />
+                      <span className="text-xs font-medium opacity-70">{tx("Photo bientôt disponible")}</span>
+                    </div>
+                  )}
+                />
               </div>
             </div>
 
@@ -324,11 +329,12 @@ export default function PackPage() {
                 {lignes.map((l) => (
                   <li key={l.id} className="flex items-center gap-4 px-4 py-3 md:px-8">
                     <div className="flex h-[54px] w-[54px] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-primary-lighter to-primary-light">
-                      {l.image ? (
-                        <img src={l.image} alt={l.nom} className="h-full w-full object-cover" />
-                      ) : (
-                        <MIcon name="local_mall" className="text-[22px] text-primary-hover" />
-                      )}
+                      <ImageWithFallback
+                        src={l.image}
+                        alt={l.nom}
+                        className="h-full w-full object-cover"
+                        fallback={<MIcon name="local_mall" className="text-[22px] text-primary-hover" />}
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold text-ink">{l.nom}</p>

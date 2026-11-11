@@ -193,6 +193,22 @@ describe('Modale de commande — administration et manager', () => {
     fireEvent.click(await screen.findByText('#31'));
     expect(within(await screen.findByRole('dialog')).getByText('Assigner')).toBeTruthy();
   });
+
+  it('recherche sur toutes les pages et ignore les accents dans le texte des articles', async () => {
+    const firstPageOrder = { ...commande, id: 31, items: [{ id: 1, nom: 'Bananes', quantite: 1, prix_unitaire: 500 }] };
+    const matchingOrder = { ...commande, id: 32, items: [{ id: 2, nom: 'Café robusta', quantite: 1, prix_unitaire: 700 }] };
+    getOrders.mockImplementation(async (params?: { page?: number }) => ({
+      data: params?.page === 2 ? [matchingOrder] : [firstPageOrder],
+      meta: { current_page: params?.page ?? 1, last_page: 2, total: 21 },
+    }));
+
+    render(avecProviders(<PlatformOrdersPanel source="admin" title="Commandes" initialSearch="cafe" />));
+
+    expect(await screen.findByText('#32')).toBeTruthy();
+    expect(screen.queryByText('#31')).toBeNull();
+    expect(getOrders).toHaveBeenCalledWith(expect.objectContaining({ page: 2 }));
+    expect(screen.getByText(/Résultats pour/)).toBeTruthy();
+  });
 });
 
 describe('Modale de commande — client', () => {
