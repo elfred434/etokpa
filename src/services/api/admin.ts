@@ -1,6 +1,8 @@
 import { apiClient } from './client';
 import { unwrap } from './unwrap';
 
+export type AdminOrderStatus = 'en_attente' | 'en_preparation' | 'en_livraison' | 'livre' | 'annule';
+
 export const adminApi = {
   // Produits
   getProducts: async (params?: Record<string, unknown> | number) => {
@@ -170,7 +172,7 @@ export const adminApi = {
     const response = await apiClient.get('/admin/orders', { params });
     return response.data;
   },
-  updateOrderStatus: async (orderId: number, statut: string) => {
+  updateOrderStatus: async (orderId: number, statut: AdminOrderStatus) => {
     const response = await apiClient.patch(`/admin/orders/${orderId}/status`, { statut });
     return response.data;
   },

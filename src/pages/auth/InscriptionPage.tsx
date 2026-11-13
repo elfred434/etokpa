@@ -20,6 +20,7 @@ const profilSchema = () => z.object({
   email: z.string().email(tx('Email invalide')),
   telephone: z.string().regex(/^\d{8,10}$/, tx('8 à 10 chiffres attendus')),
   ville: z.string().min(1, tx('Sélectionnez votre ville')),
+  quartier: z.string().max(100, tx('Le quartier ne peut pas dépasser 100 caractères')),
 });
 
 const securitySchema = () => z.object({
@@ -45,7 +46,7 @@ const STRENGTH = [
   { label: 'Fort', color: 'bg-success-dark', text: 'text-success-dark' },
 ];
 
-type ProfilErrors = Partial<Record<'prenom' | 'nom' | 'email' | 'telephone' | 'ville', string>>;
+type ProfilErrors = Partial<Record<'prenom' | 'nom' | 'email' | 'telephone' | 'ville' | 'quartier', string>>;
 type SecurityErrors = Partial<Record<'password' | 'confirm' | 'cgu', string>>;
 
 /**
@@ -62,6 +63,7 @@ export default function InscriptionPage() {
     email: '',
     telephone: '',
     ville: 'Cotonou',
+    quartier: '',
   });
   const [profilErrors, setProfilErrors] = useState<ProfilErrors>({});
 
@@ -115,13 +117,17 @@ export default function InscriptionPage() {
     try {
       // API call POST /api/auth/register
       const res = await authApi.register({
-        nom: profil.nom,
-        prenom: profil.prenom,
-        email: profil.email,
-        telephone: `229${profil.telephone}`,
+        nom: profil.nom.trim(),
+        prenom: profil.prenom.trim(),
+        email: profil.email.trim(),
+        telephone: `+229${profil.telephone}`,
         password: security.password,
+        password_confirmation: security.confirm,
+        accept_cgu: security.cgu,
+        opt_in_sms: security.sms,
+        ville: profil.ville,
         role: 'client',
-        quartier: profil.ville,
+        quartier: profil.quartier.trim() || undefined,
       });
 
       toast.success(res.message || tx("Compte créé ! Code 2FA envoyé."));
@@ -138,7 +144,7 @@ export default function InscriptionPage() {
       const securityNext: SecurityErrors = {};
       for (const [field, msgs] of Object.entries(info.fieldErrors)) {
         const msg = Array.isArray(msgs) ? msgs[0] : String(msgs);
-        if (field === 'prenom' || field === 'nom' || field === 'email' || field === 'telephone' || field === 'ville') {
+        if (field === 'prenom' || field === 'nom' || field === 'email' || field === 'telephone' || field === 'ville' || field === 'quartier') {
           profilNext[field] = msg;
         } else if (field === 'password') {
           securityNext[field] = msg;
@@ -324,6 +330,28 @@ export default function InscriptionPage() {
                 {profilErrors.ville && <p className="mt-1 text-xs text-error">{profilErrors.ville}</p>}
               </div>
 
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1" htmlFor="register-quartier">
+                  {tx("Quartier (facultatif)")}
+                </label>
+                <div className="relative">
+                  <MIcon name="location_on" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                  <input
+                    id="register-quartier"
+                    type="text"
+                    autoComplete="address-level3"
+                    maxLength={100}
+                    placeholder={tx("Ex. Cadjehoun")}
+                    value={profil.quartier}
+                    onChange={(e) => setProfilField('quartier', e.target.value)}
+                    className={`w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm outline-none ${
+                      profilErrors.quartier ? 'border-error' : 'border-border-default focus:border-primary-container'
+                    }`}
+                  />
+                </div>
+                {profilErrors.quartier && <p className="mt-1 text-xs text-error">{profilErrors.quartier}</p>}
+              </div>
+
               <button
                 type="submit"
                 className="w-full bg-primary-container hover:bg-primary-hover text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer mt-6"
@@ -449,7 +477,7 @@ export default function InscriptionPage() {
                     className="mt-0.5 rounded text-primary-container focus:ring-primary-container border-border-default"
                   />
                   <span className="text-xs text-text-secondary leading-normal">
-                    {tx("Recevoir les alertes d'accès sécurisé et codes OTP par SMS (+229).")}
+                    {tx("Recevoir les alertes de sécurité par SMS (+229). Le code de connexion est envoyé par e-mail.")}
                   </span>
                 </label>
               </div>

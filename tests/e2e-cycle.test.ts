@@ -1,17 +1,20 @@
 // @vitest-environment jsdom
 /**
- * E2E « tout le cycle » piloté UNIQUEMENT par le frontend : chaque étape passe par
- * les services API du frontend (src/services/api/*) et le vrai client axios, contre
- * l'API Laravel démarrée localement. Aucun mock HTTP.
+ * E2E « tout le cycle » piloté par le frontend : chaque étape passe par les
+ * services API et le vrai client axios, contre une API Laravel locale de test.
+ * Aucun mock HTTP.
  *
- * Cycle : inscription client → 2FA → catalogue public → zone du livreur → panier →
- * commande → paiement FedaPay simulé (SDK absent) → webhook FedaPay (acteur externe)
- * → paiement réussi → commande en préparation → assignation manager → acceptation
- * livreur → en_livraison → livré → historique ; puis 2ᵉ commande pour le REFUS livreur.
+ * Garde-fous : le test ne contacte rien sans opt-in explicite, base jetable,
+ * paiement local DEV et hôtes loopback. Les OTP sont lus depuis une instance
+ * Mailpit temporaire (SMTP + API v1), uniquement en mémoire; jamais depuis les logs.
+ * Aucun achat ni paiement fournisseur réel n'est effectué.
  *
- * Lancement : VITE_API_BASE_URL=http://127.0.0.1:8000/api npx vitest run tests/e2e-cycle.test.ts
+ * Variables requises : TOKPA_E2E_ENABLED=1, TOKPA_E2E_DISPOSABLE_DB=1,
+ * TOKPA_E2E_PAYMENT_MODE=DEV, TOKPA_E2E_PASSWORD (environnement uniquement),
+ * VITE_API_BASE_URL=http://127.0.0.1:8000/api, MAILPIT_API_URL=http://127.0.0.1:8025.
+ * Le serveur Laravel doit utiliser SMTP
+ * vers Mailpit, jamais MAIL_MAILER=log. Lancer avec Vitest sur cette suite seule.
  */
-import { existsSync, readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import axios from 'axios';
 import { apiClient } from '../src/services/api/client';
@@ -24,23 +27,45 @@ import { managerApi } from '../src/services/api/manager';
 import { livreurApi } from '../src/services/api/livreur';
 
 const API = process.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
-/** Journal Laravel (MAIL_MAILER=log) : sandbox, puis machine Windows de l'utilisateur. */
-const LARAVEL_LOG =
-  process.env.LARAVEL_LOG ||
-  [
-    '/opt/etokpa_back/storage/logs/laravel.log',
-    'C:\\xampp\\htdocs\\etokpa_back\\storage\\logs\\laravel.log',
-  ].find((p) => existsSync(p)) ||
-  '';
+const MAILPIT_API = (process.env.MAILPIT_API_URL || 'http://127.0.0.1:8025').replace(/\/+$/, '');
 const TIMEOUT = 60_000;
+const E2E_PASSWORD = process.env.TOKPA_E2E_PASSWORD ?? '';
+const OTP_TIMEOUT = 30_000;
+const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
 
-/** Ce fichier teste contre une VRAIE API locale : sans elle, on saute tout. */
+function isCredentialFreeLoopback(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return !url.username && !url.password && LOOPBACK_HOSTS.has(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+const e2eOptIn =
+  E2E_PASSWORD.length >= 8 &&
+  process.env.TOKPA_E2E_ENABLED === '1' &&
+  process.env.TOKPA_E2E_DISPOSABLE_DB === '1' &&
+  process.env.TOKPA_E2E_PAYMENT_MODE === 'DEV' &&
+  isCredentialFreeLoopback(API) &&
+  isCredentialFreeLoopback(MAILPIT_API);
+
+/** Ne sonde jamais le backend de l'utilisateur sans opt-in et base jetable. */
 let apiUp = false;
-try {
-  const probe = await axios.get(`${API}/products`, { timeout: 3000, adapter: 'http' });
-  apiUp = probe.status === 200;
-} catch {
-  apiUp = false;
+let mailpitUp = false;
+if (e2eOptIn) {
+  try {
+    const probe = await axios.get(`${API.replace(/\/+$/, '')}/products`, { timeout: 3000, adapter: 'http' });
+    apiUp = probe.status === 200;
+  } catch {
+    apiUp = false;
+  }
+  try {
+    const probe = await axios.get(`${MAILPIT_API}/api/v1/info`, { timeout: 3000, adapter: 'http' });
+    mailpitUp = probe.status === 200;
+  } catch {
+    mailpitUp = false;
+  }
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -57,20 +82,53 @@ const state: {
   refuseOrderId?: number;
 } = {};
 
-/** Le code 2FA est envoyé par mail ; MAIL_MAILER=log l'écrit dans laravel.log. */
-function lastOtpFromLog(): string {
-  const log = readFileSync(LARAVEL_LOG, 'utf-8');
-  const codes = log.match(/\b\d{6}\b/g) ?? [];
-  const code = codes[codes.length - 1];
-  if (!code) throw new Error('Aucun code 2FA trouvé dans laravel.log');
-  return code;
+function otpFromMailBody(value: unknown): string | null {
+  const text = String(value ?? '').replace(/<[^>]*>/g, ' ');
+  return text.match(/(?:code|otp)[^\d]{0,80}(\d{6})/i)?.[1] ?? null;
+}
+
+/** Lit le message ciblé depuis l'API locale Mailpit; aucun OTP n'est journalisé ou conservé. */
+async function otpFromMailpit(email: string, requestedAt: number): Promise<string> {
+  const deadline = Date.now() + OTP_TIMEOUT;
+  while (Date.now() < deadline) {
+    try {
+      const search = await axios.get(`${MAILPIT_API}/api/v1/search`, {
+        params: { query: `to:"${email}"`, limit: 10 },
+        timeout: 3000,
+        adapter: 'http',
+      });
+      const messages: any[] = Array.isArray(search.data?.messages) ? search.data.messages : [];
+      for (const summary of messages) {
+        const id = String(summary?.ID ?? '');
+        if (!id) continue;
+        const receivedAt = Date.parse(String(summary?.Created ?? ''));
+        if (Number.isFinite(receivedAt) && receivedAt < requestedAt - 5000) continue;
+        const recipients = Array.isArray(summary?.To) ? summary.To : [];
+        const recipientMatches = recipients.length === 0 || recipients.some((recipient: any) =>
+          String(recipient?.Address ?? recipient).toLowerCase() === email.toLowerCase(),
+        );
+        if (!recipientMatches) continue;
+        const detail = await axios.get(`${MAILPIT_API}/api/v1/message/${encodeURIComponent(id)}`, {
+          timeout: 3000,
+          adapter: 'http',
+        });
+        const code = otpFromMailBody(`${detail.data?.Text ?? ''}\n${detail.data?.HTML ?? ''}`);
+        if (code) return code;
+      }
+    } catch {
+      // L'email peut être encore en file; ne jamais inclure le contenu du message dans l'erreur.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error('Le code 2FA n’a pas été reçu dans Mailpit dans le délai prévu.');
 }
 
 /** Connexion + 2FA via les services frontend ; la session (token) est posée par authApi. */
-async function connect(email: string, password = 'Tokpa2026!') {
+async function connect(email: string, password = E2E_PASSWORD) {
+  const requestedAt = Date.now();
   const login: any = await authApi.login({ email, password });
   expect(login.requires_2fa ?? login.data?.requires_2fa).toBeTruthy();
-  await authApi.verify2fa({ email, code: lastOtpFromLog() });
+  await authApi.verify2fa({ email, code: await otpFromMailpit(email, requestedAt) });
   expect(localStorage.getItem('tokpa_token')).toBeTruthy();
 }
 
@@ -96,22 +154,35 @@ afterAll(() => {
   localStorage.clear();
 });
 
-describe.skipIf(!apiUp || !LARAVEL_LOG)('cycle complet via le frontend', () => {
+describe('lecture OTP Mailpit en mémoire', () => {
+  it('extrait le code du corps texte ou HTML sans écrire le contenu', () => {
+    expect(otpFromMailBody('Votre code de vérification est : 123456')).toBe('123456');
+    expect(otpFromMailBody('<p>OTP: <strong>654321</strong></p>')).toBe('654321');
+    expect(otpFromMailBody('Référence de commande 123456')).toBeNull();
+  });
+});
+
+describe.skipIf(!e2eOptIn || !apiUp || !mailpitUp)('cycle complet via le frontend', () => {
   it('inscrit un client, valide la 2FA et ouvre la session', async () => {
     state.email = `cycle.${Date.now()}@tokpa.bj`;
+    const requestedAt = Date.now();
     const reg: any = await authApi.register({
       nom: 'Cycle',
       prenom: 'E2E',
       email: state.email,
-      telephone: `229${String(Date.now()).slice(-8)}`,
-      password: 'Tokpa2026!',
+      telephone: `+229${String(Date.now()).slice(-8)}`,
+      password: E2E_PASSWORD,
+      password_confirmation: E2E_PASSWORD,
+      accept_cgu: true,
+      opt_in_sms: true,
+      ville: 'Cotonou',
       role: 'client',
-      quartier: 'Cotonou',
+      quartier: 'Cadjehoun',
     });
     expect(reg.success).toBe(true);
     expect(/2FA/i.test(String(reg.message ?? ''))).toBe(true);
 
-    await authApi.verify2fa({ email: state.email, code: lastOtpFromLog() });
+    await authApi.verify2fa({ email: state.email, code: await otpFromMailpit(state.email, requestedAt) });
     expect(localStorage.getItem('tokpa_token')).toBeTruthy();
   }, TIMEOUT);
 

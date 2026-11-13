@@ -15,6 +15,7 @@ import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRef
 import { rememberSessionUser } from '../../../routes/authGuard';
 import ProfilePhotoField from '../../../components/shared/ProfilePhotoField';
 import UserAvatar from '../../../components/shared/UserAvatar';
+import ProfileLandmarks from '../../../components/client/profil/ProfileLandmarks';
 import { displayPhoto, writeLocalPhoto } from '../../../utils/profilePhoto';
 
 /** Nombre de lignes montrées dans les aperçus du profil (commandes, paiements). */
@@ -65,8 +66,8 @@ const PAYMENT_LABELS: Record<string, { fr: string; en: string; tone: string }> =
  *   - POST /api/auth/change-password
  *   - GET /api/orders             → 5 dernières commandes (statuts réels)
  *   - GET /api/payments           → 5 derniers paiements du compte
- * Les repères de livraison ne figurent plus sur le profil : le client choisit un
- * point de repère de la zone au moment de la commande (page /panier).
+ * Les repères personnels sont lus et modifiés depuis ProfileLandmarks; le client
+ * choisit toujours un point de livraison de zone pour chaque commande.
  */
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -473,6 +474,12 @@ export default function ProfilePage() {
                 </div>
               )}
             </section>
+
+            {(role === 'client' || role === 'admin') && (
+              <div className="lg:col-span-2">
+                <ProfileLandmarks />
+              </div>
+            )}
 
             {/* SECURITY & SETTINGS */}
             <section className="mb-xl lg:col-span-2 lg:mb-0">

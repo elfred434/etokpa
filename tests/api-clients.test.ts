@@ -39,6 +39,21 @@ describe('auth API session', () => {
     expect(window.dispatchEvent).toHaveBeenCalled();
   });
 
+  it('accepts the documented nested access_token response from 2FA', async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          access_token: 'nested-sanctum-token',
+          user: { id: 8, role: 'client' },
+        },
+      },
+    });
+    await authApi.verify2fa({ email: 'client@example.test', code: '123456' });
+    expect(localStorage.getItem('tokpa_token')).toBe('nested-sanctum-token');
+    expect(JSON.parse(localStorage.getItem('tokpa_user') ?? '{}')).toEqual({ id: 8, role: 'client' });
+  });
+
   it('does not open a session when 2FA returns no token', async () => {
     vi.mocked(apiClient.post).mockResolvedValue({ data: { success: false } });
     await authApi.verify2fa({ email: 'a@b.c', code: '000000' });
@@ -117,6 +132,12 @@ describe('livreur, payment and notification adapters', () => {
     vi.mocked(apiClient.get).mockResolvedValue({ data: [] });
     await adminApi.getProducts(3);
     expect(apiClient.get).toHaveBeenCalledWith('/admin/products', { params: { page: 3 } });
+  });
+
+  it('sends admin order status changes to the documented endpoint', async () => {
+    vi.mocked(apiClient.patch).mockResolvedValue({ data: { success: true } });
+    await adminApi.updateOrderStatus(42, 'en_preparation');
+    expect(apiClient.patch).toHaveBeenCalledWith('/admin/orders/42/status', { statut: 'en_preparation' });
   });
 
   it('uploads product images as multipart on create and update', async () => {

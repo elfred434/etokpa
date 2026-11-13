@@ -13,6 +13,10 @@ export interface RegisterPayload {
   email: string;
   telephone: string;
   password: string;
+  password_confirmation: string;
+  accept_cgu: boolean;
+  opt_in_sms: boolean;
+  ville?: string;
   role?: 'client' | 'manager' | 'livreur' | 'admin' | 'super_admin';
   quartier?: string;
   zone_id?: number;
@@ -58,12 +62,18 @@ export const authApi = {
   // POST /api/auth/verify-2fa -> valide le code OTP et retourne le token Sanctum
   verify2fa: async (payload: Verify2FAPayload) => {
     const response = await apiClient.post('/auth/verify-2fa', payload);
-    if (response.data?.token) {
-      localStorage.setItem('tokpa_token', response.data.token);
+    const body = response.data ?? {};
+    const data = body.data ?? body;
+    // Le backend courant renvoie `token` à la racine; le contrat Sprint 1
+    // documente `data.access_token`. Accepter les deux formes sans ouvrir une
+    // session si la vérification OTP n'a pas réellement délivré de jeton.
+    const token = body.token ?? body.access_token ?? data.access_token ?? data.token;
+    if (typeof token === 'string' && token.trim()) {
+      localStorage.setItem('tokpa_token', token);
       // Laravel peut renvoyer une JsonResource directement ou sous une enveloppe `data`.
       // On stocke toujours l'objet utilisateur lui-même afin que currentRole() puisse
       // calculer correctement l'espace de destination après la 2FA.
-      const rawUser = response.data.user;
+      const rawUser = body.user ?? data.user;
       const user = rawUser?.data ?? rawUser;
       localStorage.setItem('tokpa_user', JSON.stringify(user));
       // Connexion réussie → on branche le temps réel Reverb (canaux privés)
