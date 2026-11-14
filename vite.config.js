@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
+// Cible d'API configurable pour tester un backend distant sans dépendre de son CORS.
+const API_PROXY_TARGET = (process.env.TOKPA_API_PROXY_TARGET || 'http://127.0.0.1:8000').trim();
+
 // Configuration de base Vite + React + Tailwind v4
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -13,15 +16,15 @@ export default defineConfig({
     // /storage et l'auth Reverb sont relayés vers Laravel depuis le dev server.
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000',
+        target: API_PROXY_TARGET,
         changeOrigin: true,
       },
       '/storage': {
-        target: 'http://127.0.0.1:8000',
+        target: API_PROXY_TARGET,
         changeOrigin: true,
       },
       '/broadcasting': {
-        target: 'http://127.0.0.1:8000',
+        target: API_PROXY_TARGET,
         changeOrigin: true,
       },
     },
