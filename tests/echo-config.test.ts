@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('laravel-echo', () => ({ default: class Echo {} }));
 vi.mock('pusher-js', () => ({ default: class Pusher {} }));
 
-import { getApiOrigin, getReverbConfig, initEcho, shutdownEcho } from '../src/services/realtime/echo';
+import { getApiOrigin, getReverbConfig, initEcho, isReverbEnabled, shutdownEcho } from '../src/services/realtime/echo';
 
 describe('realtime configuration', () => {
   beforeEach(() => {
@@ -25,6 +25,13 @@ describe('realtime configuration', () => {
       key: 'tokpa-key',
       appId: 'tokpa',
     });
+  });
+
+  it('can disable Reverb when the deployed API has no websocket service', () => {
+    expect(isReverbEnabled('false')).toBe(false);
+    expect(isReverbEnabled('FALSE')).toBe(false);
+    expect(isReverbEnabled('true')).toBe(true);
+    expect(isReverbEnabled()).toBe(true);
   });
 
   it('purges the legacy demo token and does not connect without a session', () => {

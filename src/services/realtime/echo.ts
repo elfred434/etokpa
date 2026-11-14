@@ -39,6 +39,11 @@ export function getApiOrigin(): string {
   return apiOriginFromBase(env.VITE_API_BASE_URL);
 }
 
+/** Permet de désactiver Echo lorsque le backend ne publie pas de WebSocket. */
+export function isReverbEnabled(value = env.VITE_REVERB_ENABLED): boolean {
+  return value?.trim().toLowerCase() !== 'false';
+}
+
 export interface ReverbConfig {
   host: string;
   port: number;
@@ -66,6 +71,11 @@ let boundToken: string | null = null;
  * Sans token → déconnecte et retourne null.
  */
 export function initEcho(): Echo<'pusher'> | null {
+  if (!isReverbEnabled()) {
+    shutdownEcho();
+    return null;
+  }
+
   let token = localStorage.getItem('tokpa_token');
   // Token démo legacy (avant l'alignement API) : plus valide, on le purge proprement.
   if (token === 'demo_token_sanctum_123') {
