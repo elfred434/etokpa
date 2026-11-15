@@ -202,7 +202,7 @@ export default function ProfilePage() {
                 title={tx("Se connecter")}
                 data-testid="profile-login-icon"
               >
-                <MIcon name="login" className="text-[38px] transition-transform duration-200 group-hover:scale-110" />
+                <MIcon name="person" className="text-[38px] transition-transform duration-200 group-hover:scale-110" />
               </Link>
               <h1 className="mt-7 max-w-[520px] font-h2 text-h2 font-bold">
                 {tx("Connectez-vous pour voir votre profil")}

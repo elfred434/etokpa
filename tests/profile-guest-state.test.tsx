@@ -67,7 +67,7 @@ describe('ProfilePage guest state', () => {
     expect(iconButton.getAttribute('data-testid')).toBe('profile-login-icon');
     expect(iconButton.getAttribute('title')).toBe('Se connecter');
     expect(iconButton.className).toContain('rounded-full');
-    expect(iconButton.querySelector('[data-icon-name="login"]')).not.toBeNull();
+    expect(iconButton.querySelector('[data-icon-name="person"]')).not.toBeNull();
     expect(textButton.textContent).toContain('Se connecter');
   });
 });
