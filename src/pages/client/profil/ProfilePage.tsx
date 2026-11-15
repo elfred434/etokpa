@@ -190,22 +190,36 @@ export default function ProfilePage() {
     return (
       <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
         <ClientNavbar />
-        <main className="mx-auto mt-[76px] flex w-full max-w-[720px] flex-col items-center px-md text-center lg:max-w-[900px] lg:px-lg">
-          <Link
-            to="/connexion"
-            search={{ redirect: '/profil' }}
-            className="mt-10 flex flex-col items-center gap-md rounded-[14px] border border-border-default bg-bg-card px-lg py-xl shadow-xs"
-            aria-label={tx("Se connecter")}
-          >
-            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-tint text-primary-shade">
-              <MIcon name="login" className="text-[48px]" />
-            </span>
-            <h1 className="font-h2 text-h2 font-bold">{tx("Connectez-vous pour voir votre profil")}</h1>
-            <p className="max-w-sm text-sm text-text-secondary">
-              {tx("Vos commandes et vos points de repère s’affichent ici.")}
-            </p>
-            <span className="rounded-lg bg-primary-container px-lg py-3 font-bold text-white">{tx("Se connecter")}</span>
-          </Link>
+        <main className="mx-auto mt-[76px] flex w-full max-w-5xl justify-center px-4 py-10 text-center sm:px-6">
+          <section className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-border-default bg-bg-card shadow-lg">
+            <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary-container via-secondary-container to-primary-container" />
+            <div className="flex flex-col items-center px-6 py-10 sm:px-10 sm:py-12">
+              <Link
+                to="/connexion"
+                search={{ redirect: '/profil' }}
+                className="group inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary-container text-white shadow-md ring-4 ring-primary-tint transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-[6px] focus-visible:ring-primary active:translate-y-0"
+                aria-label={tx("Se connecter")}
+                title={tx("Se connecter")}
+                data-testid="profile-login-icon"
+              >
+                <MIcon name="login" className="text-[38px] transition-transform duration-200 group-hover:scale-110" />
+              </Link>
+              <h1 className="mt-7 max-w-md font-h2 text-h2 font-bold">
+                {tx("Connectez-vous pour voir votre profil")}
+              </h1>
+              <p className="mt-3 max-w-sm text-sm leading-6 text-text-secondary">
+                {tx("Vos commandes et vos points de repère s’affichent ici.")}
+              </p>
+              <Link
+                to="/connexion"
+                search={{ redirect: '/profil' }}
+                className="btn btn-primary mt-8 min-w-[13rem] gap-2 rounded-xl px-6 font-bold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary"
+              >
+                <span>{tx("Se connecter")}</span>
+                <MIcon name="arrow_forward" className="text-[20px]" />
+              </Link>
+            </div>
+          </section>
         </main>
         <ClientBottomNav />
       </div>
