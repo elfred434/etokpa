@@ -65,6 +65,8 @@ export default function AdminCatalogPage() {
   const [form, setForm] = useState({ nom: '', description: '', prix: '', prix_minimum: '', stock: '', categorie_id: '' });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageBusy, setImageBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const saveInFlightRef = useRef(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageRemoved, setImageRemoved] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -136,10 +138,28 @@ export default function AdminCatalogPage() {
     setImagePreview(absImageUrl(pr?.image_url ?? pr?.img_url));
     setForm({ nom: pr?.nom ?? '', description: pr?.description ?? '', prix: String(pr?.prix ?? ''), prix_minimum: String(pr?.prix_minimum ?? ''), stock: String(pr?.stock ?? ''), categorie_id: String(pr?.categorie?.id ?? '') });
   };
-  const fermer = () => { revokeObjectUrl(); setImageFile(null); setImageRemoved(false); setImagePreview(null); setEdition(null); };
+  const fermer = () => {
+    if (saveInFlightRef.current) return;
+    revokeObjectUrl();
+    setImageFile(null);
+    setImageRemoved(false);
+    setImagePreview(null);
+    setEdition(null);
+  };
   const enregistrer = async () => {
+    if (saveInFlightRef.current || imageBusy) return;
+
+    const stock = form.stock.trim() === '' ? Number.NaN : Number(form.stock);
+    if (!Number.isInteger(stock) || stock < 0) {
+      await adminDialogs.alert(tx("Le stock doit être un entier supérieur ou égal à zéro."), { title: tx("Stock invalide") });
+      return;
+    }
+
+    saveInFlightRef.current = true;
+    setSaving(true);
+    let saved = false;
     try {
-      const champs = { nom: form.nom, description: form.description, prix: Number(form.prix), prix_minimum: Number(form.prix_minimum), stock: Number(form.stock), categorie_id: Number(form.categorie_id) };
+      const champs = { nom: form.nom, description: form.description, prix: Number(form.prix), prix_minimum: Number(form.prix_minimum), stock, categorie_id: Number(form.categorie_id) };
       const payload = buildProductMutationPayload(
         champs,
         imageFile,
@@ -147,9 +167,16 @@ export default function AdminCatalogPage() {
       );
       if (edition?.id) await adminApi.updateProduct(edition.id, payload);
       else await adminApi.createProduct(payload);
-      fermer(); reload();
+      saved = true;
     } catch (e: any) {
       await adminDialogs.alert(formatApiError(extractApiError(e)), { title: tx("Erreur API"), danger: true });
+    } finally {
+      saveInFlightRef.current = false;
+      setSaving(false);
+    }
+    if (saved) {
+      fermer();
+      reload();
     }
   };
   const modifierDepuisDetail = () => {
@@ -314,7 +341,7 @@ export default function AdminCatalogPage() {
               <h3 className="text-h3 font-h3 font-bold">
                 {edition.id ? tx("Modifier le produit") : tx("Nouveau produit")}
               </h3>
-              <button type="button" onClick={fermer}>{tx("Fermer")}</button>
+              <button type="button" disabled={saving} onClick={fermer}>{tx("Fermer")}</button>
             </div>
             <div className="flex-1 space-y-3 overflow-y-auto p-4 text-label">
               <>
@@ -322,7 +349,7 @@ export default function AdminCatalogPage() {
               <div><p className="text-text-secondary">{tx("Description")}</p><textarea rows={2} value={form.description} onChange={(e: any) => setForm({ ...form, description: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
               <div><p className="text-text-secondary">{tx("Prix (FCFA)")}</p><input value={form.prix} onChange={(e: any) => setForm({ ...form, prix: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
               <div><p className="text-text-secondary">{tx("Prix minimum (FCFA) — obligatoire")}</p><input value={form.prix_minimum} onChange={(e: any) => setForm({ ...form, prix_minimum: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
-              <div><p className="text-text-secondary">{tx("Stock")}</p><input value={form.stock} onChange={(e: any) => setForm({ ...form, stock: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+              <div><p className="text-text-secondary">{tx("Stock")}</p><input type="number" min="0" step="1" inputMode="numeric" value={form.stock} onChange={(e: any) => setForm({ ...form, stock: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
               <div><p className="text-text-secondary">{tx("Catégorie — obligatoire")}</p>
                 <select value={form.categorie_id} onChange={(e: any) => setForm({ ...form, categorie_id: e.target.value })} className="w-full rounded-lg border border-border-default bg-bg-card px-3 py-2">
                   <option value="">{tx("— Choisir —")}</option>
@@ -378,8 +405,22 @@ export default function AdminCatalogPage() {
               </>
             </div>
             <div className="flex justify-end gap-2 border-t border-border-default p-4">
-              <button type="button" className="btn btn-ghost" onClick={fermer}>{tx("Annuler")}</button>
-              <button type="button" className="btn btn-primary" disabled={imageBusy} onClick={enregistrer}>{tx("Enregistrer")}</button>
+              <button type="button" className="btn btn-ghost" disabled={saving} onClick={fermer}>{tx("Annuler")}</button>
+              <button
+                type="button"
+                className="btn btn-primary relative"
+                disabled={imageBusy || saving}
+                aria-busy={saving}
+                aria-label={saving ? tx("Enregistrement…") : undefined}
+                onClick={enregistrer}
+              >
+                <span className={saving ? 'opacity-0' : undefined}>{tx("Enregistrer")}</span>
+                {saving && (
+                  <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         </div>
