@@ -50,6 +50,14 @@ describe('ProfilePage guest state', () => {
     expect(heading.closest('a')).toBeNull();
     expect(description.closest('a')).toBeNull();
 
+    const card = heading.closest('section');
+    const main = heading.closest('main');
+    expect(card?.className).toContain('max-w-[620px]');
+    expect(main?.className).toContain('max-w-[1200px]');
+    expect(heading.className).toContain('max-w-[520px]');
+    expect(description.className).toContain('max-w-[480px]');
+    expect(card?.className).not.toMatch(/\bmax-w-(?:sm|md|lg|xl|[2-7]xl)\b/);
+
     const loginLinks = screen.getAllByRole('link', { name: 'Se connecter' });
     expect(loginLinks).toHaveLength(2);
     const [iconButton, textButton] = loginLinks;

@@ -190,8 +190,8 @@ export default function ProfilePage() {
     return (
       <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
         <ClientNavbar />
-        <main className="mx-auto mt-[76px] flex w-full max-w-5xl justify-center px-4 py-10 text-center sm:px-6">
-          <section className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-border-default bg-bg-card shadow-lg">
+        <main className="mx-auto mt-[76px] flex w-full max-w-[1200px] justify-center px-4 py-10 text-center sm:px-6">
+          <section className="relative w-full max-w-[620px] overflow-hidden rounded-3xl border border-border-default bg-bg-card shadow-lg">
             <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary-container via-secondary-container to-primary-container" />
             <div className="flex flex-col items-center px-6 py-10 sm:px-10 sm:py-12">
               <Link
@@ -204,10 +204,10 @@ export default function ProfilePage() {
               >
                 <MIcon name="login" className="text-[38px] transition-transform duration-200 group-hover:scale-110" />
               </Link>
-              <h1 className="mt-7 max-w-md font-h2 text-h2 font-bold">
+              <h1 className="mt-7 max-w-[520px] font-h2 text-h2 font-bold">
                 {tx("Connectez-vous pour voir votre profil")}
               </h1>
-              <p className="mt-3 max-w-sm text-sm leading-6 text-text-secondary">
+              <p className="mt-3 max-w-[480px] text-sm leading-6 text-text-secondary">
                 {tx("Vos commandes et vos points de repère s’affichent ici.")}
               </p>
               <Link
