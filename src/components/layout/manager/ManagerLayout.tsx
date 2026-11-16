@@ -106,7 +106,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
           </div>
         </div>
       </header>
-      <main id="manager-main" className="ml-0 space-y-lg p-4 pt-[calc(52px+16px)] lg:ml-64 lg:p-lg">{children}</main>
+      <main id="manager-main" className="ml-0 space-y-lg px-4 pb-4 pt-[calc(52px+16px)] lg:ml-64 lg:px-lg lg:pb-lg lg:pt-[calc(52px+24px)]">{children}</main>
       <MobileTableBridge rootId="manager-main" />
       {admin && open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>

@@ -17,14 +17,22 @@ interface AdminLayoutProps {
   mainClassName?: string;
 }
 
-/** Le décalage `ml-64` des pages Stitch ne doit pas coller le contenu sous la sidebar sur téléphone. */
+/** Le décalage `ml-64` des pages Stitch ne doit pas coller le contenu sous la sidebar sur téléphone,
+ *  et `p-lg` ne doit pas écraser `pt-[52px]` sous la barre fixe du haut. */
 function responsiveMain(mainClassName?: string) {
   const base = mainClassName ?? 'ml-64 pt-[52px] min-h-screen p-lg space-y-lg';
+  const hasLargePadding = /(^|\s)p-lg(?=\s|$)/.test(base);
   return base
     .replace(/(^|\s)ml-64(?=\s|$)/g, '$1ml-0 lg:ml-64')
-    .replace(/(^|\s)p-lg(?=\s|$)/g, '$1p-4 lg:p-lg')
+    .replace(/(^|\s)pt-\[52px\](?=\s|$)/g, hasLargePadding ? '' : '$1pt-[52px]')
+    .replace(
+      /(^|\s)p-lg(?=\s|$)/g,
+      '$1px-4 pb-4 pt-[calc(52px+16px)] lg:px-lg lg:pb-lg lg:pt-[calc(52px+24px)]',
+    )
     .replace(/(^|\s)h-screen(?=\s|$)/g, '$1min-h-screen lg:h-screen')
-    .replace(/(^|\s)overflow-hidden(?=\s|$)/g, '$1overflow-x-auto lg:overflow-hidden');
+    .replace(/(^|\s)overflow-hidden(?=\s|$)/g, '$1overflow-x-auto lg:overflow-hidden')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /**

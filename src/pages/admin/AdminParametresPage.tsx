@@ -37,7 +37,7 @@ export default function AdminParametresPage() {
   return (
     <AdminLayout currentPath="/admin/parametres">
       {/* Thème et langue : réglages réels */}
-      <div className="m-lg">
+      <div>
         <ParametresPanel desktopColumns />
       </div>
       <style>{DESIGN_CSS}</style>
