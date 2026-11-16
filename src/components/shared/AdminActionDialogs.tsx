@@ -1,7 +1,21 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
-import MIcon from './MIcon';
+import {
+  DIALOG_CANCEL_BTN_CLASS,
+  DIALOG_DANGER_BTN_CLASS,
+  DIALOG_PRIMARY_BTN_CLASS,
+  DialogFrame,
+  type DialogFrameProps,
+} from './DialogFrame';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
+
+export {
+  DIALOG_CANCEL_BTN_CLASS,
+  DIALOG_DANGER_BTN_CLASS,
+  DIALOG_PRIMARY_BTN_CLASS,
+  DialogFrame,
+  type DialogFrameProps,
+};
 
 export interface AdminDialogOptions {
   title?: string;
@@ -131,15 +145,6 @@ export function AdminActionDialogHost() {
     if (!request) return;
     if (request.kind === 'prompt') promptRef.current?.focus();
     else cancelRef.current?.focus();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        cancelActive();
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
   }, [request?.id, request?.kind]);
 
   if (!request) return null;
@@ -150,69 +155,30 @@ export function AdminActionDialogHost() {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
-      style={{ zIndex: 1000 }}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) cancelActive();
+    <DialogFrame
+      danger={request.danger}
+      describedById={`admin-action-message-${request.id}`}
+      dialogKind={request.kind}
+      icon={request.danger ? 'warning' : request.kind === 'prompt' ? 'edit' : request.kind === 'confirm' ? 'help' : 'info'}
+      role={request.kind === 'prompt' ? 'dialog' : 'alertdialog'}
+      testId="admin-action-dialog"
+      title={request.title}
+      titleId={`admin-action-title-${request.id}`}
+      zIndex={1000}
+      onClose={cancelActive}
+      onKeyDown={(event) => {
+        if (request.kind === 'prompt' && !request.multiline && event.key === 'Enter') {
+          event.preventDefault();
+          submitPrompt();
+        }
       }}
-    >
-      <section
-        aria-labelledby={`admin-action-title-${request.id}`}
-        aria-describedby={`admin-action-message-${request.id}`}
-        aria-modal="true"
-        className="flex min-w-0 w-full flex-col overflow-hidden rounded-2xl border border-border-default bg-bg-card text-text-main shadow-2xl"
-        data-testid="admin-action-dialog"
-        data-dialog-kind={request.kind}
-        role={request.kind === 'prompt' ? 'dialog' : 'alertdialog'}
-        style={{ width: '100%', maxWidth: '36rem', maxHeight: 'calc(100dvh - 2rem)', boxSizing: 'border-box' }}
-        onClick={(event) => event.stopPropagation()}
-        onKeyDown={(event) => {
-          if (request.kind === 'prompt' && !request.multiline && event.key === 'Enter') {
-            event.preventDefault();
-            submitPrompt();
-          }
-        }}
-      >
-        <header className="flex min-w-0 shrink-0 items-start gap-3 border-b border-border-default bg-surface-container-low px-4 py-4 sm:px-5">
-          <span className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${request.danger ? 'bg-error-light text-error' : 'bg-primary-tint text-primary-container'}`}>
-            <MIcon name={request.danger ? 'warning' : request.kind === 'prompt' ? 'edit' : request.kind === 'confirm' ? 'help' : 'info'} />
-          </span>
-          <h2 id={`admin-action-title-${request.id}`} className="min-w-0 flex-1 break-words text-lg font-bold text-text-main">
-            {request.title}
-          </h2>
-          <button
-            type="button"
-            aria-label={tx('Fermer')}
-            className="shrink-0 rounded-lg p-2 text-text-secondary transition-colors hover:bg-bg-secondary hover:text-text-main"
-            onClick={cancelActive}
-          >
-            <MIcon name="close" />
-          </button>
-        </header>
-
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-5">
-          <p id={`admin-action-message-${request.id}`} className="whitespace-pre-wrap break-words text-sm leading-6 text-text-secondary">
-            {request.message}
-          </p>
-          {request.kind === 'prompt' && (
-            <textarea
-              ref={promptRef}
-              aria-label={request.placeholder || tx('Votre réponse')}
-              className="mt-4 min-h-24 w-full resize-y rounded-xl border border-border-default bg-bg-card px-3 py-2 text-sm text-text-main outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-              defaultValue={request.initialValue}
-              placeholder={request.placeholder}
-              rows={request.multiline ? 4 : 2}
-            />
-          )}
-        </div>
-
-        <footer className="flex shrink-0 flex-col-reverse gap-2 border-t border-border-default bg-bg-secondary p-4 sm:flex-row sm:justify-end sm:px-5">
+      footer={
+        <>
           {request.kind !== 'alert' && (
             <button
               ref={cancelRef}
               type="button"
-              className="w-full rounded-xl border border-border-default bg-bg-card px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-bg-app sm:w-auto"
+              className={DIALOG_CANCEL_BTN_CLASS}
               onClick={cancelActive}
             >
               {request.cancelLabel}
@@ -221,7 +187,7 @@ export function AdminActionDialogHost() {
           <button
             ref={request.kind === 'alert' ? cancelRef : undefined}
             type="button"
-            className={`w-full rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${request.danger ? 'bg-error hover:bg-error-dark' : 'bg-primary-container hover:bg-primary-hover'}`}
+            className={request.danger ? DIALOG_DANGER_BTN_CLASS : DIALOG_PRIMARY_BTN_CLASS}
             onClick={() => {
               if (request.kind === 'confirm') settle(request.id, true);
               else if (request.kind === 'prompt') submitPrompt();
@@ -230,8 +196,22 @@ export function AdminActionDialogHost() {
           >
             {request.confirmLabel}
           </button>
-        </footer>
-      </section>
-    </div>
+        </>
+      }
+    >
+      <p id={`admin-action-message-${request.id}`} className="whitespace-pre-wrap break-words text-sm leading-6 text-text-secondary">
+        {request.message}
+      </p>
+      {request.kind === 'prompt' && (
+        <textarea
+          ref={promptRef}
+          aria-label={request.placeholder || tx('Votre réponse')}
+          className="mt-4 min-h-24 w-full resize-y rounded-xl border border-border-default bg-bg-card px-3 py-2 text-sm text-text-main outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+          defaultValue={request.initialValue}
+          placeholder={request.placeholder}
+          rows={request.multiline ? 4 : 2}
+        />
+      )}
+    </DialogFrame>
   );
 }

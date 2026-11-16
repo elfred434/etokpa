@@ -1,6 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import MIcon from '../../shared/MIcon';
 import MobileTableBridge from '../../shared/MobileTableBridge';
+import {
+  DIALOG_CANCEL_BTN_CLASS,
+  DIALOG_PRIMARY_BTN_CLASS,
+  DialogFrame,
+} from '../../shared/DialogFrame';
 import ManagerSidebar from './ManagerSidebar';
 import RefreshButton from '../../shared/RefreshButton';
 import SettingsLink from '../../shared/SettingsLink';
@@ -109,30 +114,47 @@ export default function ManagerLayout({ children, currentPath }: Props) {
       <main id="manager-main" className="ml-0 space-y-lg px-4 pb-4 pt-[calc(52px+16px)] lg:ml-64 lg:px-lg lg:pb-lg lg:pt-[calc(52px+24px)]">{children}</main>
       <MobileTableBridge rootId="manager-main" />
       {admin && open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-[512px] rounded-2xl bg-bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-h3 font-h3 font-bold">{tx("Changer de zone")}</h2>
-            <label className="mt-4 block text-label font-semibold">
-              {tx("Zone géographique")}
-              <select
-                value={zoneId}
-                onChange={(e) => setZoneId(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-border-default bg-bg-card px-3 py-2 text-label"
+        <DialogFrame
+          icon="location_on"
+          title={tx("Changer de zone")}
+          maxWidth="32rem"
+          disabled={saving}
+          onClose={() => setOpen(false)}
+          footer={
+            <>
+              <button
+                type="button"
+                className={DIALOG_CANCEL_BTN_CLASS}
+                disabled={saving}
+                onClick={() => setOpen(false)}
               >
-                <option value="">{tx("— Choisir une zone —")}</option>
-                {zones.map((z) => (
-                  <option key={z.id} value={String(z.id)}>{z.nom}</option>
-                ))}
-              </select>
-            </label>
-            <div className="mt-4 flex justify-end gap-2">
-              <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>{tx("Annuler")}</button>
-              <button type="button" className="btn btn-primary" disabled={saving || !zoneId} onClick={() => void changerZone()}>
+                {tx("Annuler")}
+              </button>
+              <button
+                type="button"
+                className={DIALOG_PRIMARY_BTN_CLASS}
+                disabled={saving || !zoneId}
+                onClick={() => void changerZone()}
+              >
                 {saving ? tx("Enregistrement…") : tx("Valider")}
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+          <label className="block text-sm font-semibold text-text-main">
+            {tx("Zone géographique")}
+            <select
+              value={zoneId}
+              onChange={(e) => setZoneId(e.target.value)}
+              className="mt-2 w-full rounded-xl border border-border-default bg-bg-card px-3 py-2.5 text-sm text-text-main outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="">{tx("— Choisir une zone —")}</option>
+              {zones.map((z) => (
+                <option key={z.id} value={String(z.id)}>{z.nom}</option>
+              ))}
+            </select>
+          </label>
+        </DialogFrame>
       )}
     </div>
   );

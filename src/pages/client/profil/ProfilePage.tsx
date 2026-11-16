@@ -5,6 +5,11 @@ import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
+import {
+  DIALOG_CANCEL_BTN_CLASS,
+  DIALOG_PRIMARY_BTN_CLASS,
+  DialogFrame,
+} from '../../../components/shared/DialogFrame';
 import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
 import { currentRole, hasSession } from '../../../routes/authGuard';
@@ -559,216 +564,210 @@ export default function ProfilePage() {
 
       {/* Modal Edit Profile (PUT /api/profile) */}
       {editProfileOpen && (
-        <div className="fixed inset-0 bg-on-surface/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4 animate-fade-in">
-          <div className="bg-bg-card w-full max-w-[500px] rounded-xl shadow-2xl overflow-hidden p-lg">
-            <div className="flex justify-between items-center mb-md border-b border-border-default pb-3">
-              <h3 className="font-h2 text-h2 font-bold">{isFr ? tx("Modifier mon profil") : 'Edit my profile'}</h3>
+        <DialogFrame
+          icon="edit"
+          title={isFr ? tx("Modifier mon profil") : 'Edit my profile'}
+          maxWidth="32rem"
+          disabled={saving}
+          onClose={() => setEditProfileOpen(false)}
+          footer={
+            <>
               <button
                 type="button"
+                disabled={saving}
                 onClick={() => setEditProfileOpen(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+                className={DIALOG_CANCEL_BTN_CLASS}
               >
-                <MIcon name="close" />
+                {isFr ? tx("Annuler") : 'Cancel'}
               </button>
-            </div>
-
-            <form onSubmit={handleSaveProfile} className="max-h-[70vh] space-y-md overflow-y-auto pr-1">
-              <ProfilePhotoField
-                name={[formPrenom, formNomUser].filter(Boolean).join(' ') || userFullName}
-                photo={formPhoto}
-                onChange={setFormPhoto}
-                onClear={() => setFormPhoto(null)}
+              <button
+                type="submit"
+                form="profile-edit-form"
+                disabled={saving}
+                className={DIALOG_PRIMARY_BTN_CLASS}
+              >
+                {isFr ? tx("Enregistrer") : 'Save'}
+              </button>
+            </>
+          }
+        >
+          <form id="profile-edit-form" onSubmit={handleSaveProfile} className="space-y-md">
+            <ProfilePhotoField
+              name={[formPrenom, formNomUser].filter(Boolean).join(' ') || userFullName}
+              photo={formPhoto}
+              onChange={setFormPhoto}
+              onClear={() => setFormPhoto(null)}
+            />
+            <div>
+              <label className="block text-label mb-1 text-text-secondary font-medium">{tx("Prénom")}</label>
+              <input
+                type="text"
+                value={formPrenom}
+                onChange={(e) => setFormPrenom(e.target.value)}
+                required
+                className="w-full px-md py-2 rounded-lg border border-border-default bg-bg-card text-text-main focus:border-primary outline-none"
               />
-              <div>
-                <label className="block text-label mb-1 text-text-secondary font-medium">{tx("Prénom")}</label>
-                <input
-                  type="text"
-                  value={formPrenom}
-                  onChange={(e) => setFormPrenom(e.target.value)}
-                  required
-                  className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-label mb-1 text-text-secondary font-medium">{tx("Nom")}</label>
-                <input
-                  type="text"
-                  value={formNomUser}
-                  onChange={(e) => setFormNomUser(e.target.value)}
-                  required
-                  className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-label mb-1 text-text-secondary font-medium">{tx("Adresse e-mail")}</label>
-                <input
-                  type="email"
-                  value={formEmail}
-                  onChange={(e) => setFormEmail(e.target.value)}
-                  autoComplete="email"
-                  className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-label mb-1 text-text-secondary font-medium">{tx("Téléphone")}</label>
-                <input
-                  type="tel"
-                  value={formTelephone}
-                  onChange={(e) => setFormTelephone(e.target.value)}
-                  placeholder="+229 90 00 00 00"
-                  className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none"
-                />
-              </div>
-
-              <div className="pt-md border-t border-border-default flex justify-end gap-md">
-                <button
-                  type="button"
-                  onClick={() => setEditProfileOpen(false)}
-                  className="px-md py-2 rounded-lg border border-border-default font-medium hover:bg-gray-50 transition-all cursor-pointer"
-                >
-                  {isFr ? tx("Annuler") : 'Cancel'}
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-lg py-2 rounded-lg bg-primary-container hover:bg-primary-hover text-white font-bold transition-all shadow-md cursor-pointer disabled:opacity-50"
-                >
-                  {isFr ? tx("Enregistrer") : 'Save'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            </div>
+            <div>
+              <label className="block text-label mb-1 text-text-secondary font-medium">{tx("Nom")}</label>
+              <input
+                type="text"
+                value={formNomUser}
+                onChange={(e) => setFormNomUser(e.target.value)}
+                required
+                className="w-full px-md py-2 rounded-lg border border-border-default bg-bg-card text-text-main focus:border-primary outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-label mb-1 text-text-secondary font-medium">{tx("Adresse e-mail")}</label>
+              <input
+                type="email"
+                value={formEmail}
+                onChange={(e) => setFormEmail(e.target.value)}
+                autoComplete="email"
+                className="w-full px-md py-2 rounded-lg border border-border-default bg-bg-card text-text-main focus:border-primary outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-label mb-1 text-text-secondary font-medium">{tx("Téléphone")}</label>
+              <input
+                type="tel"
+                value={formTelephone}
+                onChange={(e) => setFormTelephone(e.target.value)}
+                placeholder="+229 90 00 00 00"
+                className="w-full px-md py-2 rounded-lg border border-border-default bg-bg-card text-text-main focus:border-primary outline-none"
+              />
+            </div>
+          </form>
+        </DialogFrame>
       )}
 
       {/* Modal Change Password (POST /api/auth/change-password) */}
       {pwModalOpen && (
-        <div className="fixed inset-0 bg-on-surface/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4 animate-fade-in">
-          <div className="bg-bg-card w-full max-w-[500px] rounded-xl shadow-2xl overflow-hidden p-lg">
-            <div className="flex justify-between items-center mb-md border-b border-border-default pb-3">
-              <h3 className="font-h2 text-h2 font-bold">{isFr ? tx("Changer le mot de passe") : 'Change password'}</h3>
+        <DialogFrame
+          icon="lock"
+          title={isFr ? tx("Changer le mot de passe") : 'Change password'}
+          maxWidth="32rem"
+          disabled={saving}
+          onClose={() => setPwModalOpen(false)}
+          footer={
+            <>
               <button
                 type="button"
+                disabled={saving}
                 onClick={() => setPwModalOpen(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+                className={DIALOG_CANCEL_BTN_CLASS}
               >
-                <MIcon name="close" />
+                {isFr ? tx("Annuler") : 'Cancel'}
               </button>
+              <button
+                type="submit"
+                form="profile-password-form"
+                disabled={saving}
+                className={DIALOG_PRIMARY_BTN_CLASS}
+              >
+                {isFr ? tx("Changer") : 'Change'}
+              </button>
+            </>
+          }
+        >
+          <form id="profile-password-form" onSubmit={handleChangePassword} className="space-y-md">
+            <div>
+              <label className="block text-label mb-1 text-text-secondary font-medium">
+                {tx("Mot de passe actuel")}
+              </label>
+              <input
+                type="password"
+                value={pwCurrent}
+                onChange={(e) => setPwCurrent(e.target.value)}
+                required
+                className="w-full px-md py-2 rounded-lg border border-border-default bg-bg-card text-text-main focus:border-primary outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-label mb-1 text-text-secondary font-medium">
+                {tx("Nouveau mot de passe")}
+              </label>
+              <input
+                type="password"
+                value={pwNew}
+                onChange={(e) => setPwNew(e.target.value)}
+                required
+                className="w-full px-md py-2 rounded-lg border border-border-default bg-bg-card text-text-main focus:border-primary outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-label mb-1 text-text-secondary font-medium">
+                {tx("Confirmer le nouveau mot de passe")}
+              </label>
+              <input
+                type="password"
+                value={pwConfirm}
+                onChange={(e) => setPwConfirm(e.target.value)}
+                required
+                className="w-full px-md py-2 rounded-lg border border-border-default bg-bg-card text-text-main focus:border-primary outline-none"
+              />
             </div>
 
-            <form onSubmit={handleChangePassword} className="space-y-md">
-              <div>
-                <label className="block text-label mb-1 text-text-secondary font-medium">
-                  {tx("Mot de passe actuel")}
-                </label>
-                <input
-                  type="password"
-                  value={pwCurrent}
-                  onChange={(e) => setPwCurrent(e.target.value)}
-                  required
-                  className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none"
-                />
+            {pwError && (
+              <div className="p-3 bg-error-light border border-error/20 rounded-lg text-xs font-semibold text-error-dark">
+                {pwError}
               </div>
-              <div>
-                <label className="block text-label mb-1 text-text-secondary font-medium">
-                  {tx("Nouveau mot de passe")}
-                </label>
-                <input
-                  type="password"
-                  value={pwNew}
-                  onChange={(e) => setPwNew(e.target.value)}
-                  required
-                  className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-label mb-1 text-text-secondary font-medium">
-                  {tx("Confirmer le nouveau mot de passe")}
-                </label>
-                <input
-                  type="password"
-                  value={pwConfirm}
-                  onChange={(e) => setPwConfirm(e.target.value)}
-                  required
-                  className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none"
-                />
-              </div>
-
-              {pwError && (
-                <div className="p-3 bg-error-light border border-error/20 rounded-lg text-xs font-semibold text-error-dark">
-                  {pwError}
-                </div>
-              )}
-
-              <div className="pt-md border-t border-border-default flex justify-end gap-md">
-                <button
-                  type="button"
-                  onClick={() => setPwModalOpen(false)}
-                  className="px-md py-2 rounded-lg border border-border-default font-medium hover:bg-gray-50 transition-all cursor-pointer"
-                >
-                  {isFr ? tx("Annuler") : 'Cancel'}
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-lg py-2 rounded-lg bg-primary-container hover:bg-primary-hover text-white font-bold transition-all shadow-md cursor-pointer disabled:opacity-50"
-                >
-                  {isFr ? tx("Changer") : 'Change'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            )}
+          </form>
+        </DialogFrame>
       )}
 
       {orderSheet && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setOrderSheet(null)}>
-          <div className="max-h-[85vh] w-full max-w-[640px] overflow-y-auto rounded-t-2xl bg-bg-card p-4 shadow-2xl sm:rounded-2xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <h2 className="text-h3 font-h3 font-bold">{tx("Commande")} #{orderSheet.id}</h2>
-              <button type="button" className="rounded-lg p-1 text-text-secondary" aria-label={tx("Fermer")} onClick={() => setOrderSheet(null)}>
-                <MIcon name="close" />
+        <DialogFrame
+          icon="receipt_long"
+          title={`${tx("Commande")} #${orderSheet.id}`}
+          onClose={() => setOrderSheet(null)}
+          footer={
+            <>
+              <button type="button" className={DIALOG_CANCEL_BTN_CLASS} onClick={() => setOrderSheet(null)}>
+                {tx("Fermer")}
               </button>
-            </div>
-            <dl className="space-y-3 text-label">
-              <div><dt className="text-micro uppercase text-text-secondary">{tx("Date")}</dt><dd className="font-semibold">{orderSheet.date}</dd></div>
-              <div><dt className="text-micro uppercase text-text-secondary">{tx("Montant")}</dt><dd className="font-semibold">{orderSheet.totalLabel}</dd></div>
-              <div><dt className="text-micro uppercase text-text-secondary">{tx("Statut")}</dt><dd className="font-semibold">{isFr ? orderSheet.statusFr : orderSheet.statusEn}</dd></div>
-            </dl>
-            <div className="mt-4 flex flex-wrap gap-2">
               <Link
                 to={orderSheet.active ? '/commandes/suivi' : '/commandes'}
                 search={orderSheet.active ? { order: String(orderSheet.id) } : { detail: String(orderSheet.id) }}
-                className="btn btn-primary"
+                className={`${DIALOG_PRIMARY_BTN_CLASS} text-center`}
               >
                 {orderSheet.active ? tx("Suivre") : tx("Détails")}
               </Link>
-              <button type="button" className="btn btn-ghost" onClick={() => setOrderSheet(null)}>{tx("Fermer")}</button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+          <dl className="space-y-3 text-label">
+            <div><dt className="text-micro uppercase text-text-secondary">{tx("Date")}</dt><dd className="font-semibold">{orderSheet.date}</dd></div>
+            <div><dt className="text-micro uppercase text-text-secondary">{tx("Montant")}</dt><dd className="font-semibold">{orderSheet.totalLabel}</dd></div>
+            <div><dt className="text-micro uppercase text-text-secondary">{tx("Statut")}</dt><dd className="font-semibold">{isFr ? orderSheet.statusFr : orderSheet.statusEn}</dd></div>
+          </dl>
+        </DialogFrame>
       )}
       {paymentSheet && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setPaymentSheet(null)}>
-          <div className="max-h-[85vh] w-full max-w-[640px] overflow-y-auto rounded-t-2xl bg-bg-card p-4 shadow-2xl sm:rounded-2xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <h2 className="text-h3 font-h3 font-bold">{tx("Paiement")} #{paymentSheet.id}</h2>
-              <button type="button" className="rounded-lg p-1 text-text-secondary" aria-label={tx("Fermer")} onClick={() => setPaymentSheet(null)}>
-                <MIcon name="close" />
+        <DialogFrame
+          icon="payments"
+          title={`${tx("Paiement")} #${paymentSheet.id}`}
+          onClose={() => setPaymentSheet(null)}
+          footer={
+            <>
+              <button type="button" className={DIALOG_CANCEL_BTN_CLASS} onClick={() => setPaymentSheet(null)}>
+                {tx("Fermer")}
               </button>
-            </div>
-            <dl className="space-y-3 text-label">
-              <div><dt className="text-micro uppercase text-text-secondary">{tx("Commande")}</dt><dd className="font-semibold">{paymentSheet.orderId ? `#${paymentSheet.orderId}` : '—'}</dd></div>
-              <div><dt className="text-micro uppercase text-text-secondary">{tx("Date")}</dt><dd className="font-semibold">{paymentSheet.date}</dd></div>
-              <div><dt className="text-micro uppercase text-text-secondary">{tx("Montant")}</dt><dd className="font-semibold">{paymentSheet.totalLabel}</dd></div>
-              <div><dt className="text-micro uppercase text-text-secondary">{tx("Statut")}</dt><dd className="font-semibold">{isFr ? paymentSheet.statusFr : paymentSheet.statusEn}</dd></div>
-            </dl>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link to="/paiements" className="btn btn-primary">{tx("Voir tout")}</Link>
-              <button type="button" className="btn btn-ghost" onClick={() => setPaymentSheet(null)}>{tx("Fermer")}</button>
-            </div>
-          </div>
-        </div>
+              <Link to="/paiements" className={`${DIALOG_PRIMARY_BTN_CLASS} text-center`}>
+                {tx("Voir tout")}
+              </Link>
+            </>
+          }
+        >
+          <dl className="space-y-3 text-label">
+            <div><dt className="text-micro uppercase text-text-secondary">{tx("Commande")}</dt><dd className="font-semibold">{paymentSheet.orderId ? `#${paymentSheet.orderId}` : '—'}</dd></div>
+            <div><dt className="text-micro uppercase text-text-secondary">{tx("Date")}</dt><dd className="font-semibold">{paymentSheet.date}</dd></div>
+            <div><dt className="text-micro uppercase text-text-secondary">{tx("Montant")}</dt><dd className="font-semibold">{paymentSheet.totalLabel}</dd></div>
+            <div><dt className="text-micro uppercase text-text-secondary">{tx("Statut")}</dt><dd className="font-semibold">{isFr ? paymentSheet.statusFr : paymentSheet.statusEn}</dd></div>
+          </dl>
+        </DialogFrame>
       )}
 
       <ClientBottomNav />

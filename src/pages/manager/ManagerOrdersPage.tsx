@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
-import MIcon from '../../components/shared/MIcon';
 import PlatformOrdersPanel, { type PlatformOrder } from '../../components/orders/PlatformOrdersPanel';
+import {
+  DIALOG_CANCEL_BTN_CLASS,
+  DIALOG_PRIMARY_BTN_CLASS,
+  DialogFrame,
+} from '../../components/shared/DialogFrame';
 import { managerApi } from '../../services/api';
 import { listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -89,47 +93,57 @@ export default function ManagerOrdersPage() {
       </div>
 
       {assignation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setAssignation(null)}>
-          <div className="flex max-h-[85vh] w-full max-w-[600px] flex-col rounded-2xl bg-bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-border-default p-4">
-              <div className="min-w-0">
-                <h3 className="break-words text-h3 font-h3 font-bold">Assigner un livreur — #{assignation.id}</h3>
-                {nomZone && <p className="text-label text-text-secondary">{tx("Zone :")} {nomZone}</p>}
-              </div>
-              <button type="button" onClick={() => setAssignation(null)} className="p-1 text-text-secondary">
-                <MIcon name="close" className="text-[20px]" />
+        <DialogFrame
+          icon="two_wheeler"
+          title={`Assigner un livreur — #${assignation.id}`}
+          subtitle={nomZone ? `${tx("Zone :")} ${nomZone}` : undefined}
+          maxWidth="37.5rem"
+          onClose={() => setAssignation(null)}
+          footer={
+            <>
+              <button type="button" className={DIALOG_CANCEL_BTN_CLASS} onClick={() => setAssignation(null)}>
+                {tx("Annuler")}
               </button>
-            </div>
-            <div className="flex-1 space-y-3 overflow-y-auto p-4 text-label">
-              {livreursZone.length === 0 && <p className="text-text-secondary">{tx("Aucun livreur disponible dans la zone.")}</p>}
-              {livreursZone.map((l: any) => (
-                <label
-                  key={l.id}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 ${
-                    String(l.id) === livreurChoisi ? 'border-primary bg-primary-tint/50' : 'border-border-default'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="livreur"
-                    value={String(l.id)}
-                    checked={String(l.id) === livreurChoisi}
-                    onChange={() => setLivreurChoisi(String(l.id))}
-                    className="accent-primary"
-                  />
-                  <span className="min-w-0 flex-1 break-words font-semibold">{l.nom_complet ?? `${l.prenom ?? ''} ${l.nom ?? ''}`}</span>
-                  <span className="text-text-secondary">{l.telephone ?? ''}</span>
-                </label>
-              ))}
-            </div>
-            <div className="flex flex-wrap justify-end gap-2 border-t border-border-default p-4">
-              <button type="button" className="btn btn-ghost" onClick={() => setAssignation(null)}>{tx("Annuler")}</button>
-              <button type="button" className="btn btn-primary" onClick={confirmerAssignation} disabled={!livreurChoisi}>
+              <button
+                type="button"
+                className={DIALOG_PRIMARY_BTN_CLASS}
+                onClick={confirmerAssignation}
+                disabled={!livreurChoisi}
+              >
                 {tx("Assigner")}
               </button>
-            </div>
+            </>
+          }
+        >
+          <div className="space-y-3 text-label">
+            {livreursZone.length === 0 && (
+              <p className="text-text-secondary">{tx("Aucun livreur disponible dans la zone.")}</p>
+            )}
+            {livreursZone.map((l: any) => (
+              <label
+                key={l.id}
+                className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors ${
+                  String(l.id) === livreurChoisi
+                    ? 'border-primary bg-primary-tint/50'
+                    : 'border-border-default hover:bg-bg-secondary'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="livreur"
+                  value={String(l.id)}
+                  checked={String(l.id) === livreurChoisi}
+                  onChange={() => setLivreurChoisi(String(l.id))}
+                  className="accent-primary"
+                />
+                <span className="min-w-0 flex-1 break-words font-semibold">
+                  {l.nom_complet ?? `${l.prenom ?? ''} ${l.nom ?? ''}`}
+                </span>
+                <span className="text-text-secondary">{l.telephone ?? ''}</span>
+              </label>
+            ))}
           </div>
-        </div>
+        </DialogFrame>
       )}
     </ManagerLayout>
   );

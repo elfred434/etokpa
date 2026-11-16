@@ -2,6 +2,11 @@ import { useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import { adminDialogs } from '../../shared/AdminActionDialogs';
+import {
+  DIALOG_CANCEL_BTN_CLASS,
+  DIALOG_PRIMARY_BTN_CLASS,
+  DialogFrame,
+} from '../../shared/DialogFrame';
 import { catalogApi, landmarksApi, type ApiZone } from '../../../services/api';
 import { listOf, unwrap } from '../../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../../utils/apiError';
@@ -186,68 +191,73 @@ export default function ProfileLandmarks() {
       </div>
 
       {addOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !saving && setAddOpen(false)}>
-          <div
-            className="w-full max-w-[480px] rounded-2xl bg-bg-card p-lg shadow-xl"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="profile-landmark-dialog-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mb-md flex items-center justify-between border-b border-border-default pb-3">
-              <h3 id="profile-landmark-dialog-title" className="font-h2 text-h2 font-bold text-text-main">{tx('Ajouter un point de repère')}</h3>
-              <button type="button" aria-label={tx('Fermer')} onClick={() => setAddOpen(false)} className="rounded-full p-2 text-text-secondary hover:bg-bg-secondary">
-                <MIcon name="close" />
+        <DialogFrame
+          icon="add_location_alt"
+          title={tx('Ajouter un point de repère')}
+          titleId="profile-landmark-dialog-title"
+          maxWidth="30rem"
+          disabled={saving}
+          onClose={() => setAddOpen(false)}
+          footer={
+            <>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => setAddOpen(false)}
+                className={DIALOG_CANCEL_BTN_CLASS}
+              >
+                {tx('Annuler')}
               </button>
-            </div>
-            <form onSubmit={handleSave} className="space-y-4">
-              <label className="block space-y-1">
-                <span className="text-label font-medium text-text-secondary">{tx('Nom du lieu')}</span>
-                <input
-                  type="text"
-                  value={form.nom}
-                  maxLength={120}
-                  required
-                  onChange={(event) => setForm((value) => ({ ...value, nom: event.target.value }))}
-                  className="w-full rounded-lg border border-border-default bg-bg-card px-3 py-2 text-body text-text-main"
-                />
-              </label>
-              <label className="block space-y-1">
-                <span className="text-label font-medium text-text-secondary">{tx('Description / précisions')}</span>
-                <textarea
-                  rows={3}
-                  value={form.description}
-                  maxLength={500}
-                  required
-                  onChange={(event) => setForm((value) => ({ ...value, description: event.target.value }))}
-                  className="w-full rounded-lg border border-border-default bg-bg-card px-3 py-2 text-body text-text-main"
-                />
-              </label>
-              <label className="block space-y-1">
-                <span className="text-label font-medium text-text-secondary">{tx('Zone de livraison')}</span>
-                <select
-                  value={form.zoneId}
-                  required
-                  disabled={zones.length === 0}
-                  onChange={(event) => setForm((value) => ({ ...value, zoneId: event.target.value }))}
-                  className="w-full rounded-lg border border-border-default bg-bg-card px-3 py-2 text-body text-text-main disabled:opacity-60"
-                >
-                  <option value="">{tx('Choisir une zone…')}</option>
-                  {zones.map((zone) => <option key={zone.id} value={String(zone.id)}>{zone.nom}</option>)}
-                </select>
-                {zones.length === 0 && <span className="text-micro text-error">{tx('Les zones de livraison ne sont pas disponibles.')}</span>}
-              </label>
-              <div className="flex gap-3 pt-2">
-                <button type="button" disabled={saving} onClick={() => setAddOpen(false)} className="btn btn-ghost flex-1">
-                  {tx('Annuler')}
-                </button>
-                <button type="submit" disabled={saving || zones.length === 0} className="btn btn-primary flex-1 disabled:opacity-50">
-                  {saving ? tx('Enregistrement…') : tx('Ajouter')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+              <button
+                type="submit"
+                form="profile-landmark-form"
+                disabled={saving || zones.length === 0}
+                className={DIALOG_PRIMARY_BTN_CLASS}
+              >
+                {saving ? tx('Enregistrement…') : tx('Ajouter')}
+              </button>
+            </>
+          }
+        >
+          <form id="profile-landmark-form" onSubmit={handleSave} className="space-y-4">
+            <label className="block space-y-1">
+              <span className="text-label font-medium text-text-secondary">{tx('Nom du lieu')}</span>
+              <input
+                type="text"
+                value={form.nom}
+                maxLength={120}
+                required
+                onChange={(event) => setForm((value) => ({ ...value, nom: event.target.value }))}
+                className="w-full rounded-lg border border-border-default bg-bg-card px-3 py-2 text-body text-text-main"
+              />
+            </label>
+            <label className="block space-y-1">
+              <span className="text-label font-medium text-text-secondary">{tx('Description / précisions')}</span>
+              <textarea
+                rows={3}
+                value={form.description}
+                maxLength={500}
+                required
+                onChange={(event) => setForm((value) => ({ ...value, description: event.target.value }))}
+                className="w-full rounded-lg border border-border-default bg-bg-card px-3 py-2 text-body text-text-main"
+              />
+            </label>
+            <label className="block space-y-1">
+              <span className="text-label font-medium text-text-secondary">{tx('Zone de livraison')}</span>
+              <select
+                value={form.zoneId}
+                required
+                disabled={zones.length === 0}
+                onChange={(event) => setForm((value) => ({ ...value, zoneId: event.target.value }))}
+                className="w-full rounded-lg border border-border-default bg-bg-card px-3 py-2 text-body text-text-main disabled:opacity-60"
+              >
+                <option value="">{tx('Choisir une zone…')}</option>
+                {zones.map((zone) => <option key={zone.id} value={String(zone.id)}>{zone.nom}</option>)}
+              </select>
+              {zones.length === 0 && <span className="text-micro text-error">{tx('Les zones de livraison ne sont pas disponibles.')}</span>}
+            </label>
+          </form>
+        </DialogFrame>
       )}
     </section>
   );

@@ -6,6 +6,11 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import ImageWithFallback from '../../../components/shared/ImageWithFallback';
+import {
+  DIALOG_CANCEL_BTN_CLASS,
+  DIALOG_PRIMARY_BTN_CLASS,
+  DialogFrame,
+} from '../../../components/shared/DialogFrame';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import { acceptCounterOffer, setProposals, type NegotiationItem } from '../../../store/slices/negotiation/negotiationSlice';
@@ -632,79 +637,75 @@ export default function NegotiationsPage() {
 
       {/* Modal « Modifier mon offre » — PUT /api/budget-proposals/{id} */}
       {editModal && (
-        <div className="fixed inset-0 bg-on-surface/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4 animate-fade-in">
-          <div className="bg-bg-card w-full max-w-[480px] max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl p-lg">
-            <div className="flex justify-between items-center mb-md border-b border-border-default pb-3">
-              <h3 className="font-h2 text-h2 font-bold">{isFr ? tx("Modifier mon offre") : 'Edit my offer'}</h3>
+        <DialogFrame
+          icon="handshake"
+          title={isFr ? tx("Modifier mon offre") : 'Edit my offer'}
+          maxWidth="30rem"
+          disabled={editSaving}
+          onClose={() => setEditModal(null)}
+          footer={
+            <>
               <button
                 type="button"
+                disabled={editSaving}
                 onClick={() => setEditModal(null)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+                className={DIALOG_CANCEL_BTN_CLASS}
               >
-                <MIcon name="close" />
+                {isFr ? tx("Annuler") : 'Cancel'}
               </button>
+              <button
+                type="submit"
+                form="negotiation-edit-form"
+                disabled={editSaving}
+                className={DIALOG_PRIMARY_BTN_CLASS}
+              >
+                {editSaving
+                  ? (isFr ? tx("Envoi…") : 'Sending…')
+                  : isFr
+                    ? 'Reproposer'
+                    : 'Submit new price'}
+              </button>
+            </>
+          }
+        >
+          <form id="negotiation-edit-form" onSubmit={submitEditOffer} className="space-y-md">
+            <div className="p-md bg-bg-secondary rounded-xl border border-border-default">
+              <p className="font-bold text-on-surface">{editModal.productName}</p>
+              <p className="text-secondary text-text-secondary text-micro">
+                {isFr ? 'Prix actuel' : 'Current price'} :{' '}
+                {editModal.originalPrice.toLocaleString('fr-FR')} FCFA ·{' '}
+                {isFr ? tx("Votre offre") : 'Your offer'} :{' '}
+                {editModal.proposedPrice.toLocaleString('fr-FR')} FCFA
+              </p>
+              <p className="text-micro text-text-tertiary mt-xs">
+                {isFr ? tx("Prix minimum accepté par le marché") : 'Market minimum price'} :{' '}
+                <span className="font-bold text-primary-container">{editModal.minPrice.toLocaleString('fr-FR')} FCFA</span>
+              </p>
             </div>
 
-            <form onSubmit={submitEditOffer} className="space-y-md">
-              <div className="p-md bg-bg-secondary rounded-lg">
-                <p className="font-bold text-on-surface">{editModal.productName}</p>
-                <p className="text-secondary text-text-secondary text-micro">
-                  {isFr ? 'Prix actuel' : 'Current price'} :{' '}
-                  {editModal.originalPrice.toLocaleString('fr-FR')} FCFA ·{' '}
-                  {isFr ? tx("Votre offre") : 'Your offer'} :{' '}
-                  {editModal.proposedPrice.toLocaleString('fr-FR')} FCFA
-                </p>
-                <p className="text-micro text-text-tertiary mt-xs">
-                  {isFr ? tx("Prix minimum accepté par le marché") : 'Market minimum price'} :{' '}
-                  <span className="font-bold text-primary-container">{editModal.minPrice.toLocaleString('fr-FR')} FCFA</span>
-                </p>
+            <div>
+              <label className="block text-label mb-1 text-text-secondary font-medium">
+                {isFr ? tx("Nouveau prix proposé (FCFA)") : 'New proposed price (FCFA)'}
+              </label>
+              <input
+                type="number"
+                min={editModal.minPrice}
+                value={editPrice}
+                onChange={(e) => setEditPrice(e.target.value)}
+                required
+                className="w-full px-md py-2 rounded-lg border border-border-default bg-bg-card text-text-main focus:border-primary outline-none font-price"
+              />
+            </div>
+
+            <NegotiationLandmarkField value={editLandmark} onChange={setEditLandmark} />
+
+            {editError && (
+              <div className="p-3 bg-error-light border border-error/20 rounded-lg text-xs font-semibold text-error-dark">
+                {editError}
               </div>
-
-              <div>
-                <label className="block text-label mb-1 text-text-secondary font-medium">
-                  {isFr ? tx("Nouveau prix proposé (FCFA)") : 'New proposed price (FCFA)'}
-                </label>
-                <input
-                  type="number"
-                  min={editModal.minPrice}
-                  value={editPrice}
-                  onChange={(e) => setEditPrice(e.target.value)}
-                  required
-                  className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none font-price"
-                />
-              </div>
-
-              <NegotiationLandmarkField value={editLandmark} onChange={setEditLandmark} />
-
-              {editError && (
-                <div className="p-3 bg-error-light border border-error/20 rounded-lg text-xs font-semibold text-error-dark">
-                  {editError}
-                </div>
-              )}
-
-              <div className="pt-md border-t border-border-default flex justify-end gap-md">
-                <button
-                  type="button"
-                  onClick={() => setEditModal(null)}
-                  className="px-md py-2 rounded-lg border border-border-default font-medium hover:bg-gray-50 transition-all cursor-pointer"
-                >
-                  {isFr ? tx("Annuler") : 'Cancel'}
-                </button>
-                <button
-                  type="submit"
-                  disabled={editSaving}
-                  className="px-lg py-2 rounded-lg bg-primary-container hover:bg-primary-hover text-white font-bold transition-all shadow-md cursor-pointer disabled:opacity-50"
-                >
-                  {editSaving
-                    ? (isFr ? tx("Envoi…") : 'Sending…')
-                    : isFr
-                      ? 'Reproposer'
-                      : 'Submit new price'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            )}
+          </form>
+        </DialogFrame>
       )}
 
       {/* BottomNavBar */}

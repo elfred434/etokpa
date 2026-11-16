@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
+import { DIALOG_PRIMARY_BTN_CLASS, DialogFrame } from '../../components/shared/DialogFrame';
 import { managerApi } from '../../services/api';
 import { unwrap, listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -149,32 +150,23 @@ export default function ManagerEquipePage() {
       </div>
 
       {ajout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setAjout(false)}>
-          <div
-            className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-bg-card shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-border-default p-4">
-              <h3 className="text-h3 font-h3 font-bold">{tx("Nouveau Livreur")}</h3>
-              <button type="button" onClick={() => setAjout(false)} className="p-1 text-text-secondary hover:text-on-surface">
-                <MIcon name="close" className="text-[20px]" />
-              </button>
-            </div>
-            <div className="flex-1 p-4 text-label">
-              <p className="text-text-secondary">
-                {tr(
-                  'La création d’un compte livreur s’effectue depuis l’espace administrateur (Gestion des utilisateurs).',
-                  'Delivery rider accounts are created from the admin space (User Management).',
-                )}
-              </p>
-            </div>
-            <div className="flex justify-end border-t border-border-default p-4">
-              <button type="button" className="btn btn-ghost" onClick={() => setAjout(false)}>
-                {tx("Fermer")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DialogFrame
+          icon="info"
+          title={tx("Nouveau Livreur")}
+          onClose={() => setAjout(false)}
+          footer={
+            <button type="button" className={DIALOG_PRIMARY_BTN_CLASS} onClick={() => setAjout(false)}>
+              {tx("Fermer")}
+            </button>
+          }
+        >
+          <p className="text-sm leading-6 text-text-secondary">
+            {tr(
+              'La création d’un compte livreur s’effectue depuis l’espace administrateur (Gestion des utilisateurs).',
+              'Delivery rider accounts are created from the admin space (User Management).',
+            )}
+          </p>
+        </DialogFrame>
       )}
     </ManagerLayout>
   );

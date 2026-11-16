@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import LivreurLayout from '../../../components/layout/livreur/LivreurLayout';
 import MIcon from '../../../components/shared/MIcon';
+import { DIALOG_CANCEL_BTN_CLASS, DialogFrame } from '../../../components/shared/DialogFrame';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
 import { fmtFcfa } from '../../../services/api/unwrap';
@@ -297,81 +298,62 @@ export default function LivreurHistoryPage() {
 
       {/* Delivery Details Modal */}
       {selected && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setSelected(null)}
-          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 p-md"
+        <DialogFrame
+          icon="local_shipping"
+          title={`Détails de la course ${tokRef(selected.id)}`}
+          subtitle={tx("Historique officiel TOKPa")}
+          headerBadge={
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[12px] font-semibold text-emerald-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> {statutLabel(selected.statut)}
+            </span>
+          }
+          onClose={() => setSelected(null)}
+          footer={
+            <button
+              type="button"
+              onClick={() => setSelected(null)}
+              className={DIALOG_CANCEL_BTN_CLASS}
+            >
+              {tx("Fermer")}
+            </button>
+          }
         >
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[520px] overflow-hidden rounded-xl bg-bg-card shadow-xl">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-md border-b border-border-default p-lg">
-              <div className="flex items-center gap-md">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-tint text-primary">
-                  <MIcon name="local_shipping" />
-                </div>
+          <div className="space-y-lg">
+            <div className="rounded-xl border border-border-default bg-bg-secondary p-md">
+              <span className="text-micro font-bold uppercase tracking-wider text-text-secondary">{tx("Destination")}</span>
+              <div className="mt-sm flex items-start gap-sm">
+                <MIcon name="location_on" className="text-primary" />
                 <div>
-                  <h3 className="font-h3 text-h3 font-bold text-on-surface">Détails de la course {tokRef(selected.id)}</h3>
-                  <p className="text-micro text-text-secondary">{tx("Historique officiel TOKPa")}</p>
+                  <p className="font-semibold text-on-surface">{selected.landmark?.nom ?? '—'}</p>
+                  <p className="text-label text-text-secondary">
+                    {[selected.description_lieu, zoneOf(selected) !== '—' ? tr(`Zone ${zoneOf(selected)}`, `Zone ${zoneOf(selected)}`) : null].filter(Boolean).join(' · ') || '—'}
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-sm">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[12px] font-semibold text-emerald-700">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> {statutLabel(selected.statut)}
+            </div>
+            <div className="space-y-sm">
+              <span className="text-micro font-bold uppercase tracking-wider text-text-secondary">{tx("Détails de la commande")}</span>
+              <div className="flex justify-between gap-md text-label">
+                <span className="text-text-secondary">Articles livrés ({articlesCount(selected)})</span>
+                <span className="text-right font-medium text-on-surface">
+                  {(selected.items ?? []).map((it) => `${it.quantite}x ${tx(orderLineName(it))}`).join(', ') || '—'}
                 </span>
-                <button type="button" aria-label={tx("Fermer")} onClick={() => setSelected(null)} className="rounded-md p-1 text-text-secondary hover:bg-bg-app">
-                  <MIcon name="close" />
-                </button>
               </div>
-            </div>
-            {/* Body */}
-            <div className="space-y-lg p-lg">
-              <div className="rounded-lg border border-border-default bg-bg-secondary p-md">
-                <span className="text-micro font-bold uppercase tracking-wider text-text-secondary">{tx("Destination")}</span>
-                <div className="mt-sm flex items-start gap-sm">
-                  <MIcon name="location_on" className="text-primary" />
-                  <div>
-                    <p className="font-semibold text-on-surface">{selected.landmark?.nom ?? '—'}</p>
-                    <p className="text-label text-text-secondary">
-                      {[selected.description_lieu, zoneOf(selected) !== '—' ? tr(`Zone ${zoneOf(selected)}`, `Zone ${zoneOf(selected)}`) : null].filter(Boolean).join(' · ') || '—'}
-                    </p>
-                  </div>
-                </div>
+              <div className="flex justify-between text-label">
+                <span className="text-text-secondary">{tx("Montant de la commande")}</span>
+                <span className="font-medium text-on-surface">{fmtFcfa(selected.montant_total)}</span>
               </div>
-              <div className="space-y-sm">
-                <span className="text-micro font-bold uppercase tracking-wider text-text-secondary">{tx("Détails de la commande")}</span>
-                <div className="flex justify-between gap-md text-label">
-                  <span className="text-text-secondary">Articles livrés ({articlesCount(selected)})</span>
-                  <span className="text-right font-medium text-on-surface">
-                    {(selected.items ?? []).map((it) => `${it.quantite}x ${tx(orderLineName(it))}`).join(', ') || '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between text-label">
-                  <span className="text-text-secondary">{tx("Montant de la commande")}</span>
-                  <span className="font-medium text-on-surface">{fmtFcfa(selected.montant_total)}</span>
-                </div>
-                <div className="flex justify-between text-label">
-                  <span className="text-text-secondary">{tx("Frais de livraison")}</span>
-                  <span className="font-bold text-[#F97316]">{fmtFcfa(selected.frais_livraison)}</span>
-                </div>
-                <div className="flex justify-between text-label">
-                  <span className="text-text-secondary">{tx("Commande passée le")}</span>
-                  <span className="font-medium text-on-surface">{dateHeure(selected.created_at)}</span>
-                </div>
+              <div className="flex justify-between text-label">
+                <span className="text-text-secondary">{tx("Frais de livraison")}</span>
+                <span className="font-bold text-[#F97316]">{fmtFcfa(selected.frais_livraison)}</span>
               </div>
-            </div>
-            {/* Actions */}
-            <div className="flex justify-end border-t border-border-default p-lg">
-              <button
-                type="button"
-                onClick={() => setSelected(null)}
-                className="rounded-lg border border-border-default px-lg py-sm font-label text-label font-semibold text-on-surface hover:bg-bg-app"
-              >
-                {tx("Fermer")}
-              </button>
+              <div className="flex justify-between text-label">
+                <span className="text-text-secondary">{tx("Commande passée le")}</span>
+                <span className="font-medium text-on-surface">{dateHeure(selected.created_at)}</span>
+              </div>
             </div>
           </div>
-        </div>
+        </DialogFrame>
       )}
     </LivreurLayout>
   );

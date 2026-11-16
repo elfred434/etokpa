@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
+import {
+  DIALOG_CANCEL_BTN_CLASS,
+  DIALOG_PRIMARY_BTN_CLASS,
+  DialogFrame,
+} from '../../shared/DialogFrame';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
@@ -81,106 +86,100 @@ export default function ProfileHeader() {
 
       {/* Modal de modification de profil */}
       {editOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-[500px] rounded-2xl bg-bg-card p-lg shadow-xl">
-            <div className="mb-md flex items-center justify-between border-b border-line pb-sm">
-              <h3 className="font-h2 text-h2 text-ink">{t('profile.editProfile')}</h3>
+        <DialogFrame
+          icon="edit"
+          title={t('profile.editProfile')}
+          maxWidth="32rem"
+          onClose={() => setEditOpen(false)}
+          footer={
+            <>
               <button
                 type="button"
                 onClick={() => setEditOpen(false)}
-                className="rounded-full p-2 text-ink-2 hover:bg-page"
+                className={DIALOG_CANCEL_BTN_CLASS}
               >
-                <MIcon name="close" />
+                {t('common.cancel')}
               </button>
+              <button
+                type="submit"
+                form="profile-header-edit-form"
+                className={DIALOG_PRIMARY_BTN_CLASS}
+              >
+                {t('common.save')}
+              </button>
+            </>
+          }
+        >
+          <form id="profile-header-edit-form" onSubmit={handleSave} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label">{isFr ? tx("Prénom") : 'First Name'}</label>
+                <input
+                  type="text"
+                  value={form.prenom}
+                  onChange={(e) => setForm({ ...form, prenom: e.target.value })}
+                  className="input"
+                  required
+                />
+              </div>
+              <div>
+                <label className="label">{isFr ? 'Nom' : 'Last Name'}</label>
+                <input
+                  type="text"
+                  value={form.nom}
+                  onChange={(e) => setForm({ ...form, nom: e.target.value })}
+                  className="input"
+                  required
+                />
+              </div>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label">{isFr ? tx("Prénom") : 'First Name'}</label>
-                  <input
-                    type="text"
-                    value={form.prenom}
-                    onChange={(e) => setForm({ ...form, prenom: e.target.value })}
-                    className="input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="label">{isFr ? 'Nom' : 'Last Name'}</label>
-                  <input
-                    type="text"
-                    value={form.nom}
-                    onChange={(e) => setForm({ ...form, nom: e.target.value })}
-                    className="input"
-                    required
-                  />
-                </div>
-              </div>
+            <div>
+              <label className="label">{tx("Email")}</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="input"
+                required
+              />
+            </div>
 
+            <div>
+              <label className="label">{isFr ? tx("Téléphone") : 'Phone'}</label>
+              <input
+                type="tel"
+                value={form.telephone}
+                onChange={(e) => setForm({ ...form, telephone: e.target.value })}
+                className="input"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="label">{tx("Email")}</label>
+                <label className="label">{isFr ? tx("Ville") : 'City'}</label>
                 <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  type="text"
+                  value={form.ville}
+                  onChange={(e) => setForm({ ...form, ville: e.target.value })}
                   className="input"
                   required
                 />
               </div>
-
               <div>
-                <label className="label">{isFr ? tx("Téléphone") : 'Phone'}</label>
+                <label className="label">{isFr ? tx("Quartier") : 'Neighborhood'}</label>
                 <input
-                  type="tel"
-                  value={form.telephone}
-                  onChange={(e) => setForm({ ...form, telephone: e.target.value })}
+                  type="text"
+                  value={form.quartier}
+                  onChange={(e) => setForm({ ...form, quartier: e.target.value })}
                   className="input"
                   required
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label">{isFr ? tx("Ville") : 'City'}</label>
-                  <input
-                    type="text"
-                    value={form.ville}
-                    onChange={(e) => setForm({ ...form, ville: e.target.value })}
-                    className="input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="label">{isFr ? tx("Quartier") : 'Neighborhood'}</label>
-                  <input
-                    type="text"
-                    value={form.quartier}
-                    onChange={(e) => setForm({ ...form, quartier: e.target.value })}
-                    className="input"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="mt-lg flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditOpen(false)}
-                  className="w-1/2 rounded-lg border border-line py-2.5 text-xs font-bold text-ink-2"
-                >
-                  {t('common.cancel')}
-                </button>
-                <button
-                  type="submit"
-                  className="w-1/2 rounded-lg bg-primary py-2.5 text-xs font-bold text-white shadow-sm"
-                >
-                  {t('common.save')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            </div>
+          </form>
+        </DialogFrame>
       )}
     </>
   );

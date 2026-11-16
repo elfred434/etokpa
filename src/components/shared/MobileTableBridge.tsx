@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import MIcon from './MIcon';
+import { DIALOG_CANCEL_BTN_CLASS, DialogFrame } from './DialogFrame';
 import { tx } from '../../i18n/tx';
 
 type Sheet = { title: string; rows: { label: string; value: string }[] };
@@ -79,28 +79,24 @@ export default function MobileTableBridge({ rootId }: { rootId: string }) {
 
   if (!sheet) return null;
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setSheet(null)}>
-      <div
-        className="max-h-[85vh] w-full max-w-[640px] overflow-y-auto rounded-t-2xl bg-bg-card p-4 shadow-2xl sm:rounded-2xl"
-        role="dialog"
-        aria-modal="true"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <h2 className="text-h3 font-h3 font-bold break-words">{sheet.title}</h2>
-          <button type="button" className="shrink-0 rounded-lg p-1 text-text-secondary" aria-label={tx('Fermer')} onClick={() => setSheet(null)}>
-            <MIcon name="close" />
-          </button>
-        </div>
-        <dl className="space-y-3">
-          {sheet.rows.map((row) => (
-            <div key={`${row.label}-${row.value}`} className="border-b border-border-default pb-2 last:border-b-0">
-              <dt className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{row.label}</dt>
-              <dd className="mt-1 break-words text-label font-semibold text-on-surface">{row.value}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </div>
+    <DialogFrame
+      icon="info"
+      title={sheet.title}
+      onClose={() => setSheet(null)}
+      footer={
+        <button type="button" className={DIALOG_CANCEL_BTN_CLASS} onClick={() => setSheet(null)}>
+          {tx('Fermer')}
+        </button>
+      }
+    >
+      <dl className="space-y-3">
+        {sheet.rows.map((row) => (
+          <div key={`${row.label}-${row.value}`} className="border-b border-border-default pb-2 last:border-b-0">
+            <dt className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{row.label}</dt>
+            <dd className="mt-1 break-words text-label font-semibold text-on-surface">{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </DialogFrame>
   );
 }

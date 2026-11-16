@@ -6,6 +6,7 @@ import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import ImageWithFallback from '../../../components/shared/ImageWithFallback';
 import { adminDialogs } from '../../../components/shared/AdminActionDialogs';
+import { DIALOG_PRIMARY_BTN_CLASS, DialogFrame } from '../../../components/shared/DialogFrame';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import type { Product } from '../../../types/models';
@@ -875,35 +876,32 @@ export default function MesPacksPage() {
 
       {/* ---- Fenêtre produits (téléphone) : choisir, puis fermer pour voir le pack ---- */}
       {choixOuvert && !large && (
-        <div className="fixed inset-0 z-[75] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setChoixOuvert(false)}>
-          <div className="flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-3xl bg-bg-app shadow-2xl sm:rounded-3xl" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-start justify-between gap-3 bg-bg-card px-4 py-3">
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{tx("Rayon produits")}</p>
-                <h2 className="text-lg font-bold">{tx("Choisir des produits")}</h2>
-              </div>
-              <button type="button" className="rounded-lg p-1 text-text-secondary" aria-label={tx("Fermer")} onClick={() => setChoixOuvert(false)}>
-                <MIcon name="close" />
-              </button>
+        <DialogFrame
+          icon="inventory_2"
+          title={tx("Choisir des produits")}
+          subtitle={tx("Rayon produits")}
+          maxWidth="45rem"
+          zIndex={75}
+          bodyClassName="flex flex-col gap-3 bg-bg-app"
+          onClose={() => setChoixOuvert(false)}
+          footer={
+            <button type="button" className={DIALOG_PRIMARY_BTN_CLASS} onClick={() => setChoixOuvert(false)}>
+              {tx("Fermer la fenêtre")}
+            </button>
+          }
+        >
+          <div className="space-y-2">
+            <div className="relative">
+              <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-tertiary" />
+              <input value={qProduit} onChange={(e) => setQProduit(e.target.value)} placeholder={tx("Rechercher un produit...")} className="w-full rounded-xl border border-border-default bg-bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-primary" />
             </div>
-            <div className="space-y-2 border-b border-black/5 bg-bg-card px-4 pb-3">
-              <div className="relative">
-                <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-tertiary" />
-                <input value={qProduit} onChange={(e) => setQProduit(e.target.value)} placeholder={tx("Rechercher un produit...")} className="w-full rounded-xl border border-border-default py-2 pl-9 pr-3 text-sm outline-none focus:border-primary" />
-              </div>
-              <select value={catRail} onChange={(e) => setCatRail(e.target.value)} className="w-full rounded-xl border border-border-default bg-bg-card px-3 py-2 text-sm">
-                <option value="">{tx("Toutes les catégories")}</option>
-                {categories.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-              </select>
-            </div>
-            {RayonListe}
-            <div className="shrink-0 bg-bg-card p-3">
-              <button type="button" className="btn btn-primary w-full" onClick={() => setChoixOuvert(false)}>
-                {tx("Fermer la fenêtre")}
-              </button>
-            </div>
+            <select value={catRail} onChange={(e) => setCatRail(e.target.value)} className="w-full rounded-xl border border-border-default bg-bg-card px-3 py-2 text-sm">
+              <option value="">{tx("Toutes les catégories")}</option>
+              {categories.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+            </select>
           </div>
-        </div>
+          {RayonListe}
+        </DialogFrame>
       )}
 
       {/* ---- Fantôme de glisser-déposer (grand écran) ---- */}
