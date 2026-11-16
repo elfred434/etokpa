@@ -20,10 +20,11 @@ import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRef
 import { ordersApi, paymentsApi } from '../../../services/api';
 import { isOwnOrder } from '../../../utils/ownOrder';
 import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
-import { tx } from '../../../i18n/tx';
+import { tr, tx } from '../../../i18n/tx';
 import { orderLineName } from '../../../utils/orderLine';
 import { isCancelledStatut } from '../../../utils/orderStatus';
-import { loadPayment, paymentIdempotencyKey, rememberPayment } from '../../../utils/idempotence';
+import { clearPaymentIntent, loadPayment, paymentIdempotencyKey, rememberPayment } from '../../../utils/idempotence';
+import { indexEffectivePayments, resolveOrderPayment, type OrderPaymentSummary } from '../../../utils/paymentSummary';
 import { captureFrontendError } from '../../../services/errors/frontendErrorReporter';
 
 interface ApiOrderItem {
@@ -104,6 +105,7 @@ export default function OrdersListPage() {
   const [paying, setPaying] = useState(false);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<ApiOrder | null>(null);
+  const paymentMapRef = useRef<Map<number, OrderPaymentSummary>>(new Map());
 
   // Actualisation globale (bouton / silencieuse) : rejoue la liste sans squelette.
   const tick = useGlobalRefreshTick();
@@ -112,11 +114,20 @@ export default function OrdersListPage() {
     if (!isAuthenticated) return;
     if (!silentRefreshActive()) setLoading(true);
     setError(null);
-    ordersApi
-      .getOrders(page, statusFilter)
-      .then((res) => {
+    const paymentsPromise =
+      typeof paymentsApi.listMine === 'function'
+        ? paymentsApi.listMine().catch(() => null)
+        : Promise.resolve(null);
+    Promise.all([ordersApi.getOrders(page, statusFilter), paymentsPromise])
+      .then(([res, paymentsRes]) => {
+        const paymentMap = indexEffectivePayments(paymentsRes);
+        paymentMapRef.current = paymentMap;
         const raw = (res?.data ?? res ?? []) as Array<Record<string, unknown> & { data?: ApiOrder }>;
-        const list: ApiOrder[] = (Array.isArray(raw) ? raw : []).map((o) => (o.data ?? o) as ApiOrder);
+        const list: ApiOrder[] = (Array.isArray(raw) ? raw : []).map((o) => {
+          const order = (o.data ?? o) as ApiOrder;
+          const resolvedPayment = resolveOrderPayment(order.id, order.payment, paymentMap);
+          return resolvedPayment ? { ...order, payment: resolvedPayment } : order;
+        });
         setOrders(statusFilter ? list.filter((o) => o.statut === statusFilter) : list);
         setLastPage(Number(res?.meta?.last_page ?? res?.last_page ?? 1));
         setTotal(Number(res?.meta?.total ?? res?.total ?? list.length));
@@ -136,7 +147,9 @@ export default function OrdersListPage() {
       .getOrder(id)
       .then((res) => {
         if (!alive) return;
-        const full = (res?.data ?? res) as ApiOrder;
+        const rawFull = (res?.data ?? res) as ApiOrder;
+        const resolvedPayment = resolveOrderPayment(rawFull.id, rawFull.payment, paymentMapRef.current);
+        const full = resolvedPayment ? { ...rawFull, payment: resolvedPayment } : rawFull;
         setSelected((current) => current?.id === id ? full : current);
       })
       .catch((err) => {
@@ -152,25 +165,41 @@ export default function OrdersListPage() {
       toast.success(tx("Cette commande est déjà payée."));
       return;
     }
-    const saved = loadPayment(order.id);
-    if (saved?.redirectUrl && order.payment?.statut !== 'echoue') {
-      toast.success(tx("Ce paiement est déjà lancé. On rouvre le même lien."));
-      window.location.assign(saved.redirectUrl);
-      return;
+    const isRetry = order.payment?.statut === 'echoue';
+    if (isRetry) {
+      clearPaymentIntent(order.id);
+    } else {
+      const saved = loadPayment(order.id);
+      if (saved?.redirectUrl) {
+        toast.success(tx("Ce paiement est déjà lancé. On rouvre le même lien."));
+        window.location.assign(saved.redirectUrl);
+        return;
+      }
     }
     payLock.current = true;
     setPaying(true);
     try {
       const result = await paymentsApi.initPayment({ order_id: order.id }, paymentIdempotencyKey(order.id));
       const payment = result?.data ?? result;
+      const paymentRow = payment?.payment as { id?: number; montant?: number; statut?: string; methode?: string; fedapay_ref?: string } | undefined;
       const redirectUrl = payment?.redirect_url as string | undefined;
       rememberPayment({
         orderId: order.id,
-        paymentId: Number(payment?.payment?.id ?? payment?.id) || undefined,
-        paymentRef: payment?.payment?.fedapay_ref ?? payment?.fedapay_ref,
+        paymentId: Number(paymentRow?.id ?? payment?.id) || undefined,
+        paymentRef: paymentRow?.fedapay_ref ?? payment?.fedapay_ref,
         redirectUrl,
         currency: payment?.currency,
       });
+      if (paymentRow?.id) {
+        const nextPayment = {
+          id: Number(paymentRow.id),
+          montant: Number(paymentRow.montant ?? order.montant_total ?? 0),
+          statut: String(paymentRow.statut ?? 'en_attente'),
+          methode: String(paymentRow.methode ?? 'fedapay'),
+        };
+        setOrders((prev) => prev.map((x) => (x.id === order.id ? { ...x, payment: nextPayment } : x)));
+        setSelected((cur) => (cur && cur.id === order.id ? { ...cur, payment: nextPayment } : cur));
+      }
       if (redirectUrl) window.location.assign(redirectUrl);
       else toast.success(isFr ? tx("Paiement initialisé.") : 'Payment initialized.');
     } catch (err) {
@@ -326,7 +355,10 @@ export default function OrdersListPage() {
                             ordersApi
                               .getOrder(o.id)
                               .then((res) => {
-                                const full = (res?.data ?? res) as ApiOrder;
+                                const rawFull = (res?.data ?? res) as ApiOrder;
+                                const resolvedPayment = resolveOrderPayment(rawFull.id, rawFull.payment, paymentMapRef.current);
+                                const full = resolvedPayment ? { ...rawFull, payment: resolvedPayment } : rawFull;
+                                setOrders((prev) => prev.map((x) => (x.id === full.id ? full : x)));
                                 setSelected((cur) => (cur?.id === full.id ? full : cur));
                               })
                               .catch(() => {});
@@ -342,31 +374,63 @@ export default function OrdersListPage() {
                             {Number(o.montant_total ?? 0).toLocaleString('fr-FR')} FCFA
                           </td>
                           <td className="px-md py-sm">
-                            <span
-                              className={`inline-flex items-center gap-xs px-md py-xs rounded-full text-micro font-bold border whitespace-nowrap ${
-                                STATUT_BADGE[o.statut] ?? 'bg-bg-secondary text-text-secondary border-border-default'
-                              }`}
-                            >
-                              {isFr ? label.fr : label.en}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span
+                                className={`inline-flex items-center gap-xs px-md py-xs rounded-full text-micro font-bold border whitespace-nowrap ${
+                                  STATUT_BADGE[o.statut] ?? 'bg-bg-secondary text-text-secondary border-border-default'
+                                }`}
+                              >
+                                {isFr ? label.fr : label.en}
+                              </span>
+                              {o.payment?.statut === 'echoue' && !isCancelledStatut(o.statut) && (
+                                <button
+                                  type="button"
+                                  disabled={paying}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void handlePayer(o);
+                                  }}
+                                  className="md:hidden inline-flex items-center gap-xs px-sm py-xs rounded-lg bg-primary-container text-white text-micro font-bold hover:bg-primary-hover active:scale-95 transition-all cursor-pointer whitespace-nowrap disabled:opacity-60"
+                                >
+                                  <MIcon name={paying ? 'sync' : 'payments'} className={`text-[14px] ${paying ? 'animate-spin' : ''}`} />
+                                  {tr('Repayer', 'Pay again')}
+                                </button>
+                              )}
+                            </div>
                           </td>
                           <td className="hidden lg:table-cell px-md py-sm text-text-secondary">
                             {o.livreur?.nom_complet ?? '—'}
                           </td>
                           <td className="hidden px-md py-sm text-right md:table-cell">
-                            {!isCancelledStatut(o.statut) && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSuivre(o.id);
-                                }}
-                                className="inline-flex items-center gap-xs px-md py-xs rounded-lg bg-primary-tint border border-primary-light text-primary-container text-micro font-bold hover:bg-primary-lighter active:scale-95 transition-all cursor-pointer whitespace-nowrap"
-                              >
-                                <MIcon name="near_me" className="text-[14px]" />
-                                {isFr ? tx("Suivre") : 'Track'}
-                              </button>
-                            )}
+                            <div className="inline-flex items-center justify-end gap-2">
+                              {o.payment?.statut === 'echoue' && !isCancelledStatut(o.statut) && (
+                                <button
+                                  type="button"
+                                  disabled={paying}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void handlePayer(o);
+                                  }}
+                                  className="inline-flex items-center gap-xs px-md py-xs rounded-lg bg-primary-container text-white text-micro font-bold hover:bg-primary-hover active:scale-95 transition-all cursor-pointer whitespace-nowrap disabled:opacity-60"
+                                >
+                                  <MIcon name={paying ? 'sync' : 'payments'} className={`text-[14px] ${paying ? 'animate-spin' : ''}`} />
+                                  {tr('Repayer', 'Pay again')}
+                                </button>
+                              )}
+                              {!isCancelledStatut(o.statut) && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSuivre(o.id);
+                                  }}
+                                  className="inline-flex items-center gap-xs px-md py-xs rounded-lg bg-primary-tint border border-primary-light text-primary-container text-micro font-bold hover:bg-primary-lighter active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                                >
+                                  <MIcon name="near_me" className="text-[14px]" />
+                                  {isFr ? tx("Suivre") : 'Track'}
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -413,13 +477,13 @@ export default function OrdersListPage() {
                     {tx("Annuler")}
                   </button>
                 )}
-                {!selected.payment && selected.statut !== 'annule' && (
+                {(!selected.payment || selected.payment.statut === 'echoue') && !isCancelledStatut(selected.statut) && (
                   <BoutonPrincipal onClick={() => handlePayer(selected)} icone={paying ? 'sync' : 'payments'} disabled={paying}>
-                    {tx("Payer")}
+                    {selected.payment?.statut === 'echoue' ? tr('Repayer', 'Pay again') : tx("Payer")}
                   </BoutonPrincipal>
                 )}
                 {!isCancelledStatut(selected.statut) && (
-                  selected.payment || selected.statut === 'annule' ? (
+                  selected.payment && selected.payment.statut !== 'echoue' ? (
                     <BoutonPrincipal onClick={() => handleSuivre(selected.id)} icone="near_me">
                       {tx("Suivre cette commande")}
                     </BoutonPrincipal>
@@ -536,7 +600,11 @@ export default function OrdersListPage() {
                   {selected.payment.methode}
                 </LigneFiche>
                 <LigneFiche icone="schedule" etiquette={tx("Statut")}>
-                  {selected.payment.statut}
+                  {selected.payment.statut === 'echoue' ? (
+                    <span className="font-bold text-error">{tx("Paiement échoué")}</span>
+                  ) : (
+                    selected.payment.statut
+                  )}
                 </LigneFiche>
                 <LigneFiche icone="receipt_long" etiquette={tx("Montant")} large>
                   {Number(selected.payment.montant).toLocaleString('fr-FR')} {devise}

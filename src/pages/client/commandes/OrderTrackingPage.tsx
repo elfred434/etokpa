@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
@@ -11,11 +12,13 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
-import { catalogApi, ordersApi } from '../../../services/api';
+import { catalogApi, ordersApi, paymentsApi } from '../../../services/api';
 import { isOwnOrder } from '../../../utils/ownOrder';
-import { alertApiError } from '../../../utils/apiError';
-import { tx } from '../../../i18n/tx';
+import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
+import { tr, tx } from '../../../i18n/tx';
 import { captureFrontendError } from '../../../services/errors/frontendErrorReporter';
+import { clearPaymentIntent, paymentIdempotencyKey, rememberPayment } from '../../../utils/idempotence';
+import { indexEffectivePayments, resolveOrderPayment } from '../../../utils/paymentSummary';
 
 interface ApiRider {
   id: number;
@@ -97,6 +100,50 @@ export default function OrderTrackingPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [accessDenied, setAccessDenied] = useState(false);
   const [destCoords, setDestCoords] = useState<[number, number] | null>(null);
+  const [paying, setPaying] = useState(false);
+  const payLock = useRef(false);
+
+  const handleRepayer = async (target: ApiOrder) => {
+    if (payLock.current || paying) return;
+    clearPaymentIntent(target.id);
+    payLock.current = true;
+    setPaying(true);
+    try {
+      const result = await paymentsApi.initPayment({ order_id: target.id }, paymentIdempotencyKey(target.id));
+      const payment = result?.data ?? result;
+      const paymentRow = payment?.payment as { id?: number; montant?: number; statut?: string; methode?: string; fedapay_ref?: string } | undefined;
+      const redirectUrl = payment?.redirect_url as string | undefined;
+      rememberPayment({
+        orderId: target.id,
+        paymentId: Number(paymentRow?.id ?? payment?.id) || undefined,
+        paymentRef: paymentRow?.fedapay_ref ?? payment?.fedapay_ref,
+        redirectUrl,
+        currency: payment?.currency,
+      });
+      if (paymentRow?.id) {
+        setOrder((cur) =>
+          cur && cur.id === target.id
+            ? {
+                ...cur,
+                payment: {
+                  id: Number(paymentRow.id),
+                  montant: Number(paymentRow.montant ?? cur.montant_total ?? 0),
+                  statut: String(paymentRow.statut ?? 'en_attente'),
+                  methode: String(paymentRow.methode ?? 'fedapay'),
+                },
+              }
+            : cur,
+        );
+      }
+      if (redirectUrl) window.location.assign(redirectUrl);
+      else toast.success(isFr ? tx("Paiement initialisé.") : 'Payment initialized.');
+    } catch (err) {
+      toast.error(formatApiError(extractApiError(err)));
+    } finally {
+      payLock.current = false;
+      setPaying(false);
+    }
+  };
 
   // Chargement de la liste (pour le sélecteur quand pas de ?order=)
   useEffect(() => {
@@ -147,9 +194,15 @@ export default function OrderTrackingPage() {
           setAccessDenied(true);
           return;
         }
-        const res = await ordersApi.getOrder(selectedId);
+        const paymentsPromise =
+          typeof paymentsApi.listMine === 'function'
+            ? paymentsApi.listMine().catch(() => null)
+            : Promise.resolve(null);
+        const [res, paymentsRes] = await Promise.all([ordersApi.getOrder(selectedId), paymentsPromise]);
         if (!alive) return;
-        const full = (res?.data ?? res) as ApiOrder;
+        const rawFull = (res?.data ?? res) as ApiOrder;
+        const resolvedPayment = resolveOrderPayment(rawFull.id, rawFull.payment, indexEffectivePayments(paymentsRes));
+        const full = resolvedPayment ? { ...rawFull, payment: resolvedPayment } : rawFull;
         setOrder(full);
         setFetchError(null);
         if (full.statut === 'annule') return;
@@ -512,14 +565,27 @@ export default function OrderTrackingPage() {
                     </p>
                   )}
                   {/* Reçu de paiement — disponible pour tous les statuts (les non-payés
-                      portent la mention « non payé ») */}
-                  {order.payment?.id ? (
-                    <div className="mt-sm border-t border-border-default pt-sm">
-                      <ReceiptButton
-                        payment={order.payment}
-                        order={order}
-                        testId={`receipt-order-${order.id}`}
-                      />
+                      portent la mention « non payé ») + bouton Repayer si le paiement a échoué */}
+                  {(order.payment?.id || (!isCancelled && order.payment?.statut === 'echoue')) ? (
+                    <div className="mt-sm border-t border-border-default pt-sm flex flex-wrap items-center justify-between gap-2">
+                      {order.payment?.id ? (
+                        <ReceiptButton
+                          payment={order.payment}
+                          order={order}
+                          testId={`receipt-order-${order.id}`}
+                        />
+                      ) : <span />}
+                      {!isCancelled && order.payment?.statut === 'echoue' && (
+                        <button
+                          type="button"
+                          disabled={paying}
+                          onClick={() => void handleRepayer(order)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-container text-white text-label font-bold hover:bg-primary-hover active:scale-95 transition-all cursor-pointer disabled:opacity-60"
+                        >
+                          <MIcon name={paying ? 'sync' : 'payments'} className={`text-base ${paying ? 'animate-spin' : ''}`} />
+                          {tr('Repayer', 'Pay again')}
+                        </button>
+                      )}
                     </div>
                   ) : null}
                 </div>

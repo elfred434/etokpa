@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import toast from 'react-hot-toast';
 import { backgroundRefreshActive, silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 import MIcon from '../shared/MIcon';
 import { adminApi, ordersApi, paymentsApi } from '../../services/api';
@@ -8,8 +9,9 @@ import type { ReceiptOrder } from '../../services/receipts/receiptData';
 import ReceiptButton from './ReceiptButton';
 import { dateCourte, fmtFcfa, listOf, unwrap } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
+import { clearPaymentIntent, paymentIdempotencyKey, rememberPayment } from '../../utils/idempotence';
 import { useLanguage } from '../../context/LanguageContext';
-import { tx } from '../../i18n/tx';
+import { tr, tx } from '../../i18n/tx';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -60,6 +62,8 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<PaymentRow | null>(null);
+  const [repayingOrderId, setRepayingOrderId] = useState<number | null>(null);
+  const repayLock = useRef(false);
   // Détail de la commande liée (client, livreur, adresse) — chargé À L'OUVERTURE
   // de la modale : GET /orders/{id} renvoie les relations (OrderResource), ce
   // que la liste des paiements ne fournit pas. Aucune modification backend.
@@ -171,6 +175,50 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
     };
   }, [source, tick]);
 
+  const hasOrderSucceeded = (orderId?: number | null) =>
+    Boolean(orderId && rows.some((r) => (r.order?.id ?? r.order_id) === orderId && r.statut === 'reussi'));
+
+  const canRepayPayment = (p: PaymentRow, orderStatut?: string) => {
+    if (source !== 'mine') return false;
+    const orderId = p.order?.id ?? p.order_id;
+    if (!orderId || p.statut !== 'echoue') return false;
+    if ((orderStatut ?? p.order?.statut) === 'annule') return false;
+    return !hasOrderSucceeded(orderId);
+  };
+
+  const handleRepayer = async (orderId: number) => {
+    if (repayLock.current || repayingOrderId !== null) return;
+    clearPaymentIntent(orderId);
+    repayLock.current = true;
+    setRepayingOrderId(orderId);
+    try {
+      const result = await paymentsApi.initPayment({ order_id: orderId }, paymentIdempotencyKey(orderId));
+      const payload = result?.data ?? result;
+      const paymentRow = payload?.payment as PaymentRow | undefined;
+      const redirectUrl = payload?.redirect_url as string | undefined;
+      rememberPayment({
+        orderId,
+        paymentId: Number(paymentRow?.id ?? payload?.id) || undefined,
+        paymentRef: paymentRow?.fedapay_ref ?? payload?.fedapay_ref,
+        redirectUrl,
+        currency: payload?.currency,
+      });
+      if (paymentRow?.id) {
+        setRows((prev) => [asPayment(paymentRow), ...prev]);
+      }
+      if (redirectUrl) {
+        window.location.assign(redirectUrl);
+      } else {
+        toast.success(tx("Paiement initialisé."));
+      }
+    } catch (e) {
+      toast.error(formatApiError(extractApiError(e)));
+    } finally {
+      repayLock.current = false;
+      setRepayingOrderId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -231,7 +279,26 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                       </td>
                       <td className="px-4 py-3">
                         <p>{p.fedapay_ref || '—'}</p>
-                        <ReceiptButton payment={p} testId={`receipt-payment-${p.id}`} stopPropagation />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <ReceiptButton payment={p} testId={`receipt-payment-${p.id}`} stopPropagation />
+                          {canRepayPayment(p) && orderId && (
+                            <button
+                              type="button"
+                              disabled={repayingOrderId !== null}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleRepayer(Number(orderId));
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary-container text-white text-micro font-bold hover:bg-primary-hover active:scale-95 transition-all cursor-pointer disabled:opacity-60"
+                            >
+                              <MIcon
+                                name={repayingOrderId === Number(orderId) ? 'sync' : 'payments'}
+                                className={`text-[14px] ${repayingOrderId === Number(orderId) ? 'animate-spin' : ''}`}
+                              />
+                              {tr('Repayer', 'Pay again')}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -406,11 +473,29 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                 >
                   {tx("Fermer")}
                 </button>
+                {canRepayPayment(selected, detail?.statut ?? undefined) && (selected.order?.id ?? selected.order_id) ? (
+                  <button
+                    type="button"
+                    disabled={repayingOrderId !== null}
+                    onClick={() => void handleRepayer(Number(selected.order?.id ?? selected.order_id))}
+                    className="px-4 py-2 text-label font-bold text-white bg-primary-container hover:bg-primary-hover rounded-lg transition-transform active:scale-95 flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-60"
+                  >
+                    <MIcon
+                      name={repayingOrderId === Number(selected.order?.id ?? selected.order_id) ? 'sync' : 'payments'}
+                      className={`text-base ${repayingOrderId === Number(selected.order?.id ?? selected.order_id) ? 'animate-spin' : ''}`}
+                    />
+                    <span>{tr('Repayer', 'Pay again')}</span>
+                  </button>
+                ) : null}
                 {(selected.order?.id ?? selected.order_id) ? (
                   <button
                     type="button"
                     onClick={() => ouvrirCommande(Number(selected.order?.id ?? selected.order_id))}
-                    className="px-4 py-2 text-label font-bold text-white bg-primary-container hover:bg-primary-hover rounded-lg transition-transform active:scale-95 flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    className={
+                      canRepayPayment(selected, detail?.statut ?? undefined)
+                        ? 'px-4 py-2 text-label font-semibold text-text-main border border-border-default hover:bg-border-default/40 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer'
+                        : 'px-4 py-2 text-label font-bold text-white bg-primary-container hover:bg-primary-hover rounded-lg transition-transform active:scale-95 flex items-center gap-1.5 shadow-sm cursor-pointer'
+                    }
                   >
                     <MIcon name="open_in_new" className="text-base" />
                     <span>{tx("Voir la commande")}</span>

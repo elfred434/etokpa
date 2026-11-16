@@ -134,6 +134,15 @@ export function rememberPayment(row: Omit<PaymentIntent, 'savedAt' | 'idempotenc
   return next;
 }
 
+export function clearPaymentIntent(orderId: number): void {
+  try {
+    const rows = loadPayments().filter((item) => item.orderId !== orderId);
+    sessionStorage.setItem(PAYMENT_KEY, JSON.stringify(rows));
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Clé stable pour POST /payments/init de cette commande. */
 export function paymentIdempotencyKey(orderId: number): string {
   return rememberPayment({ orderId }).idempotencyKey;
