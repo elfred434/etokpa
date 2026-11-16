@@ -32,7 +32,7 @@ type PackLine = {
   qte: number;
   prix: number | null;
   prixMinimum: number | null;
-  stock: number;
+  stock: number | null;
   disponible: boolean;
   description: string | null;
   imageUrl: string | null;
@@ -169,7 +169,7 @@ export default function PackPage() {
     qte: Math.max(1, Number(it.pivot?.qte ?? 1)),
     prix: it.prix == null || it.prix === '' ? null : Number(it.prix),
     prixMinimum: it.prix_minimum == null || it.prix_minimum === '' ? null : Number(it.prix_minimum),
-    stock: Number(it.stock ?? 0),
+    stock: it.stock == null ? null : Number(it.stock),
     disponible: it.disponible !== false,
     description: it.description ?? null,
     imageUrl: it.image_url ?? it.img_url ?? null,
@@ -177,7 +177,7 @@ export default function PackPage() {
   }));
 
   // Un produit indisponible bloque la commande entière (le backend refuse en 422).
-  const indisponibles = lignes.filter((l) => !l.disponible || l.stock <= 0);
+  const indisponibles = lignes.filter((l) => !l.disponible || (l.stock != null && l.stock <= 0));
   const peutAjouter = lignes.length > 0 && indisponibles.length === 0;
   const sommeProduits = lignes.reduce((s, l) => s + (l.prix ?? 0) * l.qte, 0);
 

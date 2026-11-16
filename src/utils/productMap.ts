@@ -20,6 +20,7 @@ const SLUG_TO_CATEGORY: Record<string, CategoryId> = {
 /** Fiche produit : ProductResource -> modèle d'affichage. */
 export function mapApiProduct(p: ApiProduct): Product {
   const slug = p.categorie?.slug ?? '';
+  const available = p.disponible !== false && (p.stock == null || Number(p.stock) > 0);
   return {
     id: String(p.id),
     nom: p.nom,
@@ -28,7 +29,7 @@ export function mapApiProduct(p: ApiProduct): Product {
     prix: Number(p.prix),
     prixMinimum: Number(p.prix_minimum),
     categorie: SLUG_TO_CATEGORY[slug] ?? 'vegetable',
-    stock: p.disponible && p.stock > 0 ? 'available' : 'out',
+    stock: available ? 'available' : 'out',
     badges: [],
     image: absImageUrl(p.image_url ?? p.img_url) ?? undefined,
     description: p.description,

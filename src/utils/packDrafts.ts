@@ -25,7 +25,7 @@ export type PackDraftProduit = {
   prix: number;
   description: string | null;
   image_url: string | null;
-  stock: number;
+  stock?: number | null;
   disponible: boolean;
 };
 

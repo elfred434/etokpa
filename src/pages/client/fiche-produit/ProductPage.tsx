@@ -202,8 +202,8 @@ export default function ProductPage() {
   }
 
   const categoryNom = apiProduct?.categorie?.nom ?? tx("Catalogue");
-  // Commandable = disponible ET stock > 0 (même règle que « Disponible uniquement » du catalogue).
-  const unavailable = !apiProduct?.disponible || Number(apiProduct?.stock ?? 0) <= 0;
+  // Commandable = disponible et (si stock chiffré présent) stock > 0.
+  const unavailable = !apiProduct || apiProduct.disponible === false || (apiProduct.stock != null && Number(apiProduct.stock) <= 0);
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-bg-secondary font-body text-ink">
@@ -273,7 +273,7 @@ export default function ProductPage() {
                 <p className="mb-1 text-micro uppercase tracking-widest text-ink-3">{categoryNom}</p>
                 <h1 className="text-h1 text-ink">{product.nom}</h1>
                 <div className="mt-3 flex flex-wrap items-center gap-4">
-                  {apiProduct && apiProduct.stock > 0 && (
+                  {apiProduct && apiProduct.stock != null && Number(apiProduct.stock) > 0 && (
                     <span className="text-micro text-ink-2">Stock : {apiProduct.stock} unité(s)</span>
                   )}
                 </div>

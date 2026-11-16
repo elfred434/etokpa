@@ -75,9 +75,9 @@ export default function HomePage() {
       .then((res) => {
         if (!alive) return;
         const list: ApiProduct[] = Array.isArray(res?.data) ? res.data : [];
-        // Commandables (disponible et stock > 0) : même règle que « Disponible uniquement » du catalogue.
+        // Commandables (disponible et, si un stock chiffré existe, stock > 0) : même règle que le catalogue.
         const items: SelectionItem[] = list
-          .filter((p) => p.disponible !== false && Number(p.stock) > 0)
+          .filter((p) => p.disponible !== false && (p.stock == null || Number(p.stock) > 0))
           .map((p) => ({
             id: String(p.id),
             nom: p.nom,
@@ -87,7 +87,7 @@ export default function HomePage() {
             prixMinimum: Number(p.prix_minimum ?? 0),
             // Même source que l'admin ; pas d'image → null = dégradé
             image: absImageUrl(p.image_url ?? p.img_url),
-            badge: Number(p.stock) > 5 ? tx("Disponible") : tx("Stock Limité"),
+            badge: p.stock != null && Number(p.stock) <= 5 ? tx("Stock Limité") : tx("Disponible"),
           }));
         setSelection(items.slice(0, 4));
         const nego = items.find((it) => it.prixMinimum > 0 && it.prixMinimum < it.prix) ?? null;

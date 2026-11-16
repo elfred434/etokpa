@@ -50,7 +50,7 @@ type Produit = {
   nom?: string;
   prix?: number | string;
   image_url?: string | null;
-  stock?: number;
+  stock?: number | null;
   disponible?: boolean | null;
   description?: string | null;
   categorie?: { id?: number; nom?: string } | null;
@@ -424,7 +424,7 @@ export default function MesPacksPage() {
           prix: prixDe(p),
           description: p?.description ?? null,
           image_url: p?.image_url ?? null,
-          stock: Number(p?.stock ?? 0),
+          stock: p?.stock == null ? null : Number(p.stock),
           disponible: p?.disponible !== false,
         };
       }),
@@ -470,7 +470,7 @@ export default function MesPacksPage() {
   /** Le panier ne connaît pas les packs : on y met les produits, avec leurs quantités. */
   function ajouterAuPanier(draft: PackDraft) {
     if (draft.produits.length === 0) return;
-    const indisponibles = draft.produits.filter((p) => !p.disponible || p.stock <= 0);
+    const indisponibles = draft.produits.filter((p) => !p.disponible || (p.stock != null && p.stock <= 0));
     if (indisponibles.length > 0) {
       toast.error(tx("Impossible d’ajouter ce pack : un de ses produits est indisponible."));
       return;

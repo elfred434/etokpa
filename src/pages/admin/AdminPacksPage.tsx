@@ -21,7 +21,7 @@ type Produit = {
   nom?: string;
   prix?: number | string;
   image_url?: string | null;
-  stock?: number;
+  stock?: number | null;
   categorie?: { id?: number; nom?: string } | null;
 };
 

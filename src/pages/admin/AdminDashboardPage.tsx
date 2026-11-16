@@ -192,8 +192,8 @@ export default function AdminDashboardPage() {
     return `conic-gradient(${parts.join(', ')})`;
   })();
 
-  // « Alertes Système » : vrais produits en stock faible (GET /admin/products) ; plus d'alertes inventées
-  const [lowStock, setLowStock] = useState<{ id: number; nom: string; stock: number }[] | null>(null);
+  // « Alertes Système » : vrais produits indisponibles ou en stock faible (GET /admin/products) ; plus d'alertes inventées
+  const [lowStock, setLowStock] = useState<{ id: number; nom: string; stock: number | null }[] | null>(null);
   const [lowStockErr, setLowStockErr] = useState<string | null>(null);
   useEffect(() => {
     adminApi
@@ -201,9 +201,17 @@ export default function AdminDashboardPage() {
       .then((r: any) =>
         setLowStock(
           listOf(unwrap(r))
-            .filter((p: any) => Number(p.stock) <= LOW_STOCK)
-            .sort((a: any, b: any) => Number(a.stock) - Number(b.stock))
-            .map((p: any) => ({ id: Number(p.id), nom: String(p.nom), stock: Number(p.stock) })),
+            .filter((p: any) => p.disponible === false || (p.stock != null && Number(p.stock) <= LOW_STOCK))
+            .sort((a: any, b: any) => {
+              const sa = a.disponible === false ? -1 : Number(a.stock ?? 0);
+              const sb = b.disponible === false ? -1 : Number(b.stock ?? 0);
+              return sa - sb;
+            })
+            .map((p: any) => ({
+              id: Number(p.id),
+              nom: String(p.nom),
+              stock: p.stock == null ? null : Number(p.stock),
+            })),
         ),
       )
       .catch((e) => setLowStockErr(formatApiError(extractApiError(e))));
@@ -460,11 +468,13 @@ export default function AdminDashboardPage() {
               ) : (
                 <li className="flex flex-col gap-1 border-b border-border-default pb-md last:border-0 last:pb-0">
                   <span className="font-secondary text-label font-bold text-on-surface">
-                    {tr(`Stocks faibles (${lowStock.length})`, `Low stock (${lowStock.length})`)}
+                    {lowStock.some((p) => p.stock != null && p.stock > 0)
+                      ? tr(`Stocks faibles (${lowStock.length})`, `Low stock (${lowStock.length})`)
+                      : tr(`Produits indisponibles (${lowStock.length})`, `Unavailable products (${lowStock.length})`)}
                   </span>
                   {lowStock.slice(0, 4).map((p) => (
                     <p key={p.id} className="font-secondary text-secondary text-micro">
-                      {p.nom} — {p.stock <= 0 ? tx("en rupture") : tr(`plus que ${p.stock} en stock`, `only ${p.stock} left`)}
+                      {p.nom} — {p.stock == null || p.stock <= 0 ? tx("en rupture") : tr(`plus que ${p.stock} en stock`, `only ${p.stock} left`)}
                     </p>
                   ))}
                   {lowStock.length > 4 && (

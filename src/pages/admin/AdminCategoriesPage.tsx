@@ -47,6 +47,13 @@ const COLOR_CHOICES = [
   { key: 'success', cls: 'bg-success' },
   { key: 'on-surface-variant', cls: 'bg-on-surface-variant' },
 ];
+const COLOR_BADGE: Record<string, string> = {
+  primary: 'bg-primary-tint text-primary',
+  tertiary: 'bg-gradient-to-br from-amber-100 to-amber-200 text-amber-text',
+  'secondary-container': 'bg-secondary-container text-on-secondary-container',
+  success: 'bg-success-light text-success-dark',
+  'on-surface-variant': 'bg-surface-container-high text-on-surface-variant',
+};
 
 export default function AdminCategoriesPage() {
   useLanguage();
@@ -86,8 +93,8 @@ export default function AdminCategoriesPage() {
     setSel(c);
     setFNom(String(c.nom ?? ''));
     setFDesc(String(c.description ?? ''));
-    setFIcon(String(c.icone ?? CAT_ICON(String(c.nom ?? ''))));
-    setFColor(String(c.couleur ?? 'primary'));
+    setFIcon(String(c.icone || CAT_ICON(String(c.nom ?? ''))));
+    setFColor(String(c.couleur || 'primary'));
     setFAccueil(c.en_accueil ?? true);
   };
   const newCat = () => {
@@ -159,12 +166,13 @@ export default function AdminCategoriesPage() {
                   const nom = String(c.nom ?? '—');
                   const actif = typeof c.actif === 'boolean' ? c.actif : c.statut != null ? !String(c.statut).toLowerCase().includes('inact') : null;
                   const count = countByCat.get(Number(c.id)) ?? 0;
-                  const icon = String(c.icone ?? CAT_ICON(nom));
+                  const icon = String(c.icone || CAT_ICON(nom));
+                  const badgeCls = COLOR_BADGE[String(c.couleur ?? '')] ?? 'bg-gradient-to-br from-amber-100 to-amber-200 text-amber-text';
                   return (
                     <tr key={c.id} className={`hover:bg-primary-tint/30 transition-colors group cursor-pointer ${sel?.id === c.id ? 'bg-primary-tint/60' : ''}`} onClick={() => selectCat(c)}>
                       <td className="px-lg py-4">
                         <div className="flex items-center gap-4">
-                          <div className={actif === false ? 'w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-text-tertiary' : 'w-12 h-12 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-amber-text'}>
+                          <div className={actif === false ? 'w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-text-tertiary' : `w-12 h-12 rounded-lg flex items-center justify-center ${badgeCls}`}>
                             <MIcon name={icon} className="text-[24px]" />
                           </div>
                           <div>

@@ -8,11 +8,11 @@ describe('product image payloads', () => {
     description: 'Fraîche',
     prix: 500,
     prix_minimum: 400,
-    stock: 12,
     categorie_id: 3,
+    disponible: true,
   };
 
-  it('sends a selected product image as multipart with string form fields', () => {
+  it('sends a selected product image as multipart with string form fields and boolean as 1/0', () => {
     const image = new File(['webp-bytes'], 'tomate.webp', { type: 'image/webp' });
     const payload = buildProductMutationPayload(fields, image, false);
 
@@ -20,13 +20,13 @@ describe('product image payloads', () => {
     if (!(payload instanceof FormData)) throw new Error('Le payload aurait dû être multipart.');
     expect(payload.get('nom')).toBe('Tomate');
     expect(payload.get('prix')).toBe('500');
-    expect(payload.get('stock')).toBe('12');
+    expect(payload.get('disponible')).toBe('1');
     expect(payload.get('image')).toBe(image);
   });
 
   it('sends image_url: null when an existing product image is removed', () => {
     const payload = buildProductMutationPayload(fields, null, true);
-    expect(payload).toMatchObject({ nom: 'Tomate', stock: 12, image_url: null });
+    expect(payload).toMatchObject({ nom: 'Tomate', disponible: true, image_url: null });
   });
 
   it('leaves the product payload unchanged when its image is kept', () => {

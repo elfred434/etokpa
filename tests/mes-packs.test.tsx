@@ -285,4 +285,30 @@ describe('Mes packs (client) — atelier de création', () => {
     expect(items[1].product.id).toBe('2');
     expect(items[1].quantite).toBe(1);
   });
+
+  it('panier : accepte un brouillon dont les produits ont stock: null et disponible: true', async () => {
+    savePackDraft({
+      localId: 'd-null-stock',
+      serverId: null,
+      nom: 'Pack Sans Stock',
+      description: null,
+      prix_total: 600,
+      prix_minimum: null,
+      img_url: null,
+      disponible: true,
+      produits: [
+        { id: 1, qte: 3, nom: 'Tomate', prix: 200, description: null, image_url: null, stock: null, disponible: true },
+      ],
+      createdAt: new Date().toISOString(),
+      syncedAt: null,
+    });
+    renderMesPacks();
+    fireEvent.click(await screen.findByRole('button', { name: /Ajouter au panier/ }));
+
+    const items = store.getState().cart.items;
+    expect(items).toHaveLength(1);
+    expect(items[0].product.id).toBe('1');
+    expect(items[0].product.stock).toBe('available');
+    expect(items[0].quantite).toBe(3);
+  });
 });

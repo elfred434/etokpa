@@ -39,26 +39,28 @@ describe('AdminCatalogPage product save', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.useLiveRows.mockReturnValue({
-      rows: [{ id: 1, nom: 'Tomate', prix: 500, prix_minimum: 400, stock: 10, disponible: true }],
+      rows: [{ id: 1, nom: 'Tomate', prix: 500, prix_minimum: 400, stock: null, disponible: true }],
       err: null,
       loading: false,
       reload: mocks.reload,
     });
     mocks.getCategories.mockResolvedValue({ data: [] });
-    mocks.updateProduct.mockResolvedValue({ data: { stock: 14 } });
+    mocks.updateProduct.mockResolvedValue({ data: { disponible: true } });
     mocks.createProduct.mockResolvedValue({ data: {} });
     mocks.alert.mockResolvedValue(undefined);
   });
 
   afterEach(() => cleanup());
 
-  it('keeps stock in the update payload and blocks repeated clicks while saving', async () => {
+  it('saves without a stock field when backend returns stock: null and blocks repeated clicks while saving', async () => {
     let resolveUpdate: ((value?: unknown) => void) | undefined;
     mocks.updateProduct.mockImplementation(() => new Promise((resolve) => { resolveUpdate = resolve; }));
 
     render(<AdminCatalogPage />);
+    expect(screen.getByText('Disponible')).toBeTruthy();
+
     fireEvent.click(screen.getByRole('button', { name: 'Modifier' }));
-    fireEvent.change(screen.getByDisplayValue('10'), { target: { value: '14' } });
+    fireEvent.change(screen.getByDisplayValue('Tomate'), { target: { value: 'Tomate Bio' } });
 
     const saveButton = screen.getByRole('button', { name: 'Enregistrer' });
     await act(async () => {
@@ -70,31 +72,33 @@ describe('AdminCatalogPage product save', () => {
     expect(loadingButton.getAttribute('aria-busy')).toBe('true');
     expect(loadingButton.querySelector('.animate-spin')).not.toBeNull();
     expect(mocks.updateProduct).toHaveBeenCalledTimes(1);
-    expect(mocks.updateProduct).toHaveBeenCalledWith(1, expect.objectContaining({ stock: 14 }));
+    const sentPayload = mocks.updateProduct.mock.calls[0][1] as Record<string, unknown>;
+    expect(sentPayload).toMatchObject({ nom: 'Tomate Bio', disponible: true });
+    expect('stock' in sentPayload).toBe(false);
 
     fireEvent.click(loadingButton);
     expect(mocks.updateProduct).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      resolveUpdate?.({ data: { stock: 14 } });
+      resolveUpdate?.({ data: { disponible: true } });
     });
     expect(screen.queryByRole('button', { name: 'Enregistrement…' })).toBeNull();
     expect(mocks.reload).toHaveBeenCalledTimes(1);
   });
 
-  it.each(['', '-1', '2.5'])('refuses invalid stock value "%s" before sending', async (stock) => {
+  it('sends disponible: false when availability toggle is unchecked', async () => {
     render(<AdminCatalogPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Modifier' }));
-    fireEvent.change(screen.getByDisplayValue('10'), { target: { value: stock } });
+
+    const checkbox = screen.getByLabelText('Disponible à la vente') as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+    fireEvent.click(checkbox);
+    expect(checkbox.checked).toBe(false);
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
     });
 
-    expect(mocks.updateProduct).not.toHaveBeenCalled();
-    expect(mocks.alert).toHaveBeenCalledWith(
-      'Le stock doit être un entier supérieur ou égal à zéro.',
-      { title: 'Stock invalide' },
-    );
+    expect(mocks.updateProduct).toHaveBeenCalledWith(1, expect.objectContaining({ disponible: false }));
   });
 });

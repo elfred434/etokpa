@@ -19,7 +19,7 @@ export interface ApiProduct {
   img_url?: string;
   /** Champ réel de ProductResource (l'API renvoie image_url, pas img_url). */
   image_url?: string | null;
-  stock: number;
+  stock?: number | null;
   disponible: boolean;
   categorie?: {
     id: number;
@@ -36,8 +36,9 @@ export interface ApiCategory {
   description?: string | null;
   parent_id?: number | null;
   children?: ApiCategory[];
-  /** Prévus par le design mais pas encore persistés côté backend (B-17) : utilisés s'ils arrivent. */
+  /** Champs ajoutés sur `categories` côté backend (migration add_some_champs_to_categorie). */
   icone?: string | null;
+  couleur?: string | null;
   en_accueil?: boolean | null;
 }
 

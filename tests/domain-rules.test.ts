@@ -101,6 +101,30 @@ describe('product page mapping', () => {
     expect(product.image).toBeUndefined();
   });
 
+  it('treats stock: null/undefined as available when disponible is true and out when disponible is false', () => {
+    const avail = mapApiProduct({
+      id: 15,
+      nom: 'Igname',
+      prix: 1200,
+      prix_minimum: 900,
+      devise: 'XOF',
+      stock: null,
+      disponible: true,
+    });
+    expect(avail.stock).toBe('available');
+
+    const unavail = mapApiProduct({
+      id: 16,
+      nom: 'Manioc',
+      prix: 700,
+      prix_minimum: 500,
+      devise: 'XOF',
+      stock: null,
+      disponible: false,
+    });
+    expect(unavail.stock).toBe('out');
+  });
+
   it('uses the legacy img_url field when image_url is absent', () => {
     const product = mapApiProduct({
       id: 12,

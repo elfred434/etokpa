@@ -62,7 +62,7 @@ export default function AdminCatalogPage() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [detail]);
-  const [form, setForm] = useState({ nom: '', description: '', prix: '', prix_minimum: '', stock: '', categorie_id: '' });
+  const [form, setForm] = useState({ nom: '', description: '', prix: '', prix_minimum: '', categorie_id: '', disponible: true });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageBusy, setImageBusy] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -136,7 +136,14 @@ export default function AdminCatalogPage() {
     setImageFile(null);
     setImageRemoved(false);
     setImagePreview(absImageUrl(pr?.image_url ?? pr?.img_url));
-    setForm({ nom: pr?.nom ?? '', description: pr?.description ?? '', prix: String(pr?.prix ?? ''), prix_minimum: String(pr?.prix_minimum ?? ''), stock: String(pr?.stock ?? ''), categorie_id: String(pr?.categorie?.id ?? '') });
+    setForm({
+      nom: pr?.nom ?? '',
+      description: pr?.description ?? '',
+      prix: String(pr?.prix ?? ''),
+      prix_minimum: String(pr?.prix_minimum ?? ''),
+      categorie_id: String(pr?.categorie?.id ?? ''),
+      disponible: pr?.disponible !== false,
+    });
   };
   const fermer = () => {
     if (saveInFlightRef.current) return;
@@ -149,17 +156,18 @@ export default function AdminCatalogPage() {
   const enregistrer = async () => {
     if (saveInFlightRef.current || imageBusy) return;
 
-    const stock = form.stock.trim() === '' ? Number.NaN : Number(form.stock);
-    if (!Number.isInteger(stock) || stock < 0) {
-      await adminDialogs.alert(tx("Le stock doit être un entier supérieur ou égal à zéro."), { title: tx("Stock invalide") });
-      return;
-    }
-
     saveInFlightRef.current = true;
     setSaving(true);
     let saved = false;
     try {
-      const champs = { nom: form.nom, description: form.description, prix: Number(form.prix), prix_minimum: Number(form.prix_minimum), stock, categorie_id: Number(form.categorie_id) };
+      const champs = {
+        nom: form.nom,
+        description: form.description,
+        prix: Number(form.prix),
+        prix_minimum: Number(form.prix_minimum),
+        categorie_id: Number(form.categorie_id),
+        disponible: form.disponible,
+      };
       const payload = buildProductMutationPayload(
         champs,
         imageFile,
@@ -239,10 +247,11 @@ export default function AdminCatalogPage() {
     }
   };
   const qMin = q.trim().toLowerCase();
+  const isProductAvailable = (p: any) => p.disponible !== false && (p.stock == null || Number(p.stock) > 0);
   const produitsF = produits.filter((p: any) => {
     const hit = !qMin || String(p.nom ?? '').toLowerCase().includes(qMin) || String(p.id).includes(qMin);
     const cok = !catF || String(p.categorie?.id ?? p.categorie_id ?? '') === catF;
-    const dispo = p.disponible !== false && Number(p.stock) > 0;
+    const dispo = isProductAvailable(p);
     const dok = !dispoF || (dispoF === 'stock' ? dispo : !dispo);
     return hit && cok && dok;
   });
@@ -306,14 +315,14 @@ export default function AdminCatalogPage() {
                     /> <span className="font-body font-semibold">{pr.nom}</span> </div> </td>
                     <td className="py-4 px-md text-text-secondary">{pr.categorie?.nom ?? '—'}</td>
                     <td className="py-4 px-md font-price text-primary">{fmtFcfa(pr.prix)}</td>
-                    <td className="py-4 px-md"> <span className={`px-2 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 w-fit ${pr.disponible !== false && Number(pr.stock) > 0 ? 'bg-success-light text-success-dark' : 'bg-bg-secondary text-text-secondary'}`}> <span className={`w-1.5 h-1.5 rounded-full ${pr.disponible !== false && Number(pr.stock) > 0 ? 'bg-success' : 'bg-text-tertiary'}`}></span> {pr.disponible !== false && Number(pr.stock) > 0 ? tx("Disponible") : 'Rupture'} </span> </td>
+                    <td className="py-4 px-md"> <span className={`px-2 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 w-fit ${isProductAvailable(pr) ? 'bg-success-light text-success-dark' : 'bg-bg-secondary text-text-secondary'}`}> <span className={`w-1.5 h-1.5 rounded-full ${isProductAvailable(pr) ? 'bg-success' : 'bg-text-tertiary'}`}></span> {isProductAvailable(pr) ? tx("Disponible") : tx("Rupture")} </span> </td>
                     <td className="py-4 px-md text-right" onClick={(e) => e.stopPropagation()}> <div className="flex gap-2 justify-end"> <button type="button" className="font-semibold text-primary hover:underline" onClick={() => ouvrir(pr)}>{tx("Modifier")}</button> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimer(pr)}>{tx("Supprimer")}</button> </div> </td>
                   </tr>
                 ))}
                 {tab === 'categories' && slicePage(catsF).map((c: any) => (
                   <tr key={c.id} tabIndex={0} title={tx("Voir le détail")} className="cursor-pointer hover:bg-bg-secondary/50 transition-colors" onClick={() => setDetail({ kind: 'categorie', item: c })} onKeyDown={(e) => { if (e.key === 'Enter') setDetail({ kind: 'categorie', item: c }); }}>
                     <td className="py-4 px-lg" onClick={(e) => e.stopPropagation()}><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /></td>
-                    <td className="py-4 px-md"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-amber-text"><MIcon name="category" className="text-[20px]" /></div> <span className="font-body font-semibold">{c.nom}</span> </div> </td>
+                    <td className="py-4 px-md"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-amber-text"><MIcon name={c.icone || 'category'} className="text-[20px]" /></div> <span className="font-body font-semibold">{c.nom}</span> </div> </td>
                     <td className="py-4 px-md text-text-secondary">{c.description ?? '—'}</td>
                     <td className="py-4 px-md font-price text-primary">—</td>
                     <td className="py-4 px-md text-text-secondary">—</td>
@@ -349,7 +358,15 @@ export default function AdminCatalogPage() {
               <div><p className="text-text-secondary">{tx("Description")}</p><textarea rows={2} value={form.description} onChange={(e: any) => setForm({ ...form, description: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
               <div><p className="text-text-secondary">{tx("Prix (FCFA)")}</p><input value={form.prix} onChange={(e: any) => setForm({ ...form, prix: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
               <div><p className="text-text-secondary">{tx("Prix minimum (FCFA) — obligatoire")}</p><input value={form.prix_minimum} onChange={(e: any) => setForm({ ...form, prix_minimum: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
-              <div><p className="text-text-secondary">{tx("Stock")}</p><input type="number" min="0" step="1" inputMode="numeric" value={form.stock} onChange={(e: any) => setForm({ ...form, stock: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+              <label className="flex items-center gap-2 pt-1 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={form.disponible}
+                  onChange={(e: any) => setForm({ ...form, disponible: e.target.checked })}
+                  className="h-4 w-4 rounded border-border-default accent-primary"
+                />
+                <span className="text-text-main font-medium">{tx("Disponible à la vente")}</span>
+              </label>
               <div><p className="text-text-secondary">{tx("Catégorie — obligatoire")}</p>
                 <select value={form.categorie_id} onChange={(e: any) => setForm({ ...form, categorie_id: e.target.value })} className="w-full rounded-lg border border-border-default bg-bg-card px-3 py-2">
                   <option value="">{tx("— Choisir —")}</option>
@@ -452,7 +469,7 @@ function CatalogueDetailModal({
   const item = detail.item;
   const image = absImageUrl(item.image_url ?? item.img_url);
   const titre = detail.kind === 'categorie' ? tx("Détails de la catégorie") : tx("Détails du produit");
-  const dispo = detail.kind === 'categorie' ? null : item.disponible !== false && Number(item.stock) > 0;
+  const dispo = detail.kind === 'categorie' ? null : item.disponible !== false && (item.stock == null || Number(item.stock) > 0);
   const enfants: any[] = Array.isArray(item.children) ? item.children : [];
   const parent = item.parent?.nom
     ?? cats.find((c: any) => String(c.id) === String(item.parent_id))?.nom;
@@ -491,13 +508,15 @@ function CatalogueDetailModal({
               <FicheLigne label={tx("Prix")} value={fmtFcfa(item.prix)} />
               <FicheLigne label={tx("Prix minimum")} value={fmtFcfa(item.prix_minimum)} />
               <FicheLigne label={tx("Devise")} value={item.devise || 'XOF'} />
-              <FicheLigne label={tx("Stock")} value={item.stock ?? 0} />
+              {item.stock != null && <FicheLigne label={tx("Stock")} value={item.stock} />}
             </>
           )}
           {detail.kind === 'categorie' && (
             <>
               <FicheLigne label={tx("Slug")} value={item.slug} />
               <FicheLigne label={tx("Parent")} value={parent} />
+              <FicheLigne label={tx("Icône")} value={item.icone} />
+              <FicheLigne label={tx("Couleur")} value={item.couleur} />
               <FicheLigne
                 label={tx("Sous-catégories")}
                 value={enfants.length === 0 ? '—' : enfants.map((c) => c.nom).filter(Boolean).join(', ')}

@@ -221,11 +221,25 @@ export default function CatalogPage() {
             id: String(p.id),
             nom: p.nom,
             meta: p.description ?? '',
-            quantite: p.stock > 0 ? `${p.stock} en stock` : tx("Rupture"),
+            quantite:
+              p.disponible === false
+                ? tx("Rupture")
+                : p.stock != null
+                  ? (Number(p.stock) > 0 ? `${p.stock} en stock` : tx("Rupture"))
+                  : '',
             prix: Number(p.prix ?? 0),
             prixLabel: `${p.prix} F`,
             prixMinimum: Number(p.prix_minimum ?? 0),
-            stock: p.disponible === false || Number(p.stock) <= 0 ? 'none' : Number(p.stock) <= 5 ? 'low' : 'available',
+            stock:
+              p.disponible === false
+                ? 'none'
+                : p.stock == null
+                  ? 'available'
+                  : Number(p.stock) <= 0
+                    ? 'none'
+                    : Number(p.stock) <= 5
+                      ? 'low'
+                      : 'available',
             icon: mapApiCategory(p.categorie) === 'fish' ? 'set_meal' : mapApiCategory(p.categorie) === 'grain' ? 'nutrition' : mapApiCategory(p.categorie) === 'spice' ? 'restaurant' : mapApiCategory(p.categorie) === 'pack' ? 'package_2' : 'eco',
             cat: mapApiCategory(p.categorie),
             catRawId: p.categorie?.id,
