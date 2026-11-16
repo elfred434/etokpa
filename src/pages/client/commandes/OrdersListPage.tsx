@@ -6,6 +6,7 @@ import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
 import Pagination from '../../../components/shared/Pagination';
+import TableRowActions from '../../../components/shared/TableRowActions';
 import {
   ModalShell,
   BandeauFiche,
@@ -402,7 +403,7 @@ export default function OrdersListPage() {
                             {o.livreur?.nom_complet ?? '—'}
                           </td>
                           <td className="hidden px-md py-sm text-right md:table-cell">
-                            <div className="inline-flex items-center justify-end gap-2">
+                            <TableRowActions>
                               {o.payment?.statut === 'echoue' && !isCancelledStatut(o.statut) && (
                                 <button
                                   type="button"
@@ -430,7 +431,7 @@ export default function OrdersListPage() {
                                   {isFr ? tx("Suivre") : 'Track'}
                                 </button>
                               )}
-                            </div>
+                            </TableRowActions>
                           </td>
                         </tr>
                       );

@@ -8,6 +8,7 @@ import { alertApiError, extractApiError, formatApiError } from '../../utils/apiE
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import AdminNotificationBell from '../../components/layout/admin/AdminNotificationBell';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
+import TableRowActions from '../../components/shared/TableRowActions';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { currentUserId, currentUserZone, rememberUserZone } from '../../routes/authGuard';
@@ -626,18 +627,8 @@ export default function AdminUsersPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-gray-500">{cmds != null ? `${fmt(cmds)} commande${cmds > 1 ? 's' : ''}` : '—'}</td>
-                      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1">
-                          {role === 'client' && (
-                            <button
-                              type="button"
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-blue-700 hover:bg-blue-50 transition-colors"
-                              onClick={() => openPromote(u, 'client')}
-                              title={tx("Promouvoir en manager")}
-                            >
-                              <i className="ti ti-shield-check text-sm"></i>
-                            </button>
-                          )}
+                      <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <TableRowActions>
                           <button type="button" className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-orange-50 transition-colors" onClick={() => openUser(u)} title={tx("Modifier")}>
                             <i className="ti ti-edit text-sm"></i>
                           </button>
@@ -649,7 +640,17 @@ export default function AdminUsersPage() {
                           >
                             <i className={suspendu ? 'ti ti-lock-open text-sm' : 'ti ti-lock text-sm'}></i>
                           </button>
-                        </div>
+                          {role === 'client' && (
+                            <button
+                              type="button"
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                              onClick={() => openPromote(u, 'client')}
+                              title={tx("Promouvoir en manager")}
+                            >
+                              <i className="ti ti-shield-check text-sm"></i>
+                            </button>
+                          )}
+                        </TableRowActions>
                       </td>
                     </tr>
                   );

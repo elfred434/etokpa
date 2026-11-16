@@ -8,6 +8,7 @@ import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
 import ImageWithFallback from '../../components/shared/ImageWithFallback';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
+import TableRowActions from '../../components/shared/TableRowActions';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
@@ -258,16 +259,16 @@ export default function AdminValidationsPage() {
                       <td className="px-lg py-3 font-semibold">{fmtFcfa(pr.prix_propose)}</td>
                       <td className={`px-lg py-3 ${e != null && e < 0 ? 'text-error' : ''}`}>{e != null ? `${e > 0 ? '+' : ''}${e} %` : '—'}</td>
                       <td className="px-lg py-3">{dateCourte(pr.created_at)}</td>
-                      <td className="px-lg py-3" onClick={(ev) => ev.stopPropagation()}>
+                      <td className="px-lg py-3 text-right" onClick={(ev) => ev.stopPropagation()}>
                         {pr.statut === "en_attente" ? (
-                          <div className="flex gap-2">
+                          <TableRowActions>
                             <button type="button" disabled={busy} className="font-semibold text-success hover:underline disabled:opacity-50" onClick={() => decider(pr, 'accepte')}>
                               {tx("Accepter")}
                             </button>
                             <button type="button" disabled={busy} className="font-semibold text-error hover:underline disabled:opacity-50" onClick={() => decider(pr, 'refuse')}>
                               {tx("Refuser")}
                             </button>
-                          </div>
+                          </TableRowActions>
                         ) : (
                           <span className={`font-semibold ${STATUT[pr.statut]?.cls ?? ''}`}>{tx(STATUT[pr.statut]?.label ?? pr.statut)}</span>
                         )}

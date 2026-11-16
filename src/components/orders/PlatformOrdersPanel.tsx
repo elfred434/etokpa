@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import Pagination from '../shared/Pagination';
 import { ModalShell, BandeauFiche, FicheCard, LigneFiche, BoutonFermer } from '../shared/ModalShell';
+import TableRowActions from '../shared/TableRowActions';
 import { adminApi, catalogApi, managerApi } from '../../services/api';
 import { dateCourte, fmtFcfa, listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -390,12 +391,12 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
+                        <TableRowActions align="left">
                           <button type="button" className="text-primary font-bold" onClick={() => setSelected(o)}>
                             {tx("Détail")}
                           </button>
                           {renderActions?.(o)}
-                        </div>
+                        </TableRowActions>
                       </td>
                     </tr>
                   );

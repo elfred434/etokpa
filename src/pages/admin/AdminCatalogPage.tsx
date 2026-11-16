@@ -13,6 +13,7 @@ import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
 import ImageWithFallback from '../../components/shared/ImageWithFallback';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
+import TableRowActions from '../../components/shared/TableRowActions';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { useGlobalRefreshTick } from '../../hooks/useRefresh';
@@ -324,7 +325,7 @@ export default function AdminCatalogPage() {
                     <td className="py-4 px-md text-text-secondary">{pr.categorie?.nom ?? '—'}</td>
                     <td className="py-4 px-md font-price text-primary">{fmtFcfa(pr.prix)}</td>
                     <td className="py-4 px-md"> <span className={`px-2 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 w-fit ${isProductAvailable(pr) ? 'bg-success-light text-success-dark' : 'bg-bg-secondary text-text-secondary'}`}> <span className={`w-1.5 h-1.5 rounded-full ${isProductAvailable(pr) ? 'bg-success' : 'bg-text-tertiary'}`}></span> {isProductAvailable(pr) ? tx("Disponible") : tx("Rupture")} </span> </td>
-                    <td className="py-4 px-md text-right" onClick={(e) => e.stopPropagation()}> <div className="flex gap-2 justify-end"> <button type="button" className="font-semibold text-primary hover:underline" onClick={() => ouvrir(pr)}>{tx("Modifier")}</button> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimer(pr)}>{tx("Supprimer")}</button> </div> </td>
+                    <td className="py-4 px-md text-right" onClick={(e) => e.stopPropagation()}> <TableRowActions> <button type="button" className="font-semibold text-primary hover:underline" onClick={() => ouvrir(pr)}>{tx("Modifier")}</button> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimer(pr)}>{tx("Supprimer")}</button> </TableRowActions> </td>
                   </tr>
                 ))}
                 {tab === 'categories' && slicePage(catsF).map((c: any) => (
@@ -334,7 +335,7 @@ export default function AdminCatalogPage() {
                     <td className="py-4 px-md text-text-secondary">{c.description ?? '—'}</td>
                     <td className="py-4 px-md font-price text-primary">—</td>
                     <td className="py-4 px-md text-text-secondary">—</td>
-                    <td className="py-4 px-md text-right" onClick={(e) => e.stopPropagation()}> <div className="flex gap-2 justify-end"> <Link to="/admin/categories" className="font-semibold text-primary hover:underline">{tx("Éditer")}</Link> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimerCat(c)}>{tx("Supprimer")}</button> </div> </td>
+                    <td className="py-4 px-md text-right" onClick={(e) => e.stopPropagation()}> <TableRowActions> <Link to="/admin/categories" className="font-semibold text-primary hover:underline">{tx("Éditer")}</Link> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimerCat(c)}>{tx("Supprimer")}</button> </TableRowActions> </td>
                   </tr>
                 ))}
                 {((tab === 'produits' && produitsF.length === 0) || (tab === 'categories' && catsF.length === 0)) && (

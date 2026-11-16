@@ -9,6 +9,7 @@ import { absImageUrl } from '../../utils/imageUrl';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
+import TableRowActions from '../../components/shared/TableRowActions';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
@@ -245,32 +246,34 @@ export default function AdminLivreursPage() {
                         <span className="font-body text-success font-bold">{pct != null ? `${pct}%` : '—'}</span>
                       </div>
                     </td>
-                    <td className="px-md py-4 text-right space-x-2">
-                      <button
-                        type="button"
-                        className="p-2 hover:text-primary transition-colors"
-                        title={tx("Modifier")}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openDetails(l, true);
-                        }}
-                      >
-                        <MIcon name="edit" className="text-[20px]" />
-                      </button>
-                      {String(l.statut ?? '').toLowerCase() !== 'inactif' && (
+                    <td className="px-md py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                      <TableRowActions>
                         <button
                           type="button"
-                          className="p-2 transition-colors hover:text-error"
-                          title={tx("Désactiver")}
-                          aria-label={`${tx("Désactiver")} ${nom}`}
+                          className="p-2 hover:text-primary transition-colors"
+                          title={tx("Modifier")}
                           onClick={(e) => {
                             e.stopPropagation();
-                            void desactiver(l);
+                            openDetails(l, true);
                           }}
                         >
-                          <MIcon name="delete" className="text-[20px]" />
+                          <MIcon name="edit" className="text-[20px]" />
                         </button>
-                      )}
+                        {String(l.statut ?? '').toLowerCase() !== 'inactif' && (
+                          <button
+                            type="button"
+                            className="p-2 transition-colors hover:text-error"
+                            title={tx("Désactiver")}
+                            aria-label={`${tx("Désactiver")} ${nom}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void desactiver(l);
+                            }}
+                          >
+                            <MIcon name="delete" className="text-[20px]" />
+                          </button>
+                        )}
+                      </TableRowActions>
                     </td>
                   </tr>
                 );
