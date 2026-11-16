@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCartSync } from '../../hooks/useCartSync';
 import { useAutoRefresh } from '../../hooks/useRefresh';
 import { useRealtimeNotifications } from '../../hooks/useRealtimeNotifications';
+import { store } from '../../store';
+import { clear, clearProductRemovalNotices } from '../../store/slices/cart/cartSlice';
 
 type StoredRole = string | { nom?: string } | null;
 type StoredUser = { role?: StoredRole } | null;
@@ -42,10 +44,17 @@ export default function SystemBridge() {
     localStorage.getItem('tokpa_token') ? 1 : 0,
   );
   const [cartKey, setCartKey] = useState<number>(() => (hasCartSession() ? 1 : 0));
+  const wasAuthenticatedRef = useRef<boolean>(Boolean(localStorage.getItem('tokpa_token')));
 
   useEffect(() => {
     const onAuthChanged = () => {
-      const key = localStorage.getItem('tokpa_token') ? Date.now() : 0;
+      const hasToken = Boolean(localStorage.getItem('tokpa_token'));
+      const key = hasToken ? Date.now() : 0;
+      if (wasAuthenticatedRef.current && !hasToken) {
+        store.dispatch(clear());
+        store.dispatch(clearProductRemovalNotices());
+      }
+      wasAuthenticatedRef.current = hasToken;
       setSessionKey(key);
       setCartKey(hasCartSession() ? key : 0);
     };

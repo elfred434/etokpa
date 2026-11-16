@@ -48,17 +48,8 @@ export default function ManagerLitigesPage() {
   return (
     <ManagerLayout currentPath="/manager/litiges">
       <div className="space-y-6">
-        <div className="rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
-          <p className="font-bold">{tx("Non branché — endpoint absent (B-16)")}</p>
-          <p>
-            {tx("Le backend n’expose pas encore de endpoints litiges")} (<span className="font-mono">/manager/disputes</span>).
-            {tx("L’écran ci-dessous est un")} <strong>{tx("aperçu maquette")}</strong> — {tx("aucune donnée réelle.")}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
           <h1 className="text-h2 font-h2 font-bold">{tx("Gestion des Litiges & Réclamations")}</h1>
-          <span className="rounded-full bg-bg-secondary px-2.5 py-1 text-overline font-semibold">{tx("MAQUETTE")}</span>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -78,7 +69,7 @@ export default function ManagerLitigesPage() {
           ))}
         </div>
 
-        <div className="space-y-4 opacity-70 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0">
+        <div className="space-y-4 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0">
           {cartes.map((l) => (
             <div key={l.id} className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">

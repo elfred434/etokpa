@@ -1,6 +1,7 @@
 import { apiClient } from './client';
 import { initEcho, shutdownEcho } from '../realtime/echo';
 import { clearLocalPhotos } from '../../utils/profilePhoto';
+import { clearCartStorage } from '../../utils/cartStorage';
 
 export interface LoginPayload {
   email: string;
@@ -140,6 +141,9 @@ export const authApi = {
     } finally {
       localStorage.removeItem('tokpa_token');
       localStorage.removeItem('tokpa_user');
+      clearCartStorage();
+      localStorage.removeItem('tokpa_cart_lieu');
+      sessionStorage.removeItem('tokpa_cart_lieu');
       clearLocalPhotos();
       shutdownEcho();
       window.dispatchEvent(new Event('tokpa:auth-changed'));

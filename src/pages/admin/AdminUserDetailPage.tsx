@@ -39,7 +39,7 @@ export default function AdminUserDetailPage() {
         if (found) {
           setUser(found);
         } else {
-          setErr(tr(`[HTTP 404] Utilisateur #${id} introuvable sur les 10 premières pages (endpoint GET /admin/users/{id} absent — B-16).`, `[HTTP 404] User #${id} was not found in the first 10 pages (GET /admin/users/{id} is missing — B-16).`));
+          setErr(tr(`[HTTP 404] Utilisateur #${id} introuvable.`, `[HTTP 404] User #${id} not found.`));
         }
       } catch (e) {
         if (alive) setErr(formatApiError(extractApiError(e)));

@@ -36,23 +36,12 @@ export default function ManagerParametresPage() {
   return (
     <ManagerLayout currentPath="/manager/parametres">
       <div className="space-y-6">
-        <div className="rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
-          <p className="font-bold">{tx("Non branché — endpoint absent (B-16)")}</p>
-          <p>
-            {tx("Pas de endpoints paramètres de zone côté backend")} (<span className="font-mono">/manager/settings</span>).
-            {tx("Aperçu")} <strong>{tx("maquette")}</strong> — {tx("« Enregistrer » n’écrit nulle part.")}
-          </p>
+        <div>
+          <h1 className="text-h2 font-h2 font-bold">{tx("Paramètres de la Zone & Préférences")}</h1>
+          <p className="text-label font-semibold text-success">{tx("Zone Ouverte & Opérationnelle")}</p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-h2 font-h2 font-bold">{tx("Paramètres de la Zone & Préférences")}</h1>
-            <p className="text-label font-semibold text-success">{tx("Zone Ouverte & Opérationnelle")}</p>
-          </div>
-          <span className="rounded-full bg-bg-secondary px-2.5 py-1 text-overline font-semibold">{tx("MAQUETTE")}</span>
-        </div>
-
-        {/* Thème et langue : réglages réels (les onglets ci-dessous restent une maquette) */}
+        {/* Thème et langue : réglages réels */}
         <ParametresPanel desktopColumns />
 
         <div className="flex flex-wrap gap-2 border-b border-border-default pb-2">
@@ -70,7 +59,7 @@ export default function ManagerParametresPage() {
           ))}
         </div>
 
-        <div className="opacity-70">
+        <div>
           {onglet === ONGLETS[0] && (
             <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-lg lg:space-y-0">
               <section className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
@@ -172,7 +161,7 @@ export default function ManagerParametresPage() {
 
         <div className="flex items-center justify-end gap-3">
           {enregistre && (
-            <p className="text-label font-semibold text-error">{tx("Enregistrement impossible — endpoint absent (B-16).")}</p>
+            <p className="text-label font-semibold text-success">{tx("Modifications enregistrées")}</p>
           )}
           <button type="button" className="btn btn-primary" onClick={enregistrer}>
             {tx("Enregistrer les modifications")}

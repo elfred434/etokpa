@@ -41,7 +41,7 @@ type LieuDraft = {
 
 function readLieuDraft(): LieuDraft | null {
   try {
-    const raw = sessionStorage.getItem(LIEU_KEY);
+    const raw = localStorage.getItem(LIEU_KEY) ?? sessionStorage.getItem(LIEU_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw) as Partial<LieuDraft>;
     const zoneId = Number(data.zoneId);
@@ -59,11 +59,21 @@ function readLieuDraft(): LieuDraft | null {
 }
 
 function saveLieuDraft(draft: LieuDraft) {
-  sessionStorage.setItem(LIEU_KEY, JSON.stringify(draft));
+  try {
+    localStorage.setItem(LIEU_KEY, JSON.stringify(draft));
+    sessionStorage.removeItem(LIEU_KEY);
+  } catch {
+    /* ignore */
+  }
 }
 
 function clearLieuDraft() {
-  sessionStorage.removeItem(LIEU_KEY);
+  try {
+    localStorage.removeItem(LIEU_KEY);
+    sessionStorage.removeItem(LIEU_KEY);
+  } catch {
+    /* ignore */
+  }
 }
 
 interface ApiLandmark {

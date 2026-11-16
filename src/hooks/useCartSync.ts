@@ -135,11 +135,28 @@ export function useCartSync(sessionKey: number): void {
             .map((item, index) => ({ item, details: details[index] }))
             .filter((entry) => !entry.details.deleted);
 
+          const localById = new Map(local.map((it) => [String(it.product.id), it]));
+          const serverIds = new Set(serverItems.map((it) => String(it.product_id)));
+          const guestExtras =
+            sessionKey > 1
+              ? local.filter((it) => !serverIds.has(String(it.product.id)))
+              : [];
+          const extraDetails = guestExtras.length
+            ? await Promise.all(guestExtras.map((it) => fetchProductDetails(Number(it.product.id))))
+            : [];
+          if (cancelled) return;
+
+          const deletedExtras = guestExtras.filter((_, index) => extraDetails[index].deleted);
+          const availableExtras = guestExtras.filter((_, index) => !extraDetails[index].deleted);
+
           // Redis garde les anciennes données du panier même si l'admin a supprimé le produit.
           // On retire ces lignes du client et du cache serveur sans toucher aux autres articles.
           dispatch(clear());
-          if (deleted.length > 0) {
-            registerDeletedProducts(deleted.map((item) => deletedNotice(item.product_id, item.nom)));
+          if (deleted.length > 0 || deletedExtras.length > 0) {
+            registerDeletedProducts([
+              ...deleted.map((item) => deletedNotice(item.product_id, item.nom)),
+              ...deletedExtras.map((it) => deletedNotice(it.product.id, it.product.nom)),
+            ]);
             deleted.forEach((item) => {
               void cartApi.removeFromCart(item.product_id).catch(() => undefined);
             });
@@ -147,19 +164,30 @@ export function useCartSync(sessionKey: number): void {
 
           // Le serveur reste la vérité pour le reste du panier (multi-appareils).
           available.forEach(({ item, details: productDetails }) => {
+            const localMatch = localById.get(String(item.product_id))?.product;
             const product: Product = {
               id: String(item.product_id),
               nom: item.nom,
               prix: Number(item.prix),
-              prixMinimum: productDetails.prixMinimum ?? 0,
-              quantite: '',
-              origine: productDetails.categorie ?? '',
-              categorie: 'vegetable',
+              prixMinimum: productDetails.prixMinimum ?? localMatch?.prixMinimum ?? 0,
+              quantite: localMatch?.quantite ?? '',
+              origine: productDetails.categorie ?? localMatch?.origine ?? '',
+              categorie: localMatch?.categorie ?? 'vegetable',
               stock: 'available',
-              badges: [],
-              image: productDetails.image,
+              badges: localMatch?.badges ?? [],
+              image: productDetails.image ?? localMatch?.image,
+              ...(localMatch?.negotiated ? { negotiated: localMatch.negotiated } : {}),
             };
             dispatch(add({ product, quantity: item.quantite }));
+          });
+
+          // Articles ajoutés hors connexion / avant connexion : on les fusionne et les pousse au serveur.
+          availableExtras.forEach((it) => {
+            dispatch(add({ product: it.product, quantity: it.quantite }));
+            const id = Number(it.product.id);
+            cartApi.addToCart(id, it.quantite).catch((error) => {
+              if (isDeletedProductError(error)) removeDeletedProduct(id);
+            });
           });
         } else if (local.length > 0) {
           // Panier serveur vide mais panier local non vide : vérifier avant de le pousser.

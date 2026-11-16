@@ -5,7 +5,7 @@ import { managerApi } from '../../services/api';
 import { unwrap, listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
-import { tx } from '../../i18n/tx';
+import { tr, tx } from '../../i18n/tx';
 import { currentUserZone } from '../../routes/authGuard';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
@@ -162,9 +162,10 @@ export default function ManagerEquipePage() {
             </div>
             <div className="flex-1 p-4 text-label">
               <p className="text-text-secondary">
-                {tx("L’ajout de livreurs par le manager nécessite l’endpoint")}{' '}
-                <span className="font-mono">POST /manager/livreurs</span> {tx("— absent du backend actuel (B-16).")}
-                {tx("En attendant, un admin peut créer le compte via")} <span className="font-mono">POST /admin/users</span>.
+                {tr(
+                  'La création d’un compte livreur s’effectue depuis l’espace administrateur (Gestion des utilisateurs).',
+                  'Delivery rider accounts are created from the admin space (User Management).',
+                )}
               </p>
             </div>
             <div className="flex justify-end border-t border-border-default p-4">

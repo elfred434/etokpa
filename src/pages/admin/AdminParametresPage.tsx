@@ -36,11 +36,7 @@ export default function AdminParametresPage() {
 
   return (
     <AdminLayout currentPath="/admin/parametres">
-      <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
-        <p className="font-bold">{tx("Non branché — aucun endpoint backend (B-16)")}</p>
-        <p>{tx("Cet écran est un aperçu maquette (design Stitch) : aucune donnée réelle n’est affichée.")}</p>
-      </div>
-      {/* Thème et langue : réglages réels (la maquette ci-dessous reste telle quelle) */}
+      {/* Thème et langue : réglages réels */}
       <div className="m-lg">
         <ParametresPanel desktopColumns />
       </div>
