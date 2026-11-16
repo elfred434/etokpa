@@ -38,6 +38,10 @@ const KIND_ICON: Record<CategoryKind, string> = {
 /** ?cat= (tuiles de l'accueil) → filtre initial : « c{id} » = catégorie API, « pack » = Packs & Bundles. */
 const parseCat = (v: string): CatFilter => (/^c\d+$/.test(v) ? (v as CatFilter) : v === 'pack' ? 'pack' : 'all');
 
+/** Normalisation recherche : insensible à la casse et aux accents (évite le LIKE sensible à la casse côté PostgreSQL). */
+const normalizeSearch = (value: string): string =>
+  value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
 // Entrées fixes de la barre latérale ; entre les deux : les catégories réelles (GET /categories).
 // Le filtre « Zone du marché » de la maquette est retiré : le backend ne rattache aucun produit à un
 // marché (ni colonne, ni route) — il reviendra quand l'API fournira l'information.
@@ -208,57 +212,63 @@ export default function CatalogPage() {
 
   const catTitle = tx(cat === 'all' ? CAT_ALL.nom : cat === 'pack' ? CAT_PACK.nom : (categories.find((c) => c.id === cat)?.nom ?? 'Catalogue'));
 
-  // Connection API Backend GET /api/products — 100 premiers, nouveautés d'abord, recherche q (debounce)
+  // Connection API Backend GET /api/products — charge le catalogue complet (sans `q`) :
+  // évite que le LIKE sensible à la casse côté PostgreSQL n'écrase la liste après le debounce
+  // (ex. « cub » effaçant « Cube d'assaisonnement » 350 ms après l'affichage local).
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setProductsLoading(true);
-    const timer = window.setTimeout(() => {
-      catalogApi.getProducts({ q: search.trim() || undefined, per_page: 100, sort: 'created_at', dir: 'desc' })
-        .then((res) => {
+    (async () => {
+      try {
+        const list: ApiProduct[] = [];
+        for (let p = 1; p <= 10; p++) {
+          const res = await catalogApi.getProducts({ page: p, per_page: 100, sort: 'created_at', dir: 'desc' });
           if (!alive) return;
-          const list = Array.isArray(res?.data) ? res.data : [];
-          const fetched: CatalogProduct[] = list.map((p: ApiProduct) => ({
-            id: String(p.id),
-            nom: p.nom,
-            meta: p.description ?? '',
-            quantite:
-              p.disponible === false
-                ? tx("Rupture")
-                : p.stock != null
-                  ? (Number(p.stock) > 0 ? `${p.stock} en stock` : tx("Rupture"))
-                  : '',
-            prix: Number(p.prix ?? 0),
-            prixLabel: `${p.prix} F`,
-            prixMinimum: Number(p.prix_minimum ?? 0),
-            stock:
-              p.disponible === false
-                ? 'none'
-                : p.stock == null
-                  ? 'available'
-                  : Number(p.stock) <= 0
-                    ? 'none'
-                    : Number(p.stock) <= 5
-                      ? 'low'
-                      : 'available',
-            icon: mapApiCategory(p.categorie) === 'fish' ? 'set_meal' : mapApiCategory(p.categorie) === 'grain' ? 'nutrition' : mapApiCategory(p.categorie) === 'spice' ? 'restaurant' : mapApiCategory(p.categorie) === 'pack' ? 'package_2' : 'eco',
-            cat: mapApiCategory(p.categorie),
-            catRawId: p.categorie?.id,
-            catNom: p.categorie?.nom,
-            image: absImageUrl(p.image_url ?? p.img_url),
-          }));
-          setProductsList(fetched);
-          setProductsError(null);
-        })
-        .catch((err) => {
-          if (!alive) return;
-          setProductsError(alertApiError(err, 'catalog-products'));
-        })
-        .finally(() => {
-          if (alive) setProductsLoading(false);
-        });
-    }, 350);
-    return () => { alive = false; window.clearTimeout(timer); };
-  }, [search, reloadKey]);
+          const chunk = Array.isArray(res?.data) ? res.data : [];
+          list.push(...chunk);
+          if (p >= Number(res?.meta?.last_page ?? 1)) break;
+        }
+        if (!alive) return;
+        const fetched: CatalogProduct[] = list.map((p: ApiProduct) => ({
+          id: String(p.id),
+          nom: p.nom,
+          meta: p.description ?? '',
+          quantite:
+            p.disponible === false
+              ? tx("Rupture")
+              : p.stock != null
+                ? (Number(p.stock) > 0 ? `${p.stock} en stock` : tx("Rupture"))
+                : '',
+          prix: Number(p.prix ?? 0),
+          prixLabel: `${p.prix} F`,
+          prixMinimum: Number(p.prix_minimum ?? 0),
+          stock:
+            p.disponible === false
+              ? 'none'
+              : p.stock == null
+                ? 'available'
+                : Number(p.stock) <= 0
+                  ? 'none'
+                  : Number(p.stock) <= 5
+                    ? 'low'
+                    : 'available',
+          icon: mapApiCategory(p.categorie) === 'fish' ? 'set_meal' : mapApiCategory(p.categorie) === 'grain' ? 'nutrition' : mapApiCategory(p.categorie) === 'spice' ? 'restaurant' : mapApiCategory(p.categorie) === 'pack' ? 'package_2' : 'eco',
+          cat: mapApiCategory(p.categorie),
+          catRawId: p.categorie?.id,
+          catNom: p.categorie?.nom,
+          image: absImageUrl(p.image_url ?? p.img_url),
+        }));
+        setProductsList(fetched);
+        setProductsError(null);
+      } catch (err) {
+        if (!alive) return;
+        setProductsError(alertApiError(err, 'catalog-products'));
+      } finally {
+        if (alive) setProductsLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, [reloadKey]);
 
   // Curseur prix (bureau + mobile) : ramené tout à droite = plus de limite.
   const onPriceChange = (v: number) => {
@@ -268,8 +278,12 @@ export default function CatalogPage() {
 
   const filtered = useMemo(() => {
     let items = [...(packMode ? (apiPacks ?? []) : productsList)];
-    const needle = search.trim().toLowerCase();
-    if (needle) items = items.filter((p) => p.nom.toLowerCase().includes(needle) || p.meta.toLowerCase().includes(needle));
+    const needle = normalizeSearch(search.trim());
+    if (needle) {
+      items = items.filter(
+        (p) => normalizeSearch(p.nom).includes(needle) || normalizeSearch(p.meta).includes(needle),
+      );
+    }
     if (cat.startsWith('c')) {
       const id = Number(cat.slice(1));
       items = items.filter((p) => p.catRawId != null && (rootOf.get(p.catRawId) ?? p.catRawId) === id);
