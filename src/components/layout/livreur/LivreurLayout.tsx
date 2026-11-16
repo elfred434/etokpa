@@ -11,6 +11,7 @@ import { fetchLivreurProfile } from '../../../pages/livreur/livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
+import { usePreservedScroll } from '../../../hooks/usePreservedScroll';
 
 
 const NAV: { to: '/livreur' | '/livreur/course' | '/livreur/messagerie' | '/livreur/historique' | '/livreur/parametres'; icon: string; label: string; short: string; exact: boolean }[] = [
@@ -30,6 +31,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
   useLanguage();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const refreshTick = useGlobalRefreshTick();
+  const asideRef = usePreservedScroll<HTMLElement>('livreur-sidebar-aside');
   const nom = currentUserName();
   const [disponible, setDisponible] = useState<boolean | null>(null);
 
@@ -49,7 +51,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-bg-app font-body text-text-main">
       {/* SideNavBar (bureau) */}
-      <aside className="fixed left-0 top-0 z-50 hidden h-screen w-64 flex-col bg-[#F97316] text-white shadow-xl lg:flex">
+      <aside ref={asideRef} className="fixed left-0 top-0 z-50 hidden h-screen w-64 flex-col overflow-y-auto bg-[#F97316] text-white shadow-xl lg:flex">
         <div className="p-6">
           <div className="mb-8">
             <h1 className="text-2xl font-black tracking-tight text-white">TOKPa</h1>

@@ -4,6 +4,7 @@ import LogoutButton from '../../shared/LogoutButton';
 import { currentRole, currentUserName, initialsOf } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
+import { usePreservedScroll } from '../../../hooks/usePreservedScroll';
 
 
 interface AdminSidebarProps {
@@ -55,6 +56,8 @@ export default function AdminSidebar({ currentPath, open = false, onClose }: Adm
   useLanguage();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const activePath = currentPath || pathname;
+  const asideRef = usePreservedScroll<HTMLElement>('admin-sidebar-aside');
+  const navRef = usePreservedScroll<HTMLElement>('admin-sidebar-nav');
 
   const renderItem = (item: NavItem) => {
     const active =
@@ -83,6 +86,7 @@ export default function AdminSidebar({ currentPath, open = false, onClose }: Adm
 
   return (
     <aside
+      ref={asideRef}
       className={`fixed left-0 top-0 z-50 h-full w-64 flex-col overflow-y-auto border-r border-outline-variant bg-inverse-surface p-md ${open ? 'flex' : 'hidden'} lg:flex`}
       style={{ backgroundColor: 'rgb(31, 19, 11)', borderColor: 'rgba(249, 115, 22, 0.15)' }}
     >
@@ -99,7 +103,7 @@ export default function AdminSidebar({ currentPath, open = false, onClose }: Adm
         <p className="font-secondary text-label text-surface-variant opacity-70">Marketplace v2.0</p>
       </div>
 
-      <nav className="flex-1 space-y-2 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <nav ref={navRef} className="flex-1 space-y-2 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {groupLabel(tx("Gestion Métier (Admin)"))}
         {METIER_ITEMS.map(renderItem)}
         {groupLabel(tx("DevOps & Core Engine"))}

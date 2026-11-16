@@ -4,6 +4,7 @@ import LogoutButton from '../../shared/LogoutButton';
 import { currentRole, currentUserName, currentUserZone, initialsOf, isAdminRole } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
+import { usePreservedScroll } from '../../../hooks/usePreservedScroll';
 
 
 type Item = { label: string; path: string; icon: string; badge?: string };
@@ -21,8 +22,11 @@ type Props = { currentPath: string; open?: boolean; onClose?: () => void };
 
 export default function ManagerSidebar({ currentPath, open = false, onClose }: Props) {
   useLanguage();
+  const asideRef = usePreservedScroll<HTMLElement>('manager-sidebar-aside');
+  const navRef = usePreservedScroll<HTMLElement>('manager-sidebar-nav');
   return (
     <aside
+      ref={asideRef}
       className={`fixed left-0 top-0 z-50 h-screen w-64 flex-col overflow-y-auto border-r border-white/10 ${open ? 'flex' : 'hidden'} lg:flex`}
       style={{ backgroundColor: 'rgb(31,19,11)' }}
       onClick={(e) => {
@@ -52,7 +56,7 @@ export default function ManagerSidebar({ currentPath, open = false, onClose }: P
           </div>
         </div>
       </div>
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
+      <nav ref={navRef} className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
         {ITEMS.map((item) => {
           const active = currentPath === item.path;
           return (
