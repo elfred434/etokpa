@@ -175,4 +175,21 @@ describe('Compatibility with backend products without stock column (stock: null)
     });
     expect(screen.queryByText(/Tomate Dispo/)).toBeNull();
   });
+
+  it('handles ProductResource payloads where stock property is completely omitted (undefined)', async () => {
+    mocks.getProduct.mockResolvedValue({
+      data: { id: 1, nom: 'Akassa Bio', prix: 450, prix_minimum: 350, devise: 'XOF', disponible: true, categorie: { id: 1, nom: 'Féculents', slug: 'feculents' } },
+    });
+
+    render(
+      <Provider store={store}>
+        <ProductPage />
+      </Provider>,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Akassa Bio' })).toBeTruthy();
+    expect(screen.getByText('Disponible')).toBeTruthy();
+    const addBtn = screen.getByRole('button', { name: /Ajouter au panier/i }) as HTMLButtonElement;
+    expect(addBtn.disabled).toBe(false);
+  });
 });

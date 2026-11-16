@@ -137,6 +137,7 @@ export default function AdminCategoriesPage() {
     try {
       await adminApi.deleteCategory(c.id);
       setRefus('');
+      if (sel?.id === c.id) setSel(null);
       reload();
     } catch (e) {
       const msg = formatApiError(extractApiError(e));

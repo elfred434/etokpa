@@ -31,6 +31,14 @@ const DESIGN_CSS = `
  */
 const PER_PAGE = 8;
 
+const CAT_COLOR_BADGE: Record<string, string> = {
+  primary: 'bg-primary-tint text-primary',
+  tertiary: 'bg-gradient-to-br from-amber-100 to-amber-200 text-amber-text',
+  'secondary-container': 'bg-secondary-container text-on-secondary-container',
+  success: 'bg-success-light text-success-dark',
+  'on-surface-variant': 'bg-surface-container-high text-on-surface-variant',
+};
+
 export default function AdminCatalogPage() {
   useLanguage();
   useDesignScript(DESIGN_SCRIPT);
@@ -322,7 +330,7 @@ export default function AdminCatalogPage() {
                 {tab === 'categories' && slicePage(catsF).map((c: any) => (
                   <tr key={c.id} tabIndex={0} title={tx("Voir le détail")} className="cursor-pointer hover:bg-bg-secondary/50 transition-colors" onClick={() => setDetail({ kind: 'categorie', item: c })} onKeyDown={(e) => { if (e.key === 'Enter') setDetail({ kind: 'categorie', item: c }); }}>
                     <td className="py-4 px-lg" onClick={(e) => e.stopPropagation()}><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /></td>
-                    <td className="py-4 px-md"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-amber-text"><MIcon name={c.icone || 'category'} className="text-[20px]" /></div> <span className="font-body font-semibold">{c.nom}</span> </div> </td>
+                    <td className="py-4 px-md"> <div className="flex items-center gap-3"> <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${CAT_COLOR_BADGE[String(c.couleur ?? '')] ?? 'bg-gradient-to-br from-amber-100 to-amber-200 text-amber-text'}`}><MIcon name={c.icone || 'category'} className="text-[20px]" /></div> <span className="font-body font-semibold">{c.nom}</span> </div> </td>
                     <td className="py-4 px-md text-text-secondary">{c.description ?? '—'}</td>
                     <td className="py-4 px-md font-price text-primary">—</td>
                     <td className="py-4 px-md text-text-secondary">—</td>
