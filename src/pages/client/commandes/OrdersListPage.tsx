@@ -7,6 +7,7 @@ import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
 import Pagination from '../../../components/shared/Pagination';
 import TableRowActions from '../../../components/shared/TableRowActions';
+import { adminDialogs } from '../../../components/shared/AdminActionDialogs';
 import {
   ModalShell,
   BandeauFiche,
@@ -222,7 +223,11 @@ export default function OrdersListPage() {
   const [cancelling, setCancelling] = useState(false);
   const handleAnnuler = async (o: ApiOrder) => {
     if (cancelling) return;
-    if (!confirm(isFr ? `Annuler la commande #TOK-${o.id} ?` : `Cancel order #TOK-${o.id}?`)) return;
+    const confirme = await adminDialogs.confirm(
+      tr(`Annuler définitivement la commande #TOK-${o.id} ?`, `Cancel order #TOK-${o.id}?`),
+      { title: tx('Confirmer l’annulation'), confirmLabel: tx('Annuler la commande'), danger: true },
+    );
+    if (!confirme) return;
     setCancelling(true);
     try {
       await ordersApi.cancelOrder(o.id);

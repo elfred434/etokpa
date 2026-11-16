@@ -8,6 +8,7 @@ import MIcon from '../../../components/shared/MIcon';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
 import EmptyState from '../../../components/shared/EmptyState';
+import { adminDialogs } from '../../../components/shared/AdminActionDialogs';
 import { livreurApi } from '../../../services/api';
 import { fmtFcfa } from '../../../services/api/unwrap';
 import { alertApiError } from '../../../utils/apiError';
@@ -102,7 +103,19 @@ export default function LivreurCoursePage() {
 
   const changeStatus = async (statut: 'en_livraison' | 'livre') => {
     if (!order) return;
-    if (statut === 'livre' && !confirm(`Confirmer la livraison de la commande ${tokRef(order.id)} ?`)) return;
+    if (statut === 'livre') {
+      const confirme = await adminDialogs.confirm(
+        tr(
+          `Confirmer la livraison de la commande ${tokRef(order.id)} ?`,
+          `Confirm delivery of order ${tokRef(order.id)}?`,
+        ),
+        {
+          title: tx('Confirmation'),
+          confirmLabel: tx('Confirmer'),
+        },
+      );
+      if (!confirme) return;
+    }
     setBusy(true);
     try {
       const r = await livreurApi.updateStatus(order.id, statut);

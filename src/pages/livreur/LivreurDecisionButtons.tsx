@@ -91,26 +91,56 @@ export default function LivreurDecisionButtons({
         )}
       </div>
       {ask && createPortal(
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4" onClick={() => !locked && setAsk(false)}>
-          <div className="w-full max-w-[420px] rounded-2xl bg-bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-h3 text-h3 font-bold">{tx('Refuser cette course ?')}</h3>
-            <p className="mt-2 text-label text-text-secondary">
-              {tokRef(orderId)}. {tx('Elle sera remise en file pour une nouvelle attribution.')}
-            </p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button type="button" className="rounded-lg border border-border-default px-4 py-2 font-semibold" disabled={locked} onClick={() => setAsk(false)}>
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
+          onClick={() => !locked && setAsk(false)}
+        >
+          <section
+            role="alertdialog"
+            aria-modal="true"
+            className="flex min-w-0 w-full flex-col overflow-hidden rounded-2xl border border-border-default bg-bg-card text-text-main shadow-2xl"
+            style={{ width: '100%', maxWidth: '36rem', maxHeight: 'calc(100dvh - 2rem)', boxSizing: 'border-box' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="flex min-w-0 shrink-0 items-start gap-3 border-b border-border-default bg-surface-container-low px-4 py-4 sm:px-5">
+              <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-error-light text-error">
+                <MIcon name="warning" />
+              </span>
+              <h3 className="min-w-0 flex-1 break-words text-lg font-bold text-text-main">{tx('Refuser cette course ?')}</h3>
+              <button
+                type="button"
+                aria-label={tx('Fermer')}
+                disabled={locked}
+                className="shrink-0 rounded-lg p-2 text-text-secondary transition-colors hover:bg-bg-secondary hover:text-text-main"
+                onClick={() => setAsk(false)}
+              >
+                <MIcon name="close" />
+              </button>
+            </header>
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-5">
+              <p className="whitespace-pre-wrap break-words text-sm leading-6 text-text-secondary">
+                {tokRef(orderId)}. {tx('Elle sera remise en file pour une nouvelle attribution.')}
+              </p>
+            </div>
+            <footer className="flex shrink-0 flex-col-reverse gap-2 border-t border-border-default bg-bg-secondary p-4 sm:flex-row sm:justify-end sm:px-5">
+              <button
+                type="button"
+                className="w-full rounded-xl border border-border-default bg-bg-card px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-bg-app sm:w-auto"
+                disabled={locked}
+                onClick={() => setAsk(false)}
+              >
                 {tx('Annuler')}
               </button>
               <button
                 type="button"
                 disabled={locked}
                 onClick={() => void doRefuse()}
-                className="rounded-lg bg-[#991B1B] px-4 py-2 font-bold text-white disabled:opacity-50"
+                className="w-full rounded-xl bg-error px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-error-dark disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
               >
                 {busy === 'refuse' ? tx('Chargement…') : tx('Confirmer le refus')}
               </button>
-            </div>
-          </div>
+            </footer>
+          </section>
         </div>,
         document.body,
       )}

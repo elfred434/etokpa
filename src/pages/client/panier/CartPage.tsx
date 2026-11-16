@@ -6,6 +6,7 @@ import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import CartProductRemovalNotice from '../../../components/client/CartProductRemovalNotice';
 import MIcon from '../../../components/shared/MIcon';
 import ImageWithFallback from '../../../components/shared/ImageWithFallback';
+import { adminDialogs } from '../../../components/shared/AdminActionDialogs';
 import { alertApiError, extractApiError } from '../../../utils/apiError';
 import EmptyState from '../../../components/shared/EmptyState';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
@@ -516,8 +517,16 @@ export default function CartPage() {
                 {count > 0 && (
                   <button
                     type="button"
-                    onClick={() => {
-                      if (!window.confirm(tr("Vider tout le panier ?", "Empty the whole cart?"))) return;
+                    onClick={async () => {
+                      const confirme = await adminDialogs.confirm(
+                        tr("Vider tout le panier ?", "Empty the whole cart?"),
+                        {
+                          title: tx("Vider le panier"),
+                          confirmLabel: tx("Vider le panier"),
+                          danger: true,
+                        },
+                      );
+                      if (!confirme) return;
                       dispatch(clear());
                       clearCheckoutIntent();
                       toast.success(tr("Panier vidé", "Cart emptied"));

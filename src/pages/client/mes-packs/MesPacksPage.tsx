@@ -5,6 +5,7 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import ImageWithFallback from '../../../components/shared/ImageWithFallback';
+import { adminDialogs } from '../../../components/shared/AdminActionDialogs';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import type { Product } from '../../../types/models';
@@ -16,7 +17,7 @@ import { mapApiProduct } from '../../../utils/productMap';
 import { currentUserId } from '../../../routes/authGuard';
 import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { useLanguage } from '../../../context/LanguageContext';
-import { tx } from '../../../i18n/tx';
+import { tr, tx } from '../../../i18n/tx';
 import {
   deletePackDraft,
   listPackDrafts,
@@ -286,9 +287,14 @@ export default function MesPacksPage() {
     setVue('atelier');
   }
 
-  function retourGalerie() {
+  async function retourGalerie() {
     if (nom.trim() || lignes.length > 0) {
-      if (!window.confirm(tx("Quitter sans enregistrer ?"))) return;
+      const confirme = await adminDialogs.confirm(tx("Quitter sans enregistrer ?"), {
+        title: tx("Confirmation"),
+        confirmLabel: tr("Quitter", "Leave"),
+        danger: true,
+      });
+      if (!confirme) return;
     }
     setGhost(null);
     setVue('galerie');
@@ -461,8 +467,16 @@ export default function MesPacksPage() {
     }
   }
 
-  function supprimerDraft(draft: PackDraft) {
-    if (!window.confirm(tx("Supprimer ce pack ? Il disparaîtra de cet appareil."))) return;
+  async function supprimerDraft(draft: PackDraft) {
+    const confirme = await adminDialogs.confirm(
+      tx("Supprimer ce pack ? Il disparaîtra de cet appareil."),
+      {
+        title: tx("Confirmation"),
+        confirmLabel: tx("Supprimer"),
+        danger: true,
+      },
+    );
+    if (!confirme) return;
     setDrafts(deletePackDraft(draft.localId));
     toast.success(tx("Pack supprimé."));
   }
