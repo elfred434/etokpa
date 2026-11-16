@@ -1,5 +1,11 @@
 import { apiClient } from './client';
 
+export interface PointRepereZone {
+  id?: number;
+  nom?: string;
+  km_prix?: number | string;
+}
+
 /** PointRepere — exactement le modèle backend (fillable : zone_id, nom, description, latitude, longitude). */
 export interface PointRepereItem {
   id?: number;
@@ -10,6 +16,8 @@ export interface PointRepereItem {
   latitude?: number | string;
   longitude?: number | string;
   zone_id?: number;
+  /** Relation `zone` chargée par GET /api/landmarks (`PointRepere::query()->with('zone')`). */
+  zone?: PointRepereZone | null;
 }
 
 export const landmarksApi = {

@@ -57,7 +57,9 @@ export default function ConfirmationPage() {
   const state = passed?.orderId ? passed : restored ?? passed;
 
   useEffect(() => {
-    if (passed?.orderId || restored?.orderId || (!fedapayId && !status)) return;
+    // Le webhook backend (/webhooks/fedapay ou /webhook) redirige parfois vers /confirmation sans query params :
+    // si le client est connecté et que la mémoire locale est vide, on relit sa dernière commande.
+    if (passed?.orderId || restored?.orderId) return;
     if (!localStorage.getItem('tokpa_token')) return;
     let alive = true;
     (async () => {
@@ -70,22 +72,23 @@ export default function ConfirmationPage() {
         const detailRes = await ordersApi.getOrder(orderId);
         const detail = asOrder(detailRes);
         if (!detail || !alive) return;
-        const landmark = detail.landmark as { nom?: string; zone_id?: number } | undefined;
-        let zoneNom: string | undefined;
-        if (landmark?.zone_id) {
+        const landmark = detail.landmark as { nom?: string; zone_id?: number; zone?: { id?: number; nom?: string } } | undefined;
+        const landmarkZoneId = landmark?.zone_id ?? landmark?.zone?.id;
+        let zoneNom: string | undefined = typeof landmark?.zone?.nom === 'string' ? landmark.zone.nom : undefined;
+        if (!zoneNom && landmarkZoneId) {
           const zonesRes = await catalogApi.getZones();
           const zones = (zonesRes?.data ?? zonesRes ?? []) as unknown[];
-          const match = zones.map(asOrder).find((z) => Number(z?.id) === landmark.zone_id);
+          const match = zones.map(asOrder).find((z) => Number(z?.id) === landmarkZoneId);
           zoneNom = typeof match?.nom === 'string' ? match.nom : undefined;
         }
-        const payment = detail.payment as { id?: number } | undefined;
+        const payment = detail.payment as { id?: number; fedapay_ref?: string } | undefined;
         setRestored({
           orderId,
           total: Number(detail.montant_total ?? 0),
           zoneNom,
           landmarkNom: landmark?.nom,
           paymentId: payment?.id ? Number(payment.id) : undefined,
-          paymentRef: fedapayId,
+          paymentRef: fedapayId ?? payment?.fedapay_ref ?? undefined,
           paymentCurrency: 'XOF',
         });
       } catch (err) {

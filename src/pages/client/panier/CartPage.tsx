@@ -234,16 +234,18 @@ export default function CartPage() {
         successfulSources += 1;
         const rows: Array<Record<string, unknown>> = Array.isArray(res) ? res : ((res?.data ?? []) as Array<Record<string, unknown>>);
         rows.forEach((r, i) => {
+          const zoneObj = r.zone as { id?: unknown } | undefined;
+          const rawZoneId = r.zone_id ?? zoneObj?.id;
           list.push({
             key: `row-${r.id ?? i}`,
             nom: String(r.nom ?? tx("Point de repère")),
             description: String(r.description ?? ''),
             rowId: Number(r.id),
-            zoneId: r.zone_id != null ? Number(r.zone_id) : undefined,
+            zoneId: rawZoneId != null ? Number(rawZoneId) : undefined,
           });
         });
       } catch {
-        /* GET /landmarks indisponible (B-13 backend) ou hors ligne */
+        /* GET /landmarks indisponible ou hors ligne */
       }
       try {
         const res = await authApi.getProfile();
