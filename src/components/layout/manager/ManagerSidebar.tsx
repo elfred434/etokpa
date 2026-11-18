@@ -93,13 +93,24 @@ export default function ManagerSidebar({ currentPath, open = false, onClose }: P
         {/* Bascule vers l'espace client (le manager y a accès) */}
         <Link
           to="/"
-          className="mb-3 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-body text-white transition hover:bg-white/10"
+          className="mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-body text-white transition hover:bg-white/10"
         >
           <MIcon name="storefront" className="text-[18px]" />
           <span className="flex-1">{tx("Espace client")}</span>
         </Link>
+        <Link
+          to="/profil"
+          className="mb-3 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-body text-white transition hover:bg-white/10"
+        >
+          <MIcon name="account_circle" className="text-[18px]" />
+          <span className="flex-1">{tx("Profil")}</span>
+        </Link>
         {/* Utilisateur réellement connecté (plus de « Serge Migan » inventé) */}
-        <div className="flex items-center gap-3">
+        <Link
+          to="/profil"
+          title={tx("Ouvrir le profil")}
+          className="flex items-center gap-3 rounded-lg px-2 py-2 transition hover:bg-white/10"
+        >
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-label font-bold text-white">
             {initialsOf(currentUserName(), 'MG')}
           </div>
@@ -113,7 +124,7 @@ export default function ManagerSidebar({ currentPath, open = false, onClose }: P
                   : tx("Manager de zone")}
             </p>
           </div>
-        </div>
+        </Link>
         <LogoutButton withLabel tone="inverse" className="mt-3 w-full justify-start rounded-lg px-3 py-2 text-left text-white/80 hover:bg-white/10 hover:text-white" />
       </div>
     </aside>

@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 import MobileTableBridge from '../../shared/MobileTableBridge';
 import {
@@ -106,10 +107,15 @@ export default function ManagerLayout({ children, currentPath }: Props) {
           >
             <MIcon name="notifications" className="text-[18px]" />
           </button>
-          <div className="flex items-center gap-2">
+          <Link
+            to="/profil"
+            aria-label={tx("Ouvrir le profil")}
+            title={tx("Ouvrir le profil")}
+            className="flex items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-bg-secondary"
+          >
             <UserAvatar name={nom} fallback="MG" className="h-8 w-8 bg-primary-tint text-overline text-primary" />
             <p className="hidden max-w-[140px] truncate text-label font-semibold sm:block">{nom ?? (admin ? tx("Administrateur") : 'Manager')}</p>
-          </div>
+          </Link>
         </div>
       </header>
       <main id="manager-main" className="ml-0 space-y-lg px-4 pb-4 pt-[calc(52px+16px)] lg:ml-64 lg:px-lg lg:pb-lg lg:pt-[calc(52px+24px)]">{children}</main>

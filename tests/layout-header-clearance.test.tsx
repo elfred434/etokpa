@@ -77,5 +77,6 @@ describe('fixed header clearance on admin and manager layouts', () => {
     expect(cls).toContain('lg:pt-[calc(52px+24px)]');
     expect(cls).not.toContain('lg:p-lg');
     expect(cls).not.toContain('p-4');
+    expect(container.querySelector('header a[href="/profil"]')).not.toBeNull();
   });
 });

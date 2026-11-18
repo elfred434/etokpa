@@ -86,5 +86,6 @@ describe('sidebar scroll persistence across route navigation', () => {
     const second = render(<ManagerSidebar currentPath="/manager/parametres" />);
     expect(second.container.querySelector('aside')!.scrollTop).toBe(95);
     expect(second.container.querySelector('nav')!.scrollTop).toBe(210);
+    expect(second.container.querySelector('aside a[href="/profil"]')).not.toBeNull();
   });
 });

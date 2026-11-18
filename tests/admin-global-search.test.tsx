@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import type { ReactNode } from "react";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { rememberSessionUser } from "../src/routes/authGuard";
@@ -7,6 +8,11 @@ const mocks = vi.hoisted(() => ({ navigate: vi.fn() }));
 
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => mocks.navigate,
+  Link: ({ to, children, ...rest }: { to: string; children?: ReactNode }) => (
+    <a href={to} {...rest}>
+      {children}
+    </a>
+  ),
 }));
 vi.mock("../src/components/layout/admin/AdminSidebar", () => ({
   default: () => null,
@@ -109,5 +115,6 @@ describe("AdminLayout global search", () => {
     expect(screen.getByText("Elfred D.")).toBeTruthy();
     expect(screen.getByText("ED")).toBeTruthy();
     expect(screen.queryByText("Elfred K.")).toBeNull();
+    expect(screen.getByRole("link", { name: "Ouvrir le profil" }).getAttribute("href")).toBe("/profil");
   });
 });

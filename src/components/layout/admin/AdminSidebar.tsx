@@ -124,8 +124,17 @@ export default function AdminSidebar({ currentPath, open = false, onClose }: Adm
           <MIcon name="storefront" />
           <span className="font-secondary text-body">{tx("Espace client")}</span>
         </Link>
+        <Link to="/profil" className={IDLE_CLASS} onClick={onClose}>
+          <MIcon name="account_circle" />
+          <span className="font-secondary text-body">{tx("Profil")}</span>
+        </Link>
         {/* Utilisateur réellement connecté (plus de profil générique) */}
-        <div className="flex items-center gap-3 py-4">
+        <Link
+          to="/profil"
+          title={tx("Ouvrir le profil")}
+          className="flex items-center gap-3 rounded-lg px-2 py-3 transition-colors hover:bg-white/10"
+          onClick={onClose}
+        >
           <div className="w-10 h-10 rounded-full border border-white/20 bg-white/10 flex items-center justify-center text-white font-bold text-label">
             {initialsOf(currentUserName(), 'AD')}
           </div>
@@ -135,7 +144,7 @@ export default function AdminSidebar({ currentPath, open = false, onClose }: Adm
               {currentRole() === 'super_admin' ? tx("Super administrateur") : tx("Administrateur")}
             </span>
           </div>
-        </div>
+        </Link>
         <LogoutButton withLabel tone="inverse" className="w-full justify-start rounded-lg px-4 py-3 text-left text-white hover:bg-white/10" />
       </div>
     </aside>

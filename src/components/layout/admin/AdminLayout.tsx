@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import AdminSidebar from './AdminSidebar';
 import MobileTableBridge from '../../shared/MobileTableBridge';
 import MIcon from '../../shared/MIcon';
@@ -161,7 +161,12 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
             <MIcon name="help" />
           </button>
           <div className="mx-1 hidden h-8 w-[1px] bg-border-default sm:mx-2 sm:block" />
-          <div className="flex items-center gap-sm">
+          <Link
+            to="/profil"
+            aria-label={tx("Ouvrir le profil")}
+            title={tx("Ouvrir le profil")}
+            className="flex items-center gap-sm rounded-lg px-1.5 py-1 transition-colors hover:bg-bg-app"
+          >
             <UserAvatar
               name={userName}
               fallback="AD"
@@ -170,7 +175,7 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
             <span className="hidden font-secondary text-label font-bold text-primary sm:inline">
               {userName ?? tx("Admin TOKPa")}
             </span>
-          </div>
+          </Link>
         </div>
       </header>
 

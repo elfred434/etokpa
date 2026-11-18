@@ -82,6 +82,10 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
             <MIcon name="storefront" className="text-[20px]" />
             <span className="text-[14px] font-medium">{tx("Espace client")}</span>
           </Link>
+          <Link to="/profil" className="flex items-center gap-3 rounded-lg px-3 py-2 text-white/80 transition-colors hover:text-white">
+            <MIcon name="account_circle" className="text-[20px]" />
+            <span className="text-[14px] font-medium">{tx("Profil")}</span>
+          </Link>
           <LogoutButton withLabel tone="inverse" className="w-full justify-start rounded-lg px-3 py-2 text-white/80 hover:bg-white/10 hover:text-white" />
         </div>
       </aside>
@@ -97,7 +101,12 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
             <Link to="/notifications" aria-label={tx("Notifications")} className="text-text-secondary transition-colors hover:text-primary">
               <MIcon name="notifications" />
             </Link>
-            <div className="flex min-w-0 items-center gap-sm border-l border-border-default pl-2 sm:pl-lg">
+            <Link
+              to="/profil"
+              aria-label={tx("Ouvrir le profil")}
+              title={tx("Ouvrir le profil")}
+              className="flex min-w-0 items-center gap-sm rounded-lg border-l border-border-default py-1 pl-2 pr-1 transition-colors hover:bg-bg-app sm:pl-lg"
+            >
               <div className="hidden min-w-0 text-right sm:block">
                 <p className="truncate font-label text-label leading-none text-text-main">{nom ?? tx("Livreur")}</p>
                 {disponible !== null && (
@@ -111,7 +120,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
                 fallback="LV"
                 className="h-8 w-8 bg-primary-tint text-xs text-primary ring-2 ring-primary-container"
               />
-            </div>
+            </Link>
           </div>
         </header>
         {children}
