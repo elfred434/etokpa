@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import Pagination from '../shared/Pagination';
 import { ModalShell, BandeauFiche, FicheCard, LigneFiche, BoutonFermer } from '../shared/ModalShell';
 import TableRowActions from '../shared/TableRowActions';
+import { MobileFilterDrawer, MobileFilterTrigger } from '../shared/MobileFilterDrawer';
 import { adminApi, catalogApi, managerApi } from '../../services/api';
 import { dateCourte, fmtFcfa, listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -127,6 +128,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<PlatformOrder | null>(null);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
@@ -292,7 +294,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="hidden md:flex flex-wrap items-center gap-2">
         {FILTRES.map((f) => (
           <button
             key={f.statut || 'toutes'}
@@ -365,14 +367,25 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
           appliquerRecherche();
         }}
       >
-        <input
-          type="search"
-          aria-label={tx("Rechercher une commande, un client ou un article")}
-          placeholder={tx("Rechercher une commande, un client ou un article…")}
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="min-w-0 flex-1 rounded-lg border border-border-default bg-bg-card px-3 py-2 text-label"
-        />
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <input
+            type="search"
+            aria-label={tx("Rechercher une commande, un client ou un article")}
+            placeholder={tx("Rechercher une commande, un client ou un article…")}
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="min-w-0 flex-1 rounded-lg border border-border-default bg-bg-card px-3 py-2 text-label"
+          />
+          <MobileFilterTrigger
+            onClick={() => setMobileFilterOpen(true)}
+            activeCount={
+              Number(Boolean(statut)) +
+              Number(source === 'admin' && Boolean(zoneId)) +
+              Number(Boolean(dateFrom)) +
+              Number(Boolean(dateTo))
+            }
+          />
+        </div>
         <button type="submit" className="btn btn-primary px-4 py-2 text-label">
           {tx("Rechercher")}
         </button>
@@ -392,6 +405,83 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
           </button>
         )}
       </form>
+
+      <MobileFilterDrawer
+        open={mobileFilterOpen}
+        title={tx("Filtres des commandes")}
+        onClose={() => setMobileFilterOpen(false)}
+        onReset={() => {
+          setStatut('');
+          setZoneId('');
+          setDateFrom('');
+          setDateTo('');
+          setSearch('');
+          setAppliedSearch('');
+          setPage(1);
+          onSearchCommit?.('');
+        }}
+        applyLabel={`${tx("Voir")} (${visibleTotal})`}
+      >
+        <div>
+          <h4 className="mb-sm font-h3 text-h3 text-on-surface">{tx("Statut")}</h4>
+          <div className="grid grid-cols-2 gap-2">
+            {FILTRES.map((f) => (
+              <button
+                key={f.statut || 'toutes'}
+                type="button"
+                onClick={() => setStatut(f.statut)}
+                className={`rounded-lg p-2 text-left text-xs transition-all ${
+                  statut === f.statut
+                    ? 'bg-primary-tint font-bold text-primary'
+                    : 'bg-bg-secondary text-text-secondary'
+                }`}
+              >
+                {tx(f.label)}
+              </button>
+            ))}
+          </div>
+        </div>
+        {source === 'admin' && (
+          <div className="border-t border-border-default pt-4">
+            <label className="mb-1 block text-xs font-semibold text-text-secondary">{tx("Zone de livraison")}</label>
+            <select
+              aria-label={tx("Filtrer par zone")}
+              value={zoneId}
+              onChange={(e) => setZoneId(e.target.value)}
+              className="w-full rounded-lg border border-border-default bg-bg-card px-3 py-2 text-label"
+            >
+              <option value="">{tx("Toutes les zones")}</option>
+              {zones.map((z) => (
+                <option key={z.id} value={String(z.id)}>{z.nom}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        <div className="border-t border-border-default pt-4 grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1 text-xs font-semibold text-text-secondary">
+            <span>{tx("Du")}</span>
+            <input
+              type="date"
+              aria-label={tx("Date de début")}
+              value={dateFrom}
+              max={dateTo || undefined}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-full rounded-lg border border-border-default bg-bg-card px-2.5 py-2 text-label text-on-surface"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-semibold text-text-secondary">
+            <span>{tx("Au")}</span>
+            <input
+              type="date"
+              aria-label={tx("Date de fin")}
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-full rounded-lg border border-border-default bg-bg-card px-2.5 py-2 text-label text-on-surface"
+            />
+          </label>
+        </div>
+      </MobileFilterDrawer>
       {filterMode && !loading && (
         <p className="text-label text-text-secondary" role="status">
           {appliedSearch ? `${tx("Résultats pour")} « ${appliedSearch} » : ${visibleTotal}` : `${tx("Résultats filtrés")} : ${visibleTotal}`}

@@ -9,6 +9,7 @@ import AdminLayout from '../../components/layout/admin/AdminLayout';
 import AdminNotificationBell from '../../components/layout/admin/AdminNotificationBell';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import TableRowActions from '../../components/shared/TableRowActions';
+import { MobileFilterDrawer, MobileFilterTrigger } from '../../components/shared/MobileFilterDrawer';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { currentUserId, currentUserZone, rememberUserZone } from '../../routes/authGuard';
@@ -142,6 +143,7 @@ export default function AdminUsersPage() {
   const [roleTab, setRoleTab] = useState<RoleTab>('all');
   const [statusF, setStatusF] = useState('all');
   const [zoneF, setZoneF] = useState('all');
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
   useEffect(() => {
     setSearch(querySearch ?? '');
@@ -524,7 +526,90 @@ export default function AdminUsersPage() {
         </div>
 
         <div className="bg-bg-card rounded-[14px] border border-gray-200 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-4 border-b border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50/50">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between gap-3 bg-gray-50/50 md:hidden">
+            <span className="text-xs font-semibold text-gray-600">
+              {filtered.length} {tx("utilisateur(s)")}
+            </span>
+            <MobileFilterTrigger
+              onClick={() => setMobileFilterOpen(true)}
+              activeCount={
+                Number(roleTab !== 'all') +
+                Number(statusF !== 'all') +
+                Number(zoneF !== 'all')
+              }
+            />
+          </div>
+
+          <MobileFilterDrawer
+            open={mobileFilterOpen}
+            title={tx("Filtres utilisateurs")}
+            onClose={() => setMobileFilterOpen(false)}
+            onReset={() => {
+              setRoleTab('all');
+              setStatusF('all');
+              setZoneF('all');
+              setPage(1);
+            }}
+            applyLabel={`${tx("Voir")} (${filtered.length})`}
+          >
+            <div>
+              <h4 className="mb-sm font-h3 text-h3 text-on-surface">{tx("Rôle")}</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {(
+                  [
+                    ['all', `Tous (${fmt(stats.total)})`],
+                    ['client', `Clients (${fmt(stats.client)})`],
+                    ['livreur', `Livreurs (${fmt(stats.livreur)})`],
+                    ['manager', `Managers (${fmt(stats.manager)})`],
+                    ['admin', `Admins (${fmt(stats.admin)})`],
+                  ] as [RoleTab, string][]
+                ).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => choose(() => setRoleTab(id))}
+                    className={`rounded-lg p-2 text-left text-xs transition-all ${
+                      roleTab === id
+                        ? 'bg-primary-tint font-bold text-primary'
+                        : 'bg-bg-secondary text-text-secondary'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="border-t border-border-default pt-4">
+              <label className="mb-1 block text-xs font-semibold text-gray-500">{tx("Statut :")}</label>
+              <select
+                className="w-full rounded-lg border border-gray-200 bg-bg-card px-3 py-2 text-xs text-gray-700 focus:border-primary focus:outline-none"
+                value={statusF}
+                onChange={(e) => choose(() => setStatusF(e.target.value))}
+              >
+                <option value="all">{tx("Tous les statuts")}</option>
+                <option value="actif">{tx("Actifs")}</option>
+                <option value="inactif">{tx("Inactifs")}</option>
+                <option value="suspendu">{tx("Suspendus")}</option>
+              </select>
+            </div>
+            <div className="border-t border-border-default pt-4">
+              <label className="mb-1 block text-xs font-semibold text-gray-500">{tx("Zone :")}</label>
+              <select
+                className="w-full rounded-lg border border-gray-200 bg-bg-card px-3 py-2 text-xs text-gray-700 focus:border-primary focus:outline-none"
+                value={zoneF}
+                onChange={(e) => choose(() => setZoneF(e.target.value))}
+              >
+                <option value="all">{tx("Toutes les zones")}</option>
+                {zones.map((z) => (
+                  <option key={z.id} value={String(z.id)}>
+                    {z.nom}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </MobileFilterDrawer>
+
+          <div className="hidden md:flex p-4 border-b border-gray-200 md:items-center justify-between gap-4 bg-gray-50/50">
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0" id="roleFilters">
               {(
                 [

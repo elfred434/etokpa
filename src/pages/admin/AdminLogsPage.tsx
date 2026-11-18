@@ -6,6 +6,7 @@ import { acteur, categorie, detail, quand, titre } from '../../utils/auditLog';
 import { alertApiError } from '../../utils/apiError';
 import { exportAuditLogsPdf } from '../../utils/auditPdf';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
+import { MobileFilterDrawer, MobileFilterTrigger } from '../../components/shared/MobileFilterDrawer';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
@@ -58,6 +59,8 @@ export default function AdminLogsPage() {
   const [from, setFrom] = useState('');
   const [applied, setApplied] = useState<{ action?: string; from?: string }>({});
   const [type, setType] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
   const refreshTick = useGlobalRefreshTick();
 
@@ -83,6 +86,19 @@ export default function AdminLogsPage() {
     setApplied({ ...(search.trim() ? { action: search.trim() } : {}), ...(from ? { from } : {}) });
     setPage(1);
   };
+  const resetFiltres = () => {
+    setSearch('');
+    setType('');
+    setRoleFilter('');
+    setFrom('');
+    setApplied({});
+    setPage(1);
+  };
+  const activeFilterCount =
+    Number(Boolean(search.trim())) +
+    Number(Boolean(type)) +
+    Number(Boolean(roleFilter)) +
+    Number(Boolean(from));
   const visibles = type ? logs.filter((l) => categorie(l) === type) : logs;
 
   const chargerLogsPourExport = async () => {
@@ -173,7 +189,88 @@ export default function AdminLogsPage() {
           <p>{err}</p>
         </div>
       )}
-      <section className="bg-bg-card border border-border-default rounded-[14px] p-lg mb-xl shadow-sm">
+      {/* Barre de filtres compacte mobile */}
+      <div className="mb-lg flex items-center gap-2 md:hidden">
+        <div className="relative min-w-0 flex-1">
+          <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"></i>
+          <input
+            className="w-full pl-9 pr-3 py-2 text-label border-border-default border-[1.5px] rounded-[10px] bg-bg-card focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none transition-all"
+            placeholder={tx("Rechercher une action…")}
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && appliquer()}
+          />
+        </div>
+        <MobileFilterTrigger
+          onClick={() => setMobileFilterOpen(true)}
+          activeCount={activeFilterCount}
+        />
+      </div>
+
+      <MobileFilterDrawer
+        open={mobileFilterOpen}
+        title={tx("Filtres des logs")}
+        onClose={() => setMobileFilterOpen(false)}
+        onReset={resetFiltres}
+        onApply={() => {
+          appliquer();
+          setMobileFilterOpen(false);
+        }}
+        applyLabel={tx("Appliquer")}
+      >
+        <div>
+          <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Recherche")}</label>
+          <div className="relative">
+            <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"></i>
+            <input
+              className="w-full pl-10 pr-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none transition-all"
+              placeholder={tx("Action (ex : users, DELETE, OrderStatusChanged)")}
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="border-t border-border-default pt-4">
+          <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Type d'action")}</label>
+          <select
+            className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none bg-bg-card"
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+          >
+            {TYPES.map(([v, l]) => (
+              <option key={v} value={v}>
+                {tx(l)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="border-t border-border-default pt-4">
+          <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Rôle")}</label>
+          <select
+            className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none bg-bg-card"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+          >
+            <option value="">{tx("Tous les rôles")}</option>
+            <option value="admin">{tx("Administrateur")}</option>
+            <option value="vendeur">{tx("Vendeur")}</option>
+            <option value="client">{tx("Client")}</option>
+            <option value="livreur">{tx("Livreur")}</option>
+          </select>
+        </div>
+        <div className="border-t border-border-default pt-4">
+          <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Période (à partir du)")}</label>
+          <div className="flex flex-wrap items-center gap-2 rounded-[10px] border-[1.5px] border-border-default bg-bg-card px-4 py-2">
+            <i className="ti ti-calendar text-text-secondary"></i>
+            <input type="date" className="flex-1 text-body text-text-main outline-none bg-transparent" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={tx("Date de début")} />
+            <span className="text-body text-text-secondary">{tx("→ Aujourd'hui")}</span>
+          </div>
+        </div>
+      </MobileFilterDrawer>
+
+      <section className="hidden md:block bg-bg-card border border-border-default rounded-[14px] p-lg mb-xl shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-md mb-md">
           <div className="relative">
             <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Recherche")}</label>
@@ -205,12 +302,16 @@ export default function AdminLogsPage() {
           </div>
           <div>
             <label className="block text-secondary font-secondary text-text-secondary mb-1">{tx("Rôle")}</label>
-            <select className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none appearance-none bg-bg-card">
-              <option>{tx("Tous les rôles")}</option>
-              <option>{tx("Administrateur")}</option>
-              <option>{tx("Vendeur")}</option>
-              <option>{tx("Client")}</option>
-              <option>{tx("Livreur")}</option>
+            <select
+              className="w-full px-4 py-2 border-border-default border-[1.5px] rounded-[10px] focus:ring-[3px] focus:ring-primary/15 focus:border-primary-container outline-none appearance-none bg-bg-card"
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+            >
+              <option value="">{tx("Tous les rôles")}</option>
+              <option value="admin">{tx("Administrateur")}</option>
+              <option value="vendeur">{tx("Vendeur")}</option>
+              <option value="client">{tx("Client")}</option>
+              <option value="livreur">{tx("Livreur")}</option>
             </select>
           </div>
         </div>

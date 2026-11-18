@@ -14,6 +14,7 @@ import MIcon from '../../components/shared/MIcon';
 import ImageWithFallback from '../../components/shared/ImageWithFallback';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import TableRowActions from '../../components/shared/TableRowActions';
+import { MobileFilterDrawer, MobileFilterTrigger } from '../../components/shared/MobileFilterDrawer';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { useGlobalRefreshTick } from '../../hooks/useRefresh';
@@ -59,6 +60,7 @@ export default function AdminCatalogPage() {
   const [q, setQ] = useState('');
   const [catF, setCatF] = useState('');
   const [dispoF, setDispoF] = useState('');
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
   useEffect(() => setPage(1), [tab, q, catF, dispoF]); // nouveau filtre → première page
   const [edition, setEdition] = useState<any | null>(null);
@@ -297,7 +299,47 @@ export default function AdminCatalogPage() {
                 <button key={k} type="button" onClick={() => setTab(k)} className={`pb-3 px-2 font-h3 text-h3 transition-all ${tab === k ? 'text-primary border-b-2 border-primary' : 'text-text-tertiary hover:text-on-surface-variant'}`}>{label}</button>
               ))} </div> <button className="flex items-center gap-2 bg-primary-container hover:bg-primary-hover text-white px-md py-2.5 rounded-lg font-bold shadow-lg shadow-primary/10 transition-transform active:scale-95" type="button" onClick={() => ouvrir(null)}> <MIcon name="add" />
                     {tx("Nouveau produit")}
-                </button> </div>  <div className="bg-bg-card p-md rounded-lg shadow-sm flex flex-wrap items-center gap-4 border border-border-default"> <div className="flex-1 min-w-[200px]"> <div className="relative"> <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-sm" /> <input className="w-full pl-9 pr-4 py-2 text-label bg-bg-card border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" placeholder={tx("Nom, SKU ou ID...")} type="text" value={q} onChange={(e) => setQ(e.target.value)} /> </div> </div> <select className="px-md py-2 text-label bg-bg-card border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none min-w-[140px]" value={catF} onChange={(e) => setCatF(e.target.value)}> <option value="">{tx("Catégorie: Tout")}</option>
+                </button> </div>
+          <div className="flex items-center gap-2 md:hidden">
+            <div className="relative min-w-0 flex-1">
+              <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-sm" />
+              <input className="w-full pl-9 pr-3 py-2 text-label bg-bg-card border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" placeholder={tx("Nom, SKU ou ID...")} type="text" value={q} onChange={(e) => setQ(e.target.value)} />
+            </div>
+            <MobileFilterTrigger
+              onClick={() => setMobileFilterOpen(true)}
+              activeCount={Number(Boolean(catF)) + Number(Boolean(dispoF))}
+            />
+          </div>
+          <MobileFilterDrawer
+            open={mobileFilterOpen}
+            title={tx("Filtres du catalogue")}
+            onClose={() => setMobileFilterOpen(false)}
+            onReset={() => {
+              setQ('');
+              setCatF('');
+              setDispoF('');
+            }}
+            applyLabel={`${tx("Voir")} (${tab === 'produits' ? produitsF.length : catsF.length})`}
+          >
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-text-secondary">{tx("Catégorie")}</label>
+              <select className="w-full px-md py-2 text-label bg-bg-card border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" value={catF} onChange={(e) => setCatF(e.target.value)}>
+                <option value="">{tx("Catégorie: Tout")}</option>
+                {cats.map((c: any) => (
+                  <option key={c.id} value={String(c.id)}>{c.nom}</option>
+                ))}
+              </select>
+            </div>
+            <div className="border-t border-border-default pt-4">
+              <label className="mb-1 block text-xs font-semibold text-text-secondary">{tx("Disponibilité")}</label>
+              <select className="w-full px-md py-2 text-label bg-bg-card border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" value={dispoF} onChange={(e) => setDispoF(e.target.value)}>
+                <option value="">{tx("Disponibilité")}</option>
+                <option value="stock">{tx("En stock")}</option>
+                <option value="rupture">{tx("Rupture")}</option>
+              </select>
+            </div>
+          </MobileFilterDrawer>
+          <div className="hidden md:flex bg-bg-card p-md rounded-lg shadow-sm flex-wrap items-center gap-4 border border-border-default"> <div className="flex-1 min-w-[200px]"> <div className="relative"> <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-sm" /> <input className="w-full pl-9 pr-4 py-2 text-label bg-bg-card border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" placeholder={tx("Nom, SKU ou ID...")} type="text" value={q} onChange={(e) => setQ(e.target.value)} /> </div> </div> <select className="px-md py-2 text-label bg-bg-card border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none min-w-[140px]" value={catF} onChange={(e) => setCatF(e.target.value)}> <option value="">{tx("Catégorie: Tout")}</option>
                 {cats.map((c: any) => (
                   <option key={c.id} value={String(c.id)}>{c.nom}</option>
                 ))}
