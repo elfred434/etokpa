@@ -260,7 +260,7 @@ describe('modale de confirmation partagée — clientèle et livreur', () => {
 
     const hits: string[] = [];
     for (const file of walk(srcRoot)) {
-      const rel = path.relative(srcRoot, file);
+      const rel = path.relative(srcRoot, file).replace(/\\/g, '/');
       if (rel === 'components/shared/AdminActionDialogs.tsx') continue;
       const stripped = fs
         .readFileSync(file, 'utf8')
