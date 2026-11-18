@@ -7,12 +7,16 @@ const mocks = vi.hoisted(() => ({
   useCartSync: vi.fn(),
   useAutoRefresh: vi.fn(),
   useRealtimeNotifications: vi.fn(),
+  getProfile: vi.fn().mockResolvedValue({ data: null }),
 }));
 
 vi.mock('../src/hooks/useCartSync', () => ({ useCartSync: mocks.useCartSync }));
 vi.mock('../src/hooks/useRefresh', () => ({ useAutoRefresh: mocks.useAutoRefresh }));
 vi.mock('../src/hooks/useRealtimeNotifications', () => ({
   useRealtimeNotifications: mocks.useRealtimeNotifications,
+}));
+vi.mock('../src/services/api', () => ({
+  authApi: { getProfile: mocks.getProfile },
 }));
 
 import SystemBridge from '../src/components/system/SystemBridge';
@@ -96,5 +100,21 @@ describe('SystemBridge server-cart role gate', () => {
     renderBridge();
 
     expect(mocks.useCartSync).toHaveBeenCalledWith(0);
+  });
+
+  it('syncs stale tokpa_user name from GET /profile when authenticated', async () => {
+    mocks.getProfile.mockResolvedValueOnce({
+      data: { id: 13, prenom: 'Elfred', nom: 'D.', nom_complet: 'Elfred D.', role: { nom: 'super_admin' } },
+    });
+    setSession({ id: 13, prenom: 'Elfred', nom: 'K.', nom_complet: 'Elfred K.', role: { nom: 'super_admin' } });
+
+    renderBridge();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const stored = JSON.parse(localStorage.getItem('tokpa_user')!);
+    expect(stored.nom).toBe('D.');
+    expect(stored.nom_complet).toBe('Elfred D.');
   });
 });

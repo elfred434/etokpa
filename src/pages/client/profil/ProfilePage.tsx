@@ -110,6 +110,7 @@ export default function ProfilePage() {
       const p: UserProfile | undefined = res?.data ?? res;
       if (p) {
         setProfile(p);
+        rememberSessionUser(p as unknown as Record<string, unknown>);
       }
     } catch (err) {
       alertApiError(err, 'profile-load');
@@ -232,7 +233,7 @@ export default function ProfilePage() {
   }
 
   const userFullName =
-    profile?.nom_complet || (profile?.prenom ? `${profile.prenom} ${profile.nom}` : 'Utilisateur TOKPa');
+    [profile?.prenom, profile?.nom].filter(Boolean).join(' ').trim() || profile?.nom_complet || 'Utilisateur TOKPa';
   const userRole = typeof profile?.role === 'object' ? profile.role.nom : profile?.role || 'Client';
   const role = currentRole();
   const orderCount = !role || role === 'client' ? (dashCount ?? recentOrders.length) : recentOrders.length;
@@ -259,11 +260,12 @@ export default function ProfilePage() {
     try {
       const prenom = formPrenom.trim();
       const nom = formNomUser.trim();
+      const fullName = [prenom, nom].filter(Boolean).join(' ');
       const serverPhoto = formPhoto && !formPhoto.startsWith('data:') && formPhoto.length <= 500 ? formPhoto : undefined;
       const res = await authApi.updateProfile({
         prenom,
         nom,
-        nom_complet: [prenom, nom].filter(Boolean).join(' '),
+        ...(prenom && nom ? {} : { nom_complet: fullName }),
         email,
         telephone: formTelephone.trim() || undefined,
         ...(formPhoto ? (serverPhoto ? { image_profil: serverPhoto } : {}) : { image_profil: null }),

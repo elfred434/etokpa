@@ -12,6 +12,7 @@ vi.mock('../src/routes/authGuard', () => ({
   currentUserZone: () => 'Dantokpa',
   isAdminRole: () => true,
   rememberUserZone: vi.fn(),
+  useAuthRevision: () => 0,
 }));
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { rememberSessionUser } from "../src/routes/authGuard";
 
 const mocks = vi.hoisted(() => ({ navigate: vi.fn() }));
 
@@ -37,6 +38,8 @@ vi.mock("../src/i18n/tx", () => ({
 import AdminLayout from "../src/components/layout/admin/AdminLayout";
 
 afterEach(() => {
+  cleanup();
+  localStorage.clear();
   vi.clearAllMocks();
 });
 
@@ -81,5 +84,30 @@ describe("AdminLayout global search", () => {
       to: "/admin/commandes",
       search: { q: "#482" },
     });
+  });
+
+  it("displays the connected user's name and updates dynamically when session profile changes", () => {
+    localStorage.setItem("tokpa_token", "tok");
+    localStorage.setItem(
+      "tokpa_user",
+      JSON.stringify({ id: 13, prenom: "Elfred", nom: "K.", nom_complet: "Elfred K.", role: "super_admin" }),
+    );
+    render(
+      <AdminLayout currentPath="/admin">
+        <span>Contenu</span>
+      </AdminLayout>,
+    );
+
+    expect(screen.getByText("Elfred K.")).toBeTruthy();
+    expect(screen.getByText("EK")).toBeTruthy();
+    expect(screen.queryByText("Admin TOKPa")).toBeNull();
+
+    act(() => {
+      rememberSessionUser({ prenom: "Elfred", nom: "D." });
+    });
+
+    expect(screen.getByText("Elfred D.")).toBeTruthy();
+    expect(screen.getByText("ED")).toBeTruthy();
+    expect(screen.queryByText("Elfred K.")).toBeNull();
   });
 });

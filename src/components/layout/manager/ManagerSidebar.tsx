@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 import LogoutButton from '../../shared/LogoutButton';
-import { currentRole, currentUserName, currentUserZone, initialsOf, isAdminRole } from '../../../routes/authGuard';
+import { currentRole, currentUserName, currentUserZone, initialsOf, isAdminRole, useAuthRevision } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import { usePreservedScroll } from '../../../hooks/usePreservedScroll';
@@ -22,6 +22,7 @@ type Props = { currentPath: string; open?: boolean; onClose?: () => void };
 
 export default function ManagerSidebar({ currentPath, open = false, onClose }: Props) {
   useLanguage();
+  useAuthRevision();
   const asideRef = usePreservedScroll<HTMLElement>('manager-sidebar-aside');
   const navRef = usePreservedScroll<HTMLElement>('manager-sidebar-nav');
   return (

@@ -1,7 +1,7 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 import LogoutButton from '../../shared/LogoutButton';
-import { currentRole, currentUserName, initialsOf } from '../../../routes/authGuard';
+import { currentRole, currentUserName, initialsOf, useAuthRevision } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import { usePreservedScroll } from '../../../hooks/usePreservedScroll';
@@ -54,6 +54,7 @@ const IDLE_CLASS =
  */
 export default function AdminSidebar({ currentPath, open = false, onClose }: AdminSidebarProps) {
   useLanguage();
+  useAuthRevision();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const activePath = currentPath || pathname;
   const asideRef = usePreservedScroll<HTMLElement>('admin-sidebar-aside');

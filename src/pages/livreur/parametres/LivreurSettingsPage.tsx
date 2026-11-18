@@ -46,6 +46,14 @@ export default function LivreurSettingsPage() {
       .then((p) => {
         if (!alive) return;
         setProfile(p);
+        rememberSessionUser({
+          prenom: p.prenom,
+          nom: p.nom,
+          nom_complet: p.nom_complet,
+          email: p.email,
+          telephone: p.telephone,
+          image_profil: p.image_profil,
+        });
         if (!dirtyRef.current) {
           setPrenom(p.prenom ?? '');
           setNom(p.nom ?? '');
@@ -74,7 +82,7 @@ export default function LivreurSettingsPage() {
       const res = await authApi.updateProfile({
         prenom: prenom.trim(),
         nom: nom.trim(),
-        nom_complet: nomComplet,
+        ...(prenom.trim() && nom.trim() ? {} : { nom_complet: nomComplet }),
         email: mail,
         telephone: telephone.trim() || undefined,
         ...(photo ? (serverPhoto ? { image_profil: serverPhoto } : {}) : { image_profil: null }),
@@ -113,7 +121,7 @@ export default function LivreurSettingsPage() {
     navigate({ to: '/connexion' });
   };
 
-  const nomAffiche = profile?.nom_complet || [profile?.prenom, profile?.nom].filter(Boolean).join(' ') || tx("Livreur");
+  const nomAffiche = [profile?.prenom, profile?.nom].filter(Boolean).join(' ').trim() || profile?.nom_complet || tx("Livreur");
   const inputCls =
     'w-full rounded-[10px] border border-border-default bg-bg-card px-md py-sm font-body text-body text-text-main transition-all focus:bg-primary-tint/30 focus:outline-none';
 

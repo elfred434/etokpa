@@ -97,7 +97,11 @@ export function isAdminRole(role: string | null = currentRole()): boolean {
 /** Nom affichable de l'utilisateur connecté (barres admin / manager / livreur), sinon null. */
 export function currentUserName(): string | null {
   const u = storedUser();
-  const nom = u?.nom_complet || [u?.prenom, u?.nom].filter(Boolean).join(' ');
+  const fromParts = [u?.prenom, u?.nom]
+    .map((part) => (typeof part === 'string' ? part.trim() : ''))
+    .filter(Boolean)
+    .join(' ');
+  const nom = fromParts || (typeof u?.nom_complet === 'string' ? u.nom_complet.trim() : '');
   return nom || null;
 }
 
@@ -129,12 +133,22 @@ export function rememberUserZone(zoneId: number, nom?: string) {
   }
 }
 
-/** Fusionne la fiche renvoyée par PUT /profile dans la session affichée. */
+/** Fusionne la fiche renvoyée par GET/PUT /profile dans la session affichée. */
 export function rememberSessionUser(patch: Record<string, unknown>) {
   try {
-    const current = storedUser() ?? {};
-    const next = { ...current, ...patch };
-    localStorage.setItem('tokpa_user', JSON.stringify(next));
+    const raw = localStorage.getItem('tokpa_user');
+    const current = raw ? (JSON.parse(raw) as StoredUser & Record<string, unknown>) : {};
+    const next: StoredUser & Record<string, unknown> = { ...current, ...patch };
+    const fromParts = [next.prenom, next.nom]
+      .map((part) => (typeof part === 'string' ? part.trim() : ''))
+      .filter(Boolean)
+      .join(' ');
+    if (('prenom' in patch || 'nom' in patch) && fromParts && !('nom_complet' in patch)) {
+      next.nom_complet = fromParts;
+    }
+    const serialized = JSON.stringify(next);
+    if (serialized === raw) return;
+    localStorage.setItem('tokpa_user', serialized);
     window.dispatchEvent(new Event('tokpa:auth-changed'));
   } catch {
     /* session illisible */

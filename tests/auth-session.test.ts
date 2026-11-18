@@ -10,6 +10,7 @@ import {
   pageRoles,
   postLoginTarget,
   rememberRedirect,
+  rememberSessionUser,
   safeRedirect,
 } from '../src/routes/authGuard';
 
@@ -50,6 +51,20 @@ describe('session and public paths', () => {
     expect(initialsOf('awa dossou')).toBe('AD');
     expect(initialsOf('   ')).toBe('?');
     expect(initialsOf(null, 'TK')).toBe('TK');
+  });
+
+  it('prefers updated prenom/nom over stale nom_complet and syncs rememberSessionUser', () => {
+    localStorage.setItem('tokpa_token', 'tok');
+    localStorage.setItem(
+      'tokpa_user',
+      JSON.stringify({ id: 13, prenom: 'Elfred', nom: 'K.', nom_complet: 'Elfred K.' }),
+    );
+    expect(currentUserName()).toBe('Elfred K.');
+
+    rememberSessionUser({ prenom: 'Elfred', nom: 'D.' });
+    expect(currentUserName()).toBe('Elfred D.');
+    expect(initialsOf(currentUserName())).toBe('ED');
+    expect(JSON.parse(localStorage.getItem('tokpa_user')!).nom_complet).toBe('Elfred D.');
   });
 });
 

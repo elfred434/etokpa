@@ -5,7 +5,7 @@ import MIcon from '../../shared/MIcon';
 import LogoutButton from '../../shared/LogoutButton';
 import RefreshButton from '../../shared/RefreshButton';
 import SettingsLink from '../../shared/SettingsLink';
-import { currentUserName } from '../../../routes/authGuard';
+import { currentUserName, useAuthRevision } from '../../../routes/authGuard';
 import UserAvatar from '../../shared/UserAvatar';
 import { fetchLivreurProfile } from '../../../pages/livreur/livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -29,6 +29,7 @@ const NAV: { to: '/livreur' | '/livreur/course' | '/livreur/messagerie' | '/livr
  */
 export default function LivreurLayout({ children }: { children: ReactNode }) {
   useLanguage();
+  useAuthRevision();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const refreshTick = useGlobalRefreshTick();
   const asideRef = usePreservedScroll<HTMLElement>('livreur-sidebar-aside');

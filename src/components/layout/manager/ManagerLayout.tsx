@@ -13,7 +13,7 @@ import LogoutButton from '../../shared/LogoutButton';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
-import { currentRole, currentUserId, currentUserName, currentUserZone, isAdminRole, rememberUserZone } from '../../../routes/authGuard';
+import { currentRole, currentUserId, currentUserName, currentUserZone, isAdminRole, rememberUserZone, useAuthRevision } from '../../../routes/authGuard';
 import UserAvatar from '../../shared/UserAvatar';
 import { adminApi, catalogApi } from '../../../services/api';
 import { listOf } from '../../../services/api/unwrap';
@@ -25,6 +25,7 @@ type Props = { children: ReactNode; currentPath: string };
 
 export default function ManagerLayout({ children, currentPath }: Props) {
   useLanguage();
+  useAuthRevision();
   const zone = currentUserZone();
   const nom = currentUserName();
   const admin = isAdminRole(currentRole());

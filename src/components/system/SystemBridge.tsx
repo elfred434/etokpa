@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useCartSync } from '../../hooks/useCartSync';
 import { useAutoRefresh } from '../../hooks/useRefresh';
 import { useRealtimeNotifications } from '../../hooks/useRealtimeNotifications';
+import { rememberSessionUser } from '../../routes/authGuard';
+import { authApi } from '../../services/api';
 import { store } from '../../store';
 import { clear, clearProductRemovalNotices } from '../../store/slices/cart/cartSlice';
 
@@ -61,6 +63,24 @@ export default function SystemBridge() {
     window.addEventListener('tokpa:auth-changed', onAuthChanged);
     return () => window.removeEventListener('tokpa:auth-changed', onAuthChanged);
   }, []);
+
+  useEffect(() => {
+    if (!sessionKey || !localStorage.getItem('tokpa_token')) return;
+    let alive = true;
+    authApi
+      .getProfile()
+      .then((res) => {
+        if (!alive) return;
+        const user = (res as { data?: Record<string, unknown> })?.data ?? res;
+        if (user && typeof user === 'object' && !Array.isArray(user)) {
+          rememberSessionUser(user as Record<string, unknown>);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [sessionKey]);
 
   useCartSync(cartKey);
   useRealtimeNotifications(sessionKey);

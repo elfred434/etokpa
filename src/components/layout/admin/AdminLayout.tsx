@@ -7,6 +7,8 @@ import AdminNotificationBell from './AdminNotificationBell';
 import RefreshButton from '../../shared/RefreshButton';
 import SettingsLink from '../../shared/SettingsLink';
 import LogoutButton from '../../shared/LogoutButton';
+import UserAvatar from '../../shared/UserAvatar';
+import { currentUserName, useAuthRevision } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
 
@@ -42,6 +44,8 @@ function responsiveMain(mainClassName?: string) {
  */
 export default function AdminLayout({ children, currentPath, mainClassName }: AdminLayoutProps) {
   useLanguage();
+  useAuthRevision();
+  const userName = currentUserName();
   const navigate = useNavigate();
   const [navOpen, setNavOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
@@ -158,10 +162,14 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
           </button>
           <div className="mx-1 hidden h-8 w-[1px] bg-border-default sm:mx-2 sm:block" />
           <div className="flex items-center gap-sm">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-micro font-bold text-primary-dark">
-              AT
-            </div>
-            <span className="hidden font-secondary text-label font-bold text-primary sm:inline">{tx("Admin TOKPa")}</span>
+            <UserAvatar
+              name={userName}
+              fallback="AD"
+              className="h-8 w-8 bg-primary-light text-micro font-bold text-primary-dark"
+            />
+            <span className="hidden font-secondary text-label font-bold text-primary sm:inline">
+              {userName ?? tx("Admin TOKPa")}
+            </span>
           </div>
         </div>
       </header>
