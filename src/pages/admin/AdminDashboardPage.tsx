@@ -543,7 +543,7 @@ export default function AdminDashboardPage() {
                     {selected.action} — {selected.id}
                   </h3>
                   <p className="font-secondary text-micro text-text-secondary">
-                    Supervision &amp; Traitement administratif TOKPa
+                    Supervision & Traitement administratif TOKPa
                   </p>
                 </div>
               </div>
@@ -607,14 +607,14 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-surface-container-low p-3 rounded-lg border border-border-default">
                   <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold block mb-1">
-                    {tx("Montant &amp; Paiement")}
+                    {tx("Montant & Paiement")}
                   </span>
                   <p className="font-price text-h3 text-primary font-bold">{selected.amount}</p>
                   <p className="text-micro text-text-secondary mt-0.5">{selected.payment}</p>
                 </div>
                 <div className="bg-bg-app p-3 rounded-lg border border-border-default">
                   <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold block mb-1">
-                    {tx("Frais &amp; Livraison")}
+                    {tx("Frais & Livraison")}
                   </span>
                   <p className="text-label font-semibold text-on-surface">Commission TOKPa: {selected.fee}</p>
                   <p className="text-micro text-text-secondary mt-0.5">Livraison: {selected.deliveryFee}</p>

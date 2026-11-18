@@ -156,7 +156,7 @@ export default function AdminLogsPage() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <i className="ti ti-clipboard-list text-primary text-3xl"></i>
-            <h1 className="font-h1 text-h1 text-text-main">{tx("Logs &amp; Audit")}</h1>
+            <h1 className="font-h1 text-h1 text-text-main">{tx("Logs & Audit")}</h1>
           </div>
           <p className="font-body text-body text-text-secondary">
             {loading ? tx("Chargement…") : tr(`${meta.total.toLocaleString('fr-FR')} événement${meta.total > 1 ? 's' : ''} enregistré${meta.total > 1 ? 's' : ''}`, `${meta.total.toLocaleString('en-GB')} event${meta.total > 1 ? 's' : ''} recorded`)}

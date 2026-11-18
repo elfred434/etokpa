@@ -171,7 +171,7 @@ export default function LivreurSettingsPage() {
                       <MIcon name="badge" className="text-[20px]" />
                     </div>
                     <div>
-                      <h2 className="font-h2 text-h2 font-semibold text-text-main">{tx("Profil &amp; Identité")}</h2>
+                      <h2 className="font-h2 text-h2 font-semibold text-text-main">{tx("Profil & Identité")}</h2>
                       <p className="font-secondary text-micro text-text-secondary">{tx("Identifiants et zone géographique assignée")}</p>
                     </div>
                   </div>

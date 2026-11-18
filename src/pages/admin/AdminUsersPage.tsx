@@ -516,7 +516,7 @@ export default function AdminUsersPage() {
               <i className="ti ti-shield-check"></i>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500">{tx("Managers &amp; Admins")}</p>
+              <p className="text-xs font-medium text-gray-500">{tx("Managers & Admins")}</p>
               <h3 className="text-xl font-bold text-gray-900 mt-0.5">{fmt(stats.manager + stats.admin)}</h3>
               <p className="text-[11px] text-gray-500 mt-0.5">
                 {fmt(stats.manager)} managers · {fmt(stats.admin)} admins
@@ -664,7 +664,7 @@ export default function AdminUsersPage() {
                 <tr className="border-b border-gray-200 bg-gray-50 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
                   <th className="py-3 px-4">{tx("Utilisateur")}</th>
                   <th className="py-3 px-4">{tx("Rôle")}</th>
-                  <th className="py-3 px-4">{tx("Téléphone &amp; WhatsApp")}</th>
+                  <th className="py-3 px-4">{tx("Téléphone & WhatsApp")}</th>
                   <th className="py-3 px-4">{tx("Zone Principale")}</th>
                   <th className="py-3 px-4">{tx("Statut")}</th>
                   <th className="py-3 px-4">{tx("Activité")}</th>
@@ -973,7 +973,7 @@ export default function AdminUsersPage() {
                   <span className={step === 2 ? 'text-xs font-semibold text-emerald-700 block leading-tight' : 'text-xs font-semibold text-primary block leading-tight'} id="stepperText1">
                     {tx("Informations générales")}
                   </span>
-                  <span className="text-[10px] text-gray-400 block leading-tight">{tx("Identité &amp; profil")}</span>
+                  <span className="text-[10px] text-gray-400 block leading-tight">{tx("Identité & profil")}</span>
                 </div>
               </div>
               <div className={`${newRole === 'livreur' ? '' : 'hidden'} h-0.5 w-8 bg-gray-200`} id="stepperDivider"></div>
@@ -990,9 +990,9 @@ export default function AdminUsersPage() {
                 </div>
                 <div className="text-left">
                   <span className={step === 2 ? 'text-xs font-semibold text-primary block leading-tight' : 'text-xs font-medium text-gray-500 block leading-tight'} id="stepperText2">
-                    {tx("Dossier &amp; Conformité")}
+                    {tx("Dossier & Conformité")}
                   </span>
-                  <span className="text-[10px] text-gray-400 block leading-tight">{tx("Permis, CIP &amp; Véhicule")}</span>
+                  <span className="text-[10px] text-gray-400 block leading-tight">{tx("Permis, CIP & Véhicule")}</span>
                 </div>
               </div>
             </div>
@@ -1103,8 +1103,8 @@ export default function AdminUsersPage() {
                   <i className="ti ti-shield-alert"></i>
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-amber-900">{tx("Documents &amp; Conformité du Livreur")}</h4>
-                  <p className="text-[11px] text-amber-800/90 mt-0.5 leading-relaxed">{tx("Vérification obligatoire selon les normes ANIP &amp; ANATT Bénin pour l'autorisation de livraison marché.")}</p>
+                  <h4 className="text-xs font-bold text-amber-900">{tx("Documents & Conformité du Livreur")}</h4>
+                  <p className="text-[11px] text-amber-800/90 mt-0.5 leading-relaxed">{tx("Vérification obligatoire selon les normes ANIP & ANATT Bénin pour l'autorisation de livraison marché.")}</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
