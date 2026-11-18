@@ -195,7 +195,7 @@ export default function NotificationsPage() {
             </div>
 
             {/* Mobile Filter Tabs */}
-            <div className="flex gap-2 overflow-x-auto pb-2 mb-4 md:hidden">
+            <div className="flex flex-wrap gap-2 mb-4 md:hidden">
               {FILTERS.map(({ key, label, icon }) => (
                 <button
                   key={key}

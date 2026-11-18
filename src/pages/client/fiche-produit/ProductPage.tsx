@@ -512,7 +512,7 @@ export default function ProductPage() {
 
           {/* ---- Bottom Section: Tabs ---- */}
           <section className="mx-auto mt-8 mb-20 w-full max-w-[1200px] overflow-hidden rounded-xl bg-bg-card shadow-sm">
-            <div className="flex overflow-x-auto border-b border-line">
+            <div className="flex flex-wrap border-b border-line">
               {(
                 [
                   ['description', 'Description'],

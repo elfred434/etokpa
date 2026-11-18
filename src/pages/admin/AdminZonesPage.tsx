@@ -697,7 +697,7 @@ export default function AdminZonesPage() {
                           {tx("Ajouter un point de repère")}
                         </button>
                       </div>
-                      <div className="flex gap-2 overflow-x-auto">
+                      <div className="flex max-h-24 flex-wrap gap-2 overflow-y-auto">
                         {lmSel.length === 0 && <p className="text-xs text-orange-100">{tx("Aucun point de repère enregistré pour cette zone.")}</p>}
                         {lmSel.map((lm: any) => (
                           <button key={lm.id} type="button" className="shrink-0 rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold" onClick={() => openLmEdit(lm)}>

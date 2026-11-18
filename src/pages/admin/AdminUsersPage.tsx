@@ -609,8 +609,8 @@ export default function AdminUsersPage() {
             </div>
           </MobileFilterDrawer>
 
-          <div className="hidden md:flex p-4 border-b border-gray-200 md:items-center justify-between gap-4 bg-gray-50/50">
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0" id="roleFilters">
+          <div className="hidden md:flex md:flex-wrap p-4 border-b border-gray-200 md:items-center justify-between gap-4 bg-gray-50/50">
+            <div className="flex flex-wrap items-center gap-1.5" id="roleFilters">
               {(
                 [
                   ['all', `Tous (${fmt(stats.total)})`],

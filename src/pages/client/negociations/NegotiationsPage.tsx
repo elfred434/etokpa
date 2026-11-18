@@ -274,7 +274,7 @@ export default function NegotiationsPage() {
           {/* Main Content: Negotiations List */}
           <div className="min-w-0 flex-1 space-y-md">
             {/* Filters/Tabs */}
-            <nav className="flex border-b border-border-default mb-md overflow-x-auto whitespace-nowrap">
+            <nav className="flex flex-wrap gap-1 border-b border-border-default mb-md">
               <button
                 type="button"
                 onClick={() => setActiveTab('all')}
