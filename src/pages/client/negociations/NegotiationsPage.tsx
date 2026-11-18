@@ -272,7 +272,7 @@ export default function NegotiationsPage() {
 
         <div className="flex flex-col lg:flex-row gap-lg">
           {/* Main Content: Negotiations List */}
-          <div className="flex-1 space-y-md">
+          <div className="min-w-0 flex-1 space-y-md">
             {/* Filters/Tabs */}
             <nav className="flex border-b border-border-default mb-md overflow-x-auto whitespace-nowrap">
               <button

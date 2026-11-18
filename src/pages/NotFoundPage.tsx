@@ -30,7 +30,7 @@ export default function NotFoundPage() {
       <ClientNavbar />
 
       {/* Main Content with 404 Layout */}
-      <main className="relative flex-grow flex items-center justify-center p-md min-h-[calc(100vh-116px)] pt-[68px]">
+      <main className="relative flex-grow flex items-center justify-center p-md min-h-[calc(100vh-116px)] pt-[68px] pb-[88px] lg:pb-md">
         {/* Full Screen Background Overlay */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-warm-low via-surface to-warm/80 opacity-90" />

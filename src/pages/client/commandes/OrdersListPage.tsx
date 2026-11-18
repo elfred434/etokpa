@@ -342,7 +342,7 @@ export default function OrdersListPage() {
     <div className="bg-bg-app font-body text-on-surface antialiased min-h-screen flex flex-col">
       <ClientNavbar />
 
-      <main className="flex-grow px-4 py-xl pb-[80px] pt-[52px] sm:px-lg md:pb-0">
+      <main className="flex-grow px-4 py-xl pb-[80px] pt-[52px] sm:px-lg lg:pb-0">
         <div className="mx-auto w-full max-w-[1200px]">
           {/* En-tête */}
           <div className="flex flex-wrap items-center justify-between gap-2 mb-lg">

@@ -36,7 +36,7 @@ export default function NotificationBell({ notifications }: NotificationBellProp
         <>
           {/* Backdrop pour fermer au clic extérieur */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
-          <div className="absolute right-0 z-50 mt-sm w-[340px] overflow-hidden rounded-[14px] border-0.5 border-line bg-card shadow-lg">
+          <div className="fixed inset-x-3 top-[58px] z-50 overflow-hidden rounded-[14px] border-0.5 border-line bg-card shadow-lg sm:inset-x-auto sm:top-auto sm:absolute sm:right-0 sm:mt-sm sm:w-[340px]">
             <div className="flex items-center justify-between border-b-0.5 border-line p-md">
               <span className="text-[13px] font-semibold text-ink">{tx("Notifications")}</span>
               <span className="text-[12px] text-ink-3">{unread} {unread > 1 ? tx("non lues") : tx("non lue")}</span>

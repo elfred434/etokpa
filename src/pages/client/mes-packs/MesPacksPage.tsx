@@ -548,7 +548,7 @@ export default function MesPacksPage() {
         .pack-pop { animation: pack-pop 180ms ease-out; }
         @keyframes pack-pop { from { transform: scale(.94); opacity: .4; } to { transform: none; opacity: 1; } }
       `}</style>
-      <div className="flex flex-1 justify-center px-3 pb-[80px] pt-[64px] sm:px-6 md:px-12 md:pb-8 md:pt-[72px] lg:px-20 xl:px-40">
+      <div className="flex flex-1 justify-center px-3 pb-[88px] pt-[64px] sm:px-6 md:px-12 md:pt-[72px] lg:px-20 lg:pb-8 xl:px-40">
         <div className="flex w-full max-w-[1200px] flex-1 flex-col">
           {/* ---- Breadcrumbs ---- */}
           <div className="flex flex-wrap gap-2 py-3 md:px-1">

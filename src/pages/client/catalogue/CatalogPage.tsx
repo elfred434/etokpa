@@ -379,7 +379,7 @@ export default function CatalogPage() {
         }}
       />
 
-      <main className="mx-auto flex w-full max-w-[1200px] gap-4 px-4 py-lg">
+      <main className="mx-auto flex w-full max-w-[1200px] gap-4 px-4 pt-lg pb-[80px] lg:pb-lg">
         {/* ---- Sidebar Filters ---- */}
         <aside className="hidden w-[260px] flex-shrink-0 space-y-md md:block">
           <div className="rounded-xl border-[0.5px] border-line bg-bg-card p-md shadow-sm">

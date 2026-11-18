@@ -303,7 +303,7 @@ export default function OrderTrackingPage() {
     <div className="bg-bg-app font-body text-on-surface antialiased min-h-screen flex flex-col">
       <ClientNavbar />
 
-      <main className="relative flex flex-grow flex-col overflow-hidden pt-[52px] pb-[80px] md:pb-0 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)] lg:items-stretch lg:gap-lg lg:px-lg lg:pb-lg">
+      <main className="relative flex flex-grow flex-col overflow-hidden pt-[52px] pb-[80px] lg:pb-0 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)] lg:items-stretch lg:gap-lg lg:px-lg lg:pb-lg">
         {/* Pas de carte ni de suivi GPS pour une commande annulée. */}
         {!isCancelled && (
           <section className="relative h-[420px] w-full overflow-hidden bg-info-light sm:h-[520px] lg:h-auto lg:min-h-[620px] lg:rounded-[20px]">
