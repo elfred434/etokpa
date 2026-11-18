@@ -28,6 +28,7 @@ import { isCancelledStatut } from '../../../utils/orderStatus';
 import { clearPaymentIntent, loadPayment, paymentIdempotencyKey, rememberPayment } from '../../../utils/idempotence';
 import { indexEffectivePayments, resolveOrderPayment, type OrderPaymentSummary } from '../../../utils/paymentSummary';
 import { captureFrontendError } from '../../../services/errors/frontendErrorReporter';
+import { downloadCsvFile } from '../../../utils/csvExport';
 
 interface ApiOrderItem {
   id: number;
@@ -114,30 +115,59 @@ export default function OrdersListPage() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
+    let alive = true;
     if (!silentRefreshActive()) setLoading(true);
     setError(null);
     const paymentsPromise =
       typeof paymentsApi.listMine === 'function'
         ? paymentsApi.listMine().catch(() => null)
         : Promise.resolve(null);
-    Promise.all([ordersApi.getOrders(page, statusFilter), paymentsPromise])
-      .then(([res, paymentsRes]) => {
-        const paymentMap = indexEffectivePayments(paymentsRes);
-        paymentMapRef.current = paymentMap;
-        const raw = (res?.data ?? res ?? []) as Array<Record<string, unknown> & { data?: ApiOrder }>;
-        const list: ApiOrder[] = (Array.isArray(raw) ? raw : []).map((o) => {
-          const order = (o.data ?? o) as ApiOrder;
-          const resolvedPayment = resolveOrderPayment(order.id, order.payment, paymentMap);
-          return resolvedPayment ? { ...order, payment: resolvedPayment } : order;
-        });
-        setOrders(statusFilter ? list.filter((o) => o.statut === statusFilter) : list);
-        setLastPage(Number(res?.meta?.last_page ?? res?.last_page ?? 1));
-        setTotal(Number(res?.meta?.total ?? res?.total ?? list.length));
-      })
+    const normalizeOrders = (res: unknown, paymentMap: Map<number, OrderPaymentSummary>): ApiOrder[] => {
+      const r = res as { data?: unknown } | unknown[];
+      const raw = ((Array.isArray(r) ? r : r?.data) ?? []) as Array<Record<string, unknown> & { data?: ApiOrder }>;
+      return (Array.isArray(raw) ? raw : []).map((o) => {
+        const order = (o.data ?? o) as ApiOrder;
+        const resolvedPayment = resolveOrderPayment(order.id, order.payment, paymentMap);
+        return resolvedPayment ? { ...order, payment: resolvedPayment } : order;
+      });
+    };
+    void (async () => {
+      const [firstRes, paymentsRes] = await Promise.all([
+        ordersApi.getOrders(statusFilter ? 1 : page, statusFilter || undefined),
+        paymentsPromise,
+      ]);
+      if (!alive) return;
+      const paymentMap = indexEffectivePayments(paymentsRes);
+      paymentMapRef.current = paymentMap;
+      if (!statusFilter) {
+        const list = normalizeOrders(firstRes, paymentMap);
+        setOrders(list);
+        setLastPage(Number(firstRes?.meta?.last_page ?? firstRes?.last_page ?? 1));
+        setTotal(Number(firstRes?.meta?.total ?? firstRes?.total ?? list.length));
+        return;
+      }
+      const all = normalizeOrders(firstRes, paymentMap);
+      const totalPages = Math.min(25, Math.max(1, Number(firstRes?.meta?.last_page ?? firstRes?.last_page ?? 1)));
+      if (totalPages > 1) {
+        const rest = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, i) => ordersApi.getOrders(i + 2, statusFilter)),
+        );
+        if (!alive) return;
+        rest.forEach((res) => all.push(...normalizeOrders(res, paymentMap)));
+      }
+      const filtered = all.filter((o) => o.statut === statusFilter);
+      const perPage = 15;
+      setOrders(filtered.slice((page - 1) * perPage, page * perPage));
+      setLastPage(Math.max(1, Math.ceil(filtered.length / perPage)));
+      setTotal(filtered.length);
+    })()
       .catch((err) => {
-        setError(alertApiError(err, 'orders-list'));
+        if (alive) setError(alertApiError(err, 'orders-list'));
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => { alive = false; };
   }, [isAuthenticated, page, statusFilter, tick]);
 
   // Si la fiche d'une commande est ouverte pendant le refresh, relire aussi son détail complet.
@@ -284,6 +314,30 @@ export default function OrdersListPage() {
   /** Devise de la commande ouverte (les montants de la modale restent homogènes). */
   const devise = selected?.devise ?? 'FCFA';
 
+  const exportOrdersCsv = () => {
+    downloadCsvFile(
+      `commandes-tokpa-${new Date().toISOString().slice(0, 10)}.csv`,
+      [
+        tx('Référence'),
+        tx('Date'),
+        tx('Articles'),
+        tx('Total (FCFA)'),
+        tx('Statut'),
+        tx('Livreur'),
+        tx('Lieu'),
+      ],
+      orders.map((o) => [
+        `#${o.id}`,
+        fmtDate(o.created_at),
+        articlesCount(o),
+        Number(o.montant_total ?? 0),
+        libelleStatut(o.statut),
+        o.livreur?.nom_complet ?? '—',
+        [o.landmark?.nom, o.description_lieu].filter(Boolean).join(' — ') || '—',
+      ]),
+    );
+  };
+
   return (
     <div className="bg-bg-app font-body text-on-surface antialiased min-h-screen flex flex-col">
       <ClientNavbar />
@@ -293,9 +347,21 @@ export default function OrdersListPage() {
           {/* En-tête */}
           <div className="flex flex-wrap items-center justify-between gap-2 mb-lg">
             <h1 className="font-h1 text-h1 text-on-surface">{isFr ? tx("Mes commandes") : 'My orders'}</h1>
-            <span className="text-micro text-text-secondary bg-bg-card border border-border-default rounded-lg px-3 py-1.5">
-              {total} {isFr ? tx("commande(s)") : 'order(s)'}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {orders.length > 0 && (
+                <button
+                  type="button"
+                  onClick={exportOrdersCsv}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-card px-3 py-1.5 text-micro font-semibold text-on-surface hover:bg-bg-secondary cursor-pointer"
+                >
+                  <MIcon name="download" className="text-[16px]" />
+                  {tx("Exporter CSV")}
+                </button>
+              )}
+              <span className="text-micro text-text-secondary bg-bg-card border border-border-default rounded-lg px-3 py-1.5">
+                {total} {isFr ? tx("commande(s)") : 'order(s)'}
+              </span>
+            </div>
           </div>
 
           <div className="mb-lg flex flex-wrap items-center gap-2">

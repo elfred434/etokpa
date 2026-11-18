@@ -217,6 +217,14 @@ export default function NegotiationsPage() {
       );
       return;
     }
+    if (editModal.originalPrice > 0 && price > editModal.originalPrice) {
+      setEditError(
+        isFr
+          ? `Le prix proposé ne peut pas dépasser le prix catalogue (${editModal.originalPrice.toLocaleString('fr-FR')} FCFA).`
+          : `The proposed price cannot exceed the catalog price (${editModal.originalPrice.toLocaleString('fr-FR')} FCFA).`,
+      );
+      return;
+    }
     if (!editLandmark) {
       setEditError(tx("Choisissez votre point de repère avant d'envoyer l'offre."));
       return;

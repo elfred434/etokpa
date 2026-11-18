@@ -105,7 +105,7 @@ export default function AdminDashboardPage() {
   const tauxLivraison = dash && nbNonAnnulees > 0 ? `${((nbLivrees / nbNonAnnulees) * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %` : '—';
 
   // « Croissance des ventes » + « Ventes par Zone » : calculés depuis les vraies commandes de la période
-  const [range, setRange] = useState<7 | 30>(7);
+  const [range, setRange] = useState<1 | 7 | 30>(7);
   const [periodOrders, setPeriodOrders] = useState<any[] | null>(null);
   const [capped, setCapped] = useState(false);
   const [chartErr, setChartErr] = useState<string | null>(null);
@@ -159,9 +159,16 @@ export default function AdminDashboardPage() {
       d.setDate(since.getDate() + i);
       const total = totals.get(dayKey(d)) ?? 0;
       const long = d.toLocaleDateString('fr-FR', { weekday: 'long' });
+      const todayLabel = d.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: '2-digit' });
       return {
         key: dayKey(d),
-        label: range === 7 ? long.charAt(0).toUpperCase() + long.slice(1) : i % 5 === 0 || i === range - 1 ? String(d.getDate()) : '',
+        label: range === 1
+          ? todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1)
+          : range === 7
+            ? long.charAt(0).toUpperCase() + long.slice(1)
+            : i % 5 === 0 || i === range - 1
+              ? String(d.getDate())
+              : '',
         title: `${d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' })} : ${fmtFcfa(total)}`,
         total,
       };
@@ -343,10 +350,15 @@ export default function AdminDashboardPage() {
               </p>
             </div>
             <select
+              aria-label={tx("Période des statistiques")}
               value={range}
-              onChange={(e) => setRange(Number(e.target.value) === 30 ? 30 : 7)}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setRange(v === 1 ? 1 : v === 30 ? 30 : 7);
+              }}
               className="bg-bg-app border-none text-label rounded-lg px-md py-sm font-secondary"
             >
+              <option value={1}>{tx("Aujourd'hui")}</option>
               <option value={7}>{tx("7 derniers jours")}</option>
               <option value={30}>{tx("30 derniers jours")}</option>
             </select>
@@ -410,12 +422,12 @@ export default function AdminDashboardPage() {
         <div className="xl:col-span-3 bg-bg-card rounded-lg border border-border-default overflow-hidden shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-default p-4 sm:p-lg">
             <h3 className="font-h2 text-h2 text-on-surface">{tx("Activités Récentes de la Plateforme")}</h3>
-            <button
-              type="button"
+            <Link
+              to="/admin/commandes"
               className="text-primary font-secondary text-label font-bold flex items-center gap-1 hover:underline cursor-pointer"
             >
               {tx("Tout voir")} <MIcon name="arrow_forward" className="text-sm" />
-            </button>
+            </Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left font-secondary" data-mobile-detail="native">

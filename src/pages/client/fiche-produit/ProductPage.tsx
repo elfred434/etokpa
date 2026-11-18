@@ -90,6 +90,10 @@ export default function ProductPage() {
       toast.error(tr(`Le prix minimum négociable est de ${product.prixMinimum.toLocaleString('fr-FR')} FCFA`, `The minimum negotiable price is ${product.prixMinimum.toLocaleString('fr-FR')} FCFA`));
       return;
     }
+    if (product.prix > 0 && numPrice > product.prix) {
+      toast.error(tr(`Votre proposition ne peut pas dépasser le prix catalogue (${product.prix.toLocaleString('fr-FR')} FCFA).`, `Your offer cannot exceed the catalog price (${product.prix.toLocaleString('fr-FR')} FCFA).`));
+      return;
+    }
     if (!offerLandmark) {
       toast.error(tx('Choisissez votre point de repère avant d\'envoyer l\'offre.'));
       return;

@@ -12,6 +12,7 @@ import { extractApiError, formatApiError } from '../../utils/apiError';
 import { clearPaymentIntent, paymentIdempotencyKey, rememberPayment } from '../../utils/idempotence';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
+import { downloadCsvFile } from '../../utils/csvExport';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -219,11 +220,52 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
     }
   };
 
+  const exportPaymentsCsv = () => {
+    downloadCsvFile(
+      `paiements-tokpa-${new Date().toISOString().slice(0, 10)}.csv`,
+      [
+        tx('Paiement'),
+        tx('Commande'),
+        ...(source === 'all' ? [tx('Client')] : []),
+        tx('Montant (FCFA)'),
+        tx('Méthode'),
+        tx('Statut'),
+        tx('Référence'),
+        tx('Payé le'),
+      ],
+      rows.map((p) => {
+        const orderId = p.order?.id ?? p.order_id;
+        return [
+          `#${p.id}`,
+          orderId ? `#${orderId}` : '—',
+          ...(source === 'all' ? [p.client_id ? annuaire[Number(p.client_id)] ?? `#${p.client_id}` : '—'] : []),
+          Number(p.montant ?? 0),
+          p.methode || '—',
+          tx(STATUT_LABEL[p.statut ?? ''] ?? (p.statut || '—')),
+          p.fedapay_ref || '—',
+          p.paid_at ? dateCourte(p.paid_at) : '—',
+        ];
+      }),
+    );
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-h2 font-h2 font-bold">{title}</h1>
-        <p className="text-label text-text-secondary">{rows.length} {tx("Paiements")}</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 className="text-h2 font-h2 font-bold">{title}</h1>
+          <p className="text-label text-text-secondary">{rows.length} {tx("Paiements")}</p>
+        </div>
+        {rows.length > 0 && (
+          <button
+            type="button"
+            onClick={exportPaymentsCsv}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-card px-3 py-1.5 text-label font-semibold text-on-surface hover:bg-bg-secondary cursor-pointer"
+          >
+            <MIcon name="download" className="text-[16px]" />
+            {tx("Exporter CSV")}
+          </button>
+        )}
       </div>
       {err && (
         <div className="rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container" role="alert">

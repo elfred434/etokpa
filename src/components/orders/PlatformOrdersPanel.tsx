@@ -85,6 +85,15 @@ function matchesOrderSearch(order: PlatformOrder, query: string): boolean {
   return normalizeSearch(fields.join(' ')).includes(normalizeSearch(query.trim()));
 }
 
+function matchesOrderDate(order: PlatformOrder, dateFrom: string, dateTo: string): boolean {
+  if (!dateFrom && !dateTo) return true;
+  const isoDay = String(order.created_at ?? '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDay)) return false;
+  if (dateFrom && isoDay < dateFrom) return false;
+  if (dateTo && isoDay > dateTo) return false;
+  return true;
+}
+
 function lastPageOf(response: any): number {
   const value = Number(response?.meta?.last_page ?? response?.last_page ?? 1);
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : 1;
@@ -104,6 +113,8 @@ type Props = {
 export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0, initialSearch, onSearchCommit, renderActions }: Props) {
   useLanguage();
   const [statut, setStatut] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [search, setSearch] = useState(initialSearch?.trim() ?? '');
   const [appliedSearch, setAppliedSearch] = useState(initialSearch?.trim() ?? '');
   const [searchResults, setSearchResults] = useState<PlatformOrder[] | null>(null);
@@ -166,10 +177,12 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
 
   useEffect(() => {
     setPage(1);
-  }, [statut, zoneId, source, appliedSearch]);
+  }, [statut, zoneId, source, appliedSearch, dateFrom, dateTo]);
+
+  const filterMode = Boolean(appliedSearch || dateFrom || dateTo);
 
   useEffect(() => {
-    if (appliedSearch) return;
+    if (filterMode) return;
     let alive = true;
     const background = backgroundRefreshActive();
     if (!silentRefreshActive()) setLoading(true);
@@ -196,10 +209,10 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
       })
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
-  }, [source, statut, zoneId, page, reloadKey, refreshTick, appliedSearch]);
+  }, [source, statut, zoneId, page, reloadKey, refreshTick, filterMode]);
 
   useEffect(() => {
-    if (!appliedSearch) {
+    if (!filterMode) {
       setSearchResults(null);
       return;
     }
@@ -231,7 +244,11 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
         batch.forEach((rows) => all.push(...rows));
       }
       if (!alive) return;
-      const matches = all.filter((order) => matchesOrderSearch(order, appliedSearch));
+      const matches = all.filter(
+        (order) =>
+          (!appliedSearch || matchesOrderSearch(order, appliedSearch))
+          && matchesOrderDate(order, dateFrom, dateTo),
+      );
       setSearchResults(matches);
       setLastPage(Math.max(1, Math.ceil(matches.length / SEARCH_PAGE_SIZE)));
       setTotal(matches.length);
@@ -242,15 +259,14 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
       })
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
-  }, [source, statut, zoneId, appliedSearch, reloadKey, refreshTick]);
+  }, [source, statut, zoneId, appliedSearch, dateFrom, dateTo, filterMode, reloadKey, refreshTick]);
 
   const zoneNom = (id?: number) => zones.find((z) => z.id === Number(id))?.nom ?? (id ? `#${id}` : '—');
-  const searchMode = Boolean(appliedSearch);
-  const visibleOrders = searchMode
+  const visibleOrders = filterMode
     ? (searchResults ?? []).slice((page - 1) * SEARCH_PAGE_SIZE, page * SEARCH_PAGE_SIZE)
     : orders;
-  const visibleTotal = searchMode ? searchResults?.length ?? 0 : total;
-  const visibleLastPage = searchMode ? Math.max(1, Math.ceil(visibleTotal / SEARCH_PAGE_SIZE)) : lastPage;
+  const visibleTotal = filterMode ? searchResults?.length ?? 0 : total;
+  const visibleLastPage = filterMode ? Math.max(1, Math.ceil(visibleTotal / SEARCH_PAGE_SIZE)) : lastPage;
 
   const appliquerRecherche = () => {
     const query = search.trim();
@@ -293,6 +309,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
         ))}
         {source === 'admin' && (
           <select
+            aria-label={tx("Filtrer par zone")}
             value={zoneId}
             onChange={(e) => setZoneId(e.target.value)}
             className="rounded-lg border border-border-default bg-bg-card px-3 py-2 text-label"
@@ -303,6 +320,42 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
             ))}
           </select>
         )}
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-1.5 text-label text-text-secondary">
+            <span>{tx("Du")}</span>
+            <input
+              type="date"
+              aria-label={tx("Date de début")}
+              value={dateFrom}
+              max={dateTo || undefined}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="rounded-lg border border-border-default bg-bg-card px-2.5 py-1.5 text-label text-on-surface"
+            />
+          </label>
+          <label className="flex items-center gap-1.5 text-label text-text-secondary">
+            <span>{tx("Au")}</span>
+            <input
+              type="date"
+              aria-label={tx("Date de fin")}
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="rounded-lg border border-border-default bg-bg-card px-2.5 py-1.5 text-label text-on-surface"
+            />
+          </label>
+          {(dateFrom || dateTo) && (
+            <button
+              type="button"
+              className="btn btn-ghost px-2.5 py-1.5 text-label"
+              onClick={() => {
+                setDateFrom('');
+                setDateTo('');
+              }}
+            >
+              {tx("Effacer les dates")}
+            </button>
+          )}
+        </div>
       </div>
 
       <form
@@ -339,9 +392,9 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
           </button>
         )}
       </form>
-      {searchMode && !loading && (
+      {filterMode && !loading && (
         <p className="text-label text-text-secondary" role="status">
-          {tx("Résultats pour")} « {appliedSearch} » : {visibleTotal}
+          {appliedSearch ? `${tx("Résultats pour")} « ${appliedSearch} » : ${visibleTotal}` : `${tx("Résultats filtrés")} : ${visibleTotal}`}
         </p>
       )}
 
@@ -349,7 +402,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
         {loading && <p className="p-lg text-label text-text-secondary">{tx("Chargement…")}</p>}
         {!loading && visibleOrders.length === 0 && (
           <p className="p-lg text-label text-text-secondary">
-            {searchMode ? tx("Aucune commande ne correspond à cette recherche.") : tx("Aucune commande.")}
+            {filterMode ? tx("Aucune commande ne correspond à ces critères.") : tx("Aucune commande.")}
           </p>
         )}
         {!loading && visibleOrders.length > 0 && (

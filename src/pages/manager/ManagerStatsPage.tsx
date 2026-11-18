@@ -41,10 +41,10 @@ export default function ManagerStatsPage() {
   }, [periode, refreshTick]);
 
   const kpis = [
-    { icon: 'trending_up', label: "Volume d'Affaires", value: stats?.ca ?? '—' },
-    { icon: 'shopping_basket', label: tx("Commandes Total"), value: stats?.commandes ?? '—' },
-    { icon: 'task_alt', label: 'Taux de Livraison', value: stats && Number(stats.commandes) > 0 ? `${((Number(stats.livrees ?? 0) / Number(stats.commandes)) * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %` : '—' },
-    { icon: 'delivery_dining', label: tx("Commandes livrées"), value: stats?.livrees ?? '—' },
+    { icon: 'trending_up', label: "Volume d'Affaires", value: stats?.ca ?? '—', currency: true },
+    { icon: 'shopping_basket', label: tx("Commandes Total"), value: stats?.commandes ?? '—', currency: false },
+    { icon: 'task_alt', label: 'Taux de Livraison', value: stats && Number(stats.commandes) > 0 ? `${((Number(stats.livrees ?? 0) / Number(stats.commandes)) * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %` : '—', currency: false },
+    { icon: 'delivery_dining', label: tx("Commandes livrées"), value: stats?.livrees ?? '—', currency: false },
   ];
 
   return (
@@ -91,19 +91,13 @@ export default function ManagerStatsPage() {
                 <p className="text-label text-text-secondary">{tx(k.label)}</p>
               </div>
               <p className="mt-2 text-h1 font-h1 font-bold">
-                {typeof k.value === 'number' ? fmtFcfa(k.value) : k.value}
+                {typeof k.value === 'number'
+                  ? (k.currency ? fmtFcfa(k.value) : k.value.toLocaleString('fr-FR'))
+                  : k.value}
               </p>
             </div>
           ))}
         </div>
-
-        {/* Phase dev : forme brute de la réponse pour caler le mapping */}
-        {stats != null && (
-          <div className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
-            <h2 className="text-h3 font-h3 font-bold">{tx("Réponse brute (phase dev)")}</h2>
-            <pre className="mt-2 overflow-x-auto rounded-lg bg-bg-app p-3 text-micro">{JSON.stringify(stats, null, 2)}</pre>
-          </div>
-        )}
       </div>
     </ManagerLayout>
   );
