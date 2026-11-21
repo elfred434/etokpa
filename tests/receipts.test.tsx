@@ -18,7 +18,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { buildReceiptData, estPaye, numeroRecu } from '../src/services/receipts/receiptData';
+import { buildReceiptData, canDownloadReceipt, estPaye, numeroRecu } from '../src/services/receipts/receiptData';
 import { buildReceiptPdf, fmtMontant } from '../src/services/receipts/receiptPdf';
 import { receiptLabels } from '../src/services/receipts/receiptLabels';
 import { LanguageProvider } from '../src/context/LanguageContext';
@@ -232,5 +232,31 @@ describe('bouton de téléchargement du reçu', () => {
     const [data] = telecharger.mock.calls[0] as [{ paye: boolean; statut: string }];
     expect(data.paye).toBe(false);
     expect(data.statut).toBe('en_attente');
+  });
+
+  it('masque le bouton et bloque le téléchargement tant que la commande est en préparation / sans livreur', async () => {
+    expect(canDownloadReceipt(null)).toBe(false);
+    expect(canDownloadReceipt({ statut: 'en_attente', livreur_id: null })).toBe(false);
+    expect(canDownloadReceipt({ statut: 'en_preparation', livreur_id: 2 })).toBe(false);
+    expect(canDownloadReceipt({ statut: 'annule', livreur_id: 2 })).toBe(false);
+    expect(canDownloadReceipt({ statut: 'en_livraison', livreur_id: null, livreur: null })).toBe(false);
+    expect(canDownloadReceipt({ statut: 'en_livraison', livreur: { nom_complet: 'Koffi Livreur' } })).toBe(true);
+    expect(canDownloadReceipt({ statut: 'livre', livreur_id: 2 })).toBe(true);
+
+    const { container } = monter({
+      payment: paiementReussi,
+      order: { ...commande, statut: 'en_preparation' },
+      testId: 'recu-prepa',
+    });
+    expect(screen.queryByTestId('recu-prepa')).toBeNull();
+    expect(container.textContent).toBe('');
+
+    getOrder.mockResolvedValueOnce({ data: { ...commande, statut: 'en_preparation', livreur: null } });
+    monter({ payment: paiementReussi, testId: 'recu-bloque-api' });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('recu-bloque-api'));
+    });
+    await waitFor(() => expect(getOrder).toHaveBeenCalledWith(20));
+    expect(telecharger).not.toHaveBeenCalled();
   });
 });

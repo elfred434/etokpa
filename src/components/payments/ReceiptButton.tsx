@@ -14,9 +14,10 @@ import toast from 'react-hot-toast';
 import MIcon from '../shared/MIcon';
 import { ordersApi } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
-import { tx } from '../../i18n/tx';
+import { tr, tx } from '../../i18n/tx';
 import {
   buildReceiptData,
+  canDownloadReceipt,
   type ReceiptOrder,
   type ReceiptPayment,
 } from '../../services/receipts/receiptData';
@@ -47,6 +48,10 @@ export default function ReceiptButton({
   useLanguage(); // le libellé suit la langue choisie
   const [busy, setBusy] = useState(false);
 
+  if (order && !canDownloadReceipt(order)) {
+    return null;
+  }
+
   const telecharger = async () => {
     if (busy) return;
     setBusy(true);
@@ -59,6 +64,16 @@ export default function ReceiptButton({
         } catch {
           commande = null; // reçu produit sans le détail des articles
         }
+      }
+      if (commande && !canDownloadReceipt(commande)) {
+        toast.error(
+          tr(
+            'Le reçu est disponible uniquement lorsque le livreur est assigné et la livraison lancée.',
+            'The receipt is only available once a courier is assigned and delivery has started.',
+          ),
+          { id: 'tokpa-receipt-unavailable' },
+        );
+        return;
       }
       const donnees = buildReceiptData(payment, commande);
       downloadReceiptPdf(donnees, receiptLabels(), localeRecu());

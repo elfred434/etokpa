@@ -5,7 +5,7 @@ import { backgroundRefreshActive, silentRefreshActive, useGlobalRefreshTick } fr
 import MIcon from '../shared/MIcon';
 import { adminApi, ordersApi, paymentsApi } from '../../services/api';
 import { currentUserId, currentUserName, isAdminRole } from '../../routes/authGuard';
-import type { ReceiptOrder } from '../../services/receipts/receiptData';
+import { canDownloadReceipt, type ReceiptOrder } from '../../services/receipts/receiptData';
 import ReceiptButton from './ReceiptButton';
 import { dateCourte, fmtFcfa, listOf, unwrap } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -29,7 +29,12 @@ type PaymentRow = {
   recu_url?: string | null;
   paid_at?: string | null;
   created_at?: string | null;
-  order?: { id?: number; statut?: string } | null;
+  order?: {
+    id?: number;
+    statut?: string;
+    livreur_id?: number | null;
+    livreur?: { id?: number; nom_complet?: string | null; telephone?: string | null } | null;
+  } | null;
 };
 
 const STATUT_LABEL: Record<string, string> = {
@@ -322,7 +327,9 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                       <td className="px-4 py-3">
                         <p>{p.fedapay_ref || '—'}</p>
                         <div className="flex flex-wrap items-center gap-2">
-                          <ReceiptButton payment={p} testId={`receipt-payment-${p.id}`} stopPropagation />
+                          {canDownloadReceipt(p.order) ? (
+                            <ReceiptButton payment={p} testId={`receipt-payment-${p.id}`} stopPropagation />
+                          ) : null}
                           {canRepayPayment(p) && orderId && (
                             <button
                               type="button"
@@ -501,12 +508,23 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
 
             {/* Pied de modale */}
             <div className="px-6 py-4 bg-bg-secondary border-t border-border-default flex flex-wrap items-center justify-between gap-3 shrink-0">
-              <ReceiptButton
-                payment={selected}
-                order={detail}
-                variant="button"
-                testId={`receipt-payment-${selected.id}-detail`}
-              />
+              {!detailLoading && canDownloadReceipt(detail ?? selected.order) ? (
+                <ReceiptButton
+                  payment={selected}
+                  order={detail}
+                  variant="button"
+                  testId={`receipt-payment-${selected.id}-detail`}
+                />
+              ) : (
+                <span className="text-micro text-text-secondary">
+                  {detailLoading
+                    ? tx('Chargement…')
+                    : tr(
+                        'Reçu disponible après assignation du livreur et lancement de la livraison.',
+                        'Receipt available once a courier is assigned and delivery starts.',
+                      )}
+                </span>
+              )}
               <div className="flex items-center gap-2">
                 <button
                   type="button"

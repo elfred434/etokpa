@@ -7,6 +7,7 @@ import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
 import RealBeninMap from '../../../components/client/commandes/RealBeninMap';
 import ReceiptButton from '../../../components/payments/ReceiptButton';
+import { canDownloadReceipt } from '../../../services/receipts/receiptData';
 import { useRiderLocation } from '../../../hooks/useRiderLocation';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
@@ -564,16 +565,24 @@ export default function OrderTrackingPage() {
                       {order.description_lieu ? ` — ${order.description_lieu}` : ''}
                     </p>
                   )}
-                  {/* Reçu de paiement — disponible pour tous les statuts (les non-payés
-                      portent la mention « non payé ») + bouton Repayer si le paiement a échoué */}
-                  {(order.payment?.id || (!isCancelled && order.payment?.statut === 'echoue')) ? (
+                  {/* Reçu de paiement — uniquement lorsque la livraison est lancée/livrée
+                      avec un livreur assigné + bouton Repayer si le paiement a échoué */}
+                  {((order.payment?.id && (!isCancelled || canDownloadReceipt(order))) ||
+                    (!isCancelled && order.payment?.statut === 'echoue')) ? (
                     <div className="mt-sm border-t border-border-default pt-sm flex flex-wrap items-center justify-between gap-2">
-                      {order.payment?.id ? (
+                      {order.payment?.id && canDownloadReceipt(order) ? (
                         <ReceiptButton
                           payment={order.payment}
                           order={order}
                           testId={`receipt-order-${order.id}`}
                         />
+                      ) : order.payment?.id && !isCancelled ? (
+                        <span className="text-micro text-text-secondary">
+                          {tr(
+                            'Le reçu sera disponible dès la prise en charge par un livreur.',
+                            'The receipt will be available once a courier is assigned.',
+                          )}
+                        </span>
                       ) : <span />}
                       {!isCancelled && order.payment?.statut === 'echoue' && (
                         <button

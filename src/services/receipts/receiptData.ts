@@ -38,8 +38,39 @@ export type ReceiptOrder = {
   items?: ReceiptOrderItem[] | null;
   landmark?: { nom?: string | null } | null;
   client?: { nom_complet?: string | null; telephone?: string | null } | null;
-  livreur?: { nom_complet?: string | null; telephone?: string | null } | null;
+  livreur_id?: number | string | null;
+  livreur?: { id?: number | string | null; nom_complet?: string | null; telephone?: string | null } | null;
 };
+
+const STATUTS_AVEC_RECU = new Set(['en_livraison', 'livre', 'livree']);
+
+/**
+ * Le reçu n'est disponible qu'une fois la commande prise en charge pour
+ * la livraison (`en_livraison` ou `livre`), et — lorsque l'information est
+ * connue — avec un livreur effectivement assigné afin que son nom figure
+ * sur le PDF. Indisponible en `en_attente`, `en_preparation` ou `annule`.
+ */
+export function canDownloadReceipt(
+  order?: {
+    statut?: string | null;
+    livreur_id?: number | string | null;
+    livreur?: { id?: number | string | null; nom_complet?: string | null } | null;
+  } | null,
+): boolean {
+  if (!order) return false;
+  const statut = (order.statut ?? '').toString().trim().toLowerCase();
+  if (!STATUTS_AVEC_RECU.has(statut)) return false;
+
+  const hasLivreurField = order.livreur !== undefined || order.livreur_id !== undefined;
+  if (hasLivreurField) {
+    const hasNom = Boolean(order.livreur?.nom_complet && String(order.livreur.nom_complet).trim());
+    const hasId =
+      (order.livreur_id != null && Number(order.livreur_id) > 0) ||
+      (order.livreur?.id != null && Number(order.livreur.id) > 0);
+    if (!hasNom && !hasId) return false;
+  }
+  return true;
+}
 
 export type ReceiptLine = {
   nom: string;

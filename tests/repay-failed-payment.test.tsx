@@ -205,6 +205,42 @@ describe('bouton Repayer — OrderTrackingPage', () => {
 
     await waitFor(() => expect(initPayment).toHaveBeenCalledWith({ order_id: 42 }, expect.any(String)));
   });
+
+  it("n'affiche pas le bouton Reçu sur OrderTrackingPage tant que la commande est en préparation, et l'affiche en livraison avec livreur", async () => {
+    getOrders.mockResolvedValueOnce({ data: [{ ...commandeEchoue, statut: 'en_preparation', payment: undefined }] });
+    getOrder.mockResolvedValueOnce({ data: { ...commandeEchoue, statut: 'en_preparation', livreur: null } });
+    listMine.mockResolvedValueOnce({
+      data: [{ id: 101, order_id: 42, montant: 2500, statut: 'reussi', methode: 'fedapay' }],
+    });
+
+    const { unmount } = render(
+      <LanguageProvider>
+        <OrderTrackingPage />
+      </LanguageProvider>,
+    );
+
+    await screen.findByText(/Le reçu sera disponible dès la prise en charge par un livreur/i);
+    expect(screen.queryByTestId('receipt-order-42')).toBeNull();
+    unmount();
+
+    getOrders.mockResolvedValueOnce({
+      data: [{ ...commandeEchoue, statut: 'en_livraison', livreur: { id: 5, nom_complet: 'Koffi Livreur' }, payment: undefined }],
+    });
+    getOrder.mockResolvedValueOnce({
+      data: { ...commandeEchoue, statut: 'en_livraison', livreur: { id: 5, nom_complet: 'Koffi Livreur' } },
+    });
+    listMine.mockResolvedValueOnce({
+      data: [{ id: 101, order_id: 42, montant: 2500, statut: 'reussi', methode: 'fedapay' }],
+    });
+
+    render(
+      <LanguageProvider>
+        <OrderTrackingPage />
+      </LanguageProvider>,
+    );
+
+    expect(await screen.findByTestId('receipt-order-42')).toBeTruthy();
+  });
 });
 
 describe('bouton Repayer — PaymentsPanel', () => {

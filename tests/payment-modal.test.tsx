@@ -43,7 +43,7 @@ const paiement = {
   fedapay_ref: 'DEV-16',
   paid_at: null,
   created_at: '2026-10-14T15:01:46.000000Z',
-  order: { id: 31, statut: 'en_preparation' },
+  order: { id: 31, statut: 'en_livraison', livreur_id: 5 },
 };
 
 function monter(source: 'mine' | 'all') {
@@ -76,7 +76,7 @@ beforeEach(() => {
   getOrder.mockResolvedValue({
     data: {
       id: 31,
-      statut: 'en_preparation',
+      statut: 'en_livraison',
       montant_total: 950,
       frais_livraison: 250,
       description_lieu: 'Près de la pharmacie',
@@ -121,10 +121,35 @@ describe('modale de paiement — disposition', () => {
   it('regroupe les actions dans un pied : reçu, Fermer, Voir la commande', async () => {
     const dialog = await ouvrirModal('all');
     const pied = dialog.lastElementChild as HTMLElement;
-    expect(pied.textContent).toContain('Télécharger le reçu');
+    await waitFor(() => expect(pied.textContent).toContain('Télécharger le reçu'));
     expect(pied.textContent).toContain('Fermer');
     expect(pied.textContent).toContain('Voir la commande');
     expect(screen.getByTestId('receipt-payment-16-detail')).toBeTruthy();
+  });
+
+  it("masque le reçu quand la commande est en préparation ou sans livreur assigné", async () => {
+    listAll.mockResolvedValueOnce({
+      success: true,
+      data: [{ ...paiement, order: { id: 31, statut: 'en_preparation', livreur_id: null } }],
+    });
+    getOrder.mockResolvedValueOnce({
+      data: {
+        id: 31,
+        statut: 'en_preparation',
+        livreur: null,
+      },
+    });
+    monter('all');
+    await screen.findByText('#16');
+    expect(screen.queryByTestId('receipt-payment-16')).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('#16'));
+    });
+    const dialog = await screen.findByRole('dialog');
+    await waitFor(() => expect(dialog.textContent).not.toContain('Chargement…'));
+    expect(screen.queryByTestId('receipt-payment-16-detail')).toBeNull();
+    expect(dialog.textContent).toContain('Reçu disponible après assignation du livreur');
   });
 
   it('affiche la ligne « Client » dans les deux vues (disposition identique)', async () => {
