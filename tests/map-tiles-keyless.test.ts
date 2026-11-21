@@ -13,6 +13,7 @@ describe('Map tile providers — keyless production safety', () => {
       const content = fs.readFileSync(path.resolve(process.cwd(), rel), 'utf8');
       expect(content).not.toContain('basemaps.cartocdn.com');
       expect(content).not.toMatch(/https:\/\/(\{s\}\.)?tile\.openstreetmap\.org\//);
+      expect(content).toContain('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png');
     }
   });
 });

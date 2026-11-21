@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useTheme } from '../../../context/ThemeContext';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -75,7 +74,6 @@ export default function RealBeninMap({
   onRecenterRider,
 }: RealBeninMapProps) {
   useLanguage();
-  const { sombre } = useTheme();
   const mapCenter: [number, number] = riderCoords ?? destinationCoords ?? DANTOKPA_COORDS;
   const routePath: [number, number][] = [
     DANTOKPA_COORDS,
@@ -84,7 +82,7 @@ export default function RealBeninMap({
   ];
 
   return (
-    <div className="relative w-full h-full min-h-[450px] z-10 dark:ring-1 dark:ring-border-default dark:ring-offset-0">
+    <div className="relative w-full h-full min-h-[450px] z-10 dark:ring-1 dark:ring-border-default dark:ring-offset-0 dark:[&_.leaflet-tile-pane]:brightness-90 dark:[&_.leaflet-tile-pane]:contrast-105">
       <MapContainer
         center={mapCenter}
         zoom={14}
@@ -92,22 +90,11 @@ export default function RealBeninMap({
         className="w-full h-full rounded-b-none"
         style={{ height: '100%', width: '100%', minHeight: '450px' }}
       >
-        {/* Tuiles sans clé API compatibles production/Vercel :
-            OSM France en clair, Esri Dark Gray Base en sombre. */}
+        {/* Même fond de carte OSM France que la carte d'administration (sans clé API). */}
         <TileLayer
-          key={sombre ? 'tuiles-sombres' : 'tuiles-claires'}
-          attribution={
-            sombre
-              ? 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
-              : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; OSM France'
-          }
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; OSM France'
           maxZoom={19}
-          maxNativeZoom={sombre ? 16 : 19}
-          url={
-            sombre
-              ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
-              : 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png'
-          }
+          url="https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png"
         />
 
         <MapRecenterController center={mapCenter} />
