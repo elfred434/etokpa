@@ -259,9 +259,34 @@ export default function AdminUsersPage() {
   const [managerTarget, setManagerTarget] = useState<{ id: number; nom: string; kind: 'client' | 'self' } | null>(null);
   const [managerZone, setManagerZone] = useState('');
   const [promoting, setPromoting] = useState(false);
+  const [promotingAdmin, setPromotingAdmin] = useState(false);
   const openPromote = (u: { id: number; nom?: string }, kind: 'client' | 'self') => {
     setManagerZone('');
     setManagerTarget({ id: Number(u.id), nom: u.nom || nomOf(u), kind });
+  };
+  const promoteToAdmin = async (u: any) => {
+    const confirme = await adminDialogs.confirm(
+      tr(
+        `Promouvoir ${nomOf(u)} au rôle d’administrateur ?`,
+        `Promote ${nomOf(u)} to administrator?`,
+      ),
+      {
+        title: tr('Promouvoir en administrateur', 'Promote to administrator'),
+        confirmLabel: tx('Confirmer'),
+      },
+    );
+    if (!confirme) return;
+    setPromotingAdmin(true);
+    try {
+      await adminApi.promoteAsAdmin(Number(u.id));
+      toast.success(tr('Utilisateur promu administrateur.', 'User promoted to administrator.'));
+      setSelected(null);
+      setReloadKey((k) => k + 1);
+    } catch (e) {
+      alertApiError(e, 'admin-users-admin');
+    } finally {
+      setPromotingAdmin(false);
+    }
   };
   const openSelfManager = () => {
     const id = currentAdminId();
@@ -735,6 +760,16 @@ export default function AdminUsersPage() {
                               <i className="ti ti-shield-check text-sm"></i>
                             </button>
                           )}
+                          {(role === 'client' || role === 'manager') && (
+                            <button
+                              type="button"
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-purple-700 hover:bg-purple-50 transition-colors"
+                              onClick={() => void promoteToAdmin(u)}
+                              title={tr('Promouvoir en administrateur', 'Promote to administrator')}
+                            >
+                              <i className="ti ti-crown text-sm"></i>
+                            </button>
+                          )}
                         </TableRowActions>
                       </td>
                     </tr>
@@ -896,6 +931,17 @@ export default function AdminUsersPage() {
                   >
                     <i className="ti ti-shield-check text-sm"></i>
                     <span>{tx("Promouvoir en manager")}</span>
+                  </button>
+                )}
+                {(selRole === 'client' || selRole === 'manager') && (
+                  <button
+                    type="button"
+                    disabled={promotingAdmin}
+                    className="btn-press w-full py-2 px-3 bg-purple-50 border border-purple-200 hover:bg-purple-100 text-purple-800 font-medium rounded-[10px] flex items-center justify-center gap-1.5 transition-all disabled:opacity-60"
+                    onClick={() => void promoteToAdmin(selected)}
+                  >
+                    <i className="ti ti-crown text-sm"></i>
+                    <span>{tr('Promouvoir en administrateur', 'Promote to administrator')}</span>
                   </button>
                 )}
                 <div className="flex flex-col gap-2 sm:flex-row">

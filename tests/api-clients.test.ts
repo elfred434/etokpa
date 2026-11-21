@@ -163,4 +163,10 @@ describe('livreur, payment and notification adapters', () => {
       expect.objectContaining({ adapter: 'fetch', timeout: 60000 }),
     );
   });
+
+  it('promotes a client or manager to admin via POST /admin/users/{id}/admins', async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({ data: { id: 15, role: { nom: 'admin' } } });
+    await adminApi.promoteAsAdmin(15);
+    expect(apiClient.post).toHaveBeenCalledWith('/admin/users/15/admins');
+  });
 });

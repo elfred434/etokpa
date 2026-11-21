@@ -144,6 +144,10 @@ export const adminApi = {
     const response = await apiClient.post(`/admin/users/${id}/managers`, data);
     return response.data;
   },
+  promoteAsAdmin: async (id: number) => {
+    const response = await apiClient.post(`/admin/users/${id}/admins`);
+    return response.data;
+  },
   /** Met à jour la zone d'une fiche manager. La crée si l'admin n'en a pas encore. */
   setManagerZone: async (id: number, zoneId: number) => {
     const updated = (await apiClient.put(`/admin/users/${id}`, { zone_id: zoneId })).data;
