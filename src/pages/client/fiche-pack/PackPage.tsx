@@ -161,7 +161,6 @@ export default function PackPage() {
 
   const inclus = pack.products ?? pack.produits ?? [];
   const prixTotal = Number(pack.prix_total ?? 0);
-  const prixMinimum = pack.prix_minimum == null ? null : Number(pack.prix_minimum);
   const disponible = pack.disponible !== false;
   const image =
     absImageUrl(pack.img_url) ||
@@ -271,12 +270,6 @@ export default function PackPage() {
                   {prixTotal.toLocaleString('fr-FR')} FCFA
                 </span>
               </div>
-
-              {prixMinimum !== null && (
-                <p className="text-[12px] italic text-ink-2">
-                  {tx("Prix min. négociable")} : {prixMinimum.toLocaleString('fr-FR')} FCFA
-                </p>
-              )}
 
               {/* Le panier enregistre des produits, pas des packs : le pack y entre par ses produits. */}
               <div className="flex flex-col gap-3">

@@ -87,8 +87,8 @@ export default function ProductPage() {
       toast.error(tx('Veuillez entrer un montant valide en FCFA'));
       return;
     }
-    if (numPrice < product.prixMinimum) {
-      toast.error(tr(`Le prix minimum négociable est de ${product.prixMinimum.toLocaleString('fr-FR')} FCFA`, `The minimum negotiable price is ${product.prixMinimum.toLocaleString('fr-FR')} FCFA`));
+    if (product.prixMinimum > 0 && numPrice < product.prixMinimum) {
+      toast.error(tr('Votre offre est trop basse pour ce produit. Veuillez proposer un montant plus élevé.', 'Your offer is too low for this product. Please propose a higher amount.'));
       return;
     }
     if (product.prix > 0 && numPrice > product.prix) {
@@ -359,10 +359,6 @@ export default function ProductPage() {
                       </div>
                     </div>
 
-                    <p className="text-[12px] italic text-amber-text">
-                      Budget min. accepté : {product.prixMinimum.toLocaleString('fr-FR')} FCFA
-                    </p>
-
                     <NegotiationLandmarkField value={offerLandmark} onChange={setOfferLandmark} />
 
                     <button
@@ -478,8 +474,7 @@ export default function ProductPage() {
                       Offre refusée ({activeNeg.proposedPrice.toLocaleString('fr-FR')} FCFA)
                     </p>
                     <p className="text-xs text-ink">
-                      Le prix minimum accepté pour ce produit est de{' '}
-                      {activeNeg.minPrice.toLocaleString('fr-FR')} FCFA.
+                      {tx("Votre proposition n’a pas été acceptée. Vous pouvez soumettre une nouvelle offre.")}
                     </p>
                     <button
                       type="button"
@@ -545,7 +540,7 @@ export default function ProductPage() {
                 <p className="max-w-3xl text-body leading-relaxed text-ink-2">
                   {product.description || tx("Aucune description pour ce produit.")}
                 </p>
-                <div className="mt-4 grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 md:grid-cols-4">
+                <div className="mt-4 grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 md:grid-cols-3">
                   <div className="flex flex-col">
                     <span className="text-micro uppercase text-ink-3">{tx("Catégorie")}</span>
                     <span className="text-sm font-medium text-ink">{categoryNom}</span>
@@ -554,12 +549,6 @@ export default function ProductPage() {
                     <span className="text-micro uppercase text-ink-3">{tx("Prix de base")}</span>
                     <span className="text-sm font-medium text-ink">
                       {product.prix.toLocaleString('fr-FR')} FCFA
-                    </span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-micro uppercase text-ink-3">{tx("Prix min. négociable")}</span>
-                    <span className="text-sm font-medium text-ink">
-                      {product.prixMinimum.toLocaleString('fr-FR')} FCFA
                     </span>
                   </div>
                   <div className="flex flex-col">

@@ -214,11 +214,11 @@ export default function NegotiationsPage() {
       setEditError(isFr ? 'Saisissez un prix valide.' : 'Enter a valid price.');
       return;
     }
-    if (price < editModal.minPrice) {
+    if (editModal.minPrice > 0 && price < editModal.minPrice) {
       setEditError(
         isFr
-          ? `Le prix minimum négociable est ${editModal.minPrice.toLocaleString('fr-FR')} FCFA.`
-          : `The minimum negotiable price is ${editModal.minPrice.toLocaleString('fr-FR')} FCFA.`,
+          ? 'Votre offre est trop basse pour ce produit. Proposez un montant plus élevé.'
+          : 'Your offer is too low for this product. Please propose a higher amount.',
       );
       return;
     }
@@ -687,10 +687,6 @@ export default function NegotiationsPage() {
                 {isFr ? tx("Votre offre") : 'Your offer'} :{' '}
                 {editModal.proposedPrice.toLocaleString('fr-FR')} FCFA
               </p>
-              <p className="text-micro text-text-tertiary mt-xs">
-                {isFr ? tx("Prix minimum accepté par le marché") : 'Market minimum price'} :{' '}
-                <span className="font-bold text-primary-container">{editModal.minPrice.toLocaleString('fr-FR')} FCFA</span>
-              </p>
             </div>
 
             <div>
@@ -699,7 +695,7 @@ export default function NegotiationsPage() {
               </label>
               <input
                 type="number"
-                min={editModal.minPrice}
+                min={1}
                 value={editPrice}
                 onChange={(e) => setEditPrice(e.target.value)}
                 required

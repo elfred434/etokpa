@@ -214,6 +214,10 @@ describe('Audit recette fixes', () => {
     );
 
     const input = await screen.findByRole('spinbutton');
+    expect(document.body.textContent).not.toContain('Budget min. accepté');
+    expect(document.body.textContent).not.toContain('Prix min. négociable');
+    expect(document.body.textContent).not.toContain("Ce choix reste sur cet appareil : l'API ne le garde pas encore sur la proposition.");
+    expect(document.body.textContent).not.toContain('700 FCFA');
     fireEvent.change(input, { target: { value: '1500' } });
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Envoyer l’offre/i }));
@@ -221,5 +225,14 @@ describe('Audit recette fixes', () => {
 
     expect(mocks.createProposal).not.toHaveBeenCalled();
     expect(mocks.toastError).toHaveBeenCalledWith(expect.stringMatching(/ne peut pas dépasser le prix catalogue/i));
+
+    mocks.toastError.mockClear();
+    fireEvent.change(input, { target: { value: '500' } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Envoyer l’offre/i }));
+    });
+    expect(mocks.createProposal).not.toHaveBeenCalled();
+    expect(mocks.toastError).toHaveBeenCalledWith(expect.stringMatching(/trop basse/i));
+    expect(mocks.toastError.mock.calls[0]?.[0]).not.toContain('700');
   });
 });

@@ -97,9 +97,6 @@ export default function NegotiationLandmarkField({
         ))}
       </select>
       {loadError && <p className="text-xs text-error">{loadError}</p>}
-      <p className="text-[11px] leading-snug text-text-secondary">
-        {tx("Ce choix reste sur cet appareil : l'API ne le garde pas encore sur la proposition.")}
-      </p>
     </div>
   );
 }
