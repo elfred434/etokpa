@@ -8,12 +8,19 @@ import LangToggle from '../../components/shared/LangToggle';
 import { authApi } from '../../services/api';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { currentRole, hasSession, postLoginTarget } from '../../routes/authGuard';
+import {
+  clearTwoFaSession,
+  getTwoFaAttemptsLeft,
+  getTwoFaDeadline,
+  getTwoFaSecondsLeft,
+  setTwoFaAttemptsLeft,
+  startTwoFaSession,
+  TWO_FA_MAX_ATTEMPTS,
+  TWO_FA_TTL_SECONDS,
+} from '../../utils/twoFaTimer';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 
-
-const INITIAL_SECONDS = 10 * 60; // TTL réel du backend (TwoFAService::TTL_MINUTES = 10)
-const MAX_ATTEMPTS = 3;
 
 const formatTime = (s: number) =>
   `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
@@ -24,26 +31,44 @@ const formatTime = (s: number) =>
 export default function Verification2faPage() {
   useLanguage();
   const navigate = useNavigate();
+  // Email de la connexion (ou de l'inscription) en cours. Aucun email de repli : avant, sans connexion
+  // en cours, la page utilisait « client@tokpa.bj », à qui « Renvoyer le code » envoyait un vrai code.
+  const pendingEmail = localStorage.getItem('tokpa_pending_email');
+  const deadlineRef = useRef<number>(
+    pendingEmail ? getTwoFaDeadline(pendingEmail) : Date.now() + TWO_FA_TTL_SECONDS * 1000,
+  );
+
   const [code, setCode] = useState('');
-  const [secondsLeft, setSecondsLeft] = useState(INITIAL_SECONDS);
-  const [attemptsLeft, setAttemptsLeft] = useState(MAX_ATTEMPTS);
+  const [secondsLeft, setSecondsLeft] = useState(() =>
+    pendingEmail ? getTwoFaSecondsLeft(deadlineRef.current) : TWO_FA_TTL_SECONDS,
+  );
+  const [attemptsLeft, setAttemptsLeft] = useState(() =>
+    pendingEmail ? getTwoFaAttemptsLeft(pendingEmail) : TWO_FA_MAX_ATTEMPTS,
+  );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   // Empêche l'effet « pas d'email » de renvoyer vers /connexion après une 2FA réussie.
   const verified = useRef(false);
 
-  // Email de la connexion (ou de l'inscription) en cours. Aucun email de repli : avant, sans connexion
-  // en cours, la page utilisait « client@tokpa.bj », à qui « Renvoyer le code » envoyait un vrai code.
-  const pendingEmail = localStorage.getItem('tokpa_pending_email');
-
   const expired = secondsLeft <= 0;
   const blocked = attemptsLeft <= 0;
 
   useEffect(() => {
+    if (!pendingEmail) return;
+    const syncRemaining = () => {
+      setSecondsLeft(getTwoFaSecondsLeft(deadlineRef.current));
+    };
+    syncRemaining();
     if (expired) return;
-    const timer = window.setInterval(() => setSecondsLeft((s) => s - 1), 1000);
-    return () => window.clearInterval(timer);
-  }, [expired]);
+    const timer = window.setInterval(syncRemaining, 1000);
+    window.addEventListener('focus', syncRemaining);
+    document.addEventListener('visibilitychange', syncRemaining);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', syncRemaining);
+      document.removeEventListener('visibilitychange', syncRemaining);
+    };
+  }, [pendingEmail, expired]);
 
   // Accès direct à /verification-2fa, sans login en cours. Après une 2FA réussie, l'email
   // est effacé et setLoading relance ce rendu : ne pas écraser la destination du rôle.
@@ -64,14 +89,18 @@ export default function Verification2faPage() {
       // Tentative d'appel API Backend POST /api/auth/verify-2fa
       const res = await authApi.verify2fa({ email: pendingEmail, code });
       verified.current = true;
-      localStorage.removeItem('tokpa_pending_email'); // connexion terminée : l'email en attente ne sert plus
+      clearTwoFaSession(); // connexion terminée : l'email et le timer en attente ne servent plus
       toast.success(res.message || tx("Authentification réussie !"));
       // Ouverture directe de /connexion : espace du rôle. Sinon, la page demandée avant le login.
       navigate({ href: postLoginTarget(currentRole()), replace: true });
     } catch (err: unknown) {
       // Pas de fallback factice : sans token réel du backend, on ne « connecte » personne.
       setError(formatApiError(extractApiError(err)));
-      setAttemptsLeft((a) => a - 1);
+      setAttemptsLeft((a) => {
+        const next = Math.max(0, a - 1);
+        setTwoFaAttemptsLeft(pendingEmail, next);
+        return next;
+      });
     } finally {
       setLoading(false);
     }
@@ -84,8 +113,9 @@ export default function Verification2faPage() {
       toast.success(tx("Un nouveau code OTP a été envoyé par email."));
       // Nouveau délai et nouvelles tentatives SEULEMENT si un code est vraiment parti
       // (avant : remis à zéro même en cas d'échec — limite atteinte, serveur arrêté…).
-      setSecondsLeft(INITIAL_SECONDS);
-      setAttemptsLeft(MAX_ATTEMPTS);
+      deadlineRef.current = startTwoFaSession(pendingEmail);
+      setSecondsLeft(TWO_FA_TTL_SECONDS);
+      setAttemptsLeft(TWO_FA_MAX_ATTEMPTS);
       setError(null);
       setCode('');
     } catch (err) {

@@ -10,6 +10,7 @@ import { authApi } from '../../services/api';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { passwordScore } from '../../utils/passwordScore';
 import { generatePassword } from '../../utils/passwordGenerator';
+import { startTwoFaSession } from '../../utils/twoFaTimer';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
@@ -131,7 +132,7 @@ export default function InscriptionPage() {
       });
 
       toast.success(res.message || tx("Compte créé ! Code 2FA envoyé."));
-      localStorage.setItem('tokpa_pending_email', profil.email);
+      startTwoFaSession(profil.email);
       navigate({ to: '/verification-2fa' });
     } catch (err: unknown) {
       const info = extractApiError(err);

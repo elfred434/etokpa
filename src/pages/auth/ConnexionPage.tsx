@@ -7,6 +7,7 @@ import LangToggle from '../../components/shared/LangToggle';
 import { authApi } from '../../services/api';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { rememberRedirect } from '../../routes/authGuard';
+import { startTwoFaSession } from '../../utils/twoFaTimer';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
@@ -39,7 +40,7 @@ export default function ConnexionPage() {
       // API call to Laravel backend POST /api/auth/login
       const res = await authApi.login({ email, password });
       toast.success(res.message || tx("Code 2FA envoyé par email."));
-      localStorage.setItem('tokpa_pending_email', email);
+      startTwoFaSession(email);
       navigate({ to: '/verification-2fa' });
     } catch (err: unknown) {
       const info = extractApiError(err);
