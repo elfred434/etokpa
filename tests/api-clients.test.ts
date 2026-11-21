@@ -122,10 +122,13 @@ describe('livreur, payment and notification adapters', () => {
     expect(apiClient.patch).toHaveBeenCalledWith('/notifications/9/read');
   });
 
-  it('creates a budget proposal', async () => {
+  it('creates and updates a budget proposal', async () => {
     vi.mocked(apiClient.post).mockResolvedValue({ data: { id: 1 } });
+    vi.mocked(apiClient.put).mockResolvedValue({ data: { id: 2, prix_propose: 950, quantite: 2 } });
     await negotiationApi.createProposal({ product_id: 2, prix_propose: 900, quantite: 1 });
+    await negotiationApi.updateProposal(1, { product_id: 2, prix_propose: 950, quantite: 2 });
     expect(apiClient.post).toHaveBeenCalledWith('/budget-proposals', { product_id: 2, prix_propose: 900, quantite: 1 });
+    expect(apiClient.put).toHaveBeenCalledWith('/budget-proposals/1', { product_id: 2, prix_propose: 950, quantite: 2 });
   });
 
   it('accepts a page number for admin products', async () => {

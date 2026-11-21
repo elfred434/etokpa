@@ -63,7 +63,7 @@ export default function NegotiationsPage() {
             vendorName: '', // l'API ne rattache aucun produit à un marché : pas de provenance inventée
             originalPrice: Number(p.product?.prix) || Number(p.prix_propose) || 0,
             proposedPrice: Number(p.prix_propose),
-            minPrice: Number(p.product?.prix_minimum) || Number(p.prix_propose),
+            minPrice: Number(p.product?.prix_minimum) || 0,
             quantite: Number(p.quantite) || 1,
             orderId: p.commande?.id ?? p.order_id,
             adminResponse: p.admin_response || undefined,
@@ -116,6 +116,7 @@ export default function NegotiationsPage() {
   // ---- Modal « Modifier mon offre » (PUT /api/budget-proposals/{id}) ----
   const [editModal, setEditModal] = useState<NegotiationItem | null>(null);
   const [editPrice, setEditPrice] = useState('');
+  const [editQuantity, setEditQuantity] = useState('1');
   const [editLandmark, setEditLandmark] = useState<RememberedLandmark | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [editSaving, setEditSaving] = useState(false);
@@ -198,6 +199,7 @@ export default function NegotiationsPage() {
   const openEditOffer = (neg: NegotiationItem) => {
     setEditModal(neg);
     setEditPrice(String(neg.proposedPrice));
+    setEditQuantity(String(neg.quantite ?? 1));
     setEditLandmark(
       neg.landmarkId
         ? { id: neg.landmarkId, nom: neg.landmarkNom ?? '', zoneNom: neg.landmarkZone ?? '' }
@@ -210,8 +212,13 @@ export default function NegotiationsPage() {
     e.preventDefault();
     if (!editModal) return;
     const price = Number(editPrice);
+    const qty = Math.floor(Number(editQuantity));
     if (!Number.isFinite(price) || price <= 0) {
       setEditError(isFr ? 'Saisissez un prix valide.' : 'Enter a valid price.');
+      return;
+    }
+    if (!Number.isFinite(qty) || qty < 1) {
+      setEditError(isFr ? 'Saisissez une quantité d’au moins 1.' : 'Enter a quantity of at least 1.');
       return;
     }
     if (editModal.minPrice > 0 && price < editModal.minPrice) {
@@ -230,22 +237,20 @@ export default function NegotiationsPage() {
       );
       return;
     }
-    if (!editLandmark) {
-      setEditError(tx("Choisissez votre point de repère avant d'envoyer l'offre."));
-      return;
-    }
     setEditSaving(true);
     try {
       const updated = await negotiationApi.updateProposal(editModal.id, {
         product_id: Number(editModal.productId),
         prix_propose: price,
-        quantite: editModal.quantite,
-        landmark_id: editLandmark.id,
+        quantite: qty,
+        ...(editLandmark ? { landmark_id: editLandmark.id } : {}),
       });
       const newId = Number((updated as { data?: { id?: number }; id?: number })?.data?.id ?? (updated as { id?: number })?.id);
-      rememberNegotiationLandmark(editModal.id, editLandmark);
-      rememberNegotiationLandmark(`product-${editModal.productId}`, editLandmark);
-      if (Number.isFinite(newId) && newId > 0) rememberNegotiationLandmark(newId, editLandmark);
+      if (editLandmark) {
+        rememberNegotiationLandmark(editModal.id, editLandmark);
+        rememberNegotiationLandmark(`product-${editModal.productId}`, editLandmark);
+        if (Number.isFinite(newId) && newId > 0) rememberNegotiationLandmark(newId, editLandmark);
+      }
       toast.success(isFr ? tx("Offre mise à jour et retransmise au marché.") : 'Offer updated and resubmitted.');
       setEditModal(null);
       loadProposals();
@@ -689,18 +694,35 @@ export default function NegotiationsPage() {
               </p>
             </div>
 
-            <div>
-              <label className="block text-label mb-1 text-text-secondary font-medium">
-                {isFr ? tx("Nouveau prix proposé (FCFA)") : 'New proposed price (FCFA)'}
-              </label>
-              <input
-                type="number"
-                min={1}
-                value={editPrice}
-                onChange={(e) => setEditPrice(e.target.value)}
-                required
-                className="w-full px-md py-2 rounded-lg border border-border-default bg-bg-card text-text-main focus:border-primary outline-none font-price"
-              />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="block text-label mb-1 text-text-secondary font-medium" htmlFor="edit-offer-price">
+                  {isFr ? tx("Nouveau prix proposé (FCFA)") : 'New proposed price (FCFA)'}
+                </label>
+                <input
+                  id="edit-offer-price"
+                  type="number"
+                  min={1}
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                  required
+                  className="w-full px-md py-2 rounded-lg border border-border-default bg-bg-card text-text-main focus:border-primary outline-none font-price"
+                />
+              </div>
+              <div>
+                <label className="block text-label mb-1 text-text-secondary font-medium" htmlFor="edit-offer-qty">
+                  {isFr ? tx("Quantité") : 'Quantity'}
+                </label>
+                <input
+                  id="edit-offer-qty"
+                  type="number"
+                  min={1}
+                  value={editQuantity}
+                  onChange={(e) => setEditQuantity(e.target.value)}
+                  required
+                  className="w-full px-md py-2 rounded-lg border border-border-default bg-bg-card text-text-main focus:border-primary outline-none font-price"
+                />
+              </div>
             </div>
 
             <NegotiationLandmarkField value={editLandmark} onChange={setEditLandmark} />

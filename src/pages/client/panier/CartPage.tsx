@@ -573,46 +573,65 @@ export default function CartPage() {
                     const isNegotiated = negocie != null || !!item.product.negotiated;
                     const oldPrice = isNegotiated && catalogue !== unitPrice ? catalogue : item.product.negotiated?.oldPrice;
 
+                    const isPackItem = item.product.categorie === 'pack';
+                    const itemHref = isPackItem ? `/pack/${item.product.id}` : `/produit/${item.product.id}`;
+
                     return (
                       <div
                         key={item.product.id}
                         className="flex flex-wrap items-center gap-md border-b border-border-default py-md last:border-0 group sm:flex-nowrap"
                       >
-                        {/* Thumbnail */}
-                        <div className="w-20 h-20 rounded-lg flex-shrink-0 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center relative overflow-hidden">
-                          <ImageWithFallback
-                            src={item.product.image}
-                            alt={item.product.nom}
-                            className="w-full h-full rounded-lg object-cover"
-                            fallback={<MIcon name="psychiatry" className="text-primary-container text-[32px]" />}
-                          />
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-grow min-w-0">
-                          <div className="flex items-center gap-sm mb-xs flex-wrap">
-                            <h3 className="font-h3 text-h3 text-on-surface truncate font-bold">{item.product.nom}</h3>
-                            {isNegotiated && (
-                              <span className="bg-[#F59E0B]/10 text-[#F59E0B] text-micro px-2 py-0.5 rounded-full border border-[#F59E0B]/20 font-bold uppercase tracking-wider">
-                                {item.product.negotiated ? tx("Offre acceptée") : tx("Prix négocié sur la ligne")}
-                              </span>
-                            )}
+                        <a
+                          href={itemHref}
+                          onClick={(e) => {
+                            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                            e.preventDefault();
+                            if (isPackItem) {
+                              navigate({ to: '/pack/$packId', params: { packId: String(item.product.id) } });
+                            } else {
+                              navigate({ to: '/produit/$productId', params: { productId: String(item.product.id) } });
+                            }
+                          }}
+                          className="flex min-w-0 flex-1 items-center gap-md rounded-lg transition-opacity hover:opacity-85 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-container"
+                        >
+                          {/* Thumbnail */}
+                          <div className="w-20 h-20 rounded-lg flex-shrink-0 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center relative overflow-hidden">
+                            <ImageWithFallback
+                              src={item.product.image}
+                              alt={item.product.nom}
+                              className="w-full h-full rounded-lg object-cover"
+                              fallback={<MIcon name="psychiatry" className="text-primary-container text-[32px]" />}
+                            />
                           </div>
-                          <p className="text-secondary text-text-secondary truncate">
-                            {[item.product.origine, item.product.quantite].filter(Boolean).join(' · ')}
-                          </p>
 
-                          <div className="flex items-center gap-sm mt-xs">
-                            <p className="font-price text-primary-container font-bold">
-                              {unitPrice.toLocaleString('fr-FR')} FCFA
+                          {/* Info */}
+                          <div className="flex-grow min-w-0">
+                            <div className="flex items-center gap-sm mb-xs flex-wrap">
+                              <h3 className="font-h3 text-h3 text-on-surface truncate font-bold transition-colors group-hover:text-primary-container">
+                                {item.product.nom}
+                              </h3>
+                              {isNegotiated && (
+                                <span className="bg-[#F59E0B]/10 text-[#F59E0B] text-micro px-2 py-0.5 rounded-full border border-[#F59E0B]/20 font-bold uppercase tracking-wider">
+                                  {item.product.negotiated ? tx("Offre acceptée") : tx("Prix négocié sur la ligne")}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-secondary text-text-secondary truncate">
+                              {[item.product.origine, item.product.quantite].filter(Boolean).join(' · ')}
                             </p>
-                            {oldPrice && (
-                              <p className="text-secondary text-text-tertiary line-through">
-                                {oldPrice.toLocaleString('fr-FR')} FCFA
+
+                            <div className="flex items-center gap-sm mt-xs">
+                              <p className="font-price text-primary-container font-bold">
+                                {unitPrice.toLocaleString('fr-FR')} FCFA
                               </p>
-                            )}
+                              {oldPrice && (
+                                <p className="text-secondary text-text-tertiary line-through">
+                                  {oldPrice.toLocaleString('fr-FR')} FCFA
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        </a>
 
                         {/* Quantity & Delete */}
                         <div className="ml-auto flex w-full flex-row items-center justify-end gap-md sm:w-auto sm:flex-col sm:items-end">

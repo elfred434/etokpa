@@ -181,6 +181,35 @@ describe('modale de confirmation partagée — clientèle et livreur', () => {
     await waitFor(() => expect(store.getState().cart.items).toHaveLength(0));
   });
 
+  it('CartPage rend chaque article cliquable vers sa fiche produit sans bloquer +/-', async () => {
+    connecter('client');
+    store.dispatch(
+      add({
+        product: { id: '19', nom: 'Tomates fraîches', prix: 800, stock: 'available', categorie: 'vegetable' } as never,
+        quantity: 1,
+      }),
+    );
+
+    render(
+      <Provider store={store}>
+        <LanguageProvider>
+          <CartPage />
+          <AdminActionDialogHost />
+        </LanguageProvider>
+      </Provider>,
+    );
+
+    const productLink = await screen.findByRole('link', { name: /Tomates fraîches/i });
+    expect(productLink.getAttribute('href')).toBe('/produit/19');
+
+    fireEvent.click(screen.getByRole('button', { name: '+' }));
+    expect(navigate).not.toHaveBeenCalled();
+    expect(store.getState().cart.items[0].quantite).toBe(2);
+
+    fireEvent.click(productLink);
+    expect(navigate).toHaveBeenCalledWith({ to: '/produit/$productId', params: { productId: '19' } });
+  });
+
   it('MesPacksPage utilise la modale in-app pour supprimer un pack local', async () => {
     connecter('client');
     const confirmSpy = vi.spyOn(window, 'confirm');

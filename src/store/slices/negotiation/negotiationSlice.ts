@@ -48,6 +48,7 @@ const negotiationSlice = createSlice({
     submitOffer(
       state,
       action: PayloadAction<{
+        id?: string;
         productId: string;
         productName: string;
         productImage?: string;
@@ -55,9 +56,10 @@ const negotiationSlice = createSlice({
         originalPrice: number;
         proposedPrice: number;
         minPrice: number;
+        quantite?: number;
       }>
     ) {
-      const { productId, productName, productImage, vendorName, originalPrice, proposedPrice, minPrice } = action.payload;
+      const { id, productId, productName, productImage, vendorName, originalPrice, proposedPrice, minPrice, quantite } = action.payload;
 
       // L'offre part à l'administrateur (POST /budget-proposals, CDC §4.1 : il accepte ou refuse) : elle
       // reste « en attente » jusqu'à sa réponse réelle (GET /budget-proposals + temps réel
@@ -66,7 +68,7 @@ const negotiationSlice = createSlice({
       const counterPrice: number | undefined = undefined;
 
       const item: NegotiationItem = {
-        id: `neg_${Date.now()}`,
+        id: id || `neg_${Date.now()}`,
         productId,
         productName,
         productImage,
@@ -75,6 +77,7 @@ const negotiationSlice = createSlice({
         proposedPrice,
         counterPrice,
         minPrice,
+        quantite: quantite ?? 1,
         status,
         createdAt: 'À l’instant',
       };

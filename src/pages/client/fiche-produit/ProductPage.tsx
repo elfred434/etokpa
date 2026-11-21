@@ -114,12 +114,14 @@ export default function ProductPage() {
       if (Number.isFinite(proposalId) && proposalId > 0) rememberNegotiationLandmark(proposalId, offerLandmark);
       dispatch(
         submitOffer({
+          id: Number.isFinite(proposalId) && proposalId > 0 ? String(proposalId) : undefined,
           productId: product.id,
           productName: product.nom,
           productImage: product.image,
           originalPrice: product.prix,
           proposedPrice: numPrice,
           minPrice: product.prixMinimum,
+          quantite: quantity,
         }),
       );
       toast.success(tx("Offre envoyée au marché ! Vous serez notifié de sa réponse."));
@@ -384,7 +386,7 @@ export default function ProductPage() {
                       <strong className="text-amber-text">
                         {activeNeg.proposedPrice.toLocaleString('fr-FR')} FCFA
                       </strong>{' '}
-                      a été envoyée au marché. Suivez sa réponse dans « Mes Négociations ».
+                      a été envoyée au marché. Suivez ou modifiez votre offre dans « Mes Négociations ».
                       {(() => {
                         const lieu = offerLandmark ?? (product ? readNegotiationLandmark(`product-${product.id}`) : null);
                         return lieu ? (
@@ -395,6 +397,13 @@ export default function ProductPage() {
                         ) : null;
                       })()}
                     </p>
+                    <Link
+                      to="/negociations"
+                      className="inline-flex items-center gap-1 rounded-lg border border-amber-text/40 bg-bg-card px-3 py-1.5 text-xs font-bold text-amber-text transition-colors hover:bg-amber-light"
+                    >
+                      <MIcon name="edit" className="text-[14px]" />
+                      {tx('Modifier dans Mes Négociations')}
+                    </Link>
                   </div>
                 )}
 

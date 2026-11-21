@@ -53,6 +53,7 @@ export function titre(log: { action?: string } | null | undefined): string {
   if (dernier === 'position') return tx('Position GPS du livreur');
   if (dernier === 'read') return tx('Notification lue');
   if (/budget-proposals\/\d+/.test(chemin) && verbe === 'PATCH') return tr(`Réponse à la proposition #${ids[0]}`, `Reply to proposal #${ids[0]}`);
+  if (/budget-proposals\/\d+/.test(chemin) && verbe === 'PUT') return tr(`Modification de la proposition #${ids[0]}`, `Update proposal #${ids[0]}`);
   const ressource = [...seg].reverse().find((x) => NOMS[x]);
   const nom = ressource ? NOMS[ressource] : chemin;
   const action = verbe === 'POST' ? tx('Création') : verbe === 'DELETE' ? tx('Suppression') : tx('Modification');

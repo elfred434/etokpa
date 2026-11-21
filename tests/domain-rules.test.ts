@@ -189,6 +189,7 @@ describe('admin audit log text', () => {
     expect(titre({ action: 'POST api/auth/login' })).toBe('Connexion (étape mot de passe)');
     expect(titre({ action: 'PATCH api/livreur/deliveries/12/accept' })).toBe('Course acceptée · commande #12');
     expect(titre({ action: 'POST api/admin/products' })).toBe('Création · produit');
+    expect(titre({ action: 'PUT api/budget-proposals/8' })).toBe('Modification de la proposition #8');
     expect(titre({ action: 'DELETE api/orders/9' })).toBe('Suppression · commande #9');
   });
 
