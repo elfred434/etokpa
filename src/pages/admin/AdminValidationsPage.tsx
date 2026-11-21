@@ -6,7 +6,7 @@ import { alertApiError, messageApi } from '../../utils/apiError';
 import { absImageUrl } from '../../utils/imageUrl';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
-import { TableSkeleton } from '../../components/shared/Skeleton';
+import { TableBodySkeletonRows } from '../../components/shared/Skeleton';
 import ImageWithFallback from '../../components/shared/ImageWithFallback';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import TableRowActions from '../../components/shared/TableRowActions';
@@ -188,7 +188,6 @@ export default function AdminValidationsPage() {
           <p>{actionErr}</p>
         </div>
       )}
-      {loading && <TableSkeleton rows={5} cols={5} label={tx("Chargement des validations…")} className="m-lg" />}
       <style>{DESIGN_CSS}</style>
       <header className="flex flex-col gap-4 bg-bg-app px-4 pb-4 pt-4 sm:px-8 sm:pt-8">
         <div>
@@ -236,6 +235,9 @@ export default function AdminValidationsPage() {
                 </tr>
               </thead>
               <tbody>
+                {loading && visible.length === 0 && (
+                  <TableBodySkeletonRows rows={5} cols={7} label={tx("Chargement des validations…")} />
+                )}
                 {!loading && visible.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-lg py-6 text-center text-label text-text-secondary">

@@ -83,7 +83,7 @@ export default function ManagerStatsPage() {
           </div>
         )}
         {loading ? (
-          <LoadingState variant="kpi-cards" count={4} label={tx("Chargement des statistiques…")} />
+          <LoadingState variant="kpi-cards" count={4} cols={4} label={tx("Chargement des statistiques…")} />
         ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {kpis.map((k) => (

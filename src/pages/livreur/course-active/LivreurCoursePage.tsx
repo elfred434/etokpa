@@ -170,7 +170,7 @@ export default function LivreurCoursePage() {
               className="rounded-lg border border-border-default bg-bg-card px-md"
             />
           ) : deliveries === null ? (
-            <LoadingState variant="detail" label={tx("Chargement de la course…")} className="rounded-lg" />
+            <LoadingState variant="livreur-active" label={tx("Chargement de la course…")} />
           ) : (
             <EmptyState
               icon={<MIcon name="local_shipping" className="text-4xl text-primary" />}

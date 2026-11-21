@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
-import { DetailPanelSkeleton } from '../../../components/shared/Skeleton';
+import { ProfilePageSkeleton } from '../../../components/shared/Skeleton';
 import {
   DIALOG_CANCEL_BTN_CLASS,
   DIALOG_PRIMARY_BTN_CLASS,
@@ -341,7 +341,7 @@ export default function ProfilePage() {
 
       <main className="mx-auto mt-[76px] w-full max-w-[720px] px-md lg:max-w-[1200px] lg:grid lg:grid-cols-2 lg:gap-x-lg lg:gap-y-lg lg:px-lg">
         {isDataLoading ? (
-          <DetailPanelSkeleton label={tx('Chargement du profil…')} className="lg:col-span-2" />
+          <ProfilePageSkeleton label={tx('Chargement du profil…')} />
         ) : (
           <>
             {/* PROFILE HEADER */}

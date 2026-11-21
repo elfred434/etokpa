@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
-import { DetailPanelSkeleton } from '../../components/shared/Skeleton';
+import { KeyValueGridSkeleton } from '../../components/shared/Skeleton';
 import { adminApi } from '../../services/api';
 import { unwrap, listOf, dateCourte } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -67,7 +67,7 @@ export default function AdminUserDetailPage() {
           </div>
         )}
         {loading && !user && (
-          <DetailPanelSkeleton label={tx("Chargement du profil utilisateur…")} className="w-full max-w-[600px] lg:max-w-[1100px]" />
+          <KeyValueGridSkeleton label={tx("Chargement du profil utilisateur…")} className="w-full max-w-[600px] lg:max-w-[1100px]" />
         )}
 
         {user && (

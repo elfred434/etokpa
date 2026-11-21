@@ -106,7 +106,7 @@ export default function ManagerDashboardPage() {
           </div>
         )}
         {loading ? (
-          <LoadingState variant="kpi-cards" count={4} label={tx("Chargement du tableau de bord…")} />
+          <LoadingState variant="kpi-cards" count={4} cols={4} label={tx("Chargement du tableau de bord…")} />
         ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {kpis.map((k) => (

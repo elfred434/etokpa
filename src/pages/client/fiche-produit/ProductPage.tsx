@@ -8,7 +8,7 @@ import MIcon from '../../../components/shared/MIcon';
 import ImageWithFallback from '../../../components/shared/ImageWithFallback';
 import EmptyState from '../../../components/shared/EmptyState';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
-import { DetailPanelSkeleton } from '../../../components/shared/Skeleton';
+import { ProductDetailSkeleton } from '../../../components/shared/Skeleton';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import { submitOffer, acceptCounterOffer, cancelNegotiation } from '../../../store/slices/negotiation/negotiationSlice';
@@ -158,8 +158,8 @@ export default function ProductPage() {
     return (
       <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
         <ClientNavbar />
-        <main className="mx-auto w-full max-w-[1000px] px-md pt-[76px]">
-          <DetailPanelSkeleton label={tx('Chargement du produit…')} />
+        <main className="mx-auto w-full max-w-[1200px] px-4 pt-[76px] md:px-lg">
+          <ProductDetailSkeleton label={tx('Chargement du produit…')} />
         </main>
         <ClientBottomNav />
       </div>

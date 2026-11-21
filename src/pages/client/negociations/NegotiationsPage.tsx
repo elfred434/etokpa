@@ -125,7 +125,7 @@ export default function NegotiationsPage() {
       <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
         <ClientNavbar />
         <main className="mx-auto w-full max-w-[1000px] px-md pt-[76px]">
-          <LoadingState variant="cards" count={4} label={tx('Chargement des négociations…')} />
+          <LoadingState variant="negotiations" count={3} label={tx('Chargement des négociations…')} />
         </main>
         <ClientBottomNav />
       </div>
@@ -334,7 +334,7 @@ export default function NegotiationsPage() {
 
             {/* Negotiation Items */}
             {isApiLoading ? (
-              <LoadingState variant="cards" count={3} label={tx("Chargement des négociations…")} />
+              <LoadingState variant="negotiations" count={3} label={tx("Chargement des négociations…")} />
             ) : filteredHistory.length === 0 ? (
               <div className="bg-bg-card rounded-card p-lg text-center border border-border-default shadow-sm">
                 <MIcon name="handshake" className="mx-auto text-[48px] text-text-tertiary mb-2" />

@@ -71,7 +71,7 @@ export default function LivreurRecapPage() {
                 className="rounded-[14px] border-[0.5px] border-border-default bg-bg-card px-md"
               />
             ) : (
-              <LoadingState label={tx("Chargement du récapitulatif…")} className="rounded-[14px] border-[0.5px] border-border-default bg-bg-card" />
+              <LoadingState variant="livreur-recap" label={tx("Chargement du récapitulatif…")} />
             )
           ) : (
             <>

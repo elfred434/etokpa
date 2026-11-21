@@ -130,7 +130,7 @@ export default function LivreurHistoryPage() {
               className="rounded-xl border border-border-default bg-bg-card px-md"
             />
           ) : !data ? (
-            <LoadingState label={tx("Chargement de l'historique…")} className="rounded-xl border border-border-default bg-bg-card" />
+            <LoadingState variant="livreur-history" label={tx("Chargement de l'historique…")} />
           ) : (
             <>
               {/* Stats Summary */}

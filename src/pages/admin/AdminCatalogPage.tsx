@@ -11,7 +11,7 @@ import { extractApiError, formatApiError, messageApi } from '../../utils/apiErro
 import DESIGN_SCRIPT from './_scripts/AdminCatalogPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
-import { TableSkeleton } from '../../components/shared/Skeleton';
+import { TableBodySkeletonRows } from '../../components/shared/Skeleton';
 import ImageWithFallback from '../../components/shared/ImageWithFallback';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import TableRowActions from '../../components/shared/TableRowActions';
@@ -289,7 +289,6 @@ export default function AdminCatalogPage() {
           <p>{err}</p>
         </div>
       )}
-      {loading && <TableSkeleton rows={5} cols={5} label={tx("Chargement du catalogue…")} className="m-lg" />}
       <div className="m-lg">
         <button type="button" className="btn btn-primary" onClick={() => ouvrir(null)}>
           + {tx("Nouveau produit")}
@@ -356,6 +355,9 @@ export default function AdminCatalogPage() {
 </tr>
 </thead>
 <tbody>
+                {loading && ((tab === 'produits' && produitsF.length === 0) || (tab === 'categories' && catsF.length === 0)) && (
+                  <TableBodySkeletonRows rows={5} cols={6} withAvatar label={tx("Chargement du catalogue…")} />
+                )}
                 {tab === 'produits' && slicePage(produitsF).map((pr: any) => (
                   <tr key={pr.id} tabIndex={0} title={tx("Voir le détail")} className="cursor-pointer hover:bg-bg-secondary/50 transition-colors" onClick={() => ouvrirFicheProduit(pr)} onKeyDown={(e) => { if (e.key === 'Enter') ouvrirFicheProduit(pr); }}>
                     <td className="py-4 px-lg" onClick={(e) => e.stopPropagation()}><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /></td>
@@ -381,7 +383,7 @@ export default function AdminCatalogPage() {
                     <td className="py-4 px-md text-right" onClick={(e) => e.stopPropagation()}> <TableRowActions> <Link to="/admin/categories" className="font-semibold text-primary hover:underline">{tx("Éditer")}</Link> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimerCat(c)}>{tx("Supprimer")}</button> </TableRowActions> </td>
                   </tr>
                 ))}
-                {((tab === 'produits' && produitsF.length === 0) || (tab === 'categories' && catsF.length === 0)) && (
+                {!loading && ((tab === 'produits' && produitsF.length === 0) || (tab === 'categories' && catsF.length === 0)) && (
                   <tr><td className="py-6 px-lg text-text-secondary" colSpan={6}>{tx("Aucun résultat pour ces filtres.")}</td></tr>
                 )}
               </tbody>

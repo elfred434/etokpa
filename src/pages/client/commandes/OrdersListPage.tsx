@@ -306,7 +306,7 @@ export default function OrdersListPage() {
       <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
         <ClientNavbar />
         <main className="mx-auto w-full max-w-[1100px] px-md pt-[76px]">
-          <LoadingState variant="cards" count={4} label={tx('Chargement de vos commandes…')} />
+          <LoadingState variant="orders-table" count={5} label={tx('Chargement de vos commandes…')} />
         </main>
         <ClientBottomNav />
       </div>
@@ -384,7 +384,7 @@ export default function OrdersListPage() {
           )}
 
           {loading ? (
-            <LoadingState variant="cards" count={4} label={tx('Chargement de vos commandes…')} />
+            <LoadingState variant="orders-table" count={5} label={tx('Chargement de vos commandes…')} />
           ) : orders.length === 0 ? (
             <div className="py-xl bg-bg-card rounded-lg border border-border-default">
               <EmptyState

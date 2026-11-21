@@ -658,8 +658,9 @@ export default function CatalogPage() {
 
           {listLoading ? (
             <LoadingState
-              variant="cards"
-              count={6}
+              variant={view === 'list' ? 'catalog-list' : 'cards'}
+              cols={3}
+              count={view === 'list' ? 5 : 6}
               label={packMode ? tx("Chargement des packs…") : 'Chargement des produits…'}
             />
           ) : listError ? (

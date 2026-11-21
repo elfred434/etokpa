@@ -7,7 +7,7 @@ import { zoneNom, initials } from '../../services/api/useLiveRows';
 import { alertApiError, extractApiError, formatApiError } from '../../utils/apiError';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import AdminNotificationBell from '../../components/layout/admin/AdminNotificationBell';
-import { TableSkeleton } from '../../components/shared/Skeleton';
+import { TableBodySkeletonRows } from '../../components/shared/Skeleton';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import TableRowActions from '../../components/shared/TableRowActions';
 import { MobileFilterDrawer, MobileFilterTrigger } from '../../components/shared/MobileFilterDrawer';
@@ -436,7 +436,6 @@ export default function AdminUsersPage() {
           <p>{err}</p>
         </div>
       )}
-      {loading && <TableSkeleton rows={6} cols={5} label={tx("Chargement des utilisateurs…")} className="m-lg" />}
       <style>{DESIGN_CSS}</style>
       <header className="flex flex-col gap-3 border-b border-gray-200 bg-bg-card px-4 py-3 sm:px-6">
         <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
@@ -698,6 +697,9 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-xs" id="tableBody">
+                {loading && visible.length === 0 && (
+                  <TableBodySkeletonRows rows={6} cols={7} withAvatar label={tx("Chargement des utilisateurs…")} />
+                )}
                 {!loading && visible.length === 0 && (
                   <tr>
                     <td colSpan={7} className="py-6 px-4 text-center text-gray-500">

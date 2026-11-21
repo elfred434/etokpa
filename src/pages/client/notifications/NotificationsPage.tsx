@@ -8,6 +8,7 @@ import Pagination from '../../../components/shared/Pagination';
 import EmptyState from '../../../components/shared/EmptyState';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
+import { NotificationRowsSkeleton } from '../../../components/shared/Skeleton';
 import { alertApiError } from '../../../utils/apiError';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -94,11 +95,11 @@ export default function NotificationsPage() {
 
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
+      <div className="bg-bg-app min-h-screen flex flex-col font-body text-text-main">
         <ClientNavbar />
-        <main className="mx-auto w-full max-w-[900px] px-md pt-[76px]">
-          <LoadingState variant="cards" count={4} label={tx('Chargement des notifications…')} />
-        </main>
+        <div className="mt-[52px] md:mt-[64px] flex flex-1">
+          <LoadingState variant="notifications" count={5} label={tx('Chargement des notifications…')} />
+        </div>
         <ClientBottomNav />
       </div>
     );
@@ -228,7 +229,9 @@ export default function NotificationsPage() {
                   onRetry={() => loadPage(page)}
                 />
               </div>
-            ) : filtered.length === 0 && hasLoaded ? (
+            ) : !hasLoaded ? (
+              <NotificationRowsSkeleton count={5} label={tx('Chargement des notifications…')} />
+            ) : filtered.length === 0 ? (
               <div className="bg-bg-card border border-border-default rounded-xl">
                 <EmptyState
                   icon={<MIcon name="notifications" className="text-4xl text-primary" />}

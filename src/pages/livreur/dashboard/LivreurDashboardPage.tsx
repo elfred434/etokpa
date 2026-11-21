@@ -169,7 +169,7 @@ export default function LivreurDashboardPage() {
                 className="rounded-lg border border-border-default bg-bg-card px-md"
               />
             ) : deliveries === null ? (
-              <LoadingState variant="detail" label={tx("Chargement de vos courses…")} className="rounded-lg" />
+              <LoadingState variant="livreur-active" label={tx("Chargement de vos courses…")} />
             ) : active ? (
               <div className="rounded-lg border-l-4 border-primary bg-bg-card p-lg shadow-sm">
                 <div className="mb-md flex items-start justify-between gap-md">
@@ -278,7 +278,7 @@ export default function LivreurDashboardPage() {
               className="rounded-lg border border-border-default bg-bg-card px-md"
             />
           ) : recent === null ? (
-            <LoadingState label={tx("Chargement de l'historique…")} className="rounded-lg border border-border-default bg-bg-card" />
+            <LoadingState variant="table" label={tx("Chargement de l'historique…")} />
           ) : recent.length === 0 ? (
             <div className="rounded-lg border border-border-default bg-bg-card p-lg text-center text-secondary text-text-secondary shadow-sm">
               {tx("Aucune livraison effectuée pour le moment.")}

@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
-import { DetailPanelSkeleton } from '../../../components/shared/Skeleton';
+import { MessagingShellSkeleton } from '../../../components/shared/Skeleton';
 import { alertApiError } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
@@ -229,11 +229,9 @@ export default function MessagingPage() {
 
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
+      <div className="flex h-[100dvh] flex-col overflow-hidden bg-bg-app font-body text-text-main">
         <ClientNavbar />
-        <main className="mx-auto w-full max-w-[1000px] px-md pt-[76px]">
-          <DetailPanelSkeleton label={tx('Chargement de la messagerie…')} />
-        </main>
+        <MessagingShellSkeleton label={tx('Chargement de la messagerie…')} />
         <ClientBottomNav />
       </div>
     );

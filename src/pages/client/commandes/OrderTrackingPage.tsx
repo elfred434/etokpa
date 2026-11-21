@@ -403,8 +403,11 @@ export default function OrderTrackingPage() {
     return (
       <div className="bg-bg-app min-h-screen flex flex-col font-body text-text-main">
         <ClientNavbar />
-        <main className="mx-auto w-full max-w-[1200px] px-md pt-[68px] pb-[96px]">
-          <TrackingSkeleton label={tx('Chargement du suivi…')} />
+        <main className="mx-auto w-full max-w-[920px] flex-grow px-md pt-[68px] pb-[96px]">
+          <section className="rounded-[20px] bg-bg-card px-lg pt-lg pb-xl shadow-sm lg:px-xl lg:pt-xl">
+            <div className="w-12 h-1.5 bg-border-default rounded-full mx-auto mb-lg" />
+            <TrackingSkeleton label={tx('Chargement du suivi…')} />
+          </section>
         </main>
         <ClientBottomNav />
       </div>
