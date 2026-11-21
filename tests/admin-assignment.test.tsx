@@ -106,7 +106,7 @@ afterEach(() => {
 });
 
 describe('Assignation livreur — AdminLivreursPage, AdminOrdersPage, ManagerOrdersPage', () => {
-  it('AdminLivreursPage : le bouton Assigner ouvre la modale et envoie adminApi.assignLivreur', async () => {
+  it('AdminLivreursPage : affiche directement les commandes assignables au clic sur le livreur et assigne la commande choisie', async () => {
     mocks.getUsers.mockResolvedValue({
       data: [
         {
@@ -136,6 +136,14 @@ describe('Assignation livreur — AdminLivreursPage, AdminOrdersPage, ManagerOrd
           client: { nom_complet: 'Autre Zone' },
           livreur: null,
         },
+        {
+          id: 73,
+          statut: 'en_preparation',
+          montant_total: 4800,
+          landmark: { id: 4, zone_id: 7, nom: 'Akpakpa Centre' },
+          client: { nom_complet: 'Bio Client' },
+          livreur: null,
+        },
       ],
       meta: { last_page: 1 },
     });
@@ -146,17 +154,15 @@ describe('Assignation livreur — AdminLivreursPage, AdminOrdersPage, ManagerOrd
       </LanguageProvider>,
     );
 
-    const openBtn = await screen.findByRole('button', { name: 'Assigner' });
-    fireEvent.click(openBtn);
-
     expect(await screen.findByText(/#71 — Awa Client/)).toBeTruthy();
+    expect(screen.getByText(/#73 — Bio Client/)).toBeTruthy();
     expect(screen.queryByText(/#72 — Autre Zone/)).toBeNull();
 
-    const buttons = screen.getAllByRole('button', { name: 'Assigner' });
-    fireEvent.click(buttons[buttons.length - 1]);
+    fireEvent.click(screen.getByRole('radio', { name: /#73 — Bio Client/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Assigner' }));
 
-    await waitFor(() => expect(mocks.assignLivreur).toHaveBeenCalledWith(71, 11));
-    expect(mocks.toastSuccess).toHaveBeenCalledWith('Commande #71 assignée à Koffi Livreur.');
+    await waitFor(() => expect(mocks.assignLivreur).toHaveBeenCalledWith(73, 11));
+    expect(mocks.toastSuccess).toHaveBeenCalledWith('Commande #73 assignée à Koffi Livreur.');
   });
 
   it('AdminLivreursPage : explique clairement si le livreur est indisponible', async () => {
@@ -179,8 +185,9 @@ describe('Assignation livreur — AdminLivreursPage, AdminOrdersPage, ManagerOrd
       </LanguageProvider>,
     );
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Assigner' }));
     expect(await screen.findByText(/actuellement indisponible/i)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Assigner' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
   });
 
   it('AdminOrdersPage : propose Assigner sur une commande sans livreur et envoie adminApi.assignLivreur', async () => {

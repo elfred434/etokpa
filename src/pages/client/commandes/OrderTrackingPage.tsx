@@ -5,6 +5,7 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
+import { TrackingSkeleton } from '../../../components/shared/Skeleton';
 import RealBeninMap from '../../../components/client/commandes/RealBeninMap';
 import ReceiptButton from '../../../components/payments/ReceiptButton';
 import { canDownloadReceipt } from '../../../services/receipts/receiptData';
@@ -386,8 +387,12 @@ export default function OrderTrackingPage() {
 
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
-        <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+      <div className="bg-bg-app min-h-screen flex flex-col font-body text-text-main">
+        <ClientNavbar />
+        <main className="mx-auto w-full max-w-[1200px] px-md pt-[68px] pb-[96px]">
+          <TrackingSkeleton label={tx('Chargement du suivi…')} />
+        </main>
+        <ClientBottomNav />
       </div>
     );
   }
@@ -440,9 +445,7 @@ export default function OrderTrackingPage() {
           )}
 
           {showSpinner ? (
-            <div className="py-2xl flex justify-center">
-              <MIcon name="sync" className="text-primary text-3xl animate-spin" />
-            </div>
+            <TrackingSkeleton label={tx('Chargement du suivi de la commande…')} />
           ) : showEmpty ? (
             <div className="py-xl">
               <EmptyState

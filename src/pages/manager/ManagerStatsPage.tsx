@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
+import LoadingState from '../../components/shared/LoadingState';
 import { managerApi } from '../../services/api';
 import { unwrap, fmtFcfa } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -81,8 +82,9 @@ export default function ManagerStatsPage() {
             <p>{err}</p>
           </div>
         )}
-        {loading && <p className="text-label text-text-secondary">{tx("Chargement…")}</p>}
-
+        {loading ? (
+          <LoadingState variant="kpi-cards" count={4} label={tx("Chargement des statistiques…")} />
+        ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {kpis.map((k) => (
             <div key={k.label} className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
@@ -98,6 +100,7 @@ export default function ManagerStatsPage() {
             </div>
           ))}
         </div>
+        )}
       </div>
     </ManagerLayout>
   );

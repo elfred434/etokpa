@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import PlatformOrdersPanel, { type PlatformOrder } from '../../components/orders/PlatformOrdersPanel';
+import { SkeletonBlock } from '../../components/shared/Skeleton';
 import { adminApi, type AdminOrderStatus } from '../../services/api';
 import { listOf } from '../../services/api/unwrap';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
@@ -206,7 +207,15 @@ export default function AdminOrdersPage() {
               </div>
             )}
             {livreursLoading ? (
-              <p className="text-text-secondary">{tx('Chargement…')}</p>
+              <div className="space-y-2" role="status" aria-label={tx('Chargement des livreurs…')}>
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-xl border border-border-default p-3">
+                    <SkeletonBlock className="h-4 w-4 rounded-full shrink-0" />
+                    <SkeletonBlock className="h-4 w-40" />
+                    <SkeletonBlock className="h-3.5 w-24 ml-auto" />
+                  </div>
+                ))}
+              </div>
             ) : livreursDisponibles.length === 0 ? (
               <p className="text-text-secondary">{tx('Aucun livreur disponible dans la zone.')}</p>
             ) : (

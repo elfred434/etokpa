@@ -169,7 +169,7 @@ export default function LivreurDashboardPage() {
                 className="rounded-lg border border-border-default bg-bg-card px-md"
               />
             ) : deliveries === null ? (
-              <LoadingState label={tx("Chargement de vos courses…")} className="rounded-lg border border-border-default bg-bg-card" />
+              <LoadingState variant="detail" label={tx("Chargement de vos courses…")} className="rounded-lg" />
             ) : active ? (
               <div className="rounded-lg border-l-4 border-primary bg-bg-card p-lg shadow-sm">
                 <div className="mb-md flex items-start justify-between gap-md">

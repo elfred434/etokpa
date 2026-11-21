@@ -7,6 +7,7 @@ import { alertApiError } from '../../utils/apiError';
 import { exportAuditLogsPdf } from '../../utils/auditPdf';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import { MobileFilterDrawer, MobileFilterTrigger } from '../../components/shared/MobileFilterDrawer';
+import { SkeletonBlock } from '../../components/shared/Skeleton';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
@@ -159,7 +160,11 @@ export default function AdminLogsPage() {
             <h1 className="font-h1 text-h1 text-text-main">{tx("Logs & Audit")}</h1>
           </div>
           <p className="font-body text-body text-text-secondary">
-            {loading ? tx("Chargement…") : tr(`${meta.total.toLocaleString('fr-FR')} événement${meta.total > 1 ? 's' : ''} enregistré${meta.total > 1 ? 's' : ''}`, `${meta.total.toLocaleString('en-GB')} event${meta.total > 1 ? 's' : ''} recorded`)}
+              {loading ? (
+                <SkeletonBlock as="span" className="inline-block h-4 w-44 align-middle" />
+              ) : (
+              tr(`${meta.total.toLocaleString('fr-FR')} événement${meta.total > 1 ? 's' : ''} enregistré${meta.total > 1 ? 's' : ''}`, `${meta.total.toLocaleString('en-GB')} event${meta.total > 1 ? 's' : ''} recorded`)
+            )}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -332,6 +337,22 @@ export default function AdminLogsPage() {
       <section className="relative pl-md">
         <div className="absolute timeline-line"></div>
         <div className="space-y-md relative">
+          {loading && visibles.length === 0 && (
+            <div className="space-y-md" role="status" aria-label={tx("Chargement des journaux…")}>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="flex items-start gap-3 sm:gap-lg">
+                  <SkeletonBlock className="mt-4 h-2.5 w-2.5 rounded-full shrink-0" />
+                  <div className="flex-1 rounded-[10px] border-[0.5px] border-border-default bg-bg-card p-md space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <SkeletonBlock className="h-4 w-40" />
+                      <SkeletonBlock className="h-3.5 w-24" />
+                    </div>
+                    <SkeletonBlock className="h-3.5 w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {!loading && visibles.length === 0 && (
             <div className="bg-bg-card border-[0.5px] border-border-default rounded-[10px] p-md text-center text-text-secondary">
               {type ? tx("Aucun événement de ce type sur cette page.") : tx("Aucun événement enregistré.")}

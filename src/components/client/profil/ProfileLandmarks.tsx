@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
+import { SkeletonBlock } from '../../shared/Skeleton';
 import { adminDialogs } from '../../shared/AdminActionDialogs';
 import {
   DIALOG_CANCEL_BTN_CLASS,
@@ -155,7 +156,19 @@ export default function ProfileLandmarks() {
           <p>{error}</p>
         </div>
       )}
-      {loading && <p className="text-label text-text-secondary" role="status">{tx('Chargement des points de repère…')}</p>}
+      {loading && (
+        <div className="space-y-3" role="status" aria-label={tx('Chargement des points de repère…')}>
+          {[0, 1].map((i) => (
+            <div key={i} className="flex items-center gap-3 rounded-xl border border-border-default p-4">
+              <SkeletonBlock className="h-10 w-10 rounded-full shrink-0" />
+              <div className="flex-1 space-y-2">
+                <SkeletonBlock className="h-4 w-40" />
+                <SkeletonBlock className="h-3 w-56" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {!loading && landmarks.length === 0 && !error && (
         <p className="rounded-lg bg-bg-secondary p-4 text-label text-text-secondary">{tx('Aucun point de repère enregistré.')}</p>
       )}

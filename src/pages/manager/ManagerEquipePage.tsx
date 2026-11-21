@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
+import LoadingState from '../../components/shared/LoadingState';
 import { DIALOG_PRIMARY_BTN_CLASS, DialogFrame } from '../../components/shared/DialogFrame';
 import { managerApi } from '../../services/api';
 import { unwrap, listOf } from '../../services/api/unwrap';
@@ -73,8 +74,6 @@ export default function ManagerEquipePage() {
             <p>{err}</p>
           </div>
         )}
-        {loading && <p className="text-label text-text-secondary">{tx("Chargement…")}</p>}
-
         <div className="flex flex-wrap gap-2">
           <select
             value={statut}
@@ -86,6 +85,10 @@ export default function ManagerEquipePage() {
             ))}
           </select>
         </div>
+
+        {loading && livreurs.length === 0 && (
+          <LoadingState variant="rider-cards" count={6} label={tx("Chargement de l’équipe…")} />
+        )}
 
         {!loading && livs.length === 0 && (
           <p className="text-label text-text-secondary">{tx("Aucun livreur dans la zone.")}</p>

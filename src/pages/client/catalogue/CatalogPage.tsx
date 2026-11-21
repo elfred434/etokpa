@@ -8,6 +8,7 @@ import MIcon from '../../../components/shared/MIcon';
 import ImageWithFallback from '../../../components/shared/ImageWithFallback';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
+import { SkeletonBlock } from '../../../components/shared/Skeleton';
 import { useAppDispatch } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import type { CategoryId, Product } from '../../../types/models';
@@ -582,7 +583,13 @@ export default function CatalogPage() {
             <div>
               <h2 className="font-h1 text-h1 text-on-surface">{catTitle}</h2>
               <p className="mt-1 text-ink-2">
-                {listLoading ? tx("Chargement…") : listError ? '' : `${filtered.length} ${packMode ? tx("packs trouvés") : tx("produits trouvés")}`}
+                {listLoading ? (
+                  <SkeletonBlock as="span" className="inline-block h-4 w-32 align-middle" />
+                ) : listError ? (
+                  ''
+                ) : (
+                  `${filtered.length} ${packMode ? tx("packs trouvés") : tx("produits trouvés")}`
+                )}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4">
@@ -651,8 +658,9 @@ export default function CatalogPage() {
 
           {listLoading ? (
             <LoadingState
+              variant="cards"
+              count={6}
               label={packMode ? tx("Chargement des packs…") : 'Chargement des produits…'}
-              className="rounded-xl border-[0.5px] border-line bg-bg-card"
             />
           ) : listError ? (
             <ApiErrorState

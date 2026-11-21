@@ -251,7 +251,7 @@ export default function HomePage() {
               className="rounded-[14px] border border-line bg-bg-card px-md"
             />
           ) : apiCats === null ? (
-            <LoadingState label={isFr ? tx("Chargement des catégories…") : 'Loading categories…'} className="rounded-[14px] bg-warm-low" />
+            <LoadingState variant="kpi-cards" count={4} label={isFr ? tx("Chargement des catégories…") : 'Loading categories…'} />
           ) : (
           <div className="grid grid-cols-2 gap-3 sm:gap-md md:grid-cols-4">
             {categoriesList.map((c) => (
@@ -281,8 +281,9 @@ export default function HomePage() {
 
             {selLoading ? (
               <LoadingState
+                variant="cards"
+                count={4}
                 label={isFr ? tx("Chargement des produits…") : 'Loading products…'}
-                className="rounded-[14px] border border-line bg-bg-card"
               />
             ) : needsLogin ? (
               <EmptyState

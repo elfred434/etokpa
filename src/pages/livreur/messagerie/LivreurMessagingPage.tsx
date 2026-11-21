@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import LivreurLayout from '../../../components/layout/livreur/LivreurLayout';
 import MIcon from '../../../components/shared/MIcon';
+import { SkeletonBlock } from '../../../components/shared/Skeleton';
 import { chatApi, type ConversationItem } from '../../../services/api/chat';
 import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
@@ -254,7 +255,17 @@ export default function LivreurMessagingPage() {
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
               {loadingConversations ? (
-                <div className="p-4 text-sm text-text-secondary">{tx('Chargement…')}</div>
+                <div className="space-y-3 p-4" aria-busy="true" aria-label={tx('Chargement des conversations…')}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <SkeletonBlock className="h-10 w-10 rounded-full shrink-0" />
+                      <div className="flex-1 space-y-1.5">
+                        <SkeletonBlock className="h-4 w-32" />
+                        <SkeletonBlock className="h-3 w-20" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : conversations.length === 0 ? (
                 <div className="p-4 text-sm text-text-secondary">
                   {backendDenied
@@ -305,7 +316,11 @@ export default function LivreurMessagingPage() {
 
                 <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 py-4 sm:px-5" aria-live="polite">
                   {loadingMessages ? (
-                    <p className="m-auto text-sm text-text-secondary">{tx('Chargement…')}</p>
+                    <div className="space-y-3 p-2" aria-busy="true" aria-label={tx('Chargement des messages…')}>
+                      <SkeletonBlock className="h-10 w-56 rounded-2xl" />
+                      <SkeletonBlock className="ml-auto h-10 w-48 rounded-2xl" />
+                      <SkeletonBlock className="h-12 w-64 rounded-2xl" />
+                    </div>
                   ) : messages.length === 0 ? (
                     <div className="m-auto max-w-sm text-center text-text-secondary">
                       <MIcon name="chat_bubble_outline" className="mb-2 text-4xl" />

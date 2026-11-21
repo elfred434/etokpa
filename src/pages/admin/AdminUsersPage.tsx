@@ -7,6 +7,7 @@ import { zoneNom, initials } from '../../services/api/useLiveRows';
 import { alertApiError, extractApiError, formatApiError } from '../../utils/apiError';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import AdminNotificationBell from '../../components/layout/admin/AdminNotificationBell';
+import { TableSkeleton } from '../../components/shared/Skeleton';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import TableRowActions from '../../components/shared/TableRowActions';
 import { MobileFilterDrawer, MobileFilterTrigger } from '../../components/shared/MobileFilterDrawer';
@@ -435,7 +436,7 @@ export default function AdminUsersPage() {
           <p>{err}</p>
         </div>
       )}
-      {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
+      {loading && <TableSkeleton rows={6} cols={5} label={tx("Chargement des utilisateurs…")} className="m-lg" />}
       <style>{DESIGN_CSS}</style>
       <header className="flex flex-col gap-3 border-b border-gray-200 bg-bg-card px-4 py-3 sm:px-6">
         <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">

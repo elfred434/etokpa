@@ -5,6 +5,7 @@ import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
 import EmptyState from '../../../components/shared/EmptyState';
+import LoadingState from '../../../components/shared/LoadingState';
 import Pagination from '../../../components/shared/Pagination';
 import TableRowActions from '../../../components/shared/TableRowActions';
 import { adminDialogs } from '../../../components/shared/AdminActionDialogs';
@@ -302,8 +303,12 @@ export default function OrdersListPage() {
 
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
-        <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+      <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
+        <ClientNavbar />
+        <main className="mx-auto w-full max-w-[1100px] px-md pt-[76px]">
+          <LoadingState variant="cards" count={4} label={tx('Chargement de vos commandes…')} />
+        </main>
+        <ClientBottomNav />
       </div>
     );
   }
@@ -379,9 +384,7 @@ export default function OrdersListPage() {
           )}
 
           {loading ? (
-            <div className="py-2xl flex justify-center bg-bg-card rounded-lg border border-border-default">
-              <MIcon name="sync" className="text-primary text-3xl animate-spin" />
-            </div>
+            <LoadingState variant="cards" count={4} label={tx('Chargement de vos commandes…')} />
           ) : orders.length === 0 ? (
             <div className="py-xl bg-bg-card rounded-lg border border-border-default">
               <EmptyState

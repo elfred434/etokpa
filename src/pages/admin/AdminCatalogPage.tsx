@@ -11,6 +11,7 @@ import { extractApiError, formatApiError, messageApi } from '../../utils/apiErro
 import DESIGN_SCRIPT from './_scripts/AdminCatalogPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import { TableSkeleton } from '../../components/shared/Skeleton';
 import ImageWithFallback from '../../components/shared/ImageWithFallback';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import TableRowActions from '../../components/shared/TableRowActions';
@@ -288,7 +289,7 @@ export default function AdminCatalogPage() {
           <p>{err}</p>
         </div>
       )}
-      {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
+      {loading && <TableSkeleton rows={5} cols={5} label={tx("Chargement du catalogue…")} className="m-lg" />}
       <div className="m-lg">
         <button type="button" className="btn btn-primary" onClick={() => ouvrir(null)}>
           + {tx("Nouveau produit")}

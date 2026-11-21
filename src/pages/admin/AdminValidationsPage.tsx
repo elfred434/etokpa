@@ -6,6 +6,7 @@ import { alertApiError, messageApi } from '../../utils/apiError';
 import { absImageUrl } from '../../utils/imageUrl';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import { TableSkeleton } from '../../components/shared/Skeleton';
 import ImageWithFallback from '../../components/shared/ImageWithFallback';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import TableRowActions from '../../components/shared/TableRowActions';
@@ -187,7 +188,7 @@ export default function AdminValidationsPage() {
           <p>{actionErr}</p>
         </div>
       )}
-      {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
+      {loading && <TableSkeleton rows={5} cols={5} label={tx("Chargement des validations…")} className="m-lg" />}
       <style>{DESIGN_CSS}</style>
       <header className="flex flex-col gap-4 bg-bg-app px-4 pb-4 pt-4 sm:px-8 sm:pt-8">
         <div>

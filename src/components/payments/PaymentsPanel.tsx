@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import { backgroundRefreshActive, silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 import MIcon from '../shared/MIcon';
+import { TableSkeleton } from '../shared/Skeleton';
 import { adminApi, ordersApi, paymentsApi } from '../../services/api';
 import { currentUserId, currentUserName, isAdminRole } from '../../routes/authGuard';
 import { canDownloadReceipt, type ReceiptOrder } from '../../services/receipts/receiptData';
@@ -279,7 +280,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
         </div>
       )}
       <div className="overflow-hidden rounded-lg border border-border-default bg-bg-card shadow-sm">
-        {loading && <p className="p-lg text-label text-text-secondary">{tx("Chargement…")}</p>}
+        {loading && <TableSkeleton rows={6} cols={source === 'all' ? 6 : 5} label={tx("Chargement des paiements…")} className="border-0 rounded-none" />}
         {!loading && rows.length === 0 && !err && (
           <p className="p-lg text-label text-text-secondary">{tx("Aucun paiement.")}</p>
         )}

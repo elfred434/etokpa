@@ -10,11 +10,7 @@ import { isLivreurDisponible, livreurZoneId } from '../../utils/managerAssignmen
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
-import {
-  DIALOG_CANCEL_BTN_CLASS,
-  DIALOG_PRIMARY_BTN_CLASS,
-  DialogFrame,
-} from '../../components/shared/DialogFrame';
+import { DetailPanelSkeleton, SkeletonBlock } from '../../components/shared/Skeleton';
 import TableRowActions from '../../components/shared/TableRowActions';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
@@ -186,7 +182,6 @@ export default function AdminLivreursPage() {
     }
   };
 
-  const [assignOpen, setAssignOpen] = useState(false);
   const [orderChoisi, setOrderChoisi] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [assignErr, setAssignErr] = useState<string | null>(null);
@@ -212,15 +207,59 @@ export default function AdminLivreursPage() {
     });
   }, [orders, selected, selZoneId]);
 
-  const openAssignModal = () => {
-    if (!selected) return;
+  useEffect(() => {
     setAssignErr(null);
-    setOrderChoisi(assignableOrders.length === 1 ? String(assignableOrders[0].id) : '');
-    setAssignOpen(true);
-  };
+    if (assignableOrders.length === 1) {
+      setOrderChoisi(String(assignableOrders[0].id));
+    } else if (!assignableOrders.some((o) => String(o.id) === orderChoisi)) {
+      setOrderChoisi('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.id, assignableOrders]);
 
   const confirmerAssignation = async () => {
-    if (!selected || !orderChoisi || assigning) return;
+    if (!selected || assigning) return;
+    if (!selActif) {
+      setAssignErr(
+        tr(
+          'Ce compte livreur est inactif ou suspendu : il ne peut pas recevoir de commande.',
+          'This rider account is inactive or suspended: it cannot receive an order.',
+        ),
+      );
+      return;
+    }
+    if (!selDispo) {
+      setAssignErr(
+        tr(
+          'Ce livreur est actuellement indisponible. Activez sa disponibilité dans « Modifier » avant d’assigner une course.',
+          'This rider is currently unavailable. Enable availability in Edit before assigning a delivery.',
+        ),
+      );
+      return;
+    }
+    if (!selZoneId) {
+      setAssignErr(
+        tr(
+          'Aucune zone n’est attribuée à ce livreur. Définissez sa zone avant d’assigner une commande.',
+          'No zone is assigned to this rider. Set a zone before assigning an order.',
+        ),
+      );
+      return;
+    }
+    if (!orderChoisi) {
+      setAssignErr(
+        assignableOrders.length === 0
+          ? tr(
+              'Aucune commande en attente sans livreur dans la zone de ce livreur.',
+              'No unassigned active order in this rider’s zone.',
+            )
+          : tr(
+              'Sélectionnez d’abord une commande ci-dessus pour l’assigner.',
+              'Select an order above before assigning.',
+            ),
+      );
+      return;
+    }
     setAssignErr(null);
     setAssigning(true);
     try {
@@ -231,7 +270,6 @@ export default function AdminLivreursPage() {
           `Order #${orderChoisi} assigned to ${selNom}.`,
         ),
       );
-      setAssignOpen(false);
       setOrderChoisi('');
       reload();
     } catch (e) {
@@ -251,7 +289,6 @@ export default function AdminLivreursPage() {
           <p>{err}</p>
         </div>
       )}
-      {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
       <style>{DESIGN_CSS}</style>
       <div className="flex-1 bg-bg-card rounded-lg border border-border-default overflow-hidden flex flex-col">
         <div className="overflow-x-auto">
@@ -267,6 +304,23 @@ export default function AdminLivreursPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-default">
+              {loading && livreurs.length === 0 && (
+                Array.from({ length: 5 }).map((_, idx) => (
+                  <tr key={`sk-${idx}`} aria-label={idx === 0 ? tx("Chargement des livreurs…") : undefined}>
+                    <td className="px-md py-4">
+                      <div className="flex items-center gap-3">
+                        <SkeletonBlock className="w-10 h-10 rounded-full shrink-0" />
+                        <SkeletonBlock className="h-4 w-32" />
+                      </div>
+                    </td>
+                    <td className="px-md py-4"><SkeletonBlock className="h-4 w-10" /></td>
+                    <td className="px-md py-4"><SkeletonBlock className="h-4 w-20" /></td>
+                    <td className="px-md py-4"><SkeletonBlock className="h-6 w-24 rounded-full" /></td>
+                    <td className="px-md py-4"><SkeletonBlock className="h-4 w-12" /></td>
+                    <td className="px-md py-4 text-right"><SkeletonBlock className="ml-auto h-7 w-16 rounded-lg" /></td>
+                  </tr>
+                ))
+              )}
               {!loading && livreurs.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-md py-6 text-center text-text-secondary">
@@ -371,6 +425,9 @@ export default function AdminLivreursPage() {
           </div>
         </div>
       </div>
+      {loading && !selected && panelOpen && (
+        <DetailPanelSkeleton label={tx("Chargement du détail livreur…")} className="hidden lg:block lg:w-80 shrink-0" />
+      )}
       {selected && (
         <aside className="fixed inset-0 z-[60] flex w-full max-w-full flex-col overflow-y-auto bg-bg-card p-4 lg:static lg:z-auto lg:w-80 lg:rounded-lg lg:border lg:border-border-default lg:p-lg" id="detailPanel">
           <div className="flex justify-between items-start mb-lg">
@@ -472,6 +529,89 @@ export default function AdminLivreursPage() {
                 </div>
               </div>
             )}
+            <div className="pt-lg border-t border-border-default space-y-sm">
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-label text-label">{tx("Commandes assignables")}</p>
+                {canAssignSelected && (
+                  <span className="rounded-full bg-primary-tint px-2 py-0.5 text-micro font-bold text-primary">
+                    {assignableOrders.length}
+                  </span>
+                )}
+              </div>
+              {assignErr && (
+                <div className="rounded-lg border border-error bg-error-container p-2.5 text-xs font-semibold text-on-error-container" role="alert">
+                  {assignErr}
+                </div>
+              )}
+              {!selActif ? (
+                <p className="text-secondary font-body">
+                  {tr(
+                    'Ce compte livreur est inactif ou suspendu : il ne peut pas recevoir de commande.',
+                    'This rider account is inactive or suspended: it cannot receive an order.',
+                  )}
+                </p>
+              ) : !selDispo ? (
+                <p className="text-secondary font-body">
+                  {tr(
+                    'Ce livreur est actuellement indisponible. Activez sa disponibilité dans « Modifier » avant d’assigner une course.',
+                    'This rider is currently unavailable. Enable availability in Edit before assigning a delivery.',
+                  )}
+                </p>
+              ) : !selZoneId ? (
+                <p className="text-secondary font-body">
+                  {tr(
+                    'Aucune zone n’est attribuée à ce livreur. Définissez sa zone avant d’assigner une commande.',
+                    'No zone is assigned to this rider. Set a zone before assigning an order.',
+                  )}
+                </p>
+              ) : assignableOrders.length === 0 ? (
+                <p className="text-secondary font-body">
+                  {tr(
+                    'Aucune commande en attente sans livreur dans la zone de ce livreur.',
+                    'No unassigned active order in this rider’s zone.',
+                  )}
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-0.5">
+                  {assignableOrders.map((o) => {
+                    const idStr = String(o.id);
+                    const clientNom = o?.client?.nom_complet ?? o?.user?.nom_complet ?? 'Client';
+                    const checked = orderChoisi === idStr;
+                    return (
+                      <label
+                        key={o.id}
+                        className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 text-xs transition-colors ${
+                          checked
+                            ? 'border-primary bg-primary-tint/50'
+                            : 'border-border-default hover:bg-bg-secondary'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="admin-assign-order"
+                          value={idStr}
+                          checked={checked}
+                          onChange={() => {
+                            setOrderChoisi(idStr);
+                            setAssignErr(null);
+                          }}
+                          className="mt-0.5 accent-primary"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2 font-bold text-text-main">
+                            <span className="truncate">#{o.id} — {clientNom}</span>
+                            <span className="shrink-0 font-price">{fmtFcfa(o.montant_total)}</span>
+                          </div>
+                          {o?.landmark?.nom && (
+                            <p className="text-text-secondary truncate">{o.landmark.nom}</p>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
             <div className="pt-lg border-t border-border-default">
               <p className="font-label text-label mb-md">{tx("Activités récentes")}</p>
               <ul className="space-y-sm">
@@ -502,111 +642,14 @@ export default function AdminLivreursPage() {
             )}
             <button
               type="button"
-              onClick={openAssignModal}
-              className="flex-1 bg-primary-container text-white py-2 rounded-lg font-bold hover:bg-primary-hover active:scale-97 transition-all cursor-pointer"
+              disabled={assigning}
+              onClick={() => void confirmerAssignation()}
+              className="flex-1 bg-primary-container text-white py-2 rounded-lg font-bold hover:bg-primary-hover active:scale-97 transition-all cursor-pointer disabled:opacity-60"
             >
-              {tx("Assigner")}
+              {assigning ? tx("Assignation…") : tx("Assigner")}
             </button>
           </div>
         </aside>
-      )}
-      {assignOpen && selected && (
-        <DialogFrame
-          icon="two_wheeler"
-          title={tr(`Assigner une commande — ${selNom}`, `Assign an order — ${selNom}`)}
-          subtitle={zoneNom(selZoneId) !== '—' ? `${tx("Zone :")} ${zoneNom(selZoneId)}` : undefined}
-          maxWidth="37.5rem"
-          disabled={assigning}
-          onClose={() => setAssignOpen(false)}
-          footer={
-            <>
-              <button
-                type="button"
-                className={DIALOG_CANCEL_BTN_CLASS}
-                disabled={assigning}
-                onClick={() => setAssignOpen(false)}
-              >
-                {tx("Annuler")}
-              </button>
-              <button
-                type="button"
-                className={DIALOG_PRIMARY_BTN_CLASS}
-                disabled={!canAssignSelected || !orderChoisi || assigning}
-                onClick={() => void confirmerAssignation()}
-              >
-                {assigning ? tx("Assignation…") : tx("Assigner")}
-              </button>
-            </>
-          }
-        >
-          <div className="space-y-3 text-label">
-            {assignErr && (
-              <div className="rounded-lg border border-error bg-error-container p-3 text-xs font-semibold text-on-error-container" role="alert">
-                {assignErr}
-              </div>
-            )}
-            {!selActif ? (
-              <p className="text-text-secondary">
-                {tr(
-                  'Ce compte livreur est inactif ou suspendu : il ne peut pas recevoir de commande.',
-                  'This rider account is inactive or suspended: it cannot receive an order.',
-                )}
-              </p>
-            ) : !selDispo ? (
-              <p className="text-text-secondary">
-                {tr(
-                  'Ce livreur est actuellement indisponible. Activez sa disponibilité dans « Modifier » avant d’assigner une course.',
-                  'This rider is currently unavailable. Enable availability in Edit before assigning a delivery.',
-                )}
-              </p>
-            ) : !selZoneId ? (
-              <p className="text-text-secondary">
-                {tr(
-                  'Aucune zone n’est attribuée à ce livreur. Définissez sa zone avant d’assigner une commande.',
-                  'No zone is assigned to this rider. Set a zone before assigning an order.',
-                )}
-              </p>
-            ) : assignableOrders.length === 0 ? (
-              <p className="text-text-secondary">
-                {tr(
-                  'Aucune commande en attente sans livreur dans la zone de ce livreur.',
-                  'No unassigned active order in this rider’s zone.',
-                )}
-              </p>
-            ) : (
-              assignableOrders.map((o) => {
-                const idStr = String(o.id);
-                const clientNom = o?.client?.nom_complet ?? o?.user?.nom_complet ?? 'Client';
-                return (
-                  <label
-                    key={o.id}
-                    className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors ${
-                      orderChoisi === idStr
-                        ? 'border-primary bg-primary-tint/50'
-                        : 'border-border-default hover:bg-bg-secondary'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="admin-assign-order"
-                      value={idStr}
-                      checked={orderChoisi === idStr}
-                      onChange={() => setOrderChoisi(idStr)}
-                      className="accent-primary"
-                    />
-                    <span className="min-w-0 flex-1 break-words font-semibold">
-                      #{o.id} — {clientNom}
-                    </span>
-                    <span className="text-text-secondary">
-                      {o?.landmark?.nom ? `${o.landmark.nom} · ` : ''}
-                      {fmtFcfa(o.montant_total)}
-                    </span>
-                  </label>
-                );
-              })
-            )}
-          </div>
-        </DialogFrame>
       )}
     </AdminLayout>
   );

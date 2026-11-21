@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import Pagination from '../shared/Pagination';
+import { TableSkeleton } from '../shared/Skeleton';
 import { ModalShell, BandeauFiche, FicheCard, LigneFiche, BoutonFermer } from '../shared/ModalShell';
 import TableRowActions from '../shared/TableRowActions';
 import { MobileFilterDrawer, MobileFilterTrigger } from '../shared/MobileFilterDrawer';
@@ -489,7 +490,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
       )}
 
       <div className="overflow-hidden rounded-lg border border-border-default bg-bg-card shadow-sm">
-        {loading && <p className="p-lg text-label text-text-secondary">{tx("Chargement…")}</p>}
+        {loading && <TableSkeleton rows={6} cols={6} label={tx("Chargement des commandes…")} className="border-0 rounded-none" />}
         {!loading && visibleOrders.length === 0 && (
           <p className="p-lg text-label text-text-secondary">
             {filterMode ? tx("Aucune commande ne correspond à ces critères.") : tx("Aucune commande.")}

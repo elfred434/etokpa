@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
+import LoadingState from '../../components/shared/LoadingState';
+import { TableSkeleton } from '../../components/shared/Skeleton';
 import { managerApi } from '../../services/api';
 import { unwrap, listOf, fmtFcfa, heureCourte } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -103,8 +105,9 @@ export default function ManagerDashboardPage() {
             <p>{err}</p>
           </div>
         )}
-        {loading && <p className="text-label text-text-secondary">{tx("Chargement…")}</p>}
-
+        {loading ? (
+          <LoadingState variant="kpi-cards" count={4} label={tx("Chargement du tableau de bord…")} />
+        ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {kpis.map((k) => (
             <div key={k.label} className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
@@ -120,6 +123,7 @@ export default function ManagerDashboardPage() {
             </div>
           ))}
         </div>
+        )}
 
         <div className="overflow-hidden rounded-lg border border-border-default bg-bg-card shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-default px-4 py-4 sm:px-lg">
@@ -128,6 +132,9 @@ export default function ManagerDashboardPage() {
               {tx("Voir tout")}
             </Link>
           </div>
+          {loading && commandes.length === 0 && (
+            <TableSkeleton rows={4} cols={4} label={tx("Chargement des commandes…")} className="border-0 rounded-none" />
+          )}
           {commandes.length === 0 && !loading && (
             <p className="p-lg text-label text-text-secondary">{tx("Aucune commande.")}</p>
           )}

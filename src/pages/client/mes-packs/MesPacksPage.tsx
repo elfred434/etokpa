@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
+import LoadingState from '../../../components/shared/LoadingState';
 import ImageWithFallback from '../../../components/shared/ImageWithFallback';
 import { adminDialogs } from '../../../components/shared/AdminActionDialogs';
 import { DIALOG_PRIMARY_BTN_CLASS, DialogFrame } from '../../../components/shared/DialogFrame';
@@ -593,8 +594,8 @@ export default function MesPacksPage() {
                 <span className="text-sm text-ink-2">{drafts.length}</span>
               </div>
 
-              {!pret && <p className="text-sm text-ink-2">{tx("Chargement…")}</p>}
-              {drafts.length === 0 && (
+              {!pret && <LoadingState variant="cards" count={3} label={tx("Chargement de vos packs…")} />}
+              {pret && drafts.length === 0 && (
                 <div className="rounded-3xl border border-dashed border-primary/30 bg-bg-card px-6 py-16 text-center">
                   <MIcon name="package_2" className="text-5xl text-primary" />
                   <p className="mt-3 text-lg font-bold text-on-surface">{tx("Aucun pack créé pour l'instant.")}</p>

@@ -7,6 +7,7 @@ import MIcon from '../../../components/shared/MIcon';
 import Pagination from '../../../components/shared/Pagination';
 import EmptyState from '../../../components/shared/EmptyState';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
+import LoadingState from '../../../components/shared/LoadingState';
 import { alertApiError } from '../../../utils/apiError';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -93,8 +94,12 @@ export default function NotificationsPage() {
 
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
-        <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+      <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
+        <ClientNavbar />
+        <main className="mx-auto w-full max-w-[900px] px-md pt-[76px]">
+          <LoadingState variant="cards" count={4} label={tx('Chargement des notifications…')} />
+        </main>
+        <ClientBottomNav />
       </div>
     );
   }

@@ -168,7 +168,7 @@ export default function LivreurSettingsPage() {
               className="rounded-[14px] bg-bg-card px-md shadow-sm"
             />
           ) : !profile ? (
-            <LoadingState label={tx("Chargement de votre profil…")} className="rounded-[14px] bg-bg-card shadow-sm" />
+            <LoadingState variant="detail" label={tx("Chargement de votre profil…")} className="rounded-[14px]" />
           ) : (
             <div className="grid grid-cols-1 gap-lg lg:grid-cols-12">
               {/* Profil & Identité */}
