@@ -23,6 +23,7 @@ import { tr, tx } from '../../../i18n/tx';
 import { captureFrontendError } from '../../../services/errors/frontendErrorReporter';
 import { clearPaymentIntent, paymentIdempotencyKey, rememberPayment } from '../../../utils/idempotence';
 import { indexEffectivePayments, resolveOrderPayment } from '../../../utils/paymentSummary';
+import { safePaymentRedirectUrl } from '../../../utils/safeUrl';
 
 interface ApiRider {
   id: number;
@@ -154,7 +155,8 @@ export default function OrderTrackingPage() {
             : cur,
         );
       }
-      if (redirectUrl) window.location.assign(redirectUrl);
+      const safeRedirect = safePaymentRedirectUrl(redirectUrl);
+      if (safeRedirect) window.location.assign(safeRedirect);
       else toast.success(isFr ? tx("Paiement initialisé.") : 'Payment initialized.');
     } catch (err) {
       toast.error(formatApiError(extractApiError(err)));

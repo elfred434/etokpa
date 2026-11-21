@@ -61,9 +61,12 @@ export function sessionPhoto(): string | null {
   }
 }
 
+const ALLOWED_RASTER_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']);
+
 /** Réduit une image choisie pour l'afficher tout de suite, sans l'envoyer en base64 au serveur. */
 export function fileToPhoto(file: File): Promise<string> {
-  if (!file.type.startsWith('image/')) return Promise.reject(new Error('type'));
+  // Bloque explicitement SVG (scripts embarqués) et tout type non matriciel.
+  if (!ALLOWED_RASTER_TYPES.has(file.type.toLowerCase())) return Promise.reject(new Error('type'));
   if (file.size > 4 * 1024 * 1024) return Promise.reject(new Error('size'));
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

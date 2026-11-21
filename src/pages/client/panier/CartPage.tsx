@@ -29,6 +29,7 @@ import {
   saveCheckoutIntent,
   type CartLine,
 } from '../../../utils/idempotence';
+import { safePaymentRedirectUrl } from '../../../utils/safeUrl';
 
 const LIEU_KEY = 'tokpa_cart_lieu';
 
@@ -325,8 +326,9 @@ export default function CartPage() {
       };
       saveConfirmation(payload);
       if (redirectUrl) {
-        if (/fedapay\.com/i.test(redirectUrl)) {
-          window.open(redirectUrl, '_blank', 'noopener');
+        const safeRedirect = safePaymentRedirectUrl(redirectUrl);
+        if (safeRedirect && /fedapay\.com/i.test(safeRedirect)) {
+          window.open(safeRedirect, '_blank', 'noopener,noreferrer');
           toast.success(tx("Redirection vers FedaPay…"));
         } else {
           toast.success(tx("Paiement FedaPay initialisé (mode sandbox dev)."));

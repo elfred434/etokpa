@@ -205,7 +205,17 @@ export function canAccess(pathname: string, role: string | null): boolean {
  * mèneraient hors de TOKPa), et jamais un écran d'authentification (boucle). Sinon null.
  */
 export function safeRedirect(target: unknown): string | null {
-  if (typeof target !== 'string' || !target.startsWith('/') || target.startsWith('//') || target.startsWith('/\\')) {
+  if (typeof target !== 'string') return null;
+  if (/[\u0000-\u001F\u007F]/.test(target)) return null;
+  if (!target.startsWith('/') || target.startsWith('//') || target.startsWith('/\\')) {
+    return null;
+  }
+  try {
+    const decoded = decodeURIComponent(target);
+    if (decoded.startsWith('//') || decoded.startsWith('/\\') || /^\/+[a-z][a-z0-9+.-]*:/i.test(decoded)) {
+      return null;
+    }
+  } catch {
     return null;
   }
   const pathname = target.split(/[?#]/)[0];

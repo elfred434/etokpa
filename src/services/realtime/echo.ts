@@ -54,11 +54,18 @@ export interface ReverbConfig {
 }
 
 export function getReverbConfig(): ReverbConfig {
+  const isHttps = typeof window !== 'undefined' && window.location?.protocol === 'https:';
+  const defaultScheme: 'ws' | 'wss' = isHttps ? 'wss' : 'ws';
+  const scheme: 'ws' | 'wss' = env.VITE_REVERB_SCHEME === 'wss'
+    ? 'wss'
+    : env.VITE_REVERB_SCHEME === 'ws' && !isHttps
+      ? 'ws'
+      : defaultScheme;
   return {
     host: env.VITE_REVERB_HOST || 'localhost',
     port: Number(env.VITE_REVERB_PORT || 8080),
     wssPort: Number(env.VITE_REVERB_WSS_PORT || 443),
-    scheme: (env.VITE_REVERB_SCHEME as 'ws' | 'wss') || 'ws',
+    scheme,
     key: env.VITE_REVERB_KEY || 'tokpa-key',
     appId: env.VITE_REVERB_APP_ID || 'tokpa',
   };

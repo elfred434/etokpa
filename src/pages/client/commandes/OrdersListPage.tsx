@@ -30,6 +30,7 @@ import { clearPaymentIntent, loadPayment, paymentIdempotencyKey, rememberPayment
 import { indexEffectivePayments, resolveOrderPayment, type OrderPaymentSummary } from '../../../utils/paymentSummary';
 import { captureFrontendError } from '../../../services/errors/frontendErrorReporter';
 import { downloadCsvFile } from '../../../utils/csvExport';
+import { safePaymentRedirectUrl } from '../../../utils/safeUrl';
 
 interface ApiOrderItem {
   id: number;
@@ -203,9 +204,10 @@ export default function OrdersListPage() {
       clearPaymentIntent(order.id);
     } else {
       const saved = loadPayment(order.id);
-      if (saved?.redirectUrl) {
+      const safeSavedRedirect = safePaymentRedirectUrl(saved?.redirectUrl);
+      if (safeSavedRedirect) {
         toast.success(tx("Ce paiement est déjà lancé. On rouvre le même lien."));
-        window.location.assign(saved.redirectUrl);
+        window.location.assign(safeSavedRedirect);
         return;
       }
     }
@@ -233,7 +235,8 @@ export default function OrdersListPage() {
         setOrders((prev) => prev.map((x) => (x.id === order.id ? { ...x, payment: nextPayment } : x)));
         setSelected((cur) => (cur && cur.id === order.id ? { ...cur, payment: nextPayment } : cur));
       }
-      if (redirectUrl) window.location.assign(redirectUrl);
+      const safeRedirect = safePaymentRedirectUrl(redirectUrl);
+      if (safeRedirect) window.location.assign(safeRedirect);
       else toast.success(isFr ? tx("Paiement initialisé.") : 'Payment initialized.');
     } catch (err) {
       toast.error(formatApiError(extractApiError(err)));

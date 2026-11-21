@@ -14,6 +14,7 @@ import { clearPaymentIntent, paymentIdempotencyKey, rememberPayment } from '../.
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { downloadCsvFile } from '../../utils/csvExport';
+import { safePaymentRedirectUrl } from '../../utils/safeUrl';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -213,8 +214,9 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
       if (paymentRow?.id) {
         setRows((prev) => [asPayment(paymentRow), ...prev]);
       }
-      if (redirectUrl) {
-        window.location.assign(redirectUrl);
+      const safeRedirect = safePaymentRedirectUrl(redirectUrl);
+      if (safeRedirect) {
+        window.location.assign(safeRedirect);
       } else {
         toast.success(tx("Paiement initialisé."));
       }

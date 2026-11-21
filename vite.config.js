@@ -8,6 +8,10 @@ const API_PROXY_TARGET = (process.env.TOKPA_API_PROXY_TARGET || 'http://127.0.0.
 // Configuration de base Vite + React + Tailwind v4
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    // Ne jamais exposer les source maps en production (fuite du code source).
+    sourcemap: false,
+  },
   server: {
     host: true, // accessible depuis le réseau (preview distante)
     port: 5173,
