@@ -9,11 +9,17 @@ import MIcon from '../../components/shared/MIcon';
 import { TableBodySkeletonRows } from '../../components/shared/Skeleton';
 import ImageWithFallback from '../../components/shared/ImageWithFallback';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
+import {
+  DIALOG_CANCEL_BTN_CLASS,
+  DIALOG_PRIMARY_BTN_CLASS,
+  DialogFrame,
+} from '../../components/shared/DialogFrame';
 import TableRowActions from '../../components/shared/TableRowActions';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 import { landmarkFromProposal } from '../../utils/negotiationLandmark';
+import { extractCounterOfferPrice, formatCounterProposalMessage } from '../../utils/negotiationCounter';
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -62,8 +68,7 @@ const ecart = (pr: any) => {
  * AdminValidationsPage — design Stitch (code.html) conservé, données RÉELLES :
  * GET /admin/budget-proposals (toutes les pages, au plus 500) → compteur, onglets, tableau, écart,
  * pagination, panneau (produit, catégorie, chronologie, historique du client calculé sur ses
- * propositions) ; PATCH /admin/budget-proposals/{id} → accepter / refuser (+ message au client).
- * « Contre-proposer » laissé tel quel (décision utilisateur P3 : aucune contre-offre côté backend).
+ * propositions) ; PATCH /admin/budget-proposals/{id} → accepter / refuser / contre-proposer (+ message au client).
  */
 export default function AdminValidationsPage() {
   useLanguage();
@@ -133,7 +138,12 @@ export default function AdminValidationsPage() {
   const [actionErr, setActionErr] = useState('');
 
   const [busy, setBusy] = useState(false);
-  const decider = async (pr: any, decision: 'accepte' | 'refuse', admin_response?: string) => {
+  const [counterModal, setCounterModal] = useState<any | null>(null);
+  const [counterPrice, setCounterPrice] = useState('');
+  const [counterNote, setCounterNote] = useState('');
+  const [counterError, setCounterError] = useState('');
+
+  const decider = async (pr: any, decision: 'accepte' | 'refuse', admin_response?: string, successMsg?: string) => {
     const clientLandmark = decision === 'accepte' ? landmarkFromProposal(pr) : null;
     setBusy(true);
     setActionErr('');
@@ -145,11 +155,12 @@ export default function AdminValidationsPage() {
       });
       const orderId = Number(res?.order?.id ?? 0);
       toast.success(
-        decision === 'refuse'
-          ? tx("Proposition refusée.")
-          : orderId
-            ? tr(`Proposition acceptée. Commande #TOK-${orderId} créée.`, `Proposal accepted. Order #TOK-${orderId} created.`)
-            : tx("Proposition acceptée."),
+        successMsg ??
+          (decision === 'refuse'
+            ? tx("Proposition refusée.")
+            : orderId
+              ? tr(`Proposition acceptée. Commande #TOK-${orderId} créée.`, `Proposal accepted. Order #TOK-${orderId} created.`)
+              : tx("Proposition acceptée.")),
       );
       reload();
     } catch (e) {
@@ -168,6 +179,57 @@ export default function AdminValidationsPage() {
     );
     if (message === null) return;
     await decider(pr, 'refuse', message.trim() || undefined);
+  };
+  const ouvrirContreProposition = (pr: any) => {
+    const prixVendeur = Number(pr?.product?.prix ?? 0);
+    const prixMin = Number(pr?.product?.prix_minimum ?? 0);
+    const prixClient = Number(pr?.prix_propose ?? 0);
+    const suggestion =
+      prixVendeur > 0 && prixClient > 0
+        ? Math.max(prixMin, Math.round((prixVendeur + prixClient) / 2))
+        : Math.max(prixMin, prixClient, 1);
+    setCounterModal(pr);
+    setCounterPrice(String(suggestion));
+    setCounterNote('');
+    setCounterError('');
+  };
+  const envoyerContreProposition = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!counterModal) return;
+    const amount = Number(counterPrice);
+    const prixMin = Number(counterModal?.product?.prix_minimum ?? 0);
+    const prixVendeur = Number(counterModal?.product?.prix ?? 0);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setCounterError(tr('Saisissez un montant valide en FCFA.', 'Enter a valid amount in FCFA.'));
+      return;
+    }
+    if (prixMin > 0 && amount < prixMin) {
+      setCounterError(
+        tr(
+          `La contre-proposition doit être au moins égale au prix minimum (${fmtFcfa(prixMin)}).`,
+          `The counter-offer must be at least the minimum price (${fmtFcfa(prixMin)}).`,
+        ),
+      );
+      return;
+    }
+    if (prixVendeur > 0 && amount > prixVendeur) {
+      setCounterError(
+        tr(
+          `La contre-proposition ne peut pas dépasser le prix vendeur (${fmtFcfa(prixVendeur)}).`,
+          `The counter-offer cannot exceed the seller price (${fmtFcfa(prixVendeur)}).`,
+        ),
+      );
+      return;
+    }
+    const target = counterModal;
+    const message = formatCounterProposalMessage(amount, counterNote);
+    setCounterModal(null);
+    await decider(
+      target,
+      'refuse',
+      message,
+      tr('Contre-proposition envoyée au client.', 'Counter-offer sent to the customer.'),
+    );
   };
 
   const selEnAttente = selected?.statut === "en_attente";
@@ -268,12 +330,17 @@ export default function AdminValidationsPage() {
                             <button type="button" disabled={busy} className="font-semibold text-success hover:underline disabled:opacity-50" onClick={() => decider(pr, 'accepte')}>
                               {tx("Accepter")}
                             </button>
+                            <button type="button" disabled={busy} className="font-semibold text-primary hover:underline disabled:opacity-50" onClick={() => ouvrirContreProposition(pr)}>
+                              {tx("Contre-proposer")}
+                            </button>
                             <button type="button" disabled={busy} className="font-semibold text-error hover:underline disabled:opacity-50" onClick={() => decider(pr, 'refuse')}>
                               {tx("Refuser")}
                             </button>
                           </TableRowActions>
                         ) : (
-                          <span className={`font-semibold ${STATUT[pr.statut]?.cls ?? ''}`}>{tx(STATUT[pr.statut]?.label ?? pr.statut)}</span>
+                          <span className={`font-semibold ${extractCounterOfferPrice(pr.admin_response) ? 'text-primary' : (STATUT[pr.statut]?.cls ?? '')}`}>
+                            {extractCounterOfferPrice(pr.admin_response) ? tx('Contre-proposition') : tx(STATUT[pr.statut]?.label ?? pr.statut)}
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -405,11 +472,12 @@ export default function AdminValidationsPage() {
               </button>
               <button
                 type="button"
-                className="w-full py-3 bg-bg-card border-2 border-primary text-primary hover:bg-primary-tint rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
-                onClick={() => toast.error(tx("La contre-proposition n'est pas encore disponible."))}
+                disabled={!selEnAttente || busy}
+                className="w-full py-3 bg-bg-card border-2 border-primary text-primary hover:bg-primary-tint rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                onClick={() => ouvrirContreProposition(selected)}
               >
                 <MIcon name="edit" className="text-[18px]" />
-                Contre-proposer
+                {tx("Contre-proposer")}
               </button>
               <button
                 type="button"
@@ -424,6 +492,87 @@ export default function AdminValidationsPage() {
           </aside>
         )}
       </div>
+
+      {counterModal && (
+        <DialogFrame
+          icon="edit"
+          title={tr('Contre-proposition au client', 'Counter-offer to customer')}
+          maxWidth="28rem"
+          disabled={busy}
+          onClose={() => setCounterModal(null)}
+          footer={
+            <>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setCounterModal(null)}
+                className={DIALOG_CANCEL_BTN_CLASS}
+              >
+                {tx('Annuler')}
+              </button>
+              <button
+                type="submit"
+                form="admin-counter-offer-form"
+                disabled={busy}
+                className={DIALOG_PRIMARY_BTN_CLASS}
+              >
+                {busy ? tx('Envoi…') : tr('Envoyer la contre-proposition', 'Send counter-offer')}
+              </button>
+            </>
+          }
+        >
+          <form id="admin-counter-offer-form" onSubmit={envoyerContreProposition} className="space-y-4">
+            <div className="rounded-xl border border-border-default bg-bg-secondary p-3 text-xs space-y-1">
+              <p className="font-bold text-text-main text-sm">{counterModal.product?.nom ?? '—'}</p>
+              <p className="text-text-secondary">
+                {tx('Client')} : <span className="font-semibold text-text-main">{nomClient(counterModal)}</span>
+              </p>
+              <p className="text-text-secondary">
+                {tx('Offre client')} : <span className="font-semibold text-text-main">{fmtFcfa(counterModal.prix_propose)}</span>
+                {' · '}
+                {tx('Prix vendeur :')} <span className="font-semibold text-text-main">{fmtFcfa(counterModal.product?.prix)}</span>
+                {' · '}
+                {tx('Prix minimum :')} <span className="font-semibold text-text-main">{fmtFcfa(counterModal.product?.prix_minimum)}</span>
+              </p>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-text-secondary" htmlFor="admin-counter-price">
+                {tr('Montant contre-proposé (FCFA)', 'Counter-offer amount (FCFA)')}
+              </label>
+              <input
+                id="admin-counter-price"
+                type="number"
+                min={1}
+                value={counterPrice}
+                onChange={(e) => {
+                  setCounterPrice(e.target.value);
+                  setCounterError('');
+                }}
+                required
+                className="w-full rounded-lg border border-border-default bg-bg-card px-3 py-2 text-sm font-bold text-text-main focus:border-primary outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-text-secondary" htmlFor="admin-counter-note">
+                {tr('Message au client (optionnel)', 'Message to customer (optional)')}
+              </label>
+              <textarea
+                id="admin-counter-note"
+                rows={2}
+                value={counterNote}
+                onChange={(e) => setCounterNote(e.target.value)}
+                placeholder={tr('Ex: Dernier prix possible pour cette qualité.', 'Ex: Best possible price for this batch.')}
+                className="w-full rounded-lg border border-border-default bg-bg-card px-3 py-2 text-sm text-text-main focus:border-primary outline-none"
+              />
+            </div>
+            {counterError && (
+              <p className="rounded-lg border border-error/20 bg-error-light p-2.5 text-xs font-semibold text-error-dark">
+                {counterError}
+              </p>
+            )}
+          </form>
+        </DialogFrame>
+      )}
     </AdminLayout>
   );
 }

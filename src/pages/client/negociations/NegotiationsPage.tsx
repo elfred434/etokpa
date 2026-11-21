@@ -29,6 +29,7 @@ import {
 } from '../../../utils/negotiationLandmark';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import { silentRefreshActive } from '../../../hooks/useRefresh';
+import { extractCounterOfferPrice } from '../../../utils/negotiationCounter';
 import type { Product } from '../../../types/models';
 import { tx } from '../../../i18n/tx';
 
@@ -55,31 +56,36 @@ export default function NegotiationsPage() {
       .then(async (res) => {
         const proposalsList = res?.data || (Array.isArray(res) ? res : []);
         if (Array.isArray(proposalsList)) {
-          const mapped: NegotiationItem[] = proposalsList.map((p: any) => ({
-            id: String(p.id),
-            productId: String(p.product_id ?? p.product?.id ?? ''),
-            productName: p.product?.nom || `Produit #${p.product_id ?? p.product?.id ?? '?'}`,
-            productImage: absImageUrl(p.product?.image_url) ?? undefined,
-            vendorName: '', // l'API ne rattache aucun produit à un marché : pas de provenance inventée
-            originalPrice: Number(p.product?.prix) || Number(p.prix_propose) || 0,
-            proposedPrice: Number(p.prix_propose),
-            minPrice: Number(p.product?.prix_minimum) || 0,
-            quantite: Number(p.quantite) || 1,
-            orderId: p.commande?.id ?? p.order_id,
-            adminResponse: p.admin_response || undefined,
-            ...(() => {
-              const lieu = landmarkFromProposal(p) ?? readNegotiationLandmark(p.id) ?? readNegotiationLandmark(`product-${p.product_id ?? p.product?.id ?? ''}`);
-              return lieu
-                ? { landmarkId: lieu.id, landmarkNom: lieu.nom, landmarkZone: lieu.zoneNom }
-                : {};
-            })(),
-            status:
-              p.statut === 'accepte' ? 'accepted'
-              : p.statut === 'refuse' ? 'rejected'
-              : p.statut === 'expire' ? 'expired'
-              : 'pending',
-            createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR') : tx("Récemment"),
-          }));
+          const mapped: NegotiationItem[] = proposalsList.map((p: any) => {
+            const counterPrice = p.statut === 'refuse' ? extractCounterOfferPrice(p.admin_response) : null;
+            return {
+              id: String(p.id),
+              productId: String(p.product_id ?? p.product?.id ?? ''),
+              productName: p.product?.nom || `Produit #${p.product_id ?? p.product?.id ?? '?'}`,
+              productImage: absImageUrl(p.product?.image_url) ?? undefined,
+              vendorName: '', // l'API ne rattache aucun produit à un marché : pas de provenance inventée
+              originalPrice: Number(p.product?.prix) || Number(p.prix_propose) || 0,
+              proposedPrice: Number(p.prix_propose),
+              ...(counterPrice != null ? { counterPrice } : {}),
+              minPrice: Number(p.product?.prix_minimum) || 0,
+              quantite: Number(p.quantite) || 1,
+              orderId: p.commande?.id ?? p.order_id,
+              adminResponse: p.admin_response || undefined,
+              ...(() => {
+                const lieu = landmarkFromProposal(p) ?? readNegotiationLandmark(p.id) ?? readNegotiationLandmark(`product-${p.product_id ?? p.product?.id ?? ''}`);
+                return lieu
+                  ? { landmarkId: lieu.id, landmarkNom: lieu.nom, landmarkZone: lieu.zoneNom }
+                  : {};
+              })(),
+              status:
+                p.statut === 'accepte' ? 'accepted'
+                : counterPrice != null ? 'counter_offer'
+                : p.statut === 'refuse' ? 'rejected'
+                : p.statut === 'expire' ? 'expired'
+                : 'pending',
+              createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR') : tx("Récemment"),
+            };
+          });
           dispatch(setProposals(mapped));
           const accepted = mapped.filter((n) => n.status === 'accepted' && !n.orderId);
           if (accepted.length === 0) return;
@@ -173,13 +179,36 @@ export default function NegotiationsPage() {
     navigate({ to: '/panier' });
   };
 
-  const handleAcceptCounter = (productId: string, counterPrice: number) => {
-    dispatch(acceptCounterOffer({ productId }));
-    toast.success(
-      isFr
-        ? `Contre-offre de ${counterPrice.toLocaleString('fr-FR')} FCFA acceptée !`
-        : `Counter offer of ${counterPrice.toLocaleString('fr-FR')} FCFA accepted!`,
-    );
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+
+  const handleAcceptCounter = async (neg: NegotiationItem, counterPrice: number) => {
+    setAcceptingId(neg.id);
+    try {
+      const updated = await negotiationApi.updateProposal(neg.id, {
+        product_id: Number(neg.productId),
+        prix_propose: counterPrice,
+        quantite: neg.quantite ?? 1,
+        ...(neg.landmarkId ? { landmark_id: neg.landmarkId } : {}),
+      });
+      const newId = Number((updated as { data?: { id?: number }; id?: number })?.data?.id ?? (updated as { id?: number })?.id);
+      if (neg.landmarkId) {
+        const lieu = { id: neg.landmarkId, nom: neg.landmarkNom ?? '', zoneNom: neg.landmarkZone ?? '' };
+        rememberNegotiationLandmark(neg.id, lieu);
+        rememberNegotiationLandmark(`product-${neg.productId}`, lieu);
+        if (Number.isFinite(newId) && newId > 0) rememberNegotiationLandmark(newId, lieu);
+      }
+      dispatch(acceptCounterOffer({ productId: neg.productId }));
+      toast.success(
+        isFr
+          ? `Contre-offre de ${counterPrice.toLocaleString('fr-FR')} FCFA acceptée et transmise pour validation !`
+          : `Counter offer of ${counterPrice.toLocaleString('fr-FR')} FCFA accepted and submitted for confirmation!`,
+      );
+      loadProposals();
+    } catch (err: unknown) {
+      toast.error(formatApiError(extractApiError(err)) || (isFr ? tx("Impossible d’accepter la contre-offre.") : 'Could not accept the counter-offer.'));
+    } finally {
+      setAcceptingId(null);
+    }
   };
 
   const handleDiscussionClick = (neg: NegotiationItem) => {
@@ -440,7 +469,7 @@ export default function NegotiationsPage() {
                           <>
                             <div className="flex flex-col">
                               <span className="font-secondary text-secondary">{isFr ? 'Prix initial' : 'Initial price'}</span>
-                              <span className="font-price text-price text-text-secondary">
+                              <span className="font-price text-price text-text-secondary line-through opacity-70">
                                 {neg.originalPrice.toLocaleString('fr-FR')} FCFA
                               </span>
                             </div>
@@ -450,6 +479,14 @@ export default function NegotiationsPage() {
                                 {neg.proposedPrice.toLocaleString('fr-FR')} FCFA
                               </span>
                             </div>
+                            {neg.counterPrice != null && (
+                              <div className="flex flex-col bg-primary-tint border border-primary px-sm py-xs rounded-lg">
+                                <span className="font-secondary text-primary-deep">{isFr ? tx("Contre-proposition") : 'Counter-offer'}</span>
+                                <span className="font-price text-price text-primary-deep font-bold">
+                                  {neg.counterPrice.toLocaleString('fr-FR')} FCFA
+                                </span>
+                              </div>
+                            )}
                           </>
                         ) : isAccepted ? (
                           <>
@@ -496,6 +533,14 @@ export default function NegotiationsPage() {
                       )}
 
                       {/* Réponse de l'admin (backend admin_response) */}
+                      {isCounter && neg.adminResponse && (
+                        <div className="mb-md p-sm bg-primary-tint border border-primary-light rounded-lg">
+                          <p className="text-micro font-bold text-primary-deep uppercase tracking-wider mb-xs">
+                            {isFr ? tx("Réponse du marché") : 'Market response'}
+                          </p>
+                          <p className="text-secondary text-text-main">{neg.adminResponse}</p>
+                        </div>
+                      )}
                       {(isRejected || isExpired) && neg.adminResponse && (
                         <div className="mt-md p-sm bg-error-light/60 border border-error/20 rounded-lg">
                           <p className="text-micro font-bold text-error-dark uppercase tracking-wider mb-xs">
@@ -529,19 +574,33 @@ export default function NegotiationsPage() {
 
                         {isCounter && (
                           <>
+                            {neg.counterPrice != null && (
+                              <button
+                                type="button"
+                                disabled={acceptingId === neg.id}
+                                onClick={() => handleAcceptCounter(neg, neg.counterPrice!)}
+                                className="px-md py-2 bg-primary-container text-white font-medium text-label rounded-button hover:bg-primary-hover active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                              >
+                                {acceptingId === neg.id
+                                  ? tx("Envoi…")
+                                  : isFr
+                                    ? `Accepter (${neg.counterPrice.toLocaleString('fr-FR')} FCFA)`
+                                    : `Accept (${neg.counterPrice.toLocaleString('fr-FR')} FCFA)`}
+                              </button>
+                            )}
                             <button
                               type="button"
-                              onClick={() => handleDiscussionClick(neg)}
+                              onClick={() => openEditOffer(neg)}
                               className="px-md py-2 border border-primary text-primary font-medium text-label rounded-button hover:bg-primary-tint active:scale-95 transition-all cursor-pointer"
                             >
-                              {isFr ? tx("Voir la discussion") : 'View discussion'}
+                              {isFr ? tx("Modifier mon offre") : 'Edit my offer'}
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleAcceptCounter(neg.productId, neg.counterPrice || neg.minPrice)}
-                              className="px-md py-2 bg-primary-container text-white font-medium text-label rounded-button hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
+                              onClick={() => handleDiscussionClick(neg)}
+                              className="px-md py-2 border border-border-default text-on-surface-variant font-medium text-label rounded-button hover:bg-bg-secondary active:scale-95 transition-all cursor-pointer"
                             >
-                              {isFr ? tx("Répondre") : 'Reply'}
+                              {isFr ? tx("Voir la discussion") : 'View discussion'}
                             </button>
                           </>
                         )}

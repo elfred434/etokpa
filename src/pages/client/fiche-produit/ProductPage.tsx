@@ -457,11 +457,29 @@ export default function ProductPage() {
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={() => {
+                        disabled={isSubmitting}
+                        onClick={async () => {
+                          if (activeNeg.counterPrice && /^\d+$/.test(String(activeNeg.id))) {
+                            setIsSubmitting(true);
+                            try {
+                              await negotiationApi.updateProposal(activeNeg.id, {
+                                product_id: Number(product.id),
+                                prix_propose: activeNeg.counterPrice,
+                                quantite: quantity,
+                              });
+                              dispatch(acceptCounterOffer({ productId: product.id }));
+                              toast.success(tx("Contre-offre acceptée !"));
+                            } catch (e: unknown) {
+                              toast.error(formatApiError(extractApiError(e)));
+                            } finally {
+                              setIsSubmitting(false);
+                            }
+                            return;
+                          }
                           dispatch(acceptCounterOffer({ productId: product.id }));
                           toast.success(tx("Contre-offre acceptée !"));
                         }}
-                        className="w-full rounded-lg bg-amber-text py-2 text-xs font-bold text-white shadow-sm hover:brightness-110 cursor-pointer"
+                        className="w-full rounded-lg bg-amber-text py-2 text-xs font-bold text-white shadow-sm hover:brightness-110 disabled:opacity-50 cursor-pointer"
                       >
                         Accepter ({activeNeg.counterPrice?.toLocaleString('fr-FR')} FCFA)
                       </button>
