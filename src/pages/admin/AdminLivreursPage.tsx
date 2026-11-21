@@ -1,14 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { adminApi } from '../../services/api';
-import { listOf, unwrap } from '../../services/api/unwrap';
+import { fmtFcfa, listOf, unwrap } from '../../services/api/unwrap';
 import { zoneNom, initials } from '../../services/api/useLiveRows';
-import { alertApiError } from '../../utils/apiError';
+import { alertApiError, extractApiError, formatApiError } from '../../utils/apiError';
 import { statutLivreur } from '../../utils/riderStatus';
 import { absImageUrl } from '../../utils/imageUrl';
+import { isLivreurDisponible, livreurZoneId } from '../../utils/managerAssignment';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
 import { adminDialogs } from '../../components/shared/AdminActionDialogs';
+import {
+  DIALOG_CANCEL_BTN_CLASS,
+  DIALOG_PRIMARY_BTN_CLASS,
+  DialogFrame,
+} from '../../components/shared/DialogFrame';
 import TableRowActions from '../../components/shared/TableRowActions';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
@@ -47,8 +53,9 @@ const ACTIVITE: Record<string, string> = {
  * AdminLivreursPage — design Stitch (code.html) conservé, données et actions RÉELLES :
  * GET /admin/users?role=livreur (toutes les pages), GET /admin/orders (au plus 500 commandes :
  * activité, taux de succès = livrées / (livrées + annulées), course en cours), GET /admin/zones,
- * PUT /admin/users/{id} (zone, disponibilité, statut), DELETE /admin/users/{id} (désactivation).
- * Laissés tels quels (décision utilisateur P3, aucune donnée backend) : ligne « Véhicule », « Assigner ».
+ * PUT /admin/users/{id} (zone, disponibilité, statut), DELETE /admin/users/{id} (désactivation),
+ * POST /admin/assign (assignation d'une commande au livreur sélectionné).
+ * Laissé tel quel (aucune donnée backend) : ligne « Véhicule ».
  */
 export default function AdminLivreursPage() {
   useLanguage();
@@ -179,11 +186,62 @@ export default function AdminLivreursPage() {
     }
   };
 
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [orderChoisi, setOrderChoisi] = useState('');
+  const [assigning, setAssigning] = useState(false);
+  const [assignErr, setAssignErr] = useState<string | null>(null);
+
   const selNom = selected?.nom_complet ?? '—';
   const selPerf = selected ? perf(Number(selected.id)) : null;
   const selStatut = selected ? statutLivreur(selected, enCourse(Number(selected.id))) : null;
   const selActivites = selected ? (parLivreur.get(Number(selected.id)) ?? []).slice(0, 3) : [];
   const selPhoto = absImageUrl(selected?.image_profil);
+  const selZoneId = selected ? livreurZoneId(selected) : null;
+  const selDispo = selected ? isLivreurDisponible(selected) : false;
+  const selActif = String(selected?.statut ?? '').toLowerCase() === 'actif';
+  const canAssignSelected = Boolean(selected && selActif && selDispo && selZoneId);
+
+  const assignableOrders = useMemo(() => {
+    if (!selected || !selZoneId) return [];
+    return orders.filter((o) => {
+      if (o?.livreur?.id) return false;
+      const st = String(o?.statut ?? '');
+      if (st === 'annule' || st === 'livre') return false;
+      const oz = o?.landmark?.zone_id != null ? Number(o.landmark.zone_id) : null;
+      return oz == null || oz === selZoneId;
+    });
+  }, [orders, selected, selZoneId]);
+
+  const openAssignModal = () => {
+    if (!selected) return;
+    setAssignErr(null);
+    setOrderChoisi(assignableOrders.length === 1 ? String(assignableOrders[0].id) : '');
+    setAssignOpen(true);
+  };
+
+  const confirmerAssignation = async () => {
+    if (!selected || !orderChoisi || assigning) return;
+    setAssignErr(null);
+    setAssigning(true);
+    try {
+      await adminApi.assignLivreur(Number(orderChoisi), Number(selected.id));
+      toast.success(
+        tr(
+          `Commande #${orderChoisi} assignée à ${selNom}.`,
+          `Order #${orderChoisi} assigned to ${selNom}.`,
+        ),
+      );
+      setAssignOpen(false);
+      setOrderChoisi('');
+      reload();
+    } catch (e) {
+      const msg = formatApiError(extractApiError(e));
+      setAssignErr(msg);
+      toast.error(msg);
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   return (
     <AdminLayout currentPath="/admin/livreurs" mainClassName="ml-64 h-screen pt-[52px] p-lg flex flex-col lg:flex-row gap-lg overflow-hidden">
@@ -442,9 +500,113 @@ export default function AdminLivreursPage() {
                 {tx("Contacter")}
               </button>
             )}
-            <button className="flex-1 bg-primary-container text-white py-2 rounded-lg font-bold hover:bg-primary-hover active:scale-97 transition-all">{tx("Assigner")}</button>
+            <button
+              type="button"
+              onClick={openAssignModal}
+              className="flex-1 bg-primary-container text-white py-2 rounded-lg font-bold hover:bg-primary-hover active:scale-97 transition-all cursor-pointer"
+            >
+              {tx("Assigner")}
+            </button>
           </div>
         </aside>
+      )}
+      {assignOpen && selected && (
+        <DialogFrame
+          icon="two_wheeler"
+          title={tr(`Assigner une commande — ${selNom}`, `Assign an order — ${selNom}`)}
+          subtitle={zoneNom(selZoneId) !== '—' ? `${tx("Zone :")} ${zoneNom(selZoneId)}` : undefined}
+          maxWidth="37.5rem"
+          disabled={assigning}
+          onClose={() => setAssignOpen(false)}
+          footer={
+            <>
+              <button
+                type="button"
+                className={DIALOG_CANCEL_BTN_CLASS}
+                disabled={assigning}
+                onClick={() => setAssignOpen(false)}
+              >
+                {tx("Annuler")}
+              </button>
+              <button
+                type="button"
+                className={DIALOG_PRIMARY_BTN_CLASS}
+                disabled={!canAssignSelected || !orderChoisi || assigning}
+                onClick={() => void confirmerAssignation()}
+              >
+                {assigning ? tx("Assignation…") : tx("Assigner")}
+              </button>
+            </>
+          }
+        >
+          <div className="space-y-3 text-label">
+            {assignErr && (
+              <div className="rounded-lg border border-error bg-error-container p-3 text-xs font-semibold text-on-error-container" role="alert">
+                {assignErr}
+              </div>
+            )}
+            {!selActif ? (
+              <p className="text-text-secondary">
+                {tr(
+                  'Ce compte livreur est inactif ou suspendu : il ne peut pas recevoir de commande.',
+                  'This rider account is inactive or suspended: it cannot receive an order.',
+                )}
+              </p>
+            ) : !selDispo ? (
+              <p className="text-text-secondary">
+                {tr(
+                  'Ce livreur est actuellement indisponible. Activez sa disponibilité dans « Modifier » avant d’assigner une course.',
+                  'This rider is currently unavailable. Enable availability in Edit before assigning a delivery.',
+                )}
+              </p>
+            ) : !selZoneId ? (
+              <p className="text-text-secondary">
+                {tr(
+                  'Aucune zone n’est attribuée à ce livreur. Définissez sa zone avant d’assigner une commande.',
+                  'No zone is assigned to this rider. Set a zone before assigning an order.',
+                )}
+              </p>
+            ) : assignableOrders.length === 0 ? (
+              <p className="text-text-secondary">
+                {tr(
+                  'Aucune commande en attente sans livreur dans la zone de ce livreur.',
+                  'No unassigned active order in this rider’s zone.',
+                )}
+              </p>
+            ) : (
+              assignableOrders.map((o) => {
+                const idStr = String(o.id);
+                const clientNom = o?.client?.nom_complet ?? o?.user?.nom_complet ?? 'Client';
+                return (
+                  <label
+                    key={o.id}
+                    className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors ${
+                      orderChoisi === idStr
+                        ? 'border-primary bg-primary-tint/50'
+                        : 'border-border-default hover:bg-bg-secondary'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="admin-assign-order"
+                      value={idStr}
+                      checked={orderChoisi === idStr}
+                      onChange={() => setOrderChoisi(idStr)}
+                      className="accent-primary"
+                    />
+                    <span className="min-w-0 flex-1 break-words font-semibold">
+                      #{o.id} — {clientNom}
+                    </span>
+                    <span className="text-text-secondary">
+                      {o?.landmark?.nom ? `${o.landmark.nom} · ` : ''}
+                      {fmtFcfa(o.montant_total)}
+                    </span>
+                  </label>
+                );
+              })
+            )}
+          </div>
+        </DialogFrame>
       )}
     </AdminLayout>
   );

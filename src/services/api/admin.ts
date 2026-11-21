@@ -180,6 +180,13 @@ export const adminApi = {
     const response = await apiClient.patch(`/admin/orders/${orderId}/status`, { statut });
     return response.data;
   },
+  assignLivreur: async (orderId: number, livreurId: number) => {
+    const response = await apiClient.post('/admin/assign', {
+      order_id: orderId,
+      livreur_id: livreurId,
+    });
+    return response.data;
+  },
 
   // Dashboard & Audit Logs
   getDashboard: async () => {

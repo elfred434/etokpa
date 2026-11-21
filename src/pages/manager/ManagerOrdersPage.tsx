@@ -33,6 +33,8 @@ export default function ManagerOrdersPage() {
   const [err, setErr] = useState<string | null>(null);
   const [assignation, setAssignation] = useState<PlatformOrder | null>(null);
   const [livreurChoisi, setLivreurChoisi] = useState('');
+  const [assigning, setAssigning] = useState(false);
+  const [modalErr, setModalErr] = useState<string | null>(null);
   const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
@@ -47,9 +49,23 @@ export default function ManagerOrdersPage() {
   const livreursZone = filterLivreursDisponiblesDansZone(livreurs, zoneCommande);
   const nomZone = livreurs.find((l) => livreurZoneId(l) === zoneCommande)?.profil?.zone?.nom as string | undefined;
 
+  const openAssignation = (o: PlatformOrder) => {
+    const z = zoneIdOf(o.landmark?.zone_id);
+    const list = filterLivreursDisponiblesDansZone(livreurs, z);
+    setAssignation(o);
+    setModalErr(null);
+    setLivreurChoisi(list.length === 1 ? String(list[0].id) : '');
+  };
+
   const confirmerAssignation = async () => {
-    if (!assignation || !livreurChoisi) return;
+    if (!assignation || assigning) return;
+    if (!livreurChoisi) {
+      setModalErr(tr('Veuillez sélectionner un livreur disponible.', 'Please select an available rider.'));
+      return;
+    }
     setErr(null);
+    setModalErr(null);
+    setAssigning(true);
     try {
       await managerApi.assignLivreur(assignation.id, Number(livreurChoisi));
       toast.success(tr(
@@ -60,7 +76,12 @@ export default function ManagerOrdersPage() {
       setLivreurChoisi('');
       setReloadKey((k) => k + 1);
     } catch (e) {
-      setErr(formatApiError(extractApiError(e)));
+      const msg = formatApiError(extractApiError(e));
+      setErr(msg);
+      setModalErr(msg);
+      toast.error(msg);
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -77,14 +98,11 @@ export default function ManagerOrdersPage() {
           source="zone"
           reloadKey={reloadKey}
           title={tx("Commandes de votre zone")}
-          renderActions={(o) => !o.livreur && (
+          renderActions={(o) => !o.livreur?.id && !['annule', 'livre'].includes(String(o.statut ?? '')) && (
             <button
               type="button"
               className="btn btn-primary px-3 py-1.5 text-label"
-              onClick={() => {
-                setAssignation(o);
-                setLivreurChoisi('');
-              }}
+              onClick={() => openAssignation(o)}
             >
               {tx("Assigner")}
             </button>
@@ -98,24 +116,30 @@ export default function ManagerOrdersPage() {
           title={`Assigner un livreur — #${assignation.id}`}
           subtitle={nomZone ? `${tx("Zone :")} ${nomZone}` : undefined}
           maxWidth="37.5rem"
+          disabled={assigning}
           onClose={() => setAssignation(null)}
           footer={
             <>
-              <button type="button" className={DIALOG_CANCEL_BTN_CLASS} onClick={() => setAssignation(null)}>
+              <button type="button" className={DIALOG_CANCEL_BTN_CLASS} disabled={assigning} onClick={() => setAssignation(null)}>
                 {tx("Annuler")}
               </button>
               <button
                 type="button"
                 className={DIALOG_PRIMARY_BTN_CLASS}
                 onClick={confirmerAssignation}
-                disabled={!livreurChoisi}
+                disabled={assigning || livreursZone.length === 0}
               >
-                {tx("Assigner")}
+                {assigning ? tx("Assignation…") : tx("Assigner")}
               </button>
             </>
           }
         >
           <div className="space-y-3 text-label">
+            {modalErr && (
+              <div className="rounded-lg border border-error bg-error-container p-3 text-xs font-semibold text-on-error-container" role="alert">
+                {modalErr}
+              </div>
+            )}
             {livreursZone.length === 0 && (
               <p className="text-text-secondary">{tx("Aucun livreur disponible dans la zone.")}</p>
             )}
@@ -133,7 +157,10 @@ export default function ManagerOrdersPage() {
                   name="livreur"
                   value={String(l.id)}
                   checked={String(l.id) === livreurChoisi}
-                  onChange={() => setLivreurChoisi(String(l.id))}
+                  onChange={() => {
+                    setLivreurChoisi(String(l.id));
+                    setModalErr(null);
+                  }}
                   className="accent-primary"
                 />
                 <span className="min-w-0 flex-1 break-words font-semibold">
