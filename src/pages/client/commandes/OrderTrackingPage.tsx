@@ -15,7 +15,9 @@ import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { catalogApi, ordersApi, paymentsApi } from '../../../services/api';
+import { landmarksApi } from '../../../services/api/landmarks';
 import { extractOrdersPage, isOwnOrder, parseOrderIdParam } from '../../../utils/ownOrder';
+import { resolveOrderDestinationCoords, type LandmarkRecord, type ZoneWithLandmarks } from '../../../utils/landmarkCoords';
 import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
 import { tr, tx } from '../../../i18n/tx';
 import { captureFrontendError } from '../../../services/errors/frontendErrorReporter';
@@ -111,6 +113,7 @@ export default function OrderTrackingPage() {
   const [verifiedOrderId, setVerifiedOrderId] = useState<number | null>(null);
   const [deniedOrderId, setDeniedOrderId] = useState<number | null>(null);
   const [destCoords, setDestCoords] = useState<[number, number] | null>(null);
+  const [destZoneName, setDestZoneName] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
   const payLock = useRef(false);
   const prevSelectedIdRef = useRef<number | null>(requestedOrderId);
@@ -314,30 +317,41 @@ export default function OrderTrackingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, selectedId, refreshTick]);
 
-  // Destination RÉELLE de la commande : landmark (point_reperes) → GPS via GET /zones.points_repere
+  // Destination RÉELLE de la commande : landmark (zones + repères perso + anti-mer + géocodage)
   useEffect(() => {
-    const lmId = order?.landmark?.id;
-    if (!lmId || verifiedOrderId !== selectedId) {
+    if (!order?.landmark?.id && !order?.description_lieu) {
       setDestCoords(null);
+      setDestZoneName(null);
+      return;
+    }
+    if (verifiedOrderId !== selectedId) {
+      setDestCoords(null);
+      setDestZoneName(null);
       return;
     }
     let alive = true;
-    catalogApi
-      .getZones()
-      .then((res) => {
-        const list = (res?.data ?? res ?? []) as Array<{
-          points_repere?: Array<{ id: number; latitude?: number | string; longitude?: number | string }>;
-        }>;
-        for (const z of Array.isArray(list) ? list : []) {
-          for (const p of z.points_repere ?? []) {
-            if (Number(p.id) === Number(lmId)) {
-              const lat = Number(p.latitude);
-              const lng = Number(p.longitude);
-              if (alive && Number.isFinite(lat) && Number.isFinite(lng)) setDestCoords([lat, lng]);
-              return;
-            }
-          }
-        }
+    const zonesPromise =
+      typeof catalogApi?.getZones === 'function' ? catalogApi.getZones().catch(() => null) : Promise.resolve(null);
+    const landmarksPromise =
+      typeof landmarksApi?.getLandmarks === 'function'
+        ? landmarksApi.getLandmarks().catch(() => null)
+        : Promise.resolve(null);
+
+    Promise.all([zonesPromise, landmarksPromise])
+      .then(async ([zonesRes, lmRes]) => {
+        if (!alive) return;
+        const zRaw = (zonesRes as { data?: unknown } | null)?.data ?? zonesRes;
+        const lRaw = (lmRes as { data?: unknown } | null)?.data ?? lmRes;
+        const zonesList = (Array.isArray(zRaw) ? zRaw : []) as ZoneWithLandmarks[];
+        const lmList = (Array.isArray(lRaw) ? lRaw : []) as LandmarkRecord[];
+        const { coords, zoneName } = await resolveOrderDestinationCoords({
+          order,
+          zones: zonesList,
+          userLandmarks: lmList,
+        });
+        if (!alive) return;
+        setDestCoords(coords);
+        setDestZoneName(zoneName);
       })
       .catch(() => {
         /* zones indisponibles → pas de marqueur destination (honnête) */
@@ -345,7 +359,7 @@ export default function OrderTrackingPage() {
     return () => {
       alive = false;
     };
-  }, [order?.landmark?.id, verifiedOrderId, selectedId]);
+  }, [order, verifiedOrderId, selectedId]);
 
   const accessDenied = hasInvalidOrderParam || (!!selectedId && deniedOrderId === selectedId);
   const isVerifiedOrder = !!selectedId && verifiedOrderId === selectedId && !!order && !accessDenied;
@@ -429,7 +443,7 @@ export default function OrderTrackingPage() {
               riderCoords={riderCoords}
               riderName={rider?.nom_complet}
               destinationCoords={destCoords}
-              destinationLabel={[order?.landmark?.nom, order?.description_lieu].filter(Boolean).join(' — ')}
+              destinationLabel={[destZoneName, order?.landmark?.nom, order?.description_lieu].filter(Boolean).join(' — ')}
             />
           </section>
         )}
@@ -674,8 +688,9 @@ export default function OrderTrackingPage() {
                       {Number(order.montant_total ?? 0).toLocaleString('fr-FR')} FCFA
                     </span>
                   </div>
-                  {(order.landmark?.nom || order.description_lieu) && (
+                  {(destZoneName || order.landmark?.nom || order.description_lieu) && (
                     <p className="mt-sm text-micro text-text-tertiary">
+                      {destZoneName ? `${isFr ? 'Zone' : 'Zone'} : ${destZoneName} · ` : ''}
                       {isFr ? tx("Livraison") : 'Delivery'} : {order.landmark?.nom ?? '—'}
                       {order.description_lieu ? ` — ${order.description_lieu}` : ''}
                     </p>

@@ -184,6 +184,7 @@ export default function CartPage() {
   const [loading, setLoading] = useState(false);
   const [offres, setOffres] = useState<Map<number, number>>(new Map());
   const payLock = useRef(false);
+  const autoDescRef = useRef<string | null>(null);
   const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
@@ -283,6 +284,10 @@ export default function CartPage() {
     setLandmarkId(null);
     setLandmarkSel('');
     setLandmarkNomSel(null);
+    if (autoDescRef.current !== null && descriptionLieu === autoDescRef.current) {
+      setDescriptionLieu('');
+      autoDescRef.current = null;
+    }
   };
 
   const handlePaid = async () => {
@@ -709,10 +714,10 @@ export default function CartPage() {
                               // (l'API exige un landmark_id exists:point_reperes ; le vrai lieu part dans description_lieu)
                               setLandmarkId(selectedZone?.points_repere?.[0]?.id ?? null);
                             }
-                            if (!descriptionLieu.trim()) {
-                              setDescriptionLieu(
-                                personal.description ? `${personal.nom} — ${personal.description}` : personal.nom,
-                              );
+                            const nextAuto = personal.description ? `${personal.nom} — ${personal.description}` : personal.nom;
+                            if (!descriptionLieu.trim() || descriptionLieu === autoDescRef.current) {
+                              setDescriptionLieu(nextAuto);
+                              autoDescRef.current = nextAuto;
                             }
                           } else {
                             const zid = Number(v.replace('zone-', ''));
@@ -720,6 +725,10 @@ export default function CartPage() {
                             setLandmarkNomSel(
                               selectedZone?.points_repere?.find((l) => l.id === zid)?.nom ?? null,
                             );
+                            if (autoDescRef.current !== null && descriptionLieu === autoDescRef.current) {
+                              setDescriptionLieu('');
+                              autoDescRef.current = null;
+                            }
                           }
                         }}
                         disabled={
