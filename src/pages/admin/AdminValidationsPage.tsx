@@ -18,6 +18,7 @@ import TableRowActions from '../../components/shared/TableRowActions';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
+import { subscribeRealtimeRefresh } from '../../hooks/useRealtimeNotifications';
 import { landmarkFromProposal } from '../../utils/negotiationLandmark';
 import { extractCounterOfferPrice, formatCounterProposalMessage } from '../../utils/negotiationCounter';
 
@@ -79,6 +80,8 @@ export default function AdminValidationsPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const reload = () => setReloadKey((k) => k + 1);
   const refreshTick = useGlobalRefreshTick();
+
+  useEffect(() => subscribeRealtimeRefresh(['proposals'], reload), []);
 
   useEffect(() => {
     let alive = true;

@@ -6,6 +6,7 @@ import { authApi } from '../services/api/auth';
 import { catalogApi } from '../services/api/catalog';
 import { windowEcho } from '../services/realtime/echo';
 import { assignedOrderId, deliveryAssignmentToastMessage } from '../utils/notificationText';
+import { extractCounterOfferPrice } from '../utils/negotiationCounter';
 
 export interface RealtimeRefreshEvent {
   scope: 'orders' | 'proposals' | 'notifications' | 'all';
@@ -120,15 +121,20 @@ export function useRealtimeNotifications(sessionKey: number): void {
 
     const onBudgetResponded = (data: { id?: number; statut?: string; admin_response?: string }) => {
       const accepted = data.statut === 'accepte';
+      const counterPrice = !accepted ? extractCounterOfferPrice(data.admin_response) : null;
       toast(
         (isFrRef.current
           ? accepted
             ? 'Votre proposition de prix a été acceptée !'
-            : `Votre proposition a été refusée${data.admin_response ? ` : ${data.admin_response}` : ''}`
+            : counterPrice != null
+              ? `Contre-proposition reçue : ${counterPrice.toLocaleString('fr-FR')} FCFA !`
+              : `Votre proposition a été refusée${data.admin_response ? ` : ${data.admin_response}` : ''}`
           : accepted
             ? 'Your price proposal was accepted!'
-            : `Your proposal was rejected${data.admin_response ? `: ${data.admin_response}` : ''}`),
-        { icon: accepted ? '🤝' : '📩' },
+            : counterPrice != null
+              ? `Counter-offer received: ${counterPrice.toLocaleString('fr-FR')} FCFA!`
+              : `Your proposal was rejected${data.admin_response ? `: ${data.admin_response}` : ''}`),
+        { icon: accepted ? '🤝' : counterPrice != null ? '💬' : '📩' },
       );
       emitRealtimeRefresh({ scope: 'proposals', payload: data });
       emitRealtimeRefresh({ scope: 'notifications' });

@@ -11,13 +11,15 @@ import ApiErrorState from '../../../components/shared/ApiErrorState';
 import { ProductDetailSkeleton } from '../../../components/shared/Skeleton';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
-import { submitOffer, acceptCounterOffer, cancelNegotiation } from '../../../store/slices/negotiation/negotiationSlice';
+import { submitOffer, acceptCounterOffer, cancelNegotiation, setProposals, type NegotiationItem } from '../../../store/slices/negotiation/negotiationSlice';
 import type { Product } from '../../../types/models';
 import { catalogApi, negotiationApi, type ApiProduct } from '../../../services/api';
 import { mapApiProduct } from '../../../utils/productMap';
 import { alertApiError, apiErrorStatus, extractApiError, formatApiError } from '../../../utils/apiError';
+import { absImageUrl } from '../../../utils/imageUrl';
+import { extractCounterOfferPrice } from '../../../utils/negotiationCounter';
 import NegotiationLandmarkField from '../../../components/client/NegotiationLandmarkField';
-import { readNegotiationLandmark, rememberNegotiationLandmark, type RememberedLandmark } from '../../../utils/negotiationLandmark';
+import { landmarkFromProposal, readNegotiationLandmark, rememberNegotiationLandmark, type RememberedLandmark } from '../../../utils/negotiationLandmark';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
@@ -79,6 +81,57 @@ export default function ProductPage() {
       })
       .finally(() => setIsLoading(false));
   }, [productId, reloadKey, refreshTick]);
+
+  // Synchronise la négociation en cours sur ce produit depuis GET /api/budget-proposals
+  useEffect(() => {
+    if (!localStorage.getItem('tokpa_token') || !negotiationApi?.getProposals) return;
+    let alive = true;
+    negotiationApi
+      .getProposals()
+      .then((res) => {
+        if (!alive) return;
+        const proposalsList = (res as { data?: unknown[] })?.data ?? (Array.isArray(res) ? res : []);
+        if (!Array.isArray(proposalsList)) return;
+        const mapped: NegotiationItem[] = proposalsList.map((raw: any) => {
+          const counterPrice = raw.statut === 'refuse' ? extractCounterOfferPrice(raw.admin_response) : null;
+          const lieu =
+            landmarkFromProposal(raw) ??
+            readNegotiationLandmark(raw.id) ??
+            readNegotiationLandmark(`product-${raw.product_id ?? raw.product?.id ?? ''}`);
+          return {
+            id: String(raw.id),
+            productId: String(raw.product_id ?? raw.product?.id ?? ''),
+            productName: raw.product?.nom || `Produit #${raw.product_id ?? raw.product?.id ?? '?'}`,
+            productImage: absImageUrl(raw.product?.image_url) ?? undefined,
+            vendorName: '',
+            originalPrice: Number(raw.product?.prix) || Number(raw.prix_propose) || 0,
+            proposedPrice: Number(raw.prix_propose),
+            ...(counterPrice != null ? { counterPrice } : {}),
+            minPrice: Number(raw.product?.prix_minimum) || 0,
+            quantite: Number(raw.quantite) || 1,
+            orderId: raw.commande?.id ?? raw.order_id,
+            adminResponse: raw.admin_response || undefined,
+            ...(lieu ? { landmarkId: lieu.id, landmarkNom: lieu.nom, landmarkZone: lieu.zoneNom } : {}),
+            status:
+              raw.statut === 'accepte'
+                ? 'accepted'
+                : counterPrice != null
+                  ? 'counter_offer'
+                  : raw.statut === 'refuse'
+                    ? 'rejected'
+                    : raw.statut === 'expire'
+                      ? 'expired'
+                      : 'pending',
+            createdAt: raw.created_at ? new Date(raw.created_at).toLocaleDateString('fr-FR') : tx('Récemment'),
+          };
+        });
+        dispatch(setProposals(mapped));
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [productId, refreshTick, dispatch]);
 
   const handleSendOffer = async () => {
     if (!product) return;

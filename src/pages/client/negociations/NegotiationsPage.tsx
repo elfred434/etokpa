@@ -170,7 +170,7 @@ export default function NegotiationsPage() {
       image: neg.productImage,
       negotiated: { oldPrice: neg.originalPrice },
     };
-    dispatch(add({ product, quantity: 1 }));
+    dispatch(add({ product, quantity: neg.quantite ?? 1 }));
     toast.success(
       isFr
         ? `Ajouté au panier au prix négocié de ${neg.proposedPrice.toLocaleString('fr-FR')} FCFA`

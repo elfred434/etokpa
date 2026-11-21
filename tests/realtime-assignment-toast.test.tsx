@@ -156,4 +156,16 @@ describe('notifications toast delivery.assigned', () => {
       expect(stored.role).toEqual({ nom: 'admin' });
     });
   });
+
+  it('shows a counter-offer toast when budget.responded carries a counter-proposal', () => {
+    renderForUser({ id: 27, role: 'client' });
+
+    const cb = mocks.callbacks.get('notifications.27:budget.responded');
+    expect(cb).toBeTypeOf('function');
+    act(() => cb!({ id: 12, statut: 'refuse', admin_response: 'Contre-proposition : 4 400 FCFA' }));
+
+    expect(mocks.toast).toHaveBeenCalledWith(expect.stringMatching(/Contre-proposition reçue : 4[\s\u00a0\u202f]400 FCFA !/), {
+      icon: '💬',
+    });
+  });
 });
