@@ -55,15 +55,25 @@ const COLOR_OK_TX: [number, number, number] = [22, 101, 52];
 const COLOR_KO_BG: [number, number, number] = [254, 226, 226];
 const COLOR_KO_TX: [number, number, number] = [153, 27, 27];
 
+function pdfSafeText(text: string): string {
+  // jsPDF (police WinAnsi helvetica) corrompt les espaces insécables (\u202f, \u00a0)
+  // produites par Intl/toLocaleString('fr-FR') en « / » (ex. « 1 000 » → « 1/000 »).
+  return text.replace(/[\u00a0\u2007\u2009\u202f]/g, ' ');
+}
+
 export function fmtMontant(n: number | null | undefined, locale = 'fr-FR'): string {
-  return `${Number(n ?? 0).toLocaleString(locale)} FCFA`;
+  const value = Number(n ?? 0);
+  const formatted = Number.isFinite(value) ? value.toLocaleString(locale) : '0';
+  return `${pdfSafeText(formatted)} FCFA`;
 }
 
 export function fmtDate(iso: string | null | undefined, locale = 'fr-FR'): string {
   if (!iso) return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
-  return `${d.toLocaleDateString(locale)} ${d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}`;
+  return pdfSafeText(
+    `${d.toLocaleDateString(locale)} ${d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}`,
+  );
 }
 
 /** Titre de section souligné, propre à une colonne. */
@@ -71,7 +81,7 @@ function titreSection(doc: jsPDF, texte: string, y: number, x = COL_G, largeur =
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(...COLOR_PRIMARY);
-  doc.text(texte.toUpperCase(), x, y);
+  doc.text(pdfSafeText(texte.toUpperCase()), x, y);
   doc.setDrawColor(...COLOR_LINE);
   doc.line(x, y + 1.6, x + largeur, y + 1.6);
   return y + 6.5;
@@ -90,12 +100,12 @@ function ligneChamp(
   doc.setFontSize(8.6);
   // Largeur du libellé mesurée dans la police : évite tout chevauchement
   // avec la valeur (« Référence de transaction » est le plus long).
-  const libelle = `${etiquette} :`;
+  const libelle = pdfSafeText(`${etiquette} :`);
   const labW = Math.min(doc.getTextWidth(libelle) + 1.6, largeur * 0.62);
   doc.setTextColor(...COLOR_MUTED);
   doc.text(libelle, x, y);
   doc.setTextColor(...COLOR_TEXT);
-  const lignes = doc.splitTextToSize(valeur || '—', largeur - labW) as string[];
+  const lignes = doc.splitTextToSize(pdfSafeText(valeur || '—'), largeur - labW) as string[];
   doc.text(lignes, x + labW, y);
   return y + 4.3 * Math.max(lignes.length, 1) + 1.4;
 }
@@ -202,7 +212,7 @@ export function buildReceiptPdf(
     enteteTableau();
     doc.setFontSize(8.8);
     for (const ligne of data.lignes) {
-      const nom = doc.splitTextToSize(ligne.nom, 92) as string[];
+      const nom = doc.splitTextToSize(pdfSafeText(ligne.nom), 92) as string[];
       const hauteur = Math.max(6.5, nom.length * 4.4 + 2);
       if (bas + hauteur > PAGE_H - 42) {
         doc.addPage();

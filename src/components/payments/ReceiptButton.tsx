@@ -12,22 +12,40 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MIcon from '../shared/MIcon';
-import { ordersApi } from '../../services/api';
+import { authApi, ordersApi } from '../../services/api';
+import {
+  currentUserId,
+  currentUserName,
+  currentUserPhone,
+  hasSession,
+  rememberSessionUser,
+} from '../../routes/authGuard';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import {
   buildReceiptData,
   canDownloadReceipt,
+  type ReceiptClientInput,
   type ReceiptOrder,
   type ReceiptPayment,
 } from '../../services/receipts/receiptData';
 import { downloadReceiptPdf } from '../../services/receipts/receiptPdf';
 import { localeRecu, receiptLabels } from '../../services/receipts/receiptLabels';
 
+function cleanText(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
 type Props = {
   payment: ReceiptPayment;
   /** Commande déjà chargée (évite un appel réseau supplémentaire). */
   order?: ReceiptOrder | null;
+  /** Informations client déjà connues (ex. annuaire admin) quand l'API commande ne renvoie pas `client`. */
+  client?: ReceiptClientInput | null;
+  /** Autorise le repli sur le profil de la session active quand il s'agit du paiement du client connecté. */
+  allowSessionFallback?: boolean;
   /** `inline` = lien discret (listes) · `button` = bouton bordé (détails). */
   variant?: 'inline' | 'button';
   /** Nom accessible / identifiant de test. */
@@ -40,6 +58,8 @@ type Props = {
 export default function ReceiptButton({
   payment,
   order = null,
+  client = null,
+  allowSessionFallback = true,
   variant = 'inline',
   testId = 'receipt-button',
   stopPropagation = false,
@@ -75,7 +95,49 @@ export default function ReceiptButton({
         );
         return;
       }
-      const donnees = buildReceiptData(payment, commande);
+
+      let clientNom =
+        cleanText(commande?.client?.nom_complet) ??
+        cleanText([commande?.client?.prenom, commande?.client?.nom].filter(Boolean).join(' ')) ??
+        cleanText(payment.client?.nom_complet) ??
+        cleanText([payment.client?.prenom, payment.client?.nom].filter(Boolean).join(' ')) ??
+        cleanText(client?.nom_complet) ??
+        cleanText([client?.prenom, client?.nom].filter(Boolean).join(' '));
+      let clientTel =
+        cleanText(commande?.client?.telephone) ??
+        cleanText(payment.client?.telephone) ??
+        cleanText(client?.telephone);
+
+      const sessionUserId = currentUserId();
+      const isOwnPayment = payment.client_id == null || (sessionUserId != null && payment.client_id === sessionUserId);
+      if (allowSessionFallback && isOwnPayment) {
+        if (!clientNom) clientNom = currentUserName();
+        if (!clientTel) clientTel = currentUserPhone();
+        if ((!clientNom || !clientTel) && hasSession()) {
+          try {
+            const profileRes = await authApi?.getProfile?.();
+            const profile = ((profileRes as { data?: Record<string, unknown> })?.data ?? profileRes) as
+              | { nom_complet?: string; prenom?: string; nom?: string; telephone?: string }
+              | undefined;
+            if (profile && typeof profile === 'object') {
+              rememberSessionUser(profile as Record<string, unknown>);
+              if (!clientNom) {
+                clientNom =
+                  cleanText(profile.nom_complet) ??
+                  cleanText([profile.prenom, profile.nom].filter(Boolean).join(' '));
+              }
+              if (!clientTel) clientTel = cleanText(profile.telephone);
+            }
+          } catch {
+            // Repli silencieux sur les informations déjà disponibles.
+          }
+        }
+      }
+
+      const clientFallback: ReceiptClientInput | null =
+        clientNom || clientTel ? { nom_complet: clientNom, telephone: clientTel } : null;
+
+      const donnees = buildReceiptData(payment, commande, clientFallback);
       downloadReceiptPdf(donnees, receiptLabels(), localeRecu());
       toast.success(tx('Reçu téléchargé.'), { id: 'tokpa-receipt-done' });
     } catch {

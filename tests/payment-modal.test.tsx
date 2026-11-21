@@ -16,6 +16,7 @@ const getUsers = vi.fn();
 const listMine = vi.fn();
 const navigate = vi.fn();
 const getOrder = vi.fn();
+const downloadReceiptPdf = vi.fn();
 
 vi.mock('../src/services/api', () => ({
   adminApi: { getUsers: (...a: unknown[]) => getUsers(...a) },
@@ -26,6 +27,11 @@ vi.mock('../src/services/api', () => ({
   },
   ordersApi: { getOrder: (...a: unknown[]) => getOrder(...a) },
 }));
+
+vi.mock('../src/services/receipts/receiptPdf', async (importOriginal) => {
+  const reel = await importOriginal<typeof import('../src/services/receipts/receiptPdf')>();
+  return { ...reel, downloadReceiptPdf: (...a: unknown[]) => downloadReceiptPdf(...a) };
+});
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigate,
@@ -69,8 +75,8 @@ beforeEach(() => {
   listMine.mockResolvedValue({ success: true, data: [paiement] });
   getUsers.mockResolvedValue({
     data: [
-      { id: 20, nom_complet: 'Awa Client', prenom: 'Awa', nom: 'Client', role: 'client' },
-      { id: 19, nom_complet: 'Benoît Client', prenom: 'Benoît', nom: 'Client', role: 'client' },
+      { id: 20, nom_complet: 'Awa Client', prenom: 'Awa', nom: 'Client', telephone: '+229 97 00 00 20', role: 'client' },
+      { id: 19, nom_complet: 'Benoît Client', prenom: 'Benoît', nom: 'Client', telephone: '+229 97 00 00 19', role: 'client' },
     ],
   });
   getOrder.mockResolvedValue({
@@ -286,5 +292,38 @@ describe('modale de paiement — disposition', () => {
       fireEvent.click(screen.getByText('Fermer'));
     });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('transmet les coordonnées client au reçu PDF dans les vues admin et client', async () => {
+    const dialog = await ouvrirModal('all');
+    await waitFor(() => expect(dialog.textContent).toContain('+229 97 00 00 20'));
+    await waitFor(() => expect(screen.getByTestId('receipt-payment-16-detail')).toBeTruthy());
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('receipt-payment-16-detail'));
+    });
+    await waitFor(() => expect(downloadReceiptPdf).toHaveBeenCalledTimes(1));
+    expect((downloadReceiptPdf.mock.calls[0]![0] as { client: { nom: string | null; telephone: string | null } }).client).toEqual({
+      nom: 'Awa Client',
+      telephone: '+229 97 00 00 20',
+    });
+
+    document.body.innerHTML = '';
+    downloadReceiptPdf.mockClear();
+    localStorage.setItem('tokpa_token', 'jeton-de-test');
+    localStorage.setItem(
+      'tokpa_user',
+      JSON.stringify({ id: 20, nom_complet: 'Awa Client', telephone: '+229 97 00 00 20', role: 'client' }),
+    );
+    const clientDialog = await ouvrirModal('mine');
+    await waitFor(() => expect(clientDialog.textContent).toContain('+229 97 00 00 20'));
+    await waitFor(() => expect(screen.getByTestId('receipt-payment-16-detail')).toBeTruthy());
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('receipt-payment-16-detail'));
+    });
+    await waitFor(() => expect(downloadReceiptPdf).toHaveBeenCalledTimes(1));
+    expect((downloadReceiptPdf.mock.calls[0]![0] as { client: { nom: string | null; telephone: string | null } }).client).toEqual({
+      nom: 'Awa Client',
+      telephone: '+229 97 00 00 20',
+    });
   });
 });

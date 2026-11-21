@@ -5,8 +5,8 @@ import { backgroundRefreshActive, silentRefreshActive, useGlobalRefreshTick } fr
 import MIcon from '../shared/MIcon';
 import { TableSkeleton } from '../shared/Skeleton';
 import { adminApi, ordersApi, paymentsApi } from '../../services/api';
-import { currentUserId, currentUserName, isAdminRole } from '../../routes/authGuard';
-import { canDownloadReceipt, type ReceiptOrder } from '../../services/receipts/receiptData';
+import { currentUserId, currentUserName, currentUserPhone, isAdminRole } from '../../routes/authGuard';
+import { canDownloadReceipt, type ReceiptClientInput, type ReceiptOrder } from '../../services/receipts/receiptData';
 import ReceiptButton from './ReceiptButton';
 import { dateCourte, fmtFcfa, listOf, unwrap } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -77,11 +77,12 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
   // que la liste des paiements ne fournit pas. Aucune modification backend.
   const [detail, setDetail] = useState<ReceiptOrder | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  // Annuaire id → nom complet des comptes. Nécessaire car GET /orders/{id} ne
-  // renvoie PAS le client (OrderController ne charge pas la relation) : sans cet
-  // annuaire, la modale ne pouvait afficher que « #20 ». Réservé à la vue
+  // Annuaire id → coordonnées client (nom + téléphone). Nécessaire car GET /orders/{id}
+  // ne renvoie PAS le client (OrderController ne charge pas la relation) : sans cet
+  // annuaire, la modale et le reçu ne pouvaient afficher que « #20 ». Réservé à la vue
   // administration (route /admin/users) — le client n'en a pas besoin.
-  const [annuaire, setAnnuaire] = useState<Record<number, string>>({});
+  type ClientDirectoryEntry = { nom: string; telephone: string | null };
+  const [annuaire, setAnnuaire] = useState<Record<number, ClientDirectoryEntry>>({});
 
   // Actualisation globale (bouton / silencieuse) : recharge les paiements sans squelette.
   const tick = useGlobalRefreshTick();
@@ -93,20 +94,34 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
     // la vue clientèle (qui n'a pas besoin des données des autres comptes).
     if (source !== 'all' || !isAdminRole()) return;
     let alive = true;
-    adminApi
-      .getUsers({ per_page: 200 })
-      .then((res) => {
+    type UserRow = { id?: number; nom_complet?: string; prenom?: string; nom?: string; telephone?: string | null };
+    const collect = (res: unknown, map: Record<number, ClientDirectoryEntry>) => {
+      for (const u of listOf(unwrap(res)) as UserRow[]) {
+        const nom = u?.nom_complet ?? [u?.prenom, u?.nom].filter(Boolean).join(' ');
+        const telephone = typeof u?.telephone === 'string' && u.telephone.trim() ? u.telephone.trim() : null;
+        if (u?.id != null && (nom || telephone)) {
+          map[Number(u.id)] = { nom: nom || `#${u.id}`, telephone };
+        }
+      }
+    };
+    (async () => {
+      try {
+        const first = await adminApi.getUsers({ per_page: 200 });
         if (!alive) return;
-        const map: Record<number, string> = {};
-        for (const u of listOf(unwrap(res)) as Array<{ id?: number; nom_complet?: string; prenom?: string; nom?: string }>) {
-          const nom = u?.nom_complet ?? [u?.prenom, u?.nom].filter(Boolean).join(' ');
-          if (u?.id != null && nom) map[Number(u.id)] = nom;
+        const map: Record<number, ClientDirectoryEntry> = {};
+        collect(first, map);
+        const body = (first as { data?: { meta?: { last_page?: number } }; meta?: { last_page?: number } })?.data ?? first;
+        const lastPage = Math.min(Number((body as { meta?: { last_page?: number } })?.meta?.last_page ?? 1) || 1, 20);
+        for (let page = 2; page <= lastPage; page += 1) {
+          const next = await adminApi.getUsers({ page, per_page: 200 });
+          if (!alive) return;
+          collect(next, map);
         }
         setAnnuaire(map);
-      })
-      .catch(() => {
+      } catch {
         /* repli silencieux sur l'identifiant */
-      });
+      }
+    })();
     return () => {
       alive = false;
     };
@@ -135,6 +150,23 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
     };
   }, [selected, tick]);
 
+  const resolveClientForRow = (row: PaymentRow, orderDetail?: ReceiptOrder | null): ReceiptClientInput | null => {
+    const detailNom = orderDetail?.client?.nom_complet?.trim() || null;
+    const detailTel = orderDetail?.client?.telephone?.trim() || null;
+    if (source === 'all') {
+      const entry = row.client_id ? annuaire[Number(row.client_id)] : undefined;
+      const nom = detailNom || entry?.nom || null;
+      const telephone = detailTel || entry?.telephone || null;
+      return nom || telephone ? { nom_complet: nom, telephone } : null;
+    }
+    if (row.client_id == null || row.client_id === currentUserId()) {
+      const nom = detailNom || currentUserName();
+      const telephone = detailTel || currentUserPhone();
+      return nom || telephone ? { nom_complet: nom, telephone } : null;
+    }
+    return detailNom || detailTel ? { nom_complet: detailNom, telephone: detailTel } : null;
+  };
+
   /**
    * Nom affiché pour « Client ».
    * - Vue administration : détail de la commande, sinon annuaire (/admin/users).
@@ -142,15 +174,11 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
    *   à l'utilisateur connecté — sinon l'identifiant, pour ne jamais exposer le
    *   nom d'un autre compte.
    */
+  const selectedClientInfo = selected ? resolveClientForRow(selected, detail) : null;
   const nomClientAffiche = !selected
     ? '—'
-    : source === 'all'
-      ? detail?.client?.nom_complet ||
-        (selected.client_id ? annuaire[Number(selected.client_id)] : undefined) ||
-        (selected.client_id ? `#${selected.client_id}` : '—')
-      : selected.client_id == null || selected.client_id === currentUserId()
-        ? currentUserName() || (selected.client_id ? `#${selected.client_id}` : '—')
-        : `#${selected.client_id}`;
+    : selectedClientInfo?.nom_complet ||
+      (selected.client_id ? `#${selected.client_id}` : '—');
 
   /** Ouvre la commande liée au paiement (suivi côté client, liste côté admin). */
   const ouvrirCommande = (orderId: number) => {
@@ -246,7 +274,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
         return [
           `#${p.id}`,
           orderId ? `#${orderId}` : '—',
-          ...(source === 'all' ? [p.client_id ? annuaire[Number(p.client_id)] ?? `#${p.client_id}` : '—'] : []),
+          ...(source === 'all' ? [p.client_id ? annuaire[Number(p.client_id)]?.nom ?? `#${p.client_id}` : '—'] : []),
           Number(p.montant ?? 0),
           p.methode || '—',
           tx(STATUT_LABEL[p.statut ?? ''] ?? (p.statut || '—')),
@@ -315,7 +343,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                       </td>
                       {source === 'all' && (
                         <td className="px-4 py-3">
-                          {p.client_id ? annuaire[Number(p.client_id)] ?? `#${p.client_id}` : '—'}
+                          {p.client_id ? annuaire[Number(p.client_id)]?.nom ?? `#${p.client_id}` : '—'}
                         </td>
                       )}
                       <td className="px-4 py-3">
@@ -331,7 +359,13 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                         <p>{p.fedapay_ref || '—'}</p>
                         <div className="flex flex-wrap items-center gap-2">
                           {canDownloadReceipt(p.order) ? (
-                            <ReceiptButton payment={p} testId={`receipt-payment-${p.id}`} stopPropagation />
+                            <ReceiptButton
+                              payment={p}
+                              client={resolveClientForRow(p)}
+                              allowSessionFallback={source !== 'all'}
+                              testId={`receipt-payment-${p.id}`}
+                              stopPropagation
+                            />
                           ) : null}
                           {canRepayPayment(p) && orderId && (
                             <button
@@ -450,8 +484,8 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                     <MIcon name="person" className="text-text-tertiary text-base" />
                     <span className="text-text-secondary">{tx("Client")} :</span>
                     <span className="font-bold text-on-surface">{nomClientAffiche}</span>
-                    {detail?.client?.telephone && (
-                      <span className="text-micro text-text-tertiary">{detail.client.telephone}</span>
+                    {selectedClientInfo?.telephone && (
+                      <span className="text-micro text-text-tertiary">{selectedClientInfo.telephone}</span>
                     )}
                   </div>
                 </div>
@@ -515,6 +549,8 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                 <ReceiptButton
                   payment={selected}
                   order={detail}
+                  client={selectedClientInfo}
+                  allowSessionFallback={source !== 'all'}
                   variant="button"
                   testId={`receipt-payment-${selected.id}-detail`}
                 />

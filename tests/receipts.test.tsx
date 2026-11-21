@@ -25,9 +25,13 @@ import { LanguageProvider } from '../src/context/LanguageContext';
 import ReceiptButton from '../src/components/payments/ReceiptButton';
 
 const getOrder = vi.fn();
+const getProfile = vi.fn();
 vi.mock('../src/services/api', () => ({
   ordersApi: {
     getOrder: (...args: unknown[]) => getOrder(...args),
+  },
+  authApi: {
+    getProfile: (...args: unknown[]) => getProfile(...args),
   },
 }));
 
@@ -64,8 +68,10 @@ const commande = {
 };
 
 beforeEach(() => {
+  localStorage.clear();
   localStorage.setItem('tokpa_lang', 'fr');
   getOrder.mockReset();
+  getProfile.mockReset();
   telecharger.mockReset();
 });
 
@@ -126,6 +132,18 @@ describe('préparation des données du reçu', () => {
     expect(data.sousTotal).toBe(1850); // 2150 − 300 de frais
   });
 
+  it('renseigne les informations client depuis clientFallback quand la commande ne charge pas client', () => {
+    const { client: _ignored, ...commandeSansClient } = commande;
+    const data = buildReceiptData(paiementReussi, commandeSansClient, {
+      nom_complet: 'Awa Dossou',
+      telephone: '+229 97 11 22 33',
+    });
+    expect(data.client).toEqual({
+      nom: 'Awa Dossou',
+      telephone: '+229 97 11 22 33',
+    });
+  });
+
   it('numérote les reçus de façon stable et lisible', () => {
     const a = numeroRecu(5, '523426');
     const b = numeroRecu(5, '523426');
@@ -149,11 +167,29 @@ describe('rendu PDF', () => {
     expect(pages).toBeGreaterThan(1);
   });
 
-  it('formate les montants en francs CFA', () => {
-    // `toLocaleString` peut utiliser une espace fine insécable : on normalise.
-    const sansEspaceFine = (v: string) => v.replace(/[\u202f\u00a0]/g, ' ');
-    expect(sansEspaceFine(fmtMontant(1850))).toBe('1 850 FCFA');
-    expect(sansEspaceFine(fmtMontant(null))).toBe('0 FCFA');
+  it('formate les montants en francs CFA sans espace insécable corrompu par jsPDF', () => {
+    expect(fmtMontant(1000)).toBe('1 000 FCFA');
+    expect(fmtMontant(7000)).toBe('7 000 FCFA');
+    expect(fmtMontant(1850)).toBe('1 850 FCFA');
+    expect(fmtMontant(1250000)).toBe('1 250 000 FCFA');
+    expect(fmtMontant(null)).toBe('0 FCFA');
+  });
+
+  it('écrit 1 000 FCFA et 7 000 FCFA dans le flux PDF sans « 1/000 » ni « 7/000 »', () => {
+    const commandeMilliers = {
+      ...commande,
+      montant_total: 7000,
+      frais_livraison: 1000,
+      items: [{ nom: 'Sac de riz', quantite: 1, prix_unitaire: 6000 }],
+    };
+    const doc = buildReceiptPdf(
+      buildReceiptData({ ...paiementReussi, montant: 7000 }, commandeMilliers),
+      receiptLabels(),
+    );
+    const pdfText = Buffer.from(doc.output('arraybuffer')).toString('latin1');
+    expect(pdfText).toContain('(1 000 FCFA)');
+    expect(pdfText).toContain('(7 000 FCFA)');
+    expect(pdfText).not.toContain('/000');
   });
 
   it('écrit un reçu témoin pour inspection', () => {
@@ -258,5 +294,58 @@ describe('bouton de téléchargement du reçu', () => {
     });
     await waitFor(() => expect(getOrder).toHaveBeenCalledWith(20));
     expect(telecharger).not.toHaveBeenCalled();
+  });
+
+  it('complète les informations du client depuis la session / GET /profile si GET /orders/{id} omet client', async () => {
+    localStorage.setItem('tokpa_token', 'jeton-client');
+    localStorage.setItem('tokpa_user', JSON.stringify({ id: 7, nom_complet: 'Awa Client', role: 'client' }));
+    getProfile.mockResolvedValueOnce({
+      data: { id: 7, nom_complet: 'Awa Client', telephone: '+229 97 55 44 33' },
+    });
+    const { client: _ignored, ...commandeSansClient } = commande;
+
+    monter({
+      payment: { ...paiementReussi, client_id: 7 },
+      order: commandeSansClient,
+      testId: 'recu-session-client',
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('recu-session-client'));
+    });
+
+    await waitFor(() => expect(telecharger).toHaveBeenCalledTimes(1));
+    expect(getProfile).toHaveBeenCalledTimes(1);
+    const [data] = telecharger.mock.calls[0] as [{ client: { nom: string | null; telephone: string | null } }];
+    expect(data.client).toEqual({
+      nom: 'Awa Client',
+      telephone: '+229 97 55 44 33',
+    });
+  });
+
+  it('utilise les coordonnées client fournies en prop (annuaire admin)', async () => {
+    localStorage.setItem('tokpa_token', 'jeton-admin');
+    localStorage.setItem('tokpa_user', JSON.stringify({ id: 1, nom_complet: 'Admin', role: 'admin' }));
+    const { client: _ignored, ...commandeSansClient } = commande;
+
+    monter({
+      payment: { ...paiementReussi, client_id: 20 },
+      order: commandeSansClient,
+      client: { nom_complet: 'Benoît Acheteur', telephone: '+229 96 00 11 22' },
+      allowSessionFallback: false,
+      testId: 'recu-admin-client',
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('recu-admin-client'));
+    });
+
+    await waitFor(() => expect(telecharger).toHaveBeenCalledTimes(1));
+    expect(getProfile).not.toHaveBeenCalled();
+    const [data] = telecharger.mock.calls[0] as [{ client: { nom: string | null; telephone: string | null } }];
+    expect(data.client).toEqual({
+      nom: 'Benoît Acheteur',
+      telephone: '+229 96 00 11 22',
+    });
   });
 });

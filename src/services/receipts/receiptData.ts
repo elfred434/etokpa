@@ -11,15 +11,24 @@
  * généré côté front à partir des données réellement renvoyées par l'API.
  */
 
+export type ReceiptClientInput = {
+  nom_complet?: string | null;
+  prenom?: string | null;
+  nom?: string | null;
+  telephone?: string | null;
+};
+
 export type ReceiptPayment = {
   id: number;
   order_id?: number | null;
+  client_id?: number | null;
   montant?: number | string | null;
   methode?: string | null;
   statut?: string | null;
   fedapay_ref?: string | null;
   paid_at?: string | null;
   created_at?: string | null;
+  client?: ReceiptClientInput | null;
 };
 
 export type ReceiptOrderItem = {
@@ -37,7 +46,7 @@ export type ReceiptOrder = {
   created_at?: string | null;
   items?: ReceiptOrderItem[] | null;
   landmark?: { nom?: string | null } | null;
-  client?: { nom_complet?: string | null; telephone?: string | null } | null;
+  client?: ReceiptClientInput | null;
   livreur_id?: number | string | null;
   livreur?: { id?: number | string | null; nom_complet?: string | null; telephone?: string | null } | null;
 };
@@ -126,14 +135,31 @@ export function nomFichierRecu(data: ReceiptData): string {
   return `recu-tokpa-paiement-${data.paymentId}${commande}.pdf`;
 }
 
+function cleanField(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
+function resolveClientNom(source?: ReceiptClientInput | null): string | null {
+  if (!source) return null;
+  const full = cleanField(source.nom_complet);
+  if (full) return full;
+  const parts = [cleanField(source.prenom), cleanField(source.nom)].filter(Boolean).join(' ');
+  return parts || null;
+}
+
 /**
  * Assemble le reçu. `order` est facultatif : quand il manque (détail non
  * autorisé ou commande supprimée), le reçu reste valable — il porte alors
  * la mention « détail des articles indisponible ».
+ * `clientFallback` permet de renseigner nom/téléphone du client lorsque
+ * `GET /orders/{id}` ne charge pas la relation `client`.
  */
 export function buildReceiptData(
   payment: ReceiptPayment,
   order?: ReceiptOrder | null,
+  clientFallback?: ReceiptClientInput | null,
 ): ReceiptData {
   const montant = toNumber(payment.montant);
   const lignes: ReceiptLine[] = (order?.items ?? [])
@@ -176,8 +202,14 @@ export function buildReceiptData(
     paidAt: payment.paid_at ?? null,
     emisLe: new Date().toISOString(),
     client: {
-      nom: order?.client?.nom_complet ?? null,
-      telephone: order?.client?.telephone ?? null,
+      nom:
+        resolveClientNom(order?.client) ??
+        resolveClientNom(payment.client) ??
+        resolveClientNom(clientFallback),
+      telephone:
+        cleanField(order?.client?.telephone) ??
+        cleanField(payment.client?.telephone) ??
+        cleanField(clientFallback?.telephone),
     },
     livreur: {
       nom: order?.livreur?.nom_complet ?? null,

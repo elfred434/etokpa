@@ -68,6 +68,7 @@ const CATEGORY_COLORS: Record<string, RGB> = {
 
 function plainText(value: unknown, maxLength = 500): string {
   return String(value ?? "—")
+    .replace(/[\u00a0\u2007\u2009\u202f]/g, " ")
     .replace(/[\u0000-\u001f\u007f]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
@@ -169,11 +170,12 @@ function drawHeader(doc: jsPDF, count: number, locale: string, continuation = fa
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(...COLOR_MUTED);
-  const generatedAt = new Date().toLocaleString(locale);
+  const generatedAt = new Date().toLocaleString(locale).replace(/[\u00a0\u2007\u2009\u202f]/g, " ");
   doc.text(tr(`Exporté le ${generatedAt}`, `Exported ${generatedAt}`), RIGHT, 24.5, { align: "right" });
+  const countStr = count.toLocaleString(locale).replace(/[\u00a0\u2007\u2009\u202f]/g, " ");
   const countLabel = tr(
-    `${count.toLocaleString(locale)} événement${count === 1 ? "" : "s"}`,
-    `${count.toLocaleString(locale)} event${count === 1 ? "" : "s"}`,
+    `${countStr} événement${count === 1 ? "" : "s"}`,
+    `${countStr} event${count === 1 ? "" : "s"}`,
   );
   doc.text(countLabel, RIGHT, 29, { align: "right" });
 

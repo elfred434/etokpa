@@ -67,6 +67,7 @@ type StoredUser = {
   prenom?: string;
   nom?: string;
   email?: string;
+  telephone?: string;
   image_profil?: string | null;
   role?: string | { nom?: string } | null;
   profil?: { zone_id?: number; zone?: { id?: number; nom?: string } | null } | null;
@@ -109,6 +110,12 @@ export function currentUserName(): string | null {
 export function currentUserId(): number | null {
   const id = Number(storedUser()?.id);
   return id > 0 ? id : null;
+}
+
+/** Téléphone de l'utilisateur connecté, sinon null. */
+export function currentUserPhone(): string | null {
+  const tel = storedUser()?.telephone;
+  return typeof tel === 'string' && tel.trim() ? tel.trim() : null;
 }
 
 /** Zone du manager / livreur connecté (UserResource.profil.zone, chargée à la 2FA), sinon null. */
