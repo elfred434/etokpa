@@ -92,19 +92,21 @@ export default function RealBeninMap({
         className="w-full h-full rounded-b-none"
         style={{ height: '100%', width: '100%', minHeight: '450px' }}
       >
-        {/* Tuiles adaptées au thème : OSM en clair, CARTO sombre en sombre
-            (les tuiles OSM claires éblouissent sur une interface sombre). */}
+        {/* Tuiles sans clé API compatibles production/Vercel :
+            OSM France en clair, Esri Dark Gray Base en sombre. */}
         <TileLayer
           key={sombre ? 'tuiles-sombres' : 'tuiles-claires'}
           attribution={
             sombre
-              ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-              : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              ? 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
+              : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; OSM France'
           }
+          maxZoom={19}
+          maxNativeZoom={sombre ? 16 : 19}
           url={
             sombre
-              ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-              : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+              ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+              : 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png'
           }
         />
 

@@ -40,10 +40,10 @@ const DESIGN_CSS = `
         .design-modal-scroll::-webkit-scrollbar-track { background: transparent; }
     `;
 
-/** Tuiles réelles (Calques = bascule de fond de carte). */
+/** Tuiles réelles sans clé API (Calques = bascule de fond de carte). */
 const TILE_URLS = [
-  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+  'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
 ];
 const VUE_BENIN: L.LatLngExpression = [8.0, 2.3];
 
