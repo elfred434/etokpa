@@ -8,7 +8,8 @@ import { unwrap, listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
-import { currentUserZone } from '../../routes/authGuard';
+import { currentUserZone, isAdminRole } from '../../routes/authGuard';
+import { formatManagerZoneLabel } from '../../utils/managerAssignment';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
 
@@ -52,7 +53,7 @@ export default function ManagerEquipePage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-h2 font-h2 font-bold">
-              {tx("Mon équipe")} — {currentUserZone() ? `Zone ${currentUserZone()}` : tx("Zone non attribuée")}
+              {tx("Mon équipe")} — {formatManagerZoneLabel(currentUserZone(), isAdminRole())}
             </h1>
             <div className="mt-2 flex flex-wrap gap-2 text-label">
               <span className="rounded-full bg-bg-secondary px-2.5 py-1 font-semibold">{livreurs.length} {tx("livreurs")}</span>

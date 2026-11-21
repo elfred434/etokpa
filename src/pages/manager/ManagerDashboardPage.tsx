@@ -7,7 +7,8 @@ import { TableSkeleton } from '../../components/shared/Skeleton';
 import { managerApi } from '../../services/api';
 import { unwrap, listOf, fmtFcfa, heureCourte } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
-import { currentUserZone } from '../../routes/authGuard';
+import { currentUserZone, isAdminRole } from '../../routes/authGuard';
+import { formatManagerZoneLabel } from '../../utils/managerAssignment';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
@@ -95,7 +96,7 @@ export default function ManagerDashboardPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="break-words text-h2 font-h2 font-bold">Tableau de bord — Zone {currentUserZone() ?? '—'}</h1>
+            <h1 className="break-words text-h2 font-h2 font-bold">Tableau de bord — {formatManagerZoneLabel(currentUserZone(), isAdminRole())}</h1>
           </div>
         </div>
 

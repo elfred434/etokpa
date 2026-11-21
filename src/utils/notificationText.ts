@@ -76,6 +76,20 @@ export function describeNotification(n: ApiNotification, isFr: boolean): { type:
           : `The payment for your order #${orderId ?? ''} was confirmed by FedaPay.`,
         orderId,
       };
+    case 'role.changed': {
+      const role = String(d.role ?? '');
+      const isAdmin = role === 'admin' || role === 'super_admin';
+      const rawMsg = typeof d.message === 'string' && d.message.trim() ? d.message.trim() : '';
+      return {
+        type: 'security',
+        title: isFr ? 'Rôle mis à jour' : 'Role updated',
+        message: isFr
+          ? rawMsg || (isAdmin ? 'Vous êtes maintenant administrateur.' : 'Vous êtes maintenant manager.')
+          : isAdmin
+            ? 'You are now an administrator.'
+            : 'You are now a manager.',
+      };
+    }
     default:
       return {
         type: 'order',

@@ -15,6 +15,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { currentRole, currentUserId, currentUserName, currentUserZone, isAdminRole, rememberUserZone, useAuthRevision } from '../../../routes/authGuard';
+import { formatManagerZoneLabel } from '../../../utils/managerAssignment';
 import UserAvatar from '../../shared/UserAvatar';
 import { adminApi, catalogApi } from '../../../services/api';
 import { listOf } from '../../../services/api/unwrap';
@@ -89,7 +90,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
             <MIcon name="menu" />
           </button>
           <MIcon name="location_on" className="shrink-0 text-primary text-[18px]" />
-          <p className="truncate text-label font-semibold">{zone ? `Zone ${zone}` : tx("Zone non attribuée")}</p>
+          <p className="truncate text-label font-semibold">{formatManagerZoneLabel(zone, admin)}</p>
           {admin && (
             <button type="button" className="shrink-0 text-xs font-semibold text-primary hover:underline sm:text-label" aria-label={tx("Changer de zone")} onClick={() => setOpen(true)}>
               <MIcon name="edit" className="text-[16px] sm:hidden" />

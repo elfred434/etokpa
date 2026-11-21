@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 import LogoutButton from '../../shared/LogoutButton';
 import { currentRole, currentUserName, currentUserZone, initialsOf, isAdminRole, useAuthRevision } from '../../../routes/authGuard';
+import { formatManagerZoneLabel } from '../../../utils/managerAssignment';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import { usePreservedScroll } from '../../../hooks/usePreservedScroll';
@@ -49,9 +50,9 @@ export default function ManagerSidebar({ currentPath, open = false, onClose }: P
         <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2">
           <MIcon name="location_on" className="text-primary-tint text-[18px]" />
           <div className="flex-1">
-            {/* Vraie zone du manager connecté (UserResource.profil.zone) — plus de « Zone Akpakpa » inventée */}
+            {/* Vraie zone du manager connecté (ou « Toutes les zones » pour un admin sans fiche manager) */}
             <p className="text-label font-semibold text-white">
-              {currentUserZone() ? `Zone ${currentUserZone()}` : tx("Zone non attribuée")}
+              {formatManagerZoneLabel(currentUserZone(), isAdminRole())}
             </p>
             <p className="text-label text-white/80">{tx("Votre zone de gestion")}</p>
           </div>

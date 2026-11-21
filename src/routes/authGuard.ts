@@ -123,6 +123,13 @@ export function currentUserZone(): string | null {
   return storedUser()?.profil?.zone?.nom || null;
 }
 
+/** Libellé de zone dans l'espace manager (un admin sans fiche manager supervise toutes les zones). */
+export function managerZoneLabel(): string {
+  const zone = currentUserZone();
+  if (zone) return `Zone ${zone}`;
+  return isAdminRole() ? tx('Toutes les zones') : tx('Zone non attribuée');
+}
+
 /** Garde la zone choisie pour l'en-tête, en attendant le prochain profil renvoyé par l'API. */
 export function rememberUserZone(zoneId: number, nom?: string) {
   try {

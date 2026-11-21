@@ -1,3 +1,5 @@
+import { tx } from '../i18n/tx';
+
 export type ManagerZoneId = number | string | null | undefined;
 export type LivreursAvailability = boolean | number | string | null | undefined;
 
@@ -49,4 +51,10 @@ export function filterLivreursDisponiblesDansZone<T extends ManagerAssignableLiv
   return livreurs.filter(
     (livreur) => livreurZoneId(livreur) === targetZoneId && isLivreurDisponible(livreur),
   );
+}
+
+/** Libellé de zone dans l'espace manager (un admin sans fiche manager supervise toutes les zones). */
+export function formatManagerZoneLabel(zone: string | null | undefined, isAdmin = false): string {
+  if (zone) return `Zone ${zone}`;
+  return isAdmin ? tx('Toutes les zones') : tx('Zone non attribuée');
 }

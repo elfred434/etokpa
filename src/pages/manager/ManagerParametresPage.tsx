@@ -3,7 +3,8 @@ import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 import ParametresPanel from '../../components/settings/ParametresPanel';
-import { currentUserZone } from '../../routes/authGuard';
+import { currentUserZone, isAdminRole } from '../../routes/authGuard';
+import { formatManagerZoneLabel } from '../../utils/managerAssignment';
 
 
 const ONGLETS = ['Zone & Tarification', 'Règles d’attribution', 'Alertes & Notifications', 'Compte & Sécurité'];
@@ -64,7 +65,7 @@ export default function ManagerParametresPage() {
             <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-lg lg:space-y-0">
               <section className="rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
                 <h2 className="text-h3 font-h3 font-bold">
-                  {tx("Périmètre opérationnel")} — {currentUserZone() ?? tx("Zone non attribuée")}
+                  {tx("Périmètre opérationnel")} — {formatManagerZoneLabel(currentUserZone(), isAdminRole())}
                 </h2>
                 <p className="text-label text-text-secondary">
                   {tx("Définition de la couverture géographique et des marchés couverts")}

@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
+import { rememberSessionUser } from '../routes/authGuard';
+import { authApi } from '../services/api/auth';
 import { catalogApi } from '../services/api/catalog';
 import { windowEcho } from '../services/realtime/echo';
 import { assignedOrderId, deliveryAssignmentToastMessage } from '../utils/notificationText';
@@ -151,10 +153,52 @@ export function useRealtimeNotifications(sessionKey: number): void {
       emitRealtimeRefresh({ scope: 'notifications' });
     };
 
+    const onRoleChanged = (data: { role?: string; message?: string }) => {
+      const nextRole = String(data?.role ?? '');
+      const isAdmin = nextRole === 'admin' || nextRole === 'super_admin';
+      const fallbackMsg = isAdmin
+        ? isFrRef.current
+          ? 'Vous êtes maintenant administrateur.'
+          : 'You are now an administrator.'
+        : isFrRef.current
+          ? 'Vous êtes maintenant manager.'
+          : 'You are now a manager.';
+      toast(
+        isFrRef.current && typeof data?.message === 'string' && data.message.trim()
+          ? data.message.trim()
+          : fallbackMsg,
+        { icon: '🛡️' },
+      );
+      if (nextRole) {
+        rememberSessionUser({ role: nextRole });
+      }
+      void authApi?.getProfile?.()
+        ?.then((res) => {
+          if (!active) return;
+          const profile = ((res as { data?: Record<string, unknown> })?.data ?? res) as Record<string, unknown> | undefined;
+          if (profile && typeof profile === 'object' && !Array.isArray(profile)) {
+            rememberSessionUser(profile);
+          }
+        })
+        .catch(() => undefined);
+      emitRealtimeRefresh({ scope: 'notifications', payload: data as Record<string, unknown> });
+    };
+
+    const onLaravelNotification = (notification: Record<string, unknown>) => {
+      const type = String(notification?.type ?? '');
+      if (type.endsWith('RoleChangedNotification') || 'role' in (notification ?? {})) {
+        onRoleChanged(notification as { role?: string; message?: string });
+      }
+    };
+
     notificationsChannel.listen('order.status.changed', onStatusChanged);
     notificationsChannel.listen('budget.responded', onBudgetResponded);
     notificationsChannel.listen('payment.confirmed', onPaymentConfirmed);
     notificationsChannel.listen('delivery.assigned', onDeliveryAssigned);
+    notificationsChannel.listen('role.changed', onRoleChanged);
+    (
+      notificationsChannel as { notification?: (cb: (n: Record<string, unknown>) => void) => void }
+    ).notification?.(onLaravelNotification);
 
     const listenManagerZone = (zoneId: number | undefined) => {
       if (!active || !zoneId || managerZoneIds.has(zoneId)) return;
@@ -183,6 +227,11 @@ export function useRealtimeNotifications(sessionKey: number): void {
       notificationsChannel.stopListening('budget.responded', onBudgetResponded);
       notificationsChannel.stopListening('payment.confirmed', onPaymentConfirmed);
       notificationsChannel.stopListening('delivery.assigned', onDeliveryAssigned);
+      notificationsChannel.stopListening('role.changed', onRoleChanged);
+      notificationsChannel.stopListening(
+        '.Illuminate\\Notifications\\Events\\BroadcastNotificationCreated',
+        onLaravelNotification,
+      );
       managerChannelStops.forEach((stop) => stop());
     };
   }, [sessionKey]);

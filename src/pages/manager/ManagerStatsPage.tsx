@@ -7,7 +7,8 @@ import { unwrap, fmtFcfa } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
-import { currentUserZone } from '../../routes/authGuard';
+import { currentUserZone, isAdminRole } from '../../routes/authGuard';
+import { formatManagerZoneLabel } from '../../utils/managerAssignment';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
 
@@ -54,7 +55,7 @@ export default function ManagerStatsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-h2 font-h2 font-bold">
-              {tx("Statistiques de la zone")} — {currentUserZone() ?? tx("Zone non attribuée")}
+              {tx("Statistiques de la zone")} — {formatManagerZoneLabel(currentUserZone(), isAdminRole())}
             </h1>
           </div>
           <div className="flex flex-wrap gap-2">
