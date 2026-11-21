@@ -14,7 +14,7 @@ import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { catalogApi, ordersApi, paymentsApi } from '../../../services/api';
-import { isOwnOrder } from '../../../utils/ownOrder';
+import { extractOrdersPage, isOwnOrder, parseOrderIdParam } from '../../../utils/ownOrder';
 import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
 import { tr, tx } from '../../../i18n/tx';
 import { captureFrontendError } from '../../../services/errors/frontendErrorReporter';
@@ -90,19 +90,33 @@ export default function OrderTrackingPage() {
   const { isFr } = useLanguage();
   const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
   const navigate = useNavigate();
-  const search = useSearch({ from: '/commandes/suivi' }) as unknown as { order?: string; simu?: string };
+  const search = useSearch({ from: '/commandes/suivi' }) as unknown as { order?: unknown; simu?: string };
   const refreshTick = useGlobalRefreshTick();
+
+  const requestedOrderId = parseOrderIdParam(search.order);
+  const hasInvalidOrderParam =
+    search.order !== undefined &&
+    String(search.order).trim() !== '' &&
+    requestedOrderId === null;
 
   const [allOrders, setAllOrders] = useState<ApiOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<number | null>(search.order ? Number(search.order) : null);
+  const [selectedId, setSelectedId] = useState<number | null>(requestedOrderId);
   const [order, setOrder] = useState<ApiOrder | null>(null);
   const [tracking, setTracking] = useState<TrackingInfo | null>(null);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [accessDenied, setAccessDenied] = useState(false);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [detailLoading, setDetailLoading] = useState<boolean>(Boolean(requestedOrderId));
+  const [verifiedOrderId, setVerifiedOrderId] = useState<number | null>(null);
+  const [deniedOrderId, setDeniedOrderId] = useState<number | null>(null);
   const [destCoords, setDestCoords] = useState<[number, number] | null>(null);
   const [paying, setPaying] = useState(false);
   const payLock = useRef(false);
+  const prevSelectedIdRef = useRef<number | null>(requestedOrderId);
+  const ordersPage1Ref = useRef<{
+    tick: number;
+    promise: Promise<{ list: ApiOrder[]; lastPage: number; error: unknown | null }>;
+  } | null>(null);
 
   const handleRepayer = async (target: ApiOrder) => {
     if (payLock.current || paying) return;
@@ -146,55 +160,111 @@ export default function OrderTrackingPage() {
     }
   };
 
-  // Chargement de la liste (pour le sélecteur quand pas de ?order=)
+  // Chargement de la liste (pour le sélecteur quand pas de ?order=, et page 1 partagée avec la vérif d'appartenance)
   useEffect(() => {
     if (!isAuthenticated) return;
-    ordersApi
+    let alive = true;
+    const promise = ordersApi
       .getOrders()
       .then((res) => {
-        const list: ApiOrder[] = (res?.data ?? res ?? []).map((o: Record<string, unknown> & { data?: ApiOrder }) => o.data ?? o);
+        const { list, lastPage } = extractOrdersPage(res);
+        return { list: list as unknown as ApiOrder[], lastPage, error: null as unknown | null };
+      })
+      .catch((err) => ({ list: [] as ApiOrder[], lastPage: 1, error: err as unknown }));
+    ordersPage1Ref.current = { tick: refreshTick, promise };
+
+    promise
+      .then(({ list, error }) => {
+        if (!alive) return;
+        if (error) {
+          setOrdersError(alertApiError(error, 'tracking-orders'));
+          return;
+        }
         setAllOrders(list);
-        setFetchError(null);
-        if (!selectedId && list.length > 0) {
+        setOrdersError(null);
+        if (!selectedId && !hasInvalidOrderParam && list.length > 0) {
           // sans ?order= : seulement une commande encore en cours. Une commande annulée n'est pas suivie.
           const active = list.find((o) => ['en_attente', 'en_preparation', 'en_livraison'].includes(o.statut));
           if (active) setSelectedId(active.id);
         }
       })
-      .catch((err) => {
-        setFetchError(alertApiError(err, 'tracking-orders'));
-      })
-      .finally(() => setOrdersLoading(false));
+      .finally(() => {
+        if (alive) setOrdersLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, refreshTick]);
 
-  // Sync URL (?order=) → sélection (édition manuelle de l'URL incluse — le garde-fou ci-dessous s'applique)
+  // Sync URL (?order=) → sélection (édition manuelle de l'URL et ?order=%2256%22 inclus)
   useEffect(() => {
-    if (search.order) setSelectedId(Number(search.order));
-  }, [search.order]);
+    if (requestedOrderId !== null) {
+      setSelectedId(requestedOrderId);
+    }
+  }, [requestedOrderId]);
 
   // Chargement commande + tracking — UNIQUEMENT si la commande figure dans MES commandes
   // (anti-IDOR côté UI : aucune donnée d'une commande étrangère n'est jamais affichée, y compris session admin/manager)
   useEffect(() => {
     if (!isAuthenticated || !selectedId) return;
+
+    const isNewSelection = prevSelectedIdRef.current !== selectedId;
+    prevSelectedIdRef.current = selectedId;
+
+    // Si cette commande a déjà été refusée, ne jamais réinitialiser deniedOrderId sur un refreshTick
+    // (évite de flasher brièvement des infos avant de réafficher l'erreur toutes les 30s).
+    if (!isNewSelection && deniedOrderId === selectedId) {
+      return;
+    }
+
     let alive = true;
-    setAccessDenied(false);
-    if (!silentRefreshActive()) {
+    const silent = !isNewSelection && silentRefreshActive() && verifiedOrderId === selectedId;
+    if (!silent) {
       setOrder(null);
       setTracking(null);
+      setVerifiedOrderId(null);
+      setDeniedOrderId(null);
+      setDetailError(null);
+      setDetailLoading(true);
     }
+
     (async () => {
       try {
-        const mine = await isOwnOrder(selectedId);
+        let mine = false;
+        const page1Holder = ordersPage1Ref.current;
+        if (page1Holder && page1Holder.tick === refreshTick) {
+          const page1 = await page1Holder.promise;
+          if (!alive) return;
+          if (page1.error) {
+            if (!silent) {
+              setDetailError(alertApiError(page1.error, 'tracking-orders'));
+            }
+            setDetailLoading(false);
+            return;
+          }
+          mine = page1.list.some((o) => Number(o.id) === Number(selectedId));
+          if (!mine && page1.lastPage > 1) {
+            mine = await isOwnOrder(selectedId, 2);
+          }
+        } else {
+          mine = await isOwnOrder(selectedId);
+        }
         if (!alive) return;
         if (!mine) {
           captureFrontendError(new Error('Order ownership check denied detail access'), {
             source: 'security-guard',
             status: 403,
           });
-          setAccessDenied(true);
+          setOrder(null);
+          setTracking(null);
+          setVerifiedOrderId(null);
+          setDetailError(null);
+          setDeniedOrderId(selectedId);
+          setDetailLoading(false);
           return;
         }
+
         const paymentsPromise =
           typeof paymentsApi.listMine === 'function'
             ? paymentsApi.listMine().catch(() => null)
@@ -205,23 +275,48 @@ export default function OrderTrackingPage() {
         const resolvedPayment = resolveOrderPayment(rawFull.id, rawFull.payment, indexEffectivePayments(paymentsRes));
         const full = resolvedPayment ? { ...rawFull, payment: resolvedPayment } : rawFull;
         setOrder(full);
-        setFetchError(null);
+        setVerifiedOrderId(selectedId);
+        setDeniedOrderId(null);
+        setDetailError(null);
+        setDetailLoading(false);
         if (full.statut === 'annule') return;
-        const t = await ordersApi.getTracking(selectedId);
-        if (alive) setTracking(t as TrackingInfo);
+        try {
+          const t = await ordersApi.getTracking(selectedId);
+          if (alive) setTracking(t as TrackingInfo);
+        } catch {
+          /* Le endpoint /tracking est optionnel tant qu'aucune position GPS n'est disponible. */
+        }
       } catch (err) {
-        if (alive) setFetchError(alertApiError(err, 'tracking-detail'));
+        if (!alive) return;
+        const status = (err as { response?: { status?: number } } | null)?.response?.status;
+        if (status === 403 || status === 404) {
+          setOrder(null);
+          setTracking(null);
+          setVerifiedOrderId(null);
+          setDetailError(null);
+          setDeniedOrderId(selectedId);
+          setDetailLoading(false);
+          return;
+        }
+        if (!silent) {
+          setOrder(null);
+          setTracking(null);
+          setVerifiedOrderId(null);
+        }
+        setDetailError(alertApiError(err, 'tracking-detail'));
+        setDetailLoading(false);
       }
     })();
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, selectedId, refreshTick]);
 
   // Destination RÉELLE de la commande : landmark (point_reperes) → GPS via GET /zones.points_repere
   useEffect(() => {
     const lmId = order?.landmark?.id;
-    if (!lmId) {
+    if (!lmId || verifiedOrderId !== selectedId) {
       setDestCoords(null);
       return;
     }
@@ -249,18 +344,21 @@ export default function OrderTrackingPage() {
     return () => {
       alive = false;
     };
-  }, [order?.landmark?.id]);
+  }, [order?.landmark?.id, verifiedOrderId, selectedId]);
+
+  const accessDenied = hasInvalidOrderParam || (!!selectedId && deniedOrderId === selectedId);
+  const isVerifiedOrder = !!selectedId && verifiedOrderId === selectedId && !!order && !accessDenied;
 
   // Rafraîchissement temps réel sur les événements de statut (notifications.{userId})
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !isVerifiedOrder || !selectedId) return;
     return subscribeRealtimeRefresh(['orders'], (e) => {
-      if (e.scope === 'orders' && selectedId && !accessDenied) {
+      if (e.scope === 'orders') {
         ordersApi.getOrder(selectedId).then((res) => setOrder((res?.data ?? res) as ApiOrder)).catch(() => {});
         ordersApi.getTracking(selectedId).then((t) => setTracking(t as TrackingInfo)).catch(() => {});
       }
     });
-  }, [isAuthenticated, selectedId, accessDenied]);
+  }, [isAuthenticated, isVerifiedOrder, selectedId]);
 
   // Position GPS réelle (GET /orders/{id}/tracking → position) : priorité sur la simulation
   const realPosition = useMemo<[number, number] | null>(() => {
@@ -272,8 +370,8 @@ export default function OrderTrackingPage() {
   }, [tracking]);
 
   const { riderCoords, estimatedMinutes, source } = useRiderLocation({
-    orderId: selectedId ? String(selectedId) : undefined,
-    enabled: isAuthenticated && !!selectedId && !accessDenied && order?.statut !== 'annule',
+    orderId: isVerifiedOrder && selectedId ? String(selectedId) : undefined,
+    enabled: isAuthenticated && isVerifiedOrder && order?.statut !== 'annule',
     realPosition,
     destinationCoords: destCoords ?? undefined, // ETA vers la destination RÉELLE de la commande
     allowSimulation: search.simu === '1', // démo opt-in uniquement : sans ça, aucune position inventée
@@ -299,14 +397,28 @@ export default function OrderTrackingPage() {
   const isCancelled = order?.statut === 'annule';
   const articlesCount = (order?.items ?? []).reduce((sum, it) => sum + Number(it.quantite ?? 0), 0);
   const rider = order?.livreur ?? null;
+  const showDetailSpinner =
+    !accessDenied &&
+    !detailError &&
+    !!selectedId &&
+    (detailLoading || verifiedOrderId !== selectedId || !order);
+  const showSpinner = ordersLoading || showDetailSpinner;
+  const showEmpty =
+    !showSpinner &&
+    !accessDenied &&
+    !detailError &&
+    (!selectedId || (allOrders.length === 0 && !order));
+  const showOrderContent = !showSpinner && !accessDenied && !showEmpty && isVerifiedOrder;
+  const fetchError = accessDenied ? null : (detailError ?? (showOrderContent ? null : ordersError));
+  const hideMapLayout = !showOrderContent || isCancelled;
 
   return (
     <div className="bg-bg-app font-body text-on-surface antialiased min-h-screen flex flex-col">
       <ClientNavbar />
 
       <main className="relative flex flex-grow flex-col overflow-hidden pt-[52px] pb-[80px] lg:pb-0 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)] lg:items-stretch lg:gap-lg lg:px-lg lg:pb-lg">
-        {/* Pas de carte ni de suivi GPS pour une commande annulée. */}
-        {!isCancelled && (
+        {/* Pas de carte ni de suivi GPS si accès refusé, chargement ou commande annulée. */}
+        {!hideMapLayout && (
           <section className="relative h-[420px] w-full overflow-hidden bg-info-light sm:h-[520px] lg:h-auto lg:min-h-[620px] lg:rounded-[20px]">
             <RealBeninMap
               riderCoords={riderCoords}
@@ -318,7 +430,7 @@ export default function OrderTrackingPage() {
         )}
 
         {/* STATUS PANEL (Floating Bottom Sheet) */}
-        <section className={`relative z-40 -mt-8 flex-grow overflow-y-auto rounded-t-[20px] bg-bg-card px-lg pt-lg pb-xl shadow-[0_-8px_30px_rgba(0,0,0,0.08)] mx-auto w-full max-w-[800px] lg:mt-0 lg:rounded-[20px] lg:shadow-sm ${isCancelled ? 'lg:col-span-2 lg:max-w-[920px] lg:justify-self-center' : 'lg:max-w-none lg:px-xl lg:pt-xl lg:pb-xl'}`}>
+        <section className={`relative z-40 ${hideMapLayout ? 'mt-md' : '-mt-8'} flex-grow overflow-y-auto rounded-t-[20px] bg-bg-card px-lg pt-lg pb-xl shadow-[0_-8px_30px_rgba(0,0,0,0.08)] mx-auto w-full max-w-[800px] lg:mt-0 lg:rounded-[20px] lg:shadow-sm ${hideMapLayout ? 'lg:col-span-2 lg:max-w-[920px] lg:justify-self-center' : 'lg:max-w-none lg:px-xl lg:pt-xl lg:pb-xl'}`}>
           <div className="w-12 h-1.5 bg-border-default rounded-full mx-auto mb-lg" />
 
           {fetchError && (
@@ -327,11 +439,11 @@ export default function OrderTrackingPage() {
             </div>
           )}
 
-          {ordersLoading ? (
+          {showSpinner ? (
             <div className="py-2xl flex justify-center">
               <MIcon name="sync" className="text-primary text-3xl animate-spin" />
             </div>
-          ) : allOrders.length === 0 || !selectedId ? (
+          ) : showEmpty ? (
             <div className="py-xl">
               <EmptyState
                 icon={<MIcon name="local_shipping" className="text-4xl text-primary" />}
@@ -369,7 +481,7 @@ export default function OrderTrackingPage() {
                 }
               />
             </div>
-          ) : (
+          ) : !showOrderContent ? null : (
             <>
               {/* Commande suivie — EN LECTURE SEULE (aucune sélection de statut : réservée au livreur assigné) */}
               <div className="flex justify-between items-center mb-md">

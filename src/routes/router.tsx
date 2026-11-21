@@ -1,6 +1,7 @@
 import { createRootRoute, createRoute, createRouter, Outlet } from '@tanstack/react-router';
 import { Toaster } from 'react-hot-toast';
 import { guardRoute, redirectOnSessionExpired } from './authGuard';
+import { parseOrderIdParam } from '../utils/ownOrder';
 import ConnexionPage from '../pages/auth/ConnexionPage';
 import InscriptionPage from '../pages/auth/InscriptionPage';
 import Verification2faPage from '../pages/auth/Verification2faPage';
@@ -143,9 +144,20 @@ const orderTrackingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/commandes/suivi',
   component: OrderTrackingPage,
-  validateSearch: (search: Record<string, unknown>): { order?: string } => ({
-    order: typeof search.order === 'string' ? search.order : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { order?: string; simu?: string } => {
+    const id = parseOrderIdParam(search.order);
+    const order =
+      id != null
+        ? String(id)
+        : typeof search.order === 'string' && search.order.trim() !== ''
+          ? search.order.trim()
+          : undefined;
+    const simu = search.simu === '1' || search.simu === 1 ? '1' : undefined;
+    return {
+      order,
+      ...(simu ? { simu } : {}),
+    };
+  },
 });
 const ordersListRoute = createRoute({ getParentRoute: () => rootRoute, path: '/commandes', component: OrdersListPage });
 const paymentsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/paiements', component: PaymentsPage });
