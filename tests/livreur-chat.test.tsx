@@ -58,7 +58,7 @@ beforeEach(() => {
 describe('livreur messaging page', () => {
   it('loads the conversation for the requested order and sends through the API', async () => {
     get.mockImplementation((url: string) => {
-      if (url === '/conversations') {
+      if (url === '/livreur/conversations') {
         return Promise.resolve({ data: { data: [
           { id: 5, order_id: 11, client_id: 8, livreur_id: 41 },
           { id: 6, order_id: 12, client_id: 7, livreur_id: 41 },
@@ -79,12 +79,12 @@ describe('livreur messaging page', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
 
-    await waitFor(() => expect(post).toHaveBeenCalledWith('/conversations/6/messages', { contenu: 'Je vous appelle en arrivant.' }));
+    await waitFor(() => expect(post).toHaveBeenCalledWith('/livreur/conversations/6/messages', { contenu: 'Je vous appelle en arrivant.' }));
     expect(await screen.findByText('Je vous appelle en arrivant.')).toBeTruthy();
   });
 
   it('does not open an unrelated conversation when the requested order has no chat', async () => {
-    get.mockImplementation((url: string) => url === '/conversations'
+    get.mockImplementation((url: string) => url === '/livreur/conversations'
       ? Promise.resolve({ data: { data: [{ id: 5, order_id: 11, client_id: 8, livreur_id: 41 }] } })
       : Promise.resolve({ data: { data: [] } }));
 
@@ -96,12 +96,12 @@ describe('livreur messaging page', () => {
     expect(get).toHaveBeenCalledTimes(1);
   });
 
-  it('explains that courier access must be enabled by the backend after a 403', async () => {
-    get.mockRejectedValue({ response: { status: 403, data: { message: 'Forbidden' } } });
+  it('displays standard API errors without showing an obsolete 403 block banner', async () => {
+    get.mockRejectedValue({ response: { status: 500, data: { message: 'Server error' } } });
 
     renderPage();
 
-    expect(await screen.findByText(/L’accès livreur à la messagerie n’est pas encore ouvert/)).toBeTruthy();
-    expect(screen.getByText(/GET \/api\/conversations/)).toBeTruthy();
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.queryByText(/n’est pas encore ouvert côté serveur/)).toBeNull();
   });
 });

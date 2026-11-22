@@ -238,9 +238,9 @@ describe('Couche tx()/tr() — es, de, pt', () => {
     //   l’appareil, préférences conservées)
     // + 4 « détail de commande » (détail de la commande, précisions, aucun
     //   article rattaché, livreur en cours d’assignation) − 1 doublon HTML
-    //   décodé (« Vider Cache Produits & Catégories ») =
+    //   décodé (« Vider Cache Produits & Catégories ») + 2 « négociations 12 h / messagerie livreur » =
     // couverture complète des tx() statiques.
-    expect(reference.length).toBe(1346);
+    expect(reference.length).toBe(1348);
     for (const [name, dict] of dicts) {
       expect(Object.keys(dict).sort(), `clés ${name}`).toEqual(reference);
       for (const [k, v] of Object.entries(dict)) {

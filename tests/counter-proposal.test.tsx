@@ -6,7 +6,11 @@ import { configureStore } from '@reduxjs/toolkit';
 import cartReducer from '../src/store/slices/cart/cartSlice';
 import negotiationReducer from '../src/store/slices/negotiation/negotiationSlice';
 import { LanguageProvider } from '../src/context/LanguageContext';
-import { extractCounterOfferPrice, formatCounterProposalMessage } from '../src/utils/negotiationCounter';
+import {
+  extractCounterOfferPrice,
+  formatCounterProposalMessage,
+  isAcceptedNegotiationValid,
+} from '../src/utils/negotiationCounter';
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -223,7 +227,8 @@ describe('contre-proposition admin <-> client', () => {
     expect(mocks.toastSuccess).toHaveBeenCalled();
   });
 
-  it('NegotiationsPage affiche le montant contre-proposé comme prix final quand statut vaut accepte', async () => {
+  it('NegotiationsPage affiche le montant contre-proposé comme prix final quand statut vaut accepte dans la fenêtre 12h', async () => {
+    const recentIso = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
     mocks.getProposalsClient.mockResolvedValue({
       data: [
         {
@@ -233,7 +238,8 @@ describe('contre-proposition admin <-> client', () => {
           quantite: 2,
           statut: 'accepte',
           admin_response: formatCounterProposalMessage(4400, 'Dernier prix'),
-          created_at: '2026-11-16T10:00:00Z',
+          responded_at: recentIso,
+          created_at: recentIso,
           product: { id: 3, nom: 'Riz parfumé', prix: 5000, prix_minimum: 3500 },
         },
       ],
@@ -249,6 +255,44 @@ describe('contre-proposition admin <-> client', () => {
 
     expect(await screen.findByText('Offre acceptée')).toBeTruthy();
     expect(screen.getByText(/4[\s\u00a0\u202f]400 FCFA/)).toBeTruthy();
+    expect(screen.getByText(/applicable à toutes vos commandes de ce produit/i)).toBeTruthy();
+  });
+
+  it('NegotiationsPage classe comme expirée une offre acceptée depuis plus de 12h', async () => {
+    const expiredIso = new Date(Date.now() - 13 * 60 * 60 * 1000).toISOString();
+    expect(isAcceptedNegotiationValid({ statut: 'accepte', responded_at: expiredIso })).toBe(false);
+    expect(
+      isAcceptedNegotiationValid({
+        statut: 'accepte',
+        responded_at: new Date(Date.now() - 11 * 60 * 60 * 1000).toISOString(),
+      }),
+    ).toBe(true);
+
+    mocks.getProposalsClient.mockResolvedValue({
+      data: [
+        {
+          id: 14,
+          product_id: 3,
+          prix_propose: 4100,
+          quantite: 1,
+          statut: 'accepte',
+          responded_at: expiredIso,
+          created_at: expiredIso,
+          product: { id: 3, nom: 'Riz parfumé', prix: 5000, prix_minimum: 3500 },
+        },
+      ],
+    });
+
+    render(
+      <Provider store={makeStore()}>
+        <LanguageProvider>
+          <NegotiationsPage />
+        </LanguageProvider>
+      </Provider>,
+    );
+
+    expect(await screen.findByText('Offre expirée')).toBeTruthy();
+    expect(screen.queryByText('Offre acceptée')).toBeNull();
   });
 
   it('NegotiationsPage ne plante pas quand useAuthGuard passe de chargement à authentifié', async () => {

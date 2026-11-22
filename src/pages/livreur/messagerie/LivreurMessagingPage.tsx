@@ -3,7 +3,8 @@ import { useSearch } from '@tanstack/react-router';
 import LivreurLayout from '../../../components/layout/livreur/LivreurLayout';
 import MIcon from '../../../components/shared/MIcon';
 import { SkeletonBlock } from '../../../components/shared/Skeleton';
-import { chatApi, type ConversationItem } from '../../../services/api/chat';
+import { type ConversationItem } from '../../../services/api/chat';
+import { livreurApi } from '../../../services/api/livreur';
 import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import { windowEcho } from '../../../services/realtime/echo';
@@ -55,11 +56,7 @@ function timeLabel(value?: string): string {
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function responseStatus(error: unknown): number | undefined {
-  return (asRecord(asRecord(error)?.response)?.status as number | undefined) ?? undefined;
-}
-
-/** Messagerie du livreur — UI prête pour les endpoints /conversations et le canal Reverb `chat.{id}`. */
+/** Messagerie du livreur — branchée sur /livreur/conversations et le canal Reverb `chat.{id}`. */
 export default function LivreurMessagingPage() {
   const { commande: commandeRecherche } = useSearch({ from: '/livreur/messagerie' });
   const refreshTick = useGlobalRefreshTick();
@@ -71,7 +68,6 @@ export default function LivreurMessagingPage() {
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
-  const [backendDenied, setBackendDenied] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
 
   const loadConversations = useCallback(async () => {
@@ -80,10 +76,9 @@ export default function LivreurMessagingPage() {
       return;
     }
     setLoadingConversations(true);
-    setBackendDenied(false);
     setProblem(null);
     try {
-      const response = await chatApi.getConversations();
+      const response = await livreurApi.getConversations();
       const list = rowsFrom(response) as unknown as ConversationItem[];
       setConversations(list);
       setActiveConversationId((previous) => {
@@ -95,13 +90,7 @@ export default function LivreurMessagingPage() {
         return list[0] ? Number(list[0].id) : null;
       });
     } catch (error) {
-      if (responseStatus(error) === 403) {
-        setBackendDenied(true);
-        setConversations([]);
-        setActiveConversationId(null);
-      } else {
-        setProblem(formatApiError(extractApiError(error)));
-      }
+      setProblem(formatApiError(extractApiError(error)));
     } finally {
       setLoadingConversations(false);
     }
@@ -115,14 +104,14 @@ export default function LivreurMessagingPage() {
   }, [loadConversations, refreshTick]);
 
   useEffect(() => {
-    if (!activeConversationId || backendDenied) {
+    if (!activeConversationId) {
       setMessages([]);
       return;
     }
     let alive = true;
     setLoadingMessages(true);
     setMessages([]);
-    chatApi
+    livreurApi
       .getMessages(activeConversationId)
       .then((response) => {
         if (!alive) return;
@@ -130,17 +119,16 @@ export default function LivreurMessagingPage() {
       })
       .catch((error) => {
         if (!alive) return;
-        if (responseStatus(error) === 403) setBackendDenied(true);
-        else setProblem(formatApiError(extractApiError(error)));
+        setProblem(formatApiError(extractApiError(error)));
       })
       .finally(() => alive && setLoadingMessages(false));
     return () => {
       alive = false;
     };
-  }, [activeConversationId, backendDenied, refreshTick]);
+  }, [activeConversationId, refreshTick]);
 
   useEffect(() => {
-    if (!activeConversationId || !userId || backendDenied) return undefined;
+    if (!activeConversationId || !userId) return undefined;
     const echo = windowEcho();
     if (!echo) return undefined;
     try {
@@ -164,20 +152,19 @@ export default function LivreurMessagingPage() {
     } catch {
       return undefined;
     }
-  }, [activeConversationId, backendDenied, userId]);
+  }, [activeConversationId, userId]);
 
   const activeConversation = conversations.find((conversation) => Number(conversation.id) === activeConversationId) ?? null;
   const requestedConversationMissing = Boolean(
     commandeRecherche &&
     !loadingConversations &&
-    !backendDenied &&
     !conversations.some((conversation) => Number(conversation.order_id) === Number(commandeRecherche)),
   );
 
   const sendMessage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const content = input.trim();
-    if (!content || !activeConversationId || !userId || sending || backendDenied) return;
+    if (!content || !activeConversationId || !userId || sending) return;
 
     const temporaryId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const optimistic: UiMessage = {
@@ -192,7 +179,7 @@ export default function LivreurMessagingPage() {
     setSending(true);
     setProblem(null);
     try {
-      const response = await chatApi.sendMessage(activeConversationId, content);
+      const response = await livreurApi.sendMessage(activeConversationId, content);
       const savedRow = asRecord(asRecord(response)?.data);
       const saved = savedRow ? toUiMessage(savedRow) : null;
       setMessages((previous) => previous.map((message) => message.id === temporaryId
@@ -200,8 +187,7 @@ export default function LivreurMessagingPage() {
         : message));
     } catch (error) {
       setMessages((previous) => previous.filter((message) => message.id !== temporaryId));
-      if (responseStatus(error) === 403) setBackendDenied(true);
-      else setProblem(formatApiError(extractApiError(error)));
+      setProblem(formatApiError(extractApiError(error)));
     } finally {
       setSending(false);
     }
@@ -222,14 +208,6 @@ export default function LivreurMessagingPage() {
           )}
         </header>
 
-        {backendDenied && (
-          <div role="alert" className="rounded-xl border border-error bg-error-container p-4 text-sm text-on-error-container">
-            <p className="font-bold">{tr('L’accès livreur à la messagerie n’est pas encore ouvert côté serveur (403).', 'Rider chat access is not enabled on the server yet (403).')}</p>
-            <p className="mt-1">
-              {tr('Le backend doit autoriser le rôle livreur sur GET /api/conversations et GET/POST /api/conversations/{id}/messages.', 'The backend must allow the rider role on GET /api/conversations and GET/POST /api/conversations/{id}/messages.')}
-            </p>
-          </div>
-        )}
         {problem && (
           <div role="alert" className="rounded-lg border border-error bg-error-container p-3 text-label text-on-error-container">
             {problem}
@@ -268,9 +246,7 @@ export default function LivreurMessagingPage() {
                 </div>
               ) : conversations.length === 0 ? (
                 <div className="p-4 text-sm text-text-secondary">
-                  {backendDenied
-                    ? tr('Les conversations apparaîtront dès que l’API aura ouvert l’accès livreur.', 'Conversations will appear once the API enables rider access.')
-                    : tr('Aucune conversation assignée pour le moment.', 'No assigned conversations yet.')}
+                  {tr('Aucune conversation assignée pour le moment.', 'No assigned conversations yet.')}
                 </div>
               ) : conversations.map((conversation) => (
                 <button
@@ -349,13 +325,12 @@ export default function LivreurMessagingPage() {
                     onChange={(event) => setInput(event.target.value)}
                     maxLength={1000}
                     placeholder={tx('Écrire un message...')}
-                    disabled={backendDenied}
                     className="min-w-0 flex-1 rounded-full border border-border-default bg-bg-app px-4 py-2.5 text-sm outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container disabled:opacity-60"
                   />
                   <button
                     type="submit"
                     aria-label={tr('Envoyer', 'Send')}
-                    disabled={!input.trim() || sending || backendDenied}
+                    disabled={!input.trim() || sending}
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-container text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <MIcon name="send" />

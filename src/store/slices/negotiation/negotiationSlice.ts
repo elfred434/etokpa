@@ -19,6 +19,8 @@ export interface NegotiationItem {
   orderId?: number;
   /** Réponse/justification de l'admin (backend `admin_response`). */
   adminResponse?: string;
+  /** Date ISO de fin de validité (12 h après acceptation). */
+  expiresAt?: string;
   /** Point de repère choisi par le client (API si présent, sinon mémoire locale). */
   landmarkId?: number;
   landmarkNom?: string;
@@ -92,15 +94,18 @@ const negotiationSlice = createSlice({
     },
     acceptCounterOffer(state, action: PayloadAction<{ productId: string }>) {
       const { productId } = action.payload;
+      const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
       const neg = state.activeNegotiations[productId];
       if (neg && neg.counterPrice) {
         neg.status = 'accepted';
         neg.proposedPrice = neg.counterPrice;
+        neg.expiresAt = expiresAt;
       }
       const histItem = state.history.find((h) => h.productId === productId);
       if (histItem && histItem.counterPrice) {
         histItem.status = 'accepted';
         histItem.proposedPrice = histItem.counterPrice;
+        histItem.expiresAt = expiresAt;
       }
     },
     cancelNegotiation(state, action: PayloadAction<{ productId: string }>) {

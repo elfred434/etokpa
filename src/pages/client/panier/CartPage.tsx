@@ -10,8 +10,9 @@ import { adminDialogs } from '../../../components/shared/AdminActionDialogs';
 import { alertApiError, extractApiError } from '../../../utils/apiError';
 import EmptyState from '../../../components/shared/EmptyState';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
-import { clear, remove, setQuantity, selectCount, selectSubtotal, selectSavings } from '../../../store/slices/cart/cartSlice';
+import { clear, remove, setQuantity, selectCount } from '../../../store/slices/cart/cartSlice';
 import { authApi, catalogApi, landmarksApi, negotiationApi, ordersApi, paymentsApi, readCreatedOrder } from '../../../services/api';
+import { isAcceptedNegotiationValid } from '../../../utils/negotiationCounter';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { tr, tx } from '../../../i18n/tx';
@@ -168,8 +169,6 @@ export default function CartPage() {
   const dispatch = useAppDispatch();
   const items = useAppSelector((s) => s.cart.items);
   const count = useAppSelector((s) => selectCount(s.cart.items));
-  const subtotal = useAppSelector((s) => selectSubtotal(s.cart.items));
-  const savings = useAppSelector((s) => selectSavings(s.cart.items));
 
   // Zones + points de repère (backend). Le lieu saisi survit à « Continuer les achats ».
   const lieuInitial = readLieuDraft();
@@ -184,6 +183,7 @@ export default function CartPage() {
   const [landmarkError, setLandmarkError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [offres, setOffres] = useState<Map<number, number>>(new Map());
+  const [proposalsLoaded, setProposalsLoaded] = useState(false);
   const payLock = useRef(false);
   const autoDescRef = useRef<string | null>(null);
   const refreshTick = useGlobalRefreshTick();
@@ -193,22 +193,70 @@ export default function CartPage() {
     let alive = true;
     negotiationApi.getProposals()
       .then((res) => {
-        const list = (res?.data ?? []) as Array<{ product_id?: number; product?: { id?: number }; prix_propose?: number }>;
+        const list = (res?.data ?? []) as Array<{
+          product_id?: number;
+          product?: { id?: number };
+          prix_propose?: number;
+          statut?: string;
+          responded_at?: string | null;
+          created_at?: string | null;
+        }>;
         if (!alive || !Array.isArray(list)) return;
+        const sorted = [...list]
+          .filter((p) => isAcceptedNegotiationValid(p))
+          .sort((a, b) => {
+            const ta = Date.parse(a.responded_at ?? a.created_at ?? '') || 0;
+            const tb = Date.parse(b.responded_at ?? b.created_at ?? '') || 0;
+            return tb - ta;
+          });
         const map = new Map<number, number>();
-        for (const p of list) {
+        for (const p of sorted) {
           const id = Number(p.product_id ?? p.product?.id);
           if (id && !map.has(id) && p.prix_propose != null) map.set(id, Number(p.prix_propose));
         }
         setOffres(map);
+        setProposalsLoaded(true);
       })
       .catch(() => undefined);
     return () => { alive = false; };
   }, [refreshTick]);
 
+  const itemPricing = (item: (typeof items)[number]) => {
+    const catalogue = item.product.negotiated?.oldPrice ?? item.product.prix;
+    const negocie = offres.get(Number(item.product.id));
+    if (negocie != null) {
+      return {
+        unitPrice: negocie,
+        catalogue,
+        isNegotiated: true,
+        oldPrice: catalogue > negocie ? catalogue : undefined,
+      };
+    }
+    if (proposalsLoaded) {
+      return {
+        unitPrice: catalogue,
+        catalogue,
+        isNegotiated: false,
+        oldPrice: undefined,
+      };
+    }
+    return {
+      unitPrice: item.product.prix,
+      catalogue,
+      isNegotiated: !!item.product.negotiated,
+      oldPrice: item.product.negotiated?.oldPrice,
+    };
+  };
+
+  const subtotal = items.reduce((s, item) => s + itemPricing(item).unitPrice * item.quantite, 0);
+  const savings = items.reduce((s, item) => {
+    const { catalogue, unitPrice } = itemPricing(item);
+    return s + Math.max(0, catalogue - unitPrice) * item.quantite;
+  }, 0);
+
   const selectedZone = zones.find((z) => z.id === zoneId) ?? null;
   const deliveryFee = selectedZone ? Number(selectedZone.km_prix) : 0;
-  const grandTotal = Math.max(0, subtotal - savings + deliveryFee);
+  const grandTotal = Math.max(0, subtotal + deliveryFee);
 
   // 1) Chargement des zones de livraison (GET /api/zones)
   useEffect(() => {
@@ -567,11 +615,7 @@ export default function CartPage() {
               ) : (
                 <div className="flex flex-col gap-md">
                   {items.map((item) => {
-                    const catalogue = item.product.negotiated?.oldPrice ?? item.product.prix;
-                    const negocie = offres.get(Number(item.product.id));
-                    const unitPrice = negocie ?? item.product.prix;
-                    const isNegotiated = negocie != null || !!item.product.negotiated;
-                    const oldPrice = isNegotiated && catalogue !== unitPrice ? catalogue : item.product.negotiated?.oldPrice;
+                    const { unitPrice, isNegotiated, oldPrice } = itemPricing(item);
 
                     const isPackItem = item.product.categorie === 'pack';
                     const itemHref = isPackItem ? `/pack/${item.product.id}` : `/produit/${item.product.id}`;
@@ -612,7 +656,7 @@ export default function CartPage() {
                               </h3>
                               {isNegotiated && (
                                 <span className="bg-[#F59E0B]/10 text-[#F59E0B] text-micro px-2 py-0.5 rounded-full border border-[#F59E0B]/20 font-bold uppercase tracking-wider">
-                                  {item.product.negotiated ? tx("Offre acceptée") : tx("Prix négocié sur la ligne")}
+                                  {tx("Offre acceptée (12 h)")}
                                 </span>
                               )}
                             </div>
@@ -841,8 +885,8 @@ export default function CartPage() {
                   </div>
                 )}
                 {items.some((item) => offres.has(Number(item.product.id))) && (
-                  <p className="text-micro text-text-secondary">
-                    {tx("Le prix affiché est votre dernière proposition. Le total à payer reste le prix catalogue.")}
+                  <p className="text-micro text-success-dark">
+                    {tx("Prix négocié appliqué automatiquement (offre acceptée valable 12 h).")}
                   </p>
                 )}
                 <div className="flex justify-between items-center">

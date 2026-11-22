@@ -53,8 +53,8 @@ export function describeNotification(n: ApiNotification, isFr: boolean): { type:
           ? `Négociation ${t.fr}`
           : `Negotiation ${t.en}`,
         message: isFr
-          ? `Votre offre sur le budget a été ${t.fr}${statut === 'accepte' ? ' — votre commande a été créée automatiquement.' : '.'}`
-          : `Your budget offer was ${t.en}${statut === 'accepte' ? ' — your order was created automatically.' : '.'}`,
+          ? `Votre offre sur le budget a été ${t.fr}${statut === 'accepte' ? ' — valable 12 h sur vos commandes de ce produit.' : '.'}`
+          : `Your budget offer was ${t.en}${statut === 'accepte' ? ' — valid for 12h on your orders for this product.' : '.'}`,
         orderId: statut === 'accepte' ? orderId : undefined,
       };
     }

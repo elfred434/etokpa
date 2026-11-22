@@ -17,7 +17,12 @@ import { catalogApi, negotiationApi, type ApiProduct } from '../../../services/a
 import { mapApiProduct } from '../../../utils/productMap';
 import { alertApiError, apiErrorStatus, extractApiError, formatApiError } from '../../../utils/apiError';
 import { absImageUrl } from '../../../utils/imageUrl';
-import { extractCounterOfferPrice } from '../../../utils/negotiationCounter';
+import {
+  extractCounterOfferPrice,
+  formatNegotiationRemaining,
+  isAcceptedNegotiationValid,
+  negotiationExpiresAt,
+} from '../../../utils/negotiationCounter';
 import NegotiationLandmarkField from '../../../components/client/NegotiationLandmarkField';
 import { landmarkFromProposal, readNegotiationLandmark, rememberNegotiationLandmark, type RememberedLandmark } from '../../../utils/negotiationLandmark';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -30,7 +35,7 @@ type TabId = 'description' | 'origine' | 'avis';
 
 /** Fiche produit avec module de négociation F-10 — données réelles Backend API Laravel. */
 export default function ProductPage() {
-  useLanguage();
+  const { isFr } = useLanguage();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { productId } = useParams({ from: '/produit/$productId' });
@@ -98,6 +103,8 @@ export default function ProductPage() {
               ? extractCounterOfferPrice(raw.admin_response)
               : null;
           const rawProposed = Number(raw.prix_propose) || 0;
+          const acceptedValid = raw.statut === 'accepte' && isAcceptedNegotiationValid(raw);
+          const expDate = raw.statut === 'accepte' ? negotiationExpiresAt(raw) : null;
           const lieu =
             landmarkFromProposal(raw) ??
             readNegotiationLandmark(raw.id) ??
@@ -115,10 +122,13 @@ export default function ProductPage() {
             quantite: Number(raw.quantite) || 1,
             orderId: raw.commande?.id ?? raw.order_id,
             adminResponse: raw.admin_response || undefined,
+            ...(acceptedValid && expDate ? { expiresAt: expDate.toISOString() } : {}),
             ...(lieu ? { landmarkId: lieu.id, landmarkNom: lieu.nom, landmarkZone: lieu.zoneNom } : {}),
             status:
               raw.statut === 'accepte'
-                ? 'accepted'
+                ? acceptedValid
+                  ? 'accepted'
+                  : 'expired'
                 : counterPrice != null
                   ? 'counter_offer'
                   : raw.statut === 'refuse'
@@ -472,11 +482,13 @@ export default function ProductPage() {
                       <span className="text-xs font-bold uppercase tracking-wider">{tx("Offre acceptée !")}</span>
                     </div>
                     <p className="text-xs text-ink">
-                      Votre proposition de{' '}
-                      <strong className="text-success-dark">
-                        {activeNeg.proposedPrice.toLocaleString('fr-FR')} FCFA
-                      </strong>{' '}
-                      a été acceptée par le marché !
+                      {tr(
+                        `Votre proposition de ${activeNeg.proposedPrice.toLocaleString('fr-FR')} FCFA a été acceptée !`,
+                        `Your proposal of ${activeNeg.proposedPrice.toLocaleString('fr-FR')} FCFA was accepted!`,
+                      )}{' '}
+                      {formatNegotiationRemaining(activeNeg.expiresAt, isFr)
+                        ? `${formatNegotiationRemaining(activeNeg.expiresAt, isFr)} — ${tr('applicable sur toutes vos commandes de ce produit.', 'valid on all your orders for this product.')}`
+                        : tr('Prix valable 12 h sur toutes vos commandes de ce produit.', 'Price valid for 12h on all your orders for this product.')}
                     </p>
                     <div className="flex gap-2">
                       <button
@@ -559,6 +571,31 @@ export default function ProductPage() {
                     </p>
                     <p className="text-xs text-ink">
                       {tx("Votre proposition n’a pas été acceptée. Vous pouvez soumettre une nouvelle offre.")}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => dispatch(cancelNegotiation({ productId: product.id }))}
+                      className="w-full rounded-lg bg-bg-card border border-line py-2 text-xs font-bold text-ink hover:bg-surface cursor-pointer"
+                    >
+                      {tx("Faire une nouvelle offre")}
+                    </button>
+                  </div>
+                )}
+
+                {/* State: Expired (> 12h) */}
+                {activeNeg?.status === 'expired' && (
+                  <div className="space-y-3 rounded-lg border border-border-default bg-bg-secondary p-3">
+                    <p className="text-xs font-bold text-text-main">
+                      {tr(
+                        `Offre expirée (${activeNeg.proposedPrice.toLocaleString('fr-FR')} FCFA)`,
+                        `Offer expired (${activeNeg.proposedPrice.toLocaleString('fr-FR')} FCFA)`,
+                      )}
+                    </p>
+                    <p className="text-xs text-text-secondary">
+                      {tr(
+                        'La validité de 12 h de cette proposition est dépassée. Vous pouvez soumettre une nouvelle offre.',
+                        'This proposal’s 12-hour validity window has ended. You can submit a new offer.',
+                      )}
                     </p>
                     <button
                       type="button"

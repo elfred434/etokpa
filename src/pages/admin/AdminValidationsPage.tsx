@@ -157,14 +157,14 @@ export default function AdminValidationsPage() {
         ...(clientLandmark ? { landmark_id: clientLandmark.id } : {}),
       });
       const orderId = Number(res?.order?.id ?? 0);
-      toast.success(
-        successMsg ??
-          (decision === 'refuse'
-            ? tx("Proposition refusée.")
-            : orderId
-              ? tr(`Proposition acceptée. Commande #TOK-${orderId} créée.`, `Proposal accepted. Order #TOK-${orderId} created.`)
-              : tx("Proposition acceptée.")),
-      );
+        toast.success(
+          successMsg ??
+            (decision === 'refuse'
+              ? tx("Proposition refusée.")
+              : orderId
+                ? tr(`Proposition acceptée. Commande #TOK-${orderId} créée.`, `Proposal accepted. Order #TOK-${orderId} created.`)
+                : tr('Proposition acceptée. Tarif valable 12 h pour le client.', 'Proposal accepted. Price valid for 12h for the customer.')),
+        );
       reload();
     } catch (e) {
       const msg = messageApi(e);

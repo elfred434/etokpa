@@ -125,12 +125,12 @@ export function useRealtimeNotifications(sessionKey: number): void {
       toast(
         (isFrRef.current
           ? accepted
-            ? 'Votre proposition de prix a été acceptée !'
+            ? 'Votre proposition de prix a été acceptée ! Valable 12 h sur ce produit.'
             : counterPrice != null
               ? `Contre-proposition reçue : ${counterPrice.toLocaleString('fr-FR')} FCFA !`
               : `Votre proposition a été refusée${data.admin_response ? ` : ${data.admin_response}` : ''}`
           : accepted
-            ? 'Your price proposal was accepted!'
+            ? 'Your price proposal was accepted! Valid for 12h on this product.'
             : counterPrice != null
               ? `Counter-offer received: ${counterPrice.toLocaleString('fr-FR')} FCFA!`
               : `Your proposal was rejected${data.admin_response ? `: ${data.admin_response}` : ''}`),
@@ -138,7 +138,6 @@ export function useRealtimeNotifications(sessionKey: number): void {
       );
       emitRealtimeRefresh({ scope: 'proposals', payload: data });
       emitRealtimeRefresh({ scope: 'notifications' });
-      if (accepted) emitRealtimeRefresh({ scope: 'orders' });
     };
 
     const onPaymentConfirmed = (data: { order_id?: number }) => {

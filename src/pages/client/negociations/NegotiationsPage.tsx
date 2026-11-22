@@ -17,7 +17,7 @@ import { add } from '../../../store/slices/cart/cartSlice';
 import { acceptCounterOffer, setProposals, type NegotiationItem } from '../../../store/slices/negotiation/negotiationSlice';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
-import { negotiationApi, ordersApi } from '../../../services/api';
+import { negotiationApi } from '../../../services/api';
 import { absImageUrl } from '../../../utils/imageUrl';
 import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
 import NegotiationLandmarkField from '../../../components/client/NegotiationLandmarkField';
@@ -29,7 +29,12 @@ import {
 } from '../../../utils/negotiationLandmark';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import { silentRefreshActive } from '../../../hooks/useRefresh';
-import { extractCounterOfferPrice } from '../../../utils/negotiationCounter';
+import {
+  extractCounterOfferPrice,
+  formatNegotiationRemaining,
+  isAcceptedNegotiationValid,
+  negotiationExpiresAt,
+} from '../../../utils/negotiationCounter';
 import type { Product } from '../../../types/models';
 import { tx } from '../../../i18n/tx';
 
@@ -53,7 +58,7 @@ export default function NegotiationsPage() {
     if (!silentRefreshActive()) setIsApiLoading(true);
 
     negotiationApi.getProposals()
-      .then(async (res) => {
+      .then((res) => {
         const proposalsList = res?.data || (Array.isArray(res) ? res : []);
         if (Array.isArray(proposalsList)) {
           const mapped: NegotiationItem[] = proposalsList.map((p: any) => {
@@ -62,6 +67,8 @@ export default function NegotiationsPage() {
                 ? extractCounterOfferPrice(p.admin_response)
                 : null;
             const rawProposed = Number(p.prix_propose) || 0;
+            const acceptedValid = p.statut === 'accepte' && isAcceptedNegotiationValid(p);
+            const expDate = p.statut === 'accepte' ? negotiationExpiresAt(p) : null;
             return {
               id: String(p.id),
               productId: String(p.product_id ?? p.product?.id ?? ''),
@@ -75,6 +82,7 @@ export default function NegotiationsPage() {
               quantite: Number(p.quantite) || 1,
               orderId: p.commande?.id ?? p.order_id,
               adminResponse: p.admin_response || undefined,
+              ...(acceptedValid && expDate ? { expiresAt: expDate.toISOString() } : {}),
               ...(() => {
                 const lieu = landmarkFromProposal(p) ?? readNegotiationLandmark(p.id) ?? readNegotiationLandmark(`product-${p.product_id ?? p.product?.id ?? ''}`);
                 return lieu
@@ -82,7 +90,7 @@ export default function NegotiationsPage() {
                   : {};
               })(),
               status:
-                p.statut === 'accepte' ? 'accepted'
+                p.statut === 'accepte' ? (acceptedValid ? 'accepted' : 'expired')
                 : counterPrice != null ? 'counter_offer'
                 : p.statut === 'refuse' ? 'rejected'
                 : p.statut === 'expire' ? 'expired'
@@ -91,20 +99,6 @@ export default function NegotiationsPage() {
             };
           });
           dispatch(setProposals(mapped));
-          const accepted = mapped.filter((n) => n.status === 'accepted' && !n.orderId);
-          if (accepted.length === 0) return;
-          const ordersRes = await ordersApi.getOrders(1);
-          const raw = (ordersRes?.data ?? ordersRes ?? []) as unknown[];
-          const rows = (Array.isArray(raw) ? raw : []).map((row) => {
-            const o = row as { data?: Record<string, unknown> };
-            return (o.data ?? row) as { id?: number; description_lieu?: string };
-          });
-          const withOrder = mapped.map((n) => {
-            if (n.orderId || n.status !== 'accepted') return n;
-            const match = rows.find((o) => String(o.description_lieu ?? '').includes(`négociation #${n.id}`));
-            return match?.id ? { ...n, orderId: match.id } : n;
-          });
-          dispatch(setProposals(withOrder));
         }
       })
       .catch((err) => {
@@ -216,14 +210,13 @@ export default function NegotiationsPage() {
 
   const handleDiscussionClick = (neg: NegotiationItem) => {
     if (neg.status === 'accepted') {
-      // La conversation de la commande auto-créée vit dans la Messagerie
       navigate({ to: '/messagerie' });
       return;
     }
     toast(
       isFr
-        ? tx("La discussion avec le marché se débloque à l’acceptation de votre offre (Messagerie).")
-        : 'Chat with the market unlocks once your offer is accepted (Messaging).',
+        ? tx("La messagerie est ouverte dès qu’une commande est prise en charge par un livreur.")
+        : 'Messaging opens once an order is assigned to a delivery rider.',
       { icon: '💬' },
     );
   };
@@ -535,6 +528,19 @@ export default function NegotiationsPage() {
                         </p>
                       )}
 
+                      {isAccepted && (
+                        <p className="mb-md flex items-center gap-xs text-xs font-medium text-success-dark">
+                          <MIcon name="schedule" className="text-[16px]" />
+                          <span>
+                            {formatNegotiationRemaining(neg.expiresAt, isFr)
+                              ? `${formatNegotiationRemaining(neg.expiresAt, isFr)} — ${isFr ? 'applicable à toutes vos commandes de ce produit' : 'valid across all your orders for this product'}`
+                              : isFr
+                                ? 'Tarif accepté valable 12 h sur toutes vos commandes de ce produit.'
+                                : 'Accepted price valid for 12h on all your orders for this product.'}
+                          </span>
+                        </p>
+                      )}
+
                       {/* Réponse de l'admin (backend admin_response) */}
                       {isCounter && neg.adminResponse && (
                         <div className="mb-md p-sm bg-primary-tint border border-primary-light rounded-lg">
@@ -691,11 +697,11 @@ export default function NegotiationsPage() {
                 <li className="flex gap-sm">
                   <span className="text-primary font-bold">3.</span>
                   <div className="font-body text-body text-on-surface">
-                    <p className="font-bold">{isFr ? tx("Achat groupé") : 'Bulk purchase'}</p>
+                    <p className="font-bold">{isFr ? 'Validité de 12 heures' : '12-hour validity'}</p>
                     <p className="text-secondary">
                       {isFr
-                        ? 'Achetez plusieurs articles pour plus de poids.'
-                        : 'Buy multiple items for better leverage.'}
+                        ? 'Une fois accepté, votre prix négocié reste valable 12 h sur toutes vos commandes de ce produit.'
+                        : 'Once accepted, your negotiated price stays valid for 12h across all your orders for this product.'}
                     </p>
                   </div>
                 </li>

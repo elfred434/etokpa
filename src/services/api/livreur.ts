@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import type { ConversationItem, MessageItem } from './chat';
 
 export const livreurApi = {
   // GET /api/livreur/deliveries -> courses assignees au livreur
@@ -38,6 +39,29 @@ export const livreurApi = {
   // GET /api/livreur/history -> historique
   getHistory: async (page = 1) => {
     const response = await apiClient.get('/livreur/history', { params: { page } });
+    return response.data;
+  },
+
+  // GET /api/livreur/conversations -> conversations du livreur
+  getConversations: async () => {
+    const response = await apiClient.get<{ data: ConversationItem[] }>('/livreur/conversations');
+    return response.data;
+  },
+
+  // GET /api/livreur/conversations/{id}/messages -> messages d'une conversation
+  getMessages: async (conversationId: number | string, page = 1) => {
+    const response = await apiClient.get(`/livreur/conversations/${conversationId}/messages`, {
+      params: { page },
+    });
+    return response.data;
+  },
+
+  // POST /api/livreur/conversations/{id}/messages -> envoyer un message
+  sendMessage: async (conversationId: number | string, contenu: string) => {
+    const response = await apiClient.post<{ data: MessageItem }>(
+      `/livreur/conversations/${conversationId}/messages`,
+      { contenu },
+    );
     return response.data;
   },
 };

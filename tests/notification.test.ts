@@ -8,7 +8,17 @@ describe('notification descriptions', () => {
     expect(result.message).toContain('livrée');
     expect(result.orderId).toBe(12);
   });
-  it('links accepted negotiations to their order', () => expect(describeNotification({ type: 'budget.response', data: { order_id: 8, statut: 'accepte' } } as any, true).orderId).toBe(8));
+  it('describes accepted negotiations with 12h validity and no auto-order claim', () => {
+    const fr = describeNotification({ type: 'budget.response', data: { order_id: 8, statut: 'accepte' } } as any, true);
+    expect(fr.orderId).toBe(8);
+    expect(fr.message).toContain('12 h');
+    expect(fr.message).not.toContain('créée automatiquement');
+
+    const en = describeNotification({ type: 'budget.response', data: { statut: 'accepte' } } as any, false);
+    expect(en.orderId).toBeUndefined();
+    expect(en.message).toContain('12h');
+    expect(en.message).not.toContain('created automatically');
+  });
   it('describes role.changed notifications in French and English', () => {
     const fr = describeNotification(
       { type: 'role.changed', data: { role: 'admin', message: 'Vous êtes maintenant administrateur.' } } as any,
