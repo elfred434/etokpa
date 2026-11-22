@@ -57,15 +57,19 @@ export default function NegotiationsPage() {
         const proposalsList = res?.data || (Array.isArray(res) ? res : []);
         if (Array.isArray(proposalsList)) {
           const mapped: NegotiationItem[] = proposalsList.map((p: any) => {
-            const counterPrice = p.statut === 'refuse' ? extractCounterOfferPrice(p.admin_response) : null;
+            const counterPrice =
+              p.statut === 'refuse' || p.statut === 'accepte'
+                ? extractCounterOfferPrice(p.admin_response)
+                : null;
+            const rawProposed = Number(p.prix_propose) || 0;
             return {
               id: String(p.id),
               productId: String(p.product_id ?? p.product?.id ?? ''),
               productName: p.product?.nom || `Produit #${p.product_id ?? p.product?.id ?? '?'}`,
               productImage: absImageUrl(p.product?.image_url) ?? undefined,
               vendorName: '', // l'API ne rattache aucun produit à un marché : pas de provenance inventée
-              originalPrice: Number(p.product?.prix) || Number(p.prix_propose) || 0,
-              proposedPrice: Number(p.prix_propose),
+              originalPrice: Number(p.product?.prix) || rawProposed,
+              proposedPrice: p.statut === 'accepte' && counterPrice != null ? counterPrice : rawProposed,
               ...(counterPrice != null ? { counterPrice } : {}),
               minPrice: Number(p.product?.prix_minimum) || 0,
               quantite: Number(p.quantite) || 1,
@@ -183,7 +187,7 @@ export default function NegotiationsPage() {
   const handleAcceptCounter = async (neg: NegotiationItem, counterPrice: number) => {
     setAcceptingId(neg.id);
     try {
-      const updated = await negotiationApi.updateProposal(neg.id, {
+      const updated = await negotiationApi.acceptCounterProposal(neg.id, {
         product_id: Number(neg.productId),
         prix_propose: counterPrice,
         quantite: neg.quantite ?? 1,
@@ -199,8 +203,8 @@ export default function NegotiationsPage() {
       dispatch(acceptCounterOffer({ productId: neg.productId }));
       toast.success(
         isFr
-          ? `Contre-offre de ${counterPrice.toLocaleString('fr-FR')} FCFA acceptée et transmise pour validation !`
-          : `Counter offer of ${counterPrice.toLocaleString('fr-FR')} FCFA accepted and submitted for confirmation!`,
+          ? `Contre-proposition de ${counterPrice.toLocaleString('fr-FR')} FCFA acceptée !`
+          : `Counter-offer of ${counterPrice.toLocaleString('fr-FR')} FCFA accepted!`,
       );
       loadProposals();
     } catch (err: unknown) {

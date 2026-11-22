@@ -52,6 +52,7 @@ export function titre(log: { action?: string } | null | undefined): string {
   if (dernier === 'status') return tr(`Statut modifié · commande #${ids[0]}`, `Status updated · order #${ids[0]}`);
   if (dernier === 'position') return tx('Position GPS du livreur');
   if (dernier === 'read') return tx('Notification lue');
+  if (/budget-proposals\/accept_contre-propose\/\d+/.test(chemin)) return tr(`Acceptation contre-proposition #${ids[0]}`, `Accepted counter-proposal #${ids[0]}`);
   if (/budget-proposals\/\d+/.test(chemin) && verbe === 'PATCH') return tr(`Réponse à la proposition #${ids[0]}`, `Reply to proposal #${ids[0]}`);
   if (/budget-proposals\/\d+/.test(chemin) && verbe === 'PUT') return tr(`Modification de la proposition #${ids[0]}`, `Update proposal #${ids[0]}`);
   const ressource = [...seg].reverse().find((x) => NOMS[x]);

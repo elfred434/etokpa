@@ -93,7 +93,11 @@ export default function ProductPage() {
         const proposalsList = (res as { data?: unknown[] })?.data ?? (Array.isArray(res) ? res : []);
         if (!Array.isArray(proposalsList)) return;
         const mapped: NegotiationItem[] = proposalsList.map((raw: any) => {
-          const counterPrice = raw.statut === 'refuse' ? extractCounterOfferPrice(raw.admin_response) : null;
+          const counterPrice =
+            raw.statut === 'refuse' || raw.statut === 'accepte'
+              ? extractCounterOfferPrice(raw.admin_response)
+              : null;
+          const rawProposed = Number(raw.prix_propose) || 0;
           const lieu =
             landmarkFromProposal(raw) ??
             readNegotiationLandmark(raw.id) ??
@@ -104,8 +108,8 @@ export default function ProductPage() {
             productName: raw.product?.nom || `Produit #${raw.product_id ?? raw.product?.id ?? '?'}`,
             productImage: absImageUrl(raw.product?.image_url) ?? undefined,
             vendorName: '',
-            originalPrice: Number(raw.product?.prix) || Number(raw.prix_propose) || 0,
-            proposedPrice: Number(raw.prix_propose),
+            originalPrice: Number(raw.product?.prix) || rawProposed,
+            proposedPrice: raw.statut === 'accepte' && counterPrice != null ? counterPrice : rawProposed,
             ...(counterPrice != null ? { counterPrice } : {}),
             minPrice: Number(raw.product?.prix_minimum) || 0,
             quantite: Number(raw.quantite) || 1,
@@ -515,10 +519,10 @@ export default function ProductPage() {
                           if (activeNeg.counterPrice && /^\d+$/.test(String(activeNeg.id))) {
                             setIsSubmitting(true);
                             try {
-                              await negotiationApi.updateProposal(activeNeg.id, {
+                              await negotiationApi.acceptCounterProposal(activeNeg.id, {
                                 product_id: Number(product.id),
                                 prix_propose: activeNeg.counterPrice,
-                                quantite: quantity,
+                                quantite: activeNeg.quantite ?? quantity,
                               });
                               dispatch(acceptCounterOffer({ productId: product.id }));
                               toast.success(tx("Contre-offre acceptée !"));

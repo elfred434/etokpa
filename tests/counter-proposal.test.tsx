@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   respondProposal: vi.fn(),
   getProposalsClient: vi.fn(),
   updateProposal: vi.fn(),
+  acceptCounterProposal: vi.fn(),
   getOrders: vi.fn(),
   getZones: vi.fn(),
   authState: { isAuthenticated: true, isLoading: false },
@@ -78,6 +79,7 @@ vi.mock('../src/services/api', async (importOriginal) => {
       ...actual.negotiationApi,
       getProposals: mocks.getProposalsClient,
       updateProposal: mocks.updateProposal,
+      acceptCounterProposal: mocks.acceptCounterProposal,
     },
     ordersApi: {
       ...actual.ordersApi,
@@ -111,6 +113,7 @@ describe('contre-proposition admin <-> client', () => {
     mocks.respondProposal.mockReset();
     mocks.getProposalsClient.mockReset();
     mocks.updateProposal.mockReset();
+    mocks.acceptCounterProposal.mockReset();
     mocks.getOrders.mockReset();
     mocks.getZones.mockReset();
     mocks.getCategories.mockResolvedValue({ data: [] });
@@ -178,7 +181,7 @@ describe('contre-proposition admin <-> client', () => {
     expect(mocks.toastSuccess).toHaveBeenCalled();
   });
 
-  it('NegotiationsPage affiche la contre-proposition et laccepte via PUT /budget-proposals/{id}', async () => {
+  it('NegotiationsPage affiche la contre-proposition et laccepte via POST /budget-proposals/accept_contre-propose/{id}', async () => {
     mocks.getProposalsClient.mockResolvedValue({
       data: [
         {
@@ -193,7 +196,7 @@ describe('contre-proposition admin <-> client', () => {
         },
       ],
     });
-    mocks.updateProposal.mockResolvedValue({ data: { id: 13, prix_propose: 4400, quantite: 2, statut: 'en_attente' } });
+    mocks.acceptCounterProposal.mockResolvedValue({ data: { id: 12, prix_propose: 3800, quantite: 2, statut: 'accepte' } });
 
     render(
       <Provider store={makeStore()}>
@@ -210,13 +213,42 @@ describe('contre-proposition admin <-> client', () => {
     fireEvent.click(acceptBtn);
 
     await waitFor(() =>
-      expect(mocks.updateProposal).toHaveBeenCalledWith('12', {
+      expect(mocks.acceptCounterProposal).toHaveBeenCalledWith('12', {
         product_id: 3,
         prix_propose: 4400,
         quantite: 2,
       }),
     );
+    expect(mocks.updateProposal).not.toHaveBeenCalled();
     expect(mocks.toastSuccess).toHaveBeenCalled();
+  });
+
+  it('NegotiationsPage affiche le montant contre-proposé comme prix final quand statut vaut accepte', async () => {
+    mocks.getProposalsClient.mockResolvedValue({
+      data: [
+        {
+          id: 12,
+          product_id: 3,
+          prix_propose: 3800,
+          quantite: 2,
+          statut: 'accepte',
+          admin_response: formatCounterProposalMessage(4400, 'Dernier prix'),
+          created_at: '2026-11-16T10:00:00Z',
+          product: { id: 3, nom: 'Riz parfumé', prix: 5000, prix_minimum: 3500 },
+        },
+      ],
+    });
+
+    render(
+      <Provider store={makeStore()}>
+        <LanguageProvider>
+          <NegotiationsPage />
+        </LanguageProvider>
+      </Provider>,
+    );
+
+    expect(await screen.findByText('Offre acceptée')).toBeTruthy();
+    expect(screen.getByText(/4[\s\u00a0\u202f]400 FCFA/)).toBeTruthy();
   });
 
   it('NegotiationsPage ne plante pas quand useAuthGuard passe de chargement à authentifié', async () => {

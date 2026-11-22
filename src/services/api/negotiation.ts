@@ -29,4 +29,10 @@ export const negotiationApi = {
     const response = await apiClient.put(`/budget-proposals/${id}`, payload);
     return response.data;
   },
+
+  // POST /api/budget-proposals/accept_contre-propose/{id} -> accepter une contre-proposition admin
+  acceptCounterProposal: async (id: number | string, payload: CreateProposalPayload) => {
+    const response = await apiClient.post(`/budget-proposals/accept_contre-propose/${id}`, payload);
+    return response.data;
+  },
 };
