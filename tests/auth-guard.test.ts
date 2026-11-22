@@ -3,7 +3,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 vi.mock('react-hot-toast', () => ({ default: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('@tanstack/react-router', () => ({ redirect: (args: unknown) => args }));
 
-import { canAccess, currentUserZone, homeForRole, managerZoneLabel, postLoginTarget, staffSpace } from '../src/routes/authGuard';
+import { canAccess, currentUserZone, homeForRole, isPublicPath, managerZoneLabel, postLoginTarget, safeRedirect, staffSpace } from '../src/routes/authGuard';
 
 describe('role and session helpers', () => {
   beforeEach(() => localStorage.clear());
@@ -33,5 +33,9 @@ describe('role and session helpers', () => {
     expect(managerZoneLabel()).toBe('Zone Cadjèhoun');
     localStorage.setItem('tokpa_user', JSON.stringify({ role: 'manager', profil: null }));
     expect(managerZoneLabel()).toBe('Zone non attribuée');
+  });
+  it('treats /login as a public alias without redirect loop', () => {
+    expect(isPublicPath('/login')).toBe(true);
+    expect(safeRedirect('/login')).toBeNull();
   });
 });

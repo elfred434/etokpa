@@ -1,6 +1,6 @@
-import { createRootRoute, createRoute, createRouter, Outlet } from '@tanstack/react-router';
+import { createRootRoute, createRoute, createRouter, Outlet, redirect } from '@tanstack/react-router';
 import { Toaster } from 'react-hot-toast';
-import { guardRoute, redirectOnSessionExpired } from './authGuard';
+import { currentRole, guardRoute, hasSession, homeForRole, redirectOnSessionExpired } from './authGuard';
 import { parseOrderIdParam } from '../utils/ownOrder';
 import ConnexionPage from '../pages/auth/ConnexionPage';
 import InscriptionPage from '../pages/auth/InscriptionPage';
@@ -96,6 +96,17 @@ const connexionRoute = createRoute({
   validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
     redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
   }),
+});
+// Alias /login (lien de l'e-mail RoleChangedNotification) → /connexion ou espace du rôle si déjà connecté.
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/login',
+  beforeLoad: () => {
+    throw redirect({
+      to: hasSession() ? homeForRole(currentRole()) : '/connexion',
+      replace: true,
+    });
+  },
 });
 const inscriptionRoute = createRoute({ getParentRoute: () => rootRoute, path: '/inscription', component: InscriptionPage });
 const verificationRoute = createRoute({ getParentRoute: () => rootRoute, path: '/verification-2fa', component: Verification2faPage });
@@ -239,6 +250,7 @@ const livreurParametresRoute = createRoute({ getParentRoute: () => rootRoute, pa
 const routeTree = rootRoute.addChildren([
   indexRoute,
   connexionRoute,
+  loginRoute,
   inscriptionRoute,
   verificationRoute,
   resetPasswordRoute,

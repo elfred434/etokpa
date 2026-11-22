@@ -12,6 +12,7 @@ import { tr, tx } from '../i18n/tx';
 export const PUBLIC_PATHS: readonly string[] = [
   '/',
   '/connexion',
+  '/login',
   '/inscription',
   '/verification-2fa',
   '/reset-password',
