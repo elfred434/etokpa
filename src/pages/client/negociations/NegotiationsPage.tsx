@@ -126,6 +126,7 @@ export default function NegotiationsPage() {
   const [editLandmark, setEditLandmark] = useState<RememberedLandmark | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [editSaving, setEditSaving] = useState(false);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -178,8 +179,6 @@ export default function NegotiationsPage() {
     );
     navigate({ to: '/panier' });
   };
-
-  const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
   const handleAcceptCounter = async (neg: NegotiationItem, counterPrice: number) => {
     setAcceptingId(neg.id);

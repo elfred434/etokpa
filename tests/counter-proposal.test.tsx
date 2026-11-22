@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   updateProposal: vi.fn(),
   getOrders: vi.fn(),
   getZones: vi.fn(),
+  authState: { isAuthenticated: true, isLoading: false },
 }));
 
 vi.mock('react-hot-toast', () => {
@@ -51,7 +52,7 @@ vi.mock('../src/components/layout/client/ClientBottomNav', () => ({
 }));
 
 vi.mock('../src/hooks/useAuthGuard', () => ({
-  useAuthGuard: () => ({ isAuthenticated: true, isLoading: false }),
+  useAuthGuard: () => mocks.authState,
 }));
 
 vi.mock('../src/hooks/useRefresh', () => ({
@@ -115,6 +116,7 @@ describe('contre-proposition admin <-> client', () => {
     mocks.getCategories.mockResolvedValue({ data: [] });
     mocks.getOrders.mockResolvedValue({ data: [] });
     mocks.getZones.mockResolvedValue({ data: [] });
+    mocks.authState = { isAuthenticated: true, isLoading: false };
   });
 
   it('formate et extrait le montant dune contre-proposition', () => {
@@ -215,5 +217,30 @@ describe('contre-proposition admin <-> client', () => {
       }),
     );
     expect(mocks.toastSuccess).toHaveBeenCalled();
+  });
+
+  it('NegotiationsPage ne plante pas quand useAuthGuard passe de chargement à authentifié', async () => {
+    mocks.authState = { isAuthenticated: false, isLoading: true };
+    mocks.getProposalsClient.mockResolvedValue({ data: [] });
+
+    const store = makeStore();
+    const { rerender } = render(
+      <Provider store={store}>
+        <LanguageProvider>
+          <NegotiationsPage />
+        </LanguageProvider>
+      </Provider>,
+    );
+
+    mocks.authState = { isAuthenticated: true, isLoading: false };
+    rerender(
+      <Provider store={store}>
+        <LanguageProvider>
+          <NegotiationsPage />
+        </LanguageProvider>
+      </Provider>,
+    );
+
+    expect(await screen.findByText(/Aucune négociation enregistrée/i)).toBeTruthy();
   });
 });
