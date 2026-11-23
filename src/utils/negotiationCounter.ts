@@ -55,6 +55,21 @@ export function isAcceptedNegotiationValid(
   return exp.getTime() > nowMs;
 }
 
+/** Miroir de `CleanupExpiredProposals` : une offre `en_attente` expire après 12 h (`created_at`). */
+export function isPendingNegotiationValid(
+  proposal: {
+    statut?: string | null;
+    created_at?: string | null;
+  },
+  nowMs = Date.now(),
+): boolean {
+  if (proposal.statut !== 'en_attente') return false;
+  if (!proposal.created_at) return true;
+  const ts = Date.parse(proposal.created_at);
+  if (!Number.isFinite(ts)) return true;
+  return ts + NEGOTIATION_VALIDITY_MS > nowMs;
+}
+
 /** Libellé court du temps restant avant expiration (12 h). */
 export function formatNegotiationRemaining(expiresAtIso: string | undefined, isFr: boolean, nowMs = Date.now()): string | null {
   if (!expiresAtIso) return null;

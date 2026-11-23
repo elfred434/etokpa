@@ -31,7 +31,7 @@ type GpsState = 'off' | 'waiting' | 'on' | 'denied' | 'unavailable';
  * réelles : GET /livreur/deliveries, PATCH /livreur/deliveries/{id}/status, POST /livreur/position.
  * Point de retrait = repère fixe « Marché Dantokpa » de la carte (conservé sur décision utilisateur).
  * Non disponibles dans l'API : nom/téléphone du client et coordonnées du point de repère (B-25).
- * L'écran de chat livreur est branché côté frontend; les routes backend doivent encore l'autoriser (403 aujourd'hui).
+ * L'écran de chat livreur utilise `/livreur/conversations` et `/livreur/conversations/{id}/messages`.
  */
 export default function LivreurCoursePage() {
   useLanguage();

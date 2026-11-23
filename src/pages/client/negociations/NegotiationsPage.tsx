@@ -20,19 +20,13 @@ import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { negotiationApi } from '../../../services/api';
 import { absImageUrl } from '../../../utils/imageUrl';
 import { alertApiError, extractApiError, formatApiError } from '../../../utils/apiError';
-import NegotiationLandmarkField from '../../../components/client/NegotiationLandmarkField';
-import {
-  landmarkFromProposal,
-  readNegotiationLandmark,
-  rememberNegotiationLandmark,
-  type RememberedLandmark,
-} from '../../../utils/negotiationLandmark';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import { silentRefreshActive } from '../../../hooks/useRefresh';
 import {
   extractCounterOfferPrice,
   formatNegotiationRemaining,
   isAcceptedNegotiationValid,
+  isPendingNegotiationValid,
   negotiationExpiresAt,
 } from '../../../utils/negotiationCounter';
 import type { Product } from '../../../types/models';
@@ -68,7 +62,13 @@ export default function NegotiationsPage() {
                 : null;
             const rawProposed = Number(p.prix_propose) || 0;
             const acceptedValid = p.statut === 'accepte' && isAcceptedNegotiationValid(p);
-            const expDate = p.statut === 'accepte' ? negotiationExpiresAt(p) : null;
+            const pendingValid = p.statut === 'en_attente' && isPendingNegotiationValid(p);
+            const expDate =
+              p.statut === 'accepte'
+                ? negotiationExpiresAt(p)
+                : p.statut === 'en_attente'
+                  ? negotiationExpiresAt({ created_at: p.created_at })
+                  : null;
             return {
               id: String(p.id),
               productId: String(p.product_id ?? p.product?.id ?? ''),
@@ -82,18 +82,12 @@ export default function NegotiationsPage() {
               quantite: Number(p.quantite) || 1,
               orderId: p.commande?.id ?? p.order_id,
               adminResponse: p.admin_response || undefined,
-              ...(acceptedValid && expDate ? { expiresAt: expDate.toISOString() } : {}),
-              ...(() => {
-                const lieu = landmarkFromProposal(p) ?? readNegotiationLandmark(p.id) ?? readNegotiationLandmark(`product-${p.product_id ?? p.product?.id ?? ''}`);
-                return lieu
-                  ? { landmarkId: lieu.id, landmarkNom: lieu.nom, landmarkZone: lieu.zoneNom }
-                  : {};
-              })(),
+              ...((acceptedValid || pendingValid) && expDate ? { expiresAt: expDate.toISOString() } : {}),
               status:
                 p.statut === 'accepte' ? (acceptedValid ? 'accepted' : 'expired')
                 : counterPrice != null ? 'counter_offer'
                 : p.statut === 'refuse' ? 'rejected'
-                : p.statut === 'expire' ? 'expired'
+                : p.statut === 'expire' || (p.statut === 'en_attente' && !pendingValid) ? 'expired'
                 : 'pending',
               createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR') : tx("Récemment"),
             };
@@ -121,7 +115,6 @@ export default function NegotiationsPage() {
   const [editModal, setEditModal] = useState<NegotiationItem | null>(null);
   const [editPrice, setEditPrice] = useState('');
   const [editQuantity, setEditQuantity] = useState('1');
-  const [editLandmark, setEditLandmark] = useState<RememberedLandmark | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
@@ -152,10 +145,6 @@ export default function NegotiationsPage() {
   });
 
   const handleAddToCart = (neg: NegotiationItem) => {
-    if (neg.status === 'accepted' && (neg as any).orderId) {
-      navigate({ to: '/commandes', search: { detail: String((neg as any).orderId) } });
-      return;
-    }
     const product: Product = {
       id: neg.productId,
       nom: neg.productName,
@@ -175,25 +164,16 @@ export default function NegotiationsPage() {
         ? `Ajouté au panier au prix négocié de ${neg.proposedPrice.toLocaleString('fr-FR')} FCFA`
         : `Added to cart at negotiated price of ${neg.proposedPrice.toLocaleString('fr-FR')} FCFA`,
     );
-    navigate({ to: '/panier' });
   };
 
   const handleAcceptCounter = async (neg: NegotiationItem, counterPrice: number) => {
     setAcceptingId(neg.id);
     try {
-      const updated = await negotiationApi.acceptCounterProposal(neg.id, {
+      await negotiationApi.acceptCounterProposal(neg.id, {
         product_id: Number(neg.productId),
         prix_propose: counterPrice,
         quantite: neg.quantite ?? 1,
-        ...(neg.landmarkId ? { landmark_id: neg.landmarkId } : {}),
       });
-      const newId = Number((updated as { data?: { id?: number }; id?: number })?.data?.id ?? (updated as { id?: number })?.id);
-      if (neg.landmarkId) {
-        const lieu = { id: neg.landmarkId, nom: neg.landmarkNom ?? '', zoneNom: neg.landmarkZone ?? '' };
-        rememberNegotiationLandmark(neg.id, lieu);
-        rememberNegotiationLandmark(`product-${neg.productId}`, lieu);
-        if (Number.isFinite(newId) && newId > 0) rememberNegotiationLandmark(newId, lieu);
-      }
       dispatch(acceptCounterOffer({ productId: neg.productId }));
       toast.success(
         isFr
@@ -225,11 +205,6 @@ export default function NegotiationsPage() {
     setEditModal(neg);
     setEditPrice(String(neg.proposedPrice));
     setEditQuantity(String(neg.quantite ?? 1));
-    setEditLandmark(
-      neg.landmarkId
-        ? { id: neg.landmarkId, nom: neg.landmarkNom ?? '', zoneNom: neg.landmarkZone ?? '' }
-        : readNegotiationLandmark(neg.id),
-    );
     setEditError(null);
   };
 
@@ -264,18 +239,11 @@ export default function NegotiationsPage() {
     }
     setEditSaving(true);
     try {
-      const updated = await negotiationApi.updateProposal(editModal.id, {
+      await negotiationApi.updateProposal(editModal.id, {
         product_id: Number(editModal.productId),
         prix_propose: price,
         quantite: qty,
-        ...(editLandmark ? { landmark_id: editLandmark.id } : {}),
       });
-      const newId = Number((updated as { data?: { id?: number }; id?: number })?.data?.id ?? (updated as { id?: number })?.id);
-      if (editLandmark) {
-        rememberNegotiationLandmark(editModal.id, editLandmark);
-        rememberNegotiationLandmark(`product-${editModal.productId}`, editLandmark);
-        if (Number.isFinite(newId) && newId > 0) rememberNegotiationLandmark(newId, editLandmark);
-      }
       toast.success(isFr ? tx("Offre mise à jour et retransmise au marché.") : 'Offer updated and resubmitted.');
       setEditModal(null);
       loadProposals();
@@ -517,13 +485,15 @@ export default function NegotiationsPage() {
                         )}
                       </div>
 
-                      {(neg.landmarkNom || isPending) && (
-                        <p className="mb-md flex items-start gap-xs text-secondary text-text-secondary">
-                          <MIcon name="location_on" className="mt-0.5 text-[16px] text-primary" />
+                      {(isPending || isCounter) && (
+                        <p className="mb-md flex items-center gap-xs text-xs font-medium text-amber-text">
+                          <MIcon name="schedule" className="text-[16px]" />
                           <span>
-                            {neg.landmarkNom
-                              ? `${tx('Point de repère')} : ${neg.landmarkZone ? `${neg.landmarkZone} — ` : ''}${neg.landmarkNom}`
-                              : tx("Ajoutez votre point de repère en modifiant l'offre.")}
+                            {formatNegotiationRemaining(neg.expiresAt, isFr)
+                              ? `${formatNegotiationRemaining(neg.expiresAt, isFr)} — ${isFr ? 'expire après 12 h sans réponse' : 'expires after 12h with no response'}`
+                              : isFr
+                                ? 'Les négociations expirent après 12 h sans réponse.'
+                                : 'Negotiations expire after 12h with no response.'}
                           </span>
                         </p>
                       )}
@@ -569,7 +539,7 @@ export default function NegotiationsPage() {
                               className="px-md py-2 bg-primary-container text-white font-medium text-label rounded-button hover:bg-primary-hover active:scale-95 transition-all flex items-center gap-xs cursor-pointer shadow-sm"
                             >
                               <MIcon name="shopping_basket" className="text-[18px]" />
-                              {isFr ? "Finaliser l'achat" : 'Checkout deal'}
+                              {isFr ? tx("Ajouter au panier") : 'Add to cart'}
                             </button>
                             <button
                               type="button"
@@ -697,11 +667,11 @@ export default function NegotiationsPage() {
                 <li className="flex gap-sm">
                   <span className="text-primary font-bold">3.</span>
                   <div className="font-body text-body text-on-surface">
-                    <p className="font-bold">{isFr ? 'Validité de 12 heures' : '12-hour validity'}</p>
+                    <p className="font-bold">{isFr ? 'Expiration en 12 heures' : '12-hour expiration'}</p>
                     <p className="text-secondary">
                       {isFr
-                        ? 'Une fois accepté, votre prix négocié reste valable 12 h sur toutes vos commandes de ce produit.'
-                        : 'Once accepted, your negotiated price stays valid for 12h across all your orders for this product.'}
+                        ? 'Chaque négociation expire au bout de 12 h (sans réponse ou après acceptation) : ajoutez au panier et commandez avant la fin du délai.'
+                        : 'Every negotiation expires after 12h (pending without a reply or after acceptance): add to cart and order before time runs out.'}
                     </p>
                   </div>
                 </li>
@@ -792,8 +762,6 @@ export default function NegotiationsPage() {
                 />
               </div>
             </div>
-
-            <NegotiationLandmarkField value={editLandmark} onChange={setEditLandmark} />
 
             {editError && (
               <div className="p-3 bg-error-light border border-error/20 rounded-lg text-xs font-semibold text-error-dark">

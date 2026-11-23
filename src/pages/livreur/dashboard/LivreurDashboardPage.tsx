@@ -192,13 +192,23 @@ export default function LivreurDashboardPage() {
                     <p className="text-sm">{destination(active)}</p>
                   </div>
                 </div>
-                <Link
-                  to="/livreur/course"
-                  search={{ commande: active.id }}
-                  className="block w-full rounded-xl bg-[#F97316] py-3.5 text-center text-[15px] font-bold text-white shadow-lg shadow-orange-500/20 transition-all hover:bg-[#EA580C] active:scale-95"
-                >
-                  {tx("Voir la course active")}
-                </Link>
+                <div className="flex flex-col gap-sm sm:flex-row">
+                  <Link
+                    to="/livreur/course"
+                    search={{ commande: active.id }}
+                    className="block flex-1 rounded-xl bg-[#F97316] py-3.5 text-center text-[15px] font-bold text-white shadow-lg shadow-orange-500/20 transition-all hover:bg-[#EA580C] active:scale-95"
+                  >
+                    {tx("Voir la course active")}
+                  </Link>
+                  <Link
+                    to="/livreur/messagerie"
+                    search={{ commande: active.id }}
+                    className="inline-flex items-center justify-center gap-xs rounded-xl border border-border-default bg-bg-app px-4 py-3.5 text-[15px] font-bold text-text-main transition-colors hover:border-primary hover:bg-primary-tint"
+                  >
+                    <MIcon name="chat_bubble" className="text-primary text-[18px]" />
+                    {tx("Chat")}
+                  </Link>
+                </div>
                 <div className="mt-3">
                   <LivreurDecisionButtons
                     orderId={active.id}

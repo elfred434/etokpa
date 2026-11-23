@@ -114,6 +114,7 @@ export function initEcho(): Echo<'pusher'> | null {
       broadcaster: 'pusher',
       key,
       cluster: '',
+      namespace: '',
       host,
       port,
       wsHost: host,

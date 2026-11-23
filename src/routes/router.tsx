@@ -170,9 +170,13 @@ const orderTrackingRoute = createRoute({
     };
   },
 });
+const commandeSearch = (search: Record<string, unknown>): { commande?: number } => {
+  const n = Number(search.commande);
+  return { commande: Number.isInteger(n) && n > 0 ? n : undefined };
+};
 const ordersListRoute = createRoute({ getParentRoute: () => rootRoute, path: '/commandes', component: OrdersListPage });
 const paymentsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/paiements', component: PaymentsPage });
-const messagingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/messagerie', component: MessagingPage });
+const messagingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/messagerie', component: MessagingPage, validateSearch: commandeSearch });
 const adminCatalogueRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/catalogue', component: AdminCatalogPage });
 const adminPacksRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -235,10 +239,6 @@ const managerParametresRoute = createRoute({ getParentRoute: () => rootRoute, pa
 const managerZonePrefsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager/parametres/zone', component: ManagerZonePrefsPage });
 
 // Espace livreur (rôle livreur uniquement — authGuard.ts). ?commande=<id> : course ciblée.
-const commandeSearch = (search: Record<string, unknown>): { commande?: number } => {
-  const n = Number(search.commande);
-  return { commande: Number.isInteger(n) && n > 0 ? n : undefined };
-};
 const livreurRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur', component: LivreurDashboardPage });
 const livreurCourseRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/course', component: LivreurCoursePage, validateSearch: commandeSearch });
 const livreurMessagingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/messagerie', component: LivreurMessagingPage, validateSearch: commandeSearch });

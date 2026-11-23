@@ -661,6 +661,7 @@ export default function OrderTrackingPage() {
                   )}
                   <Link
                     to="/messagerie"
+                    search={order ? { commande: order.id } : undefined}
                     className="w-10 h-10 bg-bg-card border border-border-default rounded-lg flex items-center justify-center text-primary-container active:scale-95 transition-transform"
                     title={isFr ? tx("Discuter") : 'Chat'}
                   >
@@ -679,6 +680,7 @@ export default function OrderTrackingPage() {
                     </span>
                     <Link
                       to="/messagerie"
+                      search={{ commande: order.id }}
                       className="text-label text-primary-container font-bold hover:underline"
                     >
                       {isFr ? tx("Contacter le support") : 'Contact support'}

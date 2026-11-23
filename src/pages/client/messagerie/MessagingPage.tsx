@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link, useSearch } from '@tanstack/react-router';
 import clsx from 'clsx';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
@@ -76,9 +76,11 @@ const initials = (name: string) =>
 export default function MessagingPage() {
   const { isFr } = useLanguage();
   const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
+  const { commande: commandeRecherche } = useSearch({ from: '/messagerie' });
   const refreshTick = useGlobalRefreshTick();
 
   const [conversations, setConversations] = useState<UIConversation[]>([]);
+  const [conversationsLoaded, setConversationsLoaded] = useState(false);
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
   const [activeOrder, setActiveOrder] = useState<ActiveOrderInfo | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
@@ -120,6 +122,10 @@ export default function MessagingPage() {
               });
             });
             setActiveConvId((prev) => {
+              if (commandeRecherche) {
+                const targeted = mapped.find((m) => Number(m.orderId) === Number(commandeRecherche));
+                return targeted ? targeted.id : null;
+              }
               if (prev && mapped.some((m) => m.id === prev)) return prev;
               return mapped[0]?.id ?? null;
             });
@@ -127,8 +133,12 @@ export default function MessagingPage() {
             setConversations([]);
             setActiveConvId(null);
           }
+          setConversationsLoaded(true);
         })
-        .catch((err) => alertApiError(err, 'chat-conversations'));
+        .catch((err) => {
+          setConversationsLoaded(true);
+          alertApiError(err, 'chat-conversations');
+        });
     };
 
     load();
@@ -137,13 +147,19 @@ export default function MessagingPage() {
     return subscribeRealtimeRefresh(['orders'], (event) => {
       if (event.scope === 'orders') load();
     });
-  }, [isAuthenticated, isFr, refreshTick]);
+  }, [isAuthenticated, isFr, commandeRecherche, refreshTick]);
 
   // 2) Contexte commande active — GET /api/orders/{orderId} (livreur + total + statut)
   useEffect(() => {
-    if (!isAuthenticated || !activeConvId) return;
+    if (!isAuthenticated || !activeConvId) {
+      setActiveOrder(null);
+      return;
+    }
     const conv = conversations.find((c) => c.id === activeConvId);
-    if (!conv?.orderId) return;
+    if (!conv?.orderId) {
+      setActiveOrder(null);
+      return;
+    }
 
     ordersApi
       .getOrder(conv.orderId)
@@ -262,6 +278,11 @@ export default function MessagingPage() {
 
   const riderName = activeOrder?.riderName ?? (isFr ? 'Livreur TOKPa' : 'TOKPa Rider');
   const riderInitials = activeOrder?.riderInitials ?? 'LK';
+  const requestedConversationMissing = Boolean(
+    commandeRecherche &&
+    conversationsLoaded &&
+    !conversations.some((c) => Number(c.orderId) === Number(commandeRecherche)),
+  );
 
   return (
     <div className="bg-bg-app font-body text-text-main flex h-[100dvh] flex-col overflow-hidden pb-20 lg:pb-0">
@@ -369,10 +390,10 @@ export default function MessagingPage() {
                   <MIcon name="call" />
                 </a>
               )}
-              {activeConvId && activeOrder?.statut !== 'annule' && (
+              {activeOrder?.orderId && activeOrder?.statut !== 'annule' && (
                 <Link
                   to="/commandes/suivi"
-                  search={{ order: String(activeConvId) }}
+                  search={{ order: String(activeOrder.orderId) }}
                   className="p-sm text-text-secondary hover:bg-primary-tint hover:text-primary-container rounded-lg transition-all"
                 >
                   <MIcon name="map" />
@@ -406,7 +427,21 @@ export default function MessagingPage() {
 
           {/* Messages Area */}
           <div className="flex flex-1 flex-col gap-md overflow-y-auto px-3 pb-xl sm:px-lg">
-            {messages.length === 0 ? (
+            {requestedConversationMissing && (
+              <div role="status" className="mt-3 rounded-lg border border-border-default bg-bg-card p-3 text-sm text-text-secondary">
+                {isFr
+                  ? `Aucune conversation n’est encore associée à la commande #TOK-${commandeRecherche}.`
+                  : `No conversation is linked to order #TOK-${commandeRecherche} yet.`}
+              </div>
+            )}
+            {!activeConvId ? (
+              <div className="m-auto text-center">
+                <MIcon name="chat_bubble_outline" className="text-5xl text-text-tertiary mb-3" />
+                <p className="font-label text-label text-text-secondary font-bold">
+                  {isFr ? 'Sélectionnez une conversation' : 'Select a conversation'}
+                </p>
+              </div>
+            ) : messages.length === 0 ? (
               <div className="m-auto text-center">
                 <MIcon name="chat" className="text-5xl text-text-tertiary mb-3" />
                 <p className="font-label text-label text-text-secondary font-bold">

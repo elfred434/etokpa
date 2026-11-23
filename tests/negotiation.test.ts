@@ -6,10 +6,12 @@ describe('negotiation reducer', () => {
     const state = reducer(undefined, submitOffer({ productId: 'p1', productName: 'Riz', originalPrice: 1200, proposedPrice: 1000, minPrice: 900 }));
     expect(state.history[0]).toMatchObject({ productId: 'p1', status: 'pending', proposedPrice: 1000 });
   });
-  it('synchronizes API proposals into active negotiations', () => {
-    const proposal = { id: '7', productId: 'p2', productName: 'Maïs', originalPrice: 800, proposedPrice: 700, minPrice: 600, status: 'accepted' as const, createdAt: 'today' };
-    const state = reducer(undefined, setProposals([proposal]));
-    expect(state.activeNegotiations.p2).toEqual(proposal);
+  it('keeps the latest proposal per productId when synchronizing API proposals ordered newest-first', () => {
+    const newest = { id: '15', productId: 'p2', productName: 'Gingembre', originalPrice: 800, proposedPrice: 750, minPrice: 600, status: 'pending' as const, createdAt: 'today' };
+    const olderExpired = { id: '7', productId: 'p2', productName: 'Gingembre', originalPrice: 800, proposedPrice: 720, minPrice: 600, status: 'expired' as const, createdAt: 'yesterday' };
+    const state = reducer(undefined, setProposals([newest, olderExpired]));
+    expect(state.activeNegotiations.p2).toEqual(newest);
+    expect(state.history).toHaveLength(2);
   });
   it('accepts a counter offer', () => {
     const base = reducer(undefined, submitOffer({ productId: 'p1', productName: 'Riz', originalPrice: 1200, proposedPrice: 900, minPrice: 800 }));

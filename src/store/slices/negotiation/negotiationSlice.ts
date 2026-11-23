@@ -45,7 +45,16 @@ const negotiationSlice = createSlice({
   reducers: {
     setProposals(state, action: PayloadAction<NegotiationItem[]>) {
       state.history = action.payload;
-      state.activeNegotiations = Object.fromEntries(action.payload.map((n) => [n.productId, n]));
+      // L'API renvoie `latest()` (plus récent en premier) : conserver la première occurrence par produit
+      // pour ne pas écraser une nouvelle offre par une ancienne offre expirée/refusée.
+      const latestByProduct: Record<string, NegotiationItem> = {};
+      for (const item of action.payload) {
+        if (!item.productId) continue;
+        if (!latestByProduct[item.productId]) {
+          latestByProduct[item.productId] = item;
+        }
+      }
+      state.activeNegotiations = latestByProduct;
     },
     submitOffer(
       state,

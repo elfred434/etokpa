@@ -21,10 +21,9 @@ import {
   extractCounterOfferPrice,
   formatNegotiationRemaining,
   isAcceptedNegotiationValid,
+  isPendingNegotiationValid,
   negotiationExpiresAt,
 } from '../../../utils/negotiationCounter';
-import NegotiationLandmarkField from '../../../components/client/NegotiationLandmarkField';
-import { landmarkFromProposal, readNegotiationLandmark, rememberNegotiationLandmark, type RememberedLandmark } from '../../../utils/negotiationLandmark';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
@@ -50,7 +49,6 @@ export default function ProductPage() {
 
   const [quantity, setQuantity] = useState(1);
   const [offerInput, setOfferInput] = useState('');
-  const [offerLandmark, setOfferLandmark] = useState<RememberedLandmark | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tab, setTab] = useState<TabId>('description');
 
@@ -104,11 +102,13 @@ export default function ProductPage() {
               : null;
           const rawProposed = Number(raw.prix_propose) || 0;
           const acceptedValid = raw.statut === 'accepte' && isAcceptedNegotiationValid(raw);
-          const expDate = raw.statut === 'accepte' ? negotiationExpiresAt(raw) : null;
-          const lieu =
-            landmarkFromProposal(raw) ??
-            readNegotiationLandmark(raw.id) ??
-            readNegotiationLandmark(`product-${raw.product_id ?? raw.product?.id ?? ''}`);
+          const pendingValid = raw.statut === 'en_attente' && isPendingNegotiationValid(raw);
+          const expDate =
+            raw.statut === 'accepte'
+              ? negotiationExpiresAt(raw)
+              : raw.statut === 'en_attente'
+                ? negotiationExpiresAt({ created_at: raw.created_at })
+                : null;
           return {
             id: String(raw.id),
             productId: String(raw.product_id ?? raw.product?.id ?? ''),
@@ -122,8 +122,7 @@ export default function ProductPage() {
             quantite: Number(raw.quantite) || 1,
             orderId: raw.commande?.id ?? raw.order_id,
             adminResponse: raw.admin_response || undefined,
-            ...(acceptedValid && expDate ? { expiresAt: expDate.toISOString() } : {}),
-            ...(lieu ? { landmarkId: lieu.id, landmarkNom: lieu.nom, landmarkZone: lieu.zoneNom } : {}),
+            ...((acceptedValid || pendingValid) && expDate ? { expiresAt: expDate.toISOString() } : {}),
             status:
               raw.statut === 'accepte'
                 ? acceptedValid
@@ -133,7 +132,7 @@ export default function ProductPage() {
                   ? 'counter_offer'
                   : raw.statut === 'refuse'
                     ? 'rejected'
-                    : raw.statut === 'expire'
+                    : raw.statut === 'expire' || (raw.statut === 'en_attente' && !pendingValid)
                       ? 'expired'
                       : 'pending',
             createdAt: raw.created_at ? new Date(raw.created_at).toLocaleDateString('fr-FR') : tx('Récemment'),
@@ -162,10 +161,6 @@ export default function ProductPage() {
       toast.error(tr(`Votre proposition ne peut pas dépasser le prix catalogue (${product.prix.toLocaleString('fr-FR')} FCFA).`, `Your offer cannot exceed the catalog price (${product.prix.toLocaleString('fr-FR')} FCFA).`));
       return;
     }
-    if (!offerLandmark) {
-      toast.error(tx('Choisissez votre point de repère avant d\'envoyer l\'offre.'));
-      return;
-    }
 
     setIsSubmitting(true);
     try {
@@ -174,11 +169,8 @@ export default function ProductPage() {
         product_id: Number(product.id),
         prix_propose: numPrice,
         quantite: quantity,
-        landmark_id: offerLandmark.id,
       });
       const proposalId = Number((created as { data?: { id?: number }; id?: number })?.data?.id ?? (created as { id?: number })?.id);
-      rememberNegotiationLandmark(`product-${product.id}`, offerLandmark);
-      if (Number.isFinite(proposalId) && proposalId > 0) rememberNegotiationLandmark(proposalId, offerLandmark);
       dispatch(
         submitOffer({
           id: Number.isFinite(proposalId) && proposalId > 0 ? String(proposalId) : undefined,
@@ -428,8 +420,6 @@ export default function ProductPage() {
                       </div>
                     </div>
 
-                    <NegotiationLandmarkField value={offerLandmark} onChange={setOfferLandmark} />
-
                     <button
                       type="button"
                       disabled={isSubmitting}
@@ -454,15 +444,11 @@ export default function ProductPage() {
                         {activeNeg.proposedPrice.toLocaleString('fr-FR')} FCFA
                       </strong>{' '}
                       a été envoyée au marché. Suivez ou modifiez votre offre dans « Mes Négociations ».
-                      {(() => {
-                        const lieu = offerLandmark ?? (product ? readNegotiationLandmark(`product-${product.id}`) : null);
-                        return lieu ? (
-                          <>
-                            {' '}
-                            {tx('Point de repère')} : {lieu.zoneNom ? `${lieu.zoneNom} — ` : ''}{lieu.nom}.
-                          </>
-                        ) : null;
-                      })()}
+                    </p>
+                    <p className="text-[11px] font-medium text-amber-text">
+                      {formatNegotiationRemaining(activeNeg.expiresAt, isFr)
+                        ? `${formatNegotiationRemaining(activeNeg.expiresAt, isFr)} — ${tr('expire après 12 h sans réponse.', 'expires after 12h with no response.')}`
+                        : tr('Les négociations expirent après 12 h.', 'Negotiations expire after 12h.')}
                     </p>
                     <Link
                       to="/negociations"

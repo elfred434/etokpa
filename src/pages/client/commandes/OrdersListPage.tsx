@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
@@ -653,17 +653,25 @@ export default function OrdersListPage() {
             )}
             <LigneFiche icone="two_wheeler" etiquette={tx("Livreur")} large>
               {selected.livreur ? (
-                <>
-                  {selected.livreur.nom_complet}
+                <span className="flex flex-wrap items-center gap-2">
+                  <span>{selected.livreur.nom_complet}</span>
                   {selected.livreur.telephone && (
                     <a
                       href={`tel:${selected.livreur.telephone.replace(/\s/g, '')}`}
-                      className="ml-2 text-primary font-bold hover:underline"
+                      className="text-primary font-bold hover:underline"
                     >
                       {selected.livreur.telephone}
                     </a>
                   )}
-                </>
+                  <Link
+                    to="/messagerie"
+                    search={{ commande: selected.id }}
+                    className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary-tint px-2 py-0.5 text-xs font-bold text-primary hover:bg-primary-tint"
+                  >
+                    <MIcon name="chat" className="text-[14px]" />
+                    {tx("Discuter")}
+                  </Link>
+                </span>
               ) : (
                 <span className="font-normal text-text-secondary">{tx("Livreur en cours d’assignation…")}</span>
               )}
