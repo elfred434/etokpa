@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { LanguageProvider } from '../src/context/LanguageContext';
 
 const mocks = vi.hoisted(() => ({
@@ -110,5 +110,78 @@ describe('client targeted messaging (?commande=<id>)', () => {
     expect((await screen.findAllByText('Koffi Cible')).length).toBeGreaterThanOrEqual(1);
     const trackLink = screen.getByRole('link', { name: 'Suivre' });
     expect(trackLink.getAttribute('href')).toContain('order=12');
+  });
+
+  it('targets order 23 immediately on Suivre and map links when switching from order 75 even while order 23 details are pending', async () => {
+    mocks.search = { commande: undefined };
+    let resolveOrder23: ((value: unknown) => void) | null = null;
+    mocks.getConversations.mockResolvedValue({
+      data: [
+        { id: 101, order_id: 75, client_id: 7, livreur_id: 41, updated_at: '2026-11-22T12:00:00Z' },
+        { id: 102, order_id: 23, client_id: 7, livreur_id: 42, updated_at: '2026-11-22T09:00:00Z' },
+      ],
+    });
+    mocks.getOrder.mockImplementation((orderId: number) => {
+      if (orderId === 23) {
+        return new Promise((resolve) => {
+          resolveOrder23 = resolve;
+        });
+      }
+      return Promise.resolve({
+        data: {
+          id: 75,
+          montant_total: 12000,
+          statut: 'en_livraison',
+          livreur: { nom_complet: 'Livreur 75', telephone: '01020375' },
+          items: [{ id: 1 }],
+        },
+      });
+    });
+    mocks.getMessages.mockImplementation((convId: number) =>
+      Promise.resolve({
+        data: {
+          data: [
+            {
+              id: convId,
+              conversation_id: convId,
+              sender_id: 41,
+              contenu: convId === 101 ? 'Discussion 75' : 'Discussion 23',
+              created_at: '2026-11-22T10:05:00Z',
+            },
+          ],
+        },
+      }),
+    );
+
+    render(
+      <LanguageProvider>
+        <MessagingPage />
+      </LanguageProvider>,
+    );
+
+    expect(await screen.findByText('Discussion 75')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Suivre' }).getAttribute('href')).toBe('/commandes/suivi?order=75');
+
+    // Switch to conversation for order #23 while getOrder(23) has not resolved yet
+    fireEvent.click(screen.getByText('#TOK-23'));
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Suivre' }).getAttribute('href')).toBe('/commandes/suivi?order=23');
+    });
+    const mapLink = screen.getAllByRole('link').find((a) => a.getAttribute('href')?.startsWith('/commandes/suivi'));
+    expect(mapLink?.getAttribute('href')).toBe('/commandes/suivi?order=23');
+    expect(screen.queryByText('#TOK-75', { selector: 'strong' })).toBeNull();
+
+    resolveOrder23?.({
+      data: {
+        id: 23,
+        montant_total: 4500,
+        statut: 'en_livraison',
+        livreur: { nom_complet: 'Livreur 23', telephone: '01020323' },
+        items: [{ id: 2 }],
+      },
+    });
+    expect(await screen.findByText('Discussion 23')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Suivre' }).getAttribute('href')).toBe('/commandes/suivi?order=23');
   });
 });

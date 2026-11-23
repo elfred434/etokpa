@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import clsx from 'clsx';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
@@ -85,6 +85,7 @@ export default function MessagingPage() {
   const [activeOrder, setActiveOrder] = useState<ActiveOrderInfo | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [inputText, setInputText] = useState('');
+  const appliedQueryOrderRef = useRef<number | undefined>(undefined);
 
   const currentUserId = (() => {
     const raw = localStorage.getItem('tokpa_user');
@@ -103,17 +104,22 @@ export default function MessagingPage() {
       chatApi
         .getConversations()
         .then((res) => {
-          const list = (res?.data || (Array.isArray(res) ? res : [])) as ConversationItem[];
+          const list = (res?.data || (Array.isArray(res) ? res : [])) as Array<
+            ConversationItem & { order?: { id?: number } | null }
+          >;
           if (Array.isArray(list) && list.length > 0) {
-            const mapped: UIConversation[] = list.map((c) => ({
-              id: c.id,
-              orderId: c.order_id ?? null,
-              riderName: isFr ? 'Livreur TOKPa' : 'TOKPa Rider',
-              riderInitials: 'LK',
-              orderCode: c.order_id ? `#TOK-${c.order_id}` : '—',
-              lastMessage: isFr ? 'Discussion en cours…' : 'Ongoing discussion…',
-              time: fmtTime(c.updated_at),
-            }));
+            const mapped: UIConversation[] = list.map((c) => {
+              const orderId = c.order_id ?? c.order?.id ?? null;
+              return {
+                id: c.id,
+                orderId,
+                riderName: isFr ? 'Livreur TOKPa' : 'TOKPa Rider',
+                riderInitials: 'LK',
+                orderCode: orderId ? `#TOK-${orderId}` : '—',
+                lastMessage: isFr ? 'Discussion en cours…' : 'Ongoing discussion…',
+                time: fmtTime(c.updated_at),
+              };
+            });
             setConversations((prev) => {
               // Conserver les noms de livreurs déjà chargés
               return mapped.map((m) => {
@@ -121,8 +127,13 @@ export default function MessagingPage() {
                 return known ? { ...m, riderName: known.riderName, riderInitials: known.riderInitials } : m;
               });
             });
+            const shouldApplyQueryOrder =
+              commandeRecherche != null && appliedQueryOrderRef.current !== commandeRecherche;
+            if (shouldApplyQueryOrder) {
+              appliedQueryOrderRef.current = commandeRecherche;
+            }
             setActiveConvId((prev) => {
-              if (commandeRecherche) {
+              if (shouldApplyQueryOrder) {
                 const targeted = mapped.find((m) => Number(m.orderId) === Number(commandeRecherche));
                 return targeted ? targeted.id : null;
               }
@@ -149,28 +160,30 @@ export default function MessagingPage() {
     });
   }, [isAuthenticated, isFr, commandeRecherche, refreshTick]);
 
+  const activeConv = conversations.find((c) => c.id === activeConvId) ?? null;
+  const activeConvOrderId = activeConv?.orderId ?? null;
+
   // 2) Contexte commande active — GET /api/orders/{orderId} (livreur + total + statut)
   useEffect(() => {
-    if (!isAuthenticated || !activeConvId) {
-      setActiveOrder(null);
-      return;
-    }
-    const conv = conversations.find((c) => c.id === activeConvId);
-    if (!conv?.orderId) {
+    if (!isAuthenticated || !activeConvId || !activeConvOrderId) {
       setActiveOrder(null);
       return;
     }
 
+    let alive = true;
+    setActiveOrder((prev) => (prev && Number(prev.orderId) === Number(activeConvOrderId) ? prev : null));
+
     ordersApi
-      .getOrder(conv.orderId)
+      .getOrder(activeConvOrderId)
       .then((res) => {
+        if (!alive) return;
         const o = res?.data ?? res;
         if (!o) return;
         const livreur = (o.livreur ?? {}) as { nom_complet?: string; telephone?: string };
         const riderName = livreur.nom_complet || (isFr ? 'Livreur TOKPa' : 'TOKPa Rider');
         const items = Array.isArray(o.items) ? o.items : [];
         const info: ActiveOrderInfo = {
-          orderId: o.id ?? conv.orderId,
+          orderId: o.id ?? activeConvOrderId,
           riderName,
           riderInitials: initials(riderName),
           phone: livreur.telephone || '',
@@ -190,8 +203,15 @@ export default function MessagingPage() {
           return changed ? next : prev;
         });
       })
-      .catch((err) => alertApiError(err, 'chat-order'));
-  }, [isAuthenticated, activeConvId, conversations, refreshTick]);
+      .catch((err) => {
+        if (!alive) return;
+        alertApiError(err, 'chat-order');
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [isAuthenticated, activeConvId, activeConvOrderId, isFr, refreshTick]);
 
   // 3) Messages — GET /api/conversations/{id}/messages
   useEffect(() => {
@@ -200,9 +220,13 @@ export default function MessagingPage() {
       return;
     }
 
+    let alive = true;
+    setMessages([]);
+
     chatApi
       .getMessages(activeConvId)
       .then((res) => {
+        if (!alive) return;
         const msgs = (res?.data?.data || res?.data || (Array.isArray(res) ? res : [])) as MessageItem[];
         if (Array.isArray(msgs)) {
           setMessages(
@@ -215,7 +239,14 @@ export default function MessagingPage() {
           );
         }
       })
-      .catch((err) => alertApiError(err, 'chat-messages'));
+      .catch((err) => {
+        if (!alive) return;
+        alertApiError(err, 'chat-messages');
+      });
+
+    return () => {
+      alive = false;
+    };
   }, [isAuthenticated, activeConvId, currentUserId, refreshTick]);
 
   // 4) Temps réel — canal privé `chat.{conversationId}`, événement `message.sent`
@@ -276,8 +307,13 @@ export default function MessagingPage() {
     }
   };
 
-  const riderName = activeOrder?.riderName ?? (isFr ? 'Livreur TOKPa' : 'TOKPa Rider');
-  const riderInitials = activeOrder?.riderInitials ?? 'LK';
+  const scopedOrder =
+    activeOrder && activeConvOrderId != null && Number(activeOrder.orderId) === Number(activeConvOrderId)
+      ? activeOrder
+      : null;
+  const trackOrderId = activeConvOrderId ?? scopedOrder?.orderId ?? null;
+  const riderName = scopedOrder?.riderName ?? activeConv?.riderName ?? (isFr ? 'Livreur TOKPa' : 'TOKPa Rider');
+  const riderInitials = scopedOrder?.riderInitials ?? activeConv?.riderInitials ?? 'LK';
   const requestedConversationMissing = Boolean(
     commandeRecherche &&
     conversationsLoaded &&
@@ -382,18 +418,18 @@ export default function MessagingPage() {
             </div>
 
             <div className="flex items-center gap-sm">
-              {activeOrder?.phone && (
+              {scopedOrder?.phone && (
                 <a
-                  href={`tel:${activeOrder.phone.replace(/\s/g, '')}`}
+                  href={`tel:${scopedOrder.phone.replace(/\s/g, '')}`}
                   className="p-sm text-text-secondary hover:bg-primary-tint hover:text-primary-container rounded-lg transition-all"
                 >
                   <MIcon name="call" />
                 </a>
               )}
-              {activeOrder?.orderId && activeOrder?.statut !== 'annule' && (
+              {trackOrderId && scopedOrder?.statut !== 'annule' && (
                 <Link
                   to="/commandes/suivi"
-                  search={{ order: String(activeOrder.orderId) }}
+                  search={{ order: String(trackOrderId) }}
                   className="p-sm text-text-secondary hover:bg-primary-tint hover:text-primary-container rounded-lg transition-all"
                 >
                   <MIcon name="map" />
@@ -403,20 +439,24 @@ export default function MessagingPage() {
           </header>
 
           {/* Order Context Banner */}
-          {activeOrder && (
+          {trackOrderId && (
             <div className="m-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary-light bg-primary-tint px-3 py-2 sm:m-md sm:px-md">
               <div className="flex min-w-0 items-center gap-sm">
                 <MIcon name="shopping_bag" className="shrink-0 text-primary-container" />
                 <span className="font-label text-label text-text-main break-words">
                   {isFr ? tx("Commande") : 'Order'}{' '}
-                  <strong className="text-primary-container">#TOK-{activeOrder.orderId}</strong> ·{' '}
-                  {fmtFCFA(activeOrder.total)} · {STATUT_LABELS[activeOrder.statut] ?? activeOrder.statut}
+                  <strong className="text-primary-container">#TOK-{trackOrderId}</strong>
+                  {scopedOrder ? (
+                    <>
+                      {' '}· {fmtFCFA(scopedOrder.total)} · {STATUT_LABELS[scopedOrder.statut] ?? scopedOrder.statut}
+                    </>
+                  ) : null}
                 </span>
               </div>
-              {activeOrder.statut !== 'annule' && (
+              {scopedOrder?.statut !== 'annule' && (
                 <Link
                   to="/commandes/suivi"
-                  search={{ order: String(activeOrder.orderId) }}
+                  search={{ order: String(trackOrderId) }}
                   className="text-primary-container font-bold text-label hover:underline"
                 >
                   {isFr ? tx("Suivre") : 'Track'}

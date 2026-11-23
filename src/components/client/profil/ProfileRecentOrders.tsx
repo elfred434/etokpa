@@ -54,6 +54,7 @@ export default function ProfileRecentOrders() {
                 </span>
                 <Link
                   to={o.active ? '/commandes/suivi' : '/confirmation'}
+                  search={o.active ? { order: String(o.id) } : undefined}
                   className="flex items-center gap-0.5 text-xs font-bold text-primary hover:underline"
                 >
                   {o.active ? (isFr ? tx("Suivre") : 'Track') : (isFr ? tx("Détails") : 'Details')}
