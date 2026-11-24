@@ -1,9 +1,7 @@
+// Vérifie côté client qu’une commande appartient bien à l’utilisateur connecté.
 import { ordersApi } from '../services/api';
 
-/**
- * Extrait un identifiant de commande positif depuis `?order=56`, `?order=%2256%22`
- * (`"56"`) ou un nombre. Retourne `null` si absent ou invalide (jamais `NaN`).
- */
+// Transforme ou formate les données via parseOrderIdParam.
 export function parseOrderIdParam(raw: unknown): number | null {
   if (typeof raw === 'number') {
     return Number.isSafeInteger(raw) && raw > 0 ? raw : null;
@@ -15,6 +13,7 @@ export function parseOrderIdParam(raw: unknown): number | null {
   return Number.isSafeInteger(n) && n > 0 ? n : null;
 }
 
+// Transforme ou formate les données via extractOrdersPage.
 export function extractOrdersPage(res: unknown): {
   list: Array<Record<string, unknown> & { id?: number }>;
   lastPage: number;
@@ -34,12 +33,7 @@ export function extractOrdersPage(res: unknown): {
   };
 }
 
-/**
- * Anti-IDOR : une commande n'est considérée visible que si elle figure dans
- * MES commandes — `GET /orders` (OrderController@index) est filtré côté serveur
- * par `user_id = auth()->id()`. Scan paginé borné à 20 pages (300 commandes) ;
- * au-delà, on refuse par prudence.
- */
+// Vérifie la condition métier isOwnOrder.
 export async function isOwnOrder(id: number, startPage = 1): Promise<boolean> {
   if (!Number.isSafeInteger(id) || id <= 0) return false;
   let page = Math.max(1, startPage);

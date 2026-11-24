@@ -1,3 +1,4 @@
+// Page d’accueil client présentant les catégories, produits vedettes, packs et recherche rapide.
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -20,8 +21,6 @@ import { alertApiError, apiErrorStatus } from '../../../utils/apiError';
 import { tx } from '../../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 
-
-/** Icônes de la maquette accueil (Categories Grid), par famille — icone non persistée côté backend (B-17). */
 const HOME_KIND_ICON: Record<CategoryKind, string> = {
   vegetable: 'potted_plant',
   fish: 'set_meal',
@@ -34,37 +33,30 @@ const HOME_KIND_ICON: Record<CategoryKind, string> = {
 interface SelectionItem {
   id: string;
   nom: string;
-  /** Nom réel de la catégorie (remplace l'ancien faux « Marché Dantokpa » : l'API n'a pas de marché). */
   categorie: string;
   prixLabel: string;
   prix: number;
-  /** Vrai prix minimum négociable (ProductResource.prix_minimum). */
   prixMinimum: number;
   image: string | null;
   badge: string;
 }
 
-/** Accueil TOKPa — Connecté au Backend API Laravel + UI Stitch */
+// Composant de la page Home : gère le chargement des données et le rendu.
 export default function HomePage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { t, isFr } = useLanguage();
   const [offre, setOffre] = useState('');
-  // Uniquement des produits réels : rien pendant le chargement, message de l'API en cas d'échec.
   const [selection, setSelection] = useState<SelectionItem[]>([]);
   const [selLoading, setSelLoading] = useState(true);
   const [selError, setSelError] = useState<string | null>(null);
-  // Visiteur non connecté : l'API refuse les produits (401 — B-1 côté backend) → invitation à se
-  // connecter au lieu d'une alerte. Quand B-1 sera corrigé, les vrais produits s'afficheront seuls.
   const [needsLogin, setNeedsLogin] = useState(false);
-  // Bandeau « Propose ton prix » : un vrai produit négociable (prix minimum < prix) ; sinon masqué.
   const [negoProduct, setNegoProduct] = useState<SelectionItem | null>(null);
-  // « Réessayer » : relance produits + catégories.
   const [reloadKey, setReloadKey] = useState(0);
   const refreshTick = useGlobalRefreshTick();
   const retry = () => setReloadKey((k) => k + 1);
 
-  // Connection API Backend GET /api/products — produits réels ET commandables uniquement
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setSelLoading(true);
@@ -75,7 +67,6 @@ export default function HomePage() {
       .then((res) => {
         if (!alive) return;
         const list: ApiProduct[] = Array.isArray(res?.data) ? res.data : [];
-        // Commandables (disponible et, si un stock chiffré existe, stock > 0) : même règle que le catalogue.
         const items: SelectionItem[] = list
           .filter((p) => p.disponible !== false && (p.stock == null || Number(p.stock) > 0))
           .map((p) => ({
@@ -85,14 +76,12 @@ export default function HomePage() {
             prixLabel: `${Number(p.prix).toLocaleString('fr-FR')} FCFA`,
             prix: Number(p.prix),
             prixMinimum: Number(p.prix_minimum ?? 0),
-            // Même source que l'admin ; pas d'image → null = dégradé
             image: absImageUrl(p.image_url ?? p.img_url),
             badge: p.stock != null && Number(p.stock) <= 5 ? tx("Stock Limité") : tx("Disponible"),
           }));
         setSelection(items.slice(0, 4));
         const nego = items.find((it) => it.prixMinimum > 0 && it.prixMinimum < it.prix) ?? null;
         setNegoProduct(nego);
-        // Offre suggérée : -10 % du prix (comme la fiche produit), jamais sous le prix minimum.
         if (nego) setOffre((current) => current || String(Math.max(nego.prixMinimum, Math.round(nego.prix * 0.9))));
       })
       .catch((err) => {
@@ -108,11 +97,10 @@ export default function HomePage() {
     };
   }, [reloadKey, refreshTick]);
 
-  // Catégories réelles — GET /api/categories (F-07). Plus de tuiles de la maquette : échec → message de
-  // l'API ; visiteur non connecté (401, B-1) → section masquée (l'invitation est dans la sélection).
   const [apiCats, setApiCats] = useState<ApiCategory[] | null>(null);
   const [catsError, setCatsError] = useState<string | null>(null);
   const [catsNeedLogin, setCatsNeedLogin] = useState(false);
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setApiCats(null);
@@ -134,8 +122,7 @@ export default function HomePage() {
     };
   }, [reloadKey, refreshTick]);
 
-  // Bandeau « Propose ton prix » — démonstration : aucun envoi au serveur.
-  // La vraie offre se fait depuis la fiche du produit (module de négociation F-10).
+  // Valide et transmet l’action sendOffer.
   const sendOffer = () => {
     if (!negoProduct) return;
     const proposed = Number(offre.replace(/\D/g, ''));
@@ -158,8 +145,6 @@ export default function HomePage() {
     { icon: 'location_on', titre: t('home.atouts.a3Title'), texte: t('home.atouts.a3Text') },
   ];
 
-  // 4 tuiles comme la maquette : 3 catégories réelles (celles marquées en_accueil d'abord — champ
-  // non persisté aujourd'hui, B-17) + « Packs ». Clic → catalogue déjà filtré (?cat=).
   const categoriesList: { icon: string; nom: string; cat: string }[] = apiCats
     ? [
         ...[...apiCats.filter((c) => c.en_accueil), ...apiCats.filter((c) => !c.en_accueil)]
@@ -169,6 +154,7 @@ export default function HomePage() {
       ]
     : [];
 
+  // Enregistre ou crée les données via addToCart.
   const addToCart = (item: SelectionItem) => {
     const product: Product = {
       id: item.id,
@@ -186,12 +172,12 @@ export default function HomePage() {
     toast.success(isFr ? `${item.nom} ajouté au panier` : `${item.nom} added to cart`);
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="min-h-screen bg-page font-body text-on-surface">
       <ClientNavbar />
 
       <main className="mx-auto w-full max-w-[1200px] overflow-x-hidden px-3 sm:px-4 pb-[80px] pt-[52px] lg:pb-0">
-        {/* ---- Hero ---- */}
         <section className="relative mt-md sm:mt-lg flex min-h-[380px] sm:min-h-[460px] md:min-h-[500px] items-center overflow-hidden rounded-[20px] sm:rounded-[24px] border border-line bg-bg-card shadow-sm">
           <div className="absolute inset-0 z-0">
             <img
@@ -219,7 +205,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ---- Value Propositions ---- */}
         <section className="my-lg sm:my-xl grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-3">
           {atoutsList.map((a) => (
             <div key={a.titre} className="flex items-start gap-md rounded-[14px] border border-line bg-card p-4 sm:p-lg">
@@ -234,7 +219,6 @@ export default function HomePage() {
           ))}
         </section>
 
-        {/* ---- Categories Grid (catégories réelles ; masquée pour un visiteur non connecté) ---- */}
         {!catsNeedLogin && (
         <section className="mb-lg sm:mb-xl">
           <div className="mb-md sm:mb-lg flex items-end justify-between">
@@ -269,7 +253,6 @@ export default function HomePage() {
         </section>
         )}
 
-        {/* ---- Featured Products (produits réels uniquement) ---- */}
         {(selLoading || needsLogin || selError || selection.length > 0) && (
           <section className="mb-lg sm:mb-xl">
             <div className="mb-md sm:mb-lg flex items-end justify-between">
@@ -353,7 +336,6 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ---- Négociation : vrai produit négociable (masqué s'il n'y en a pas) ---- */}
         {negoProduct && (
         <section className="mb-lg sm:mb-xl bg-bg-card rounded-[14px] border-l-[3px] border-secondary-container p-4 sm:p-lg flex flex-col md:flex-row items-center justify-between gap-md sm:gap-lg">
           <div className="w-full md:w-[70%]">

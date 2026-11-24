@@ -1,3 +1,4 @@
+// Appels API CRUD des points de repère enregistrés par le client.
 import { apiClient } from './client';
 
 export interface PointRepereZone {
@@ -6,34 +7,32 @@ export interface PointRepereZone {
   km_prix?: number | string;
 }
 
-/** PointRepere — exactement le modèle backend (fillable : zone_id, nom, description, latitude, longitude). */
 export interface PointRepereItem {
   id?: number;
   user_id?: number;
   nom: string;
   description?: string;
-  /** decimal:7 côté backend (peut arriver en string) */
   latitude?: number | string;
   longitude?: number | string;
   zone_id?: number;
-  /** Relation `zone` chargée par GET /api/landmarks (`PointRepere::query()->with('zone')`). */
   zone?: PointRepereZone | null;
 }
 
+// Regroupe les appels API du module landmarks.
 export const landmarksApi = {
-  // GET /api/landmarks -> points de repère de l'utilisateur
+  // Appelle GET /landmarks via le client API.
   getLandmarks: async () => {
     const response = await apiClient.get('/landmarks');
     return response.data;
   },
 
-  // POST /api/landmarks -> ajouter un point de repère
+  // Appelle POST /landmarks via le client API.
   createLandmark: async (data: PointRepereItem) => {
     const response = await apiClient.post('/landmarks', data);
     return response.data;
   },
 
-  // DELETE /api/landmarks/{id} -> supprimer un point de repère
+  // Appelle DELETE /landmarks/${id} via le client API.
   deleteLandmark: async (id: number | string) => {
     const response = await apiClient.delete(`/landmarks/${id}`);
     return response.data;

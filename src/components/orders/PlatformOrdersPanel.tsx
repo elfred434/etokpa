@@ -1,3 +1,4 @@
+// Tableau paginé et filtrable des commandes partagé entre Admin et Manager.
 import { useEffect, useState, type ReactNode } from 'react';
 import Pagination from '../shared/Pagination';
 import { TableSkeleton } from '../shared/Skeleton';
@@ -50,6 +51,7 @@ export type PlatformOrder = {
   user?: { nom_complet?: string; telephone?: string } | null;
 };
 
+// Helper asOrder : réalise le traitement métier associé.
 function asOrder(row: any): PlatformOrder {
   const inner = row?.data && typeof row.data === 'object' && 'id' in row.data ? row.data : row;
   return inner as PlatformOrder;
@@ -58,6 +60,7 @@ function asOrder(row: any): PlatformOrder {
 const SEARCH_PAGE_SIZE = 20;
 const SEARCH_BATCH_SIZE = 5;
 
+// Transforme ou formate les données via normalizeSearch.
 function normalizeSearch(value: unknown): string {
   return String(value ?? '')
     .normalize('NFD')
@@ -65,6 +68,7 @@ function normalizeSearch(value: unknown): string {
     .toLowerCase();
 }
 
+// Helper matchesOrderSearch : réalise le traitement métier associé.
 function matchesOrderSearch(order: PlatformOrder, query: string): boolean {
   const client = order.client ?? order.user;
   const fields = [
@@ -87,6 +91,7 @@ function matchesOrderSearch(order: PlatformOrder, query: string): boolean {
   return normalizeSearch(fields.join(' ')).includes(normalizeSearch(query.trim()));
 }
 
+// Helper matchesOrderDate : réalise le traitement métier associé.
 function matchesOrderDate(order: PlatformOrder, dateFrom: string, dateTo: string): boolean {
   if (!dateFrom && !dateTo) return true;
   const isoDay = String(order.created_at ?? '').slice(0, 10);
@@ -96,6 +101,7 @@ function matchesOrderDate(order: PlatformOrder, dateFrom: string, dateTo: string
   return true;
 }
 
+// Helper lastPageOf : réalise le traitement métier associé.
 function lastPageOf(response: any): number {
   const value = Number(response?.meta?.last_page ?? response?.last_page ?? 1);
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : 1;
@@ -111,7 +117,7 @@ type Props = {
   renderActions?: (order: PlatformOrder) => ReactNode;
 };
 
-/** Liste paginée des commandes. `admin` = toute la plateforme. `zone` = ce que GET /manager/orders renvoie. */
+// Composant React PlatformOrdersPanel : prépare l’état et affiche son interface.
 export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0, initialSearch, onSearchCommit, renderActions }: Props) {
   useLanguage();
   const [statut, setStatut] = useState('');
@@ -132,6 +138,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const refreshTick = useGlobalRefreshTick();
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!selected?.items?.length) return;
     const orderId = selected.id;
@@ -164,12 +171,14 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
     return () => { alive = false; };
   }, [selected]);
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     catalogApi.getZones()
       .then((res) => setZones(listOf(res).map((z: any) => ({ id: Number(z.id), nom: String(z.nom ?? '') }))))
       .catch(() => undefined);
   }, [refreshTick]);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     const nextSearch = initialSearch?.trim() ?? '';
     setSearch(nextSearch);
@@ -178,12 +187,14 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
     setPage(1);
   }, [initialSearch]);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     setPage(1);
   }, [statut, zoneId, source, appliedSearch, dateFrom, dateTo]);
 
   const filterMode = Boolean(appliedSearch || dateFrom || dateTo);
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     if (filterMode) return;
     let alive = true;
@@ -214,6 +225,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
     return () => { alive = false; };
   }, [source, statut, zoneId, page, reloadKey, refreshTick, filterMode]);
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     if (!filterMode) {
       setSearchResults(null);
@@ -271,6 +283,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
   const visibleTotal = filterMode ? searchResults?.length ?? 0 : total;
   const visibleLastPage = filterMode ? Math.max(1, Math.ceil(visibleTotal / SEARCH_PAGE_SIZE)) : lastPage;
 
+  // Helper appliquerRecherche : réalise le traitement métier associé.
   const appliquerRecherche = () => {
     const query = search.trim();
     setSearch(query);
@@ -280,6 +293,7 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
     onSearchCommit?.(query);
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="space-y-6">
       <div>
@@ -570,7 +584,6 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
             </>
           }
         >
-          {/* Bandeau : identifiant, date, montant, statut */}
           <BandeauFiche
             id={selected.id}
             date={selected.created_at ? dateCourte(selected.created_at) : undefined}
@@ -586,7 +599,6 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
             }
           />
 
-          {/* Client */}
           <FicheCard icone="person" titre={tx("Client")}>
             <LigneFiche icone="badge" etiquette={tx("Nom")}>
               {(selected.client ?? selected.user)?.nom_complet ?? '—'}
@@ -596,7 +608,6 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
             </LigneFiche>
           </FicheCard>
 
-          {/* Livraison */}
           <FicheCard icone="local_shipping" titre={tx("Livraison")}>
             <LigneFiche icone="location_on" etiquette={tx("Point de repère")} large>
               {selected.landmark?.nom ?? selected.description_lieu ?? '—'}
@@ -620,7 +631,6 @@ export default function PlatformOrdersPanel({ source, title, hint, reloadKey = 0
             </LigneFiche>
           </FicheCard>
 
-          {/* Articles */}
           <FicheCard icone="shopping_bag" titre={tx("Articles")} colonnes={1}>
             {Array.isArray(selected.items) && selected.items.length > 0 ? (
               <>

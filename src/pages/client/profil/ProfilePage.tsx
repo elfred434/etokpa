@@ -1,3 +1,4 @@
+// Page profil client : édition des coordonnées, photo, points de repère et raccourcis.
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -24,7 +25,6 @@ import UserAvatar from '../../../components/shared/UserAvatar';
 import ProfileLandmarks from '../../../components/client/profil/ProfileLandmarks';
 import { displayPhoto, writeLocalPhoto } from '../../../utils/profilePhoto';
 
-/** Nombre de lignes montrées dans les aperçus du profil (commandes, paiements). */
 const PROFILE_LIST_LIMIT = 5;
 
 interface OrderItem {
@@ -37,7 +37,6 @@ interface OrderItem {
   active: boolean;
 }
 
-/** Ligne de l'aperçu « Mes paiements » du profil. */
 interface PaymentItem {
   id: number;
   orderId: number | null;
@@ -48,7 +47,6 @@ interface PaymentItem {
   tone: string;
 }
 
-/** Mapping statut backend → affichage (machine à états TOKPa). */
 const STATUT_LABELS: Record<string, { fr: string; en: string; active: boolean }> = {
   en_attente: { fr: 'En attente', en: 'Pending', active: true },
   en_preparation: { fr: 'En préparation', en: 'Preparing', active: true },
@@ -57,7 +55,6 @@ const STATUT_LABELS: Record<string, { fr: string; en: string; active: boolean }>
   annule: { fr: 'Annulée', en: 'Cancelled', active: false },
 };
 
-/** Mapping statut de paiement → libellé + pastille (aligné sur PaymentsPanel). */
 const PAYMENT_LABELS: Record<string, { fr: string; en: string; tone: string }> = {
   en_attente: { fr: 'Paiement en attente', en: 'Payment pending', tone: 'bg-bg-secondary text-text-secondary' },
   reussi: { fr: 'Paiement réussi', en: 'Payment successful', tone: 'bg-success-light text-success' },
@@ -65,16 +62,7 @@ const PAYMENT_LABELS: Record<string, { fr: string; en: string; tone: string }> =
   rembourse: { fr: 'Paiement remboursé', en: 'Payment refunded', tone: 'bg-primary-tint text-primary-dark' },
 };
 
-/**
- * ProfilePage — données 100 % backend :
- *   - GET /api/profile            → infos utilisateur
- *   - PUT /api/profile            → modification identité
- *   - POST /api/auth/change-password
- *   - GET /api/orders             → 5 dernières commandes (statuts réels)
- *   - GET /api/payments           → 5 derniers paiements du compte
- * Les repères personnels sont lus et modifiés depuis ProfileLandmarks; le client
- * choisit toujours un point de livraison de zone pour chaque commande.
- */
+// Composant de la page Profile : gère le chargement des données et le rendu.
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { language, isFr } = useLanguage();
@@ -85,13 +73,11 @@ export default function ProfilePage() {
   const [recentPayments, setRecentPayments] = useState<PaymentItem[]>([]);
   const [orderSheet, setOrderSheet] = useState<OrderItem | null>(null);
   const [paymentSheet, setPaymentSheet] = useState<PaymentItem | null>(null);
-  // Nombre total de commandes — GET /dashboard (GET /orders est paginé par 15)
   const [dashCount, setDashCount] = useState<number | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const refreshTick = useGlobalRefreshTick();
 
-  // Modals
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [formPrenom, setFormPrenom] = useState('');
   const [formNomUser, setFormNomUser] = useState('');
@@ -105,6 +91,7 @@ export default function ProfilePage() {
   const [pwConfirm, setPwConfirm] = useState('');
   const [pwError, setPwError] = useState<string | null>(null);
 
+  // Récupère et normalise les données pour loadProfile.
   const loadProfile = async () => {
     try {
       const res = await authApi.getProfile();
@@ -118,7 +105,7 @@ export default function ProfilePage() {
     }
   };
 
-  // Chargement initial : profil + commandes
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!isAuthenticated) return;
     if (!silentRefreshActive()) setIsDataLoading(true);
@@ -161,8 +148,6 @@ export default function ProfilePage() {
       })
       .catch((err) => alertApiError(err, 'profile-dashboard'));
 
-    // GET /payments renvoie la liste complète des paiements du compte : on la
-    // garde entière (pour le compteur) et l'aperçu en affiche les 5 premiers.
     const p4 = paymentsApi
       .listMine()
       .then((res) => {
@@ -240,7 +225,7 @@ export default function ProfilePage() {
   const orderCount = !role || role === 'client' ? (dashCount ?? recentOrders.length) : recentOrders.length;
   const paymentCount = recentPayments.length;
 
-  // ---- Modification du profil (PUT /profile) ----
+  // Gère l’action utilisateur OpenEditProfile.
   const handleOpenEditProfile = () => {
     setFormPrenom(profile?.prenom ?? '');
     setFormNomUser(profile?.nom ?? '');
@@ -250,6 +235,7 @@ export default function ProfilePage() {
     setEditProfileOpen(true);
   };
 
+  // Gère l’action utilisateur SaveProfile.
   const handleSaveProfile = async (e: FormEvent) => {
     e.preventDefault();
     const email = formEmail.trim();
@@ -298,7 +284,7 @@ export default function ProfilePage() {
     }
   };
 
-  // ---- Changement de mot de passe (POST /auth/change-password) ----
+  // Gère l’action utilisateur ChangePassword.
   const handleChangePassword = async (e: FormEvent) => {
     e.preventDefault();
     setPwError(null);
@@ -329,12 +315,14 @@ export default function ProfilePage() {
     }
   };
 
+  // Gère l’action utilisateur Logout.
   const handleLogout = async () => {
     await authApi.logout();
     toast.success(isFr ? tx("Déconnexion effectuée") : 'Logged out');
     navigate({ to: '/connexion' });
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
       <ClientNavbar />
@@ -344,7 +332,6 @@ export default function ProfilePage() {
           <ProfilePageSkeleton label={tx('Chargement du profil…')} />
         ) : (
           <>
-            {/* PROFILE HEADER */}
             <section className="bg-bg-card rounded-[14px] p-lg border border-border-default flex flex-col sm:flex-row items-start sm:items-center justify-between gap-md mb-md shadow-xs lg:col-span-2 lg:mb-0">
               <div className="flex items-center gap-md">
                 <UserAvatar
@@ -377,7 +364,6 @@ export default function ProfilePage() {
               </button>
             </section>
 
-            {/* STATS (calculées sur les données API réelles) */}
             <section className="grid grid-cols-2 gap-md mb-md lg:col-span-2 lg:mb-0">
               <div className="bg-bg-card p-md rounded-[10px] border border-border-default flex flex-col items-center justify-center text-center shadow-xs">
                 <span className="font-h2 text-h2 text-text-main font-bold">{orderCount}</span>
@@ -393,7 +379,6 @@ export default function ProfilePage() {
               </div>
             </section>
 
-            {/* ORDERS SECTION */}
             <section className="mb-md lg:mb-0">
               <div className="flex items-center justify-between mb-sm">
                 <h3 className="font-h3 text-h3 text-text-main font-bold">
@@ -446,7 +431,6 @@ export default function ProfilePage() {
               )}
             </section>
 
-            {/* PAYMENTS SECTION — 5 derniers paiements du compte */}
             <section className="mb-md lg:mb-0">
               <div className="flex items-center justify-between mb-sm">
                 <h3 className="font-h3 text-h3 text-text-main font-bold">
@@ -501,7 +485,6 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* SECURITY & SETTINGS */}
             <section className="mb-xl lg:col-span-2 lg:mb-0">
               <h3 className="font-h3 text-h3 text-text-main mb-sm font-bold">
                 {isFr ? tx("Paramètres & Sécurité") : 'Settings & Security'}
@@ -563,7 +546,6 @@ export default function ProfilePage() {
         )}
       </main>
 
-      {/* Modal Edit Profile (PUT /api/profile) */}
       {editProfileOpen && (
         <DialogFrame
           icon="edit"
@@ -643,7 +625,6 @@ export default function ProfilePage() {
         </DialogFrame>
       )}
 
-      {/* Modal Change Password (POST /api/auth/change-password) */}
       {pwModalOpen && (
         <DialogFrame
           icon="lock"

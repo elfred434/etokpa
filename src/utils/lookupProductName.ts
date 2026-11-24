@@ -1,9 +1,10 @@
+// Résout et met en cache le nom d’un produit à partir de son identifiant.
 import { catalogApi } from '../services/api';
 import { unwrap } from '../services/api/unwrap';
 
 const cache = new Map<number, string>();
 
-/** GET /products/{id} est public : admin et manager peuvent l'appeler. */
+// Helper lookupProductName : réalise le traitement métier associé.
 export async function lookupProductName(id: number): Promise<string> {
   const cached = cache.get(id);
   if (cached) return cached;

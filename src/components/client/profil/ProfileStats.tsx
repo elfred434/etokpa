@@ -1,12 +1,10 @@
+// Cartes statistiques résumant l’activité du client (commandes, économies).
 import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
-
-/**
- * ProfileStats — Cartes de statistiques utilisateur (Commandes, Repères, Négociations).
- */
+// Composant React ProfileStats : prépare l’état et affiche son interface.
 export default function ProfileStats() {
   const { t, isFr } = useLanguage();
 
@@ -37,6 +35,7 @@ export default function ProfileStats() {
     },
   ];
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="mb-md grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-md">
       {stats.map((s) => (

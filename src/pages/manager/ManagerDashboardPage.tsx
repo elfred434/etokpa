@@ -1,3 +1,4 @@
+// Tableau de bord du manager présentant l’activité et les commandes récentes de sa zone.
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
@@ -13,7 +14,6 @@ import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 const STATUT_CLASS: Record<string, string> = {
@@ -26,15 +26,18 @@ const STATUT_CLASS: Record<string, string> = {
   'livree': 'bg-success-container text-on-surface',
 };
 
+// Helper orderOf : réalise le traitement métier associé.
 function orderOf(row: any) {
   const inner = row?.data && typeof row.data === 'object' && 'id' in row.data ? row.data : row;
   return inner ?? row;
 }
 
+// Helper statutClass : réalise le traitement métier associé.
 function statutClass(s: string) {
   return STATUT_CLASS[(s ?? '').toLowerCase()] ?? 'bg-bg-secondary text-text-secondary';
 }
 
+// Composant de la page ManagerDashboard : gère le chargement des données et le rendu.
 export default function ManagerDashboardPage() {
   useLanguage();
   const [stats, setStats] = useState<any>(null);
@@ -43,6 +46,7 @@ export default function ManagerDashboardPage() {
   const [loading, setLoading] = useState(true);
   const refreshTick = useGlobalRefreshTick();
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setLoading(true);
@@ -91,6 +95,7 @@ export default function ManagerDashboardPage() {
     },
   ];
 
+  // Retourne le rendu JSX du composant.
   return (
     <ManagerLayout currentPath="/manager">
       <div className="space-y-6">

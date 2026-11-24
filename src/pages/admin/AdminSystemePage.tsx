@@ -1,3 +1,4 @@
+// État du système, journaux en direct et santé des services backend.
 import { useDesignScript } from '../../utils/designRuntime';
 import DESIGN_SCRIPT from './_scripts/AdminSystemePage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
@@ -5,17 +6,15 @@ import MIcon from '../../components/shared/MIcon';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
-
+// Feuille de styles intégrée (DESIGN_CSS) injectée pour le rendu de la vue.
 const DESIGN_CSS = `@layer base{html,body{margin:0;padding:0;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}`;
 
-/**
- * AdminSystemePage — copie conforme statique du design Stitch (code.html).
- * Interactions : script du design exécuté via useDesignScript (comportement copié).
- */
+// Composant de la page AdminSysteme : gère le chargement des données et le rendu.
 export default function AdminSystemePage() {
   useLanguage();
   useDesignScript(DESIGN_SCRIPT);
 
+  // Retourne le rendu JSX du composant.
   return (
     <AdminLayout currentPath="/admin/systeme">
       <style>{DESIGN_CSS}</style>
@@ -45,7 +44,7 @@ export default function AdminSystemePage() {
           {tx("Annuler")}
         </button> <button className="px-4 py-2 rounded-lg bg-error hover:bg-error-dark text-white font-label text-label font-bold transition-all shadow-lg shadow-error/30" data-onclick="confirmKillSwitch()" type="button">
           {tx("COUPER TOUS LES FLUX")}
-        </button> </div> </div> </div> </div> 
+        </button> </div> </div> </div> </div>
     </AdminLayout>
   );
 }

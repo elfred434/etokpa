@@ -1,3 +1,4 @@
+// Gestion des commandes de la zone du manager et assignation aux livreurs disponibles.
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
@@ -17,15 +18,18 @@ import { filterLivreursDisponiblesDansZone } from '../../utils/managerAssignment
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// Helper zoneIdOf : réalise le traitement métier associé.
 function zoneIdOf(raw: unknown): number | null {
   const n = Number(raw);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+// Helper livreurZoneId : réalise le traitement métier associé.
 function livreurZoneId(l: any): number | null {
   return zoneIdOf(l?.profil?.zone_id ?? l?.profil?.zone?.id ?? l?.zone_id ?? l?.zone?.id);
 }
 
+// Composant de la page ManagerOrders : gère le chargement des données et le rendu.
 export default function ManagerOrdersPage() {
   useLanguage();
   const [reloadKey, setReloadKey] = useState(0);
@@ -37,6 +41,7 @@ export default function ManagerOrdersPage() {
   const [modalErr, setModalErr] = useState<string | null>(null);
   const refreshTick = useGlobalRefreshTick();
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     managerApi.getLivreurs()
@@ -49,6 +54,7 @@ export default function ManagerOrdersPage() {
   const livreursZone = filterLivreursDisponiblesDansZone(livreurs, zoneCommande);
   const nomZone = livreurs.find((l) => livreurZoneId(l) === zoneCommande)?.profil?.zone?.nom as string | undefined;
 
+  // Helper openAssignation : réalise le traitement métier associé.
   const openAssignation = (o: PlatformOrder) => {
     const z = zoneIdOf(o.landmark?.zone_id);
     const list = filterLivreursDisponiblesDansZone(livreurs, z);
@@ -57,6 +63,7 @@ export default function ManagerOrdersPage() {
     setLivreurChoisi(list.length === 1 ? String(list[0].id) : '');
   };
 
+  // Valide et transmet l’action confirmerAssignation.
   const confirmerAssignation = async () => {
     if (!assignation || assigning) return;
     if (!livreurChoisi) {
@@ -85,6 +92,7 @@ export default function ManagerOrdersPage() {
     }
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <ManagerLayout currentPath="/manager/commandes">
       <div className="space-y-6">

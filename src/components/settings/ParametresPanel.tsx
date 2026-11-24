@@ -1,29 +1,17 @@
+// Panneau partagé de sélection de langue et de thème.
 import MIcon from '../shared/MIcon';
 import { THEMES, useTheme } from '../../context/ThemeContext';
 import { LANGUAGES, useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
-/**
- * Paramètres — apparence (thème) et langue.
- *
- * Composant unique partagé par les quatre espaces : la page Paramètres du client
- * (`/parametres`) et les pages Paramètres déjà existantes de l'administration,
- * du livreur et du manager. Les deux réglages étaient auparavant deux pastilles
- * dans chaque barre de navigation ; ils sont désormais ici, en choix explicites
- * (voir plutôt qu'un bouton qui fait défiler).
- *
- * Aucun état local : le thème et la langue sont lus et écrits dans leurs
- * contextes (`ThemeContext`, `LanguageContext`), qui persistent le choix.
- */
+// Composant React ParametresPanel : prépare l’état et affiche son interface.
 export default function ParametresPanel({ desktopColumns = false }: { desktopColumns?: boolean }) {
   const { choix, effectif, setChoix } = useTheme();
   const { language, setLanguage } = useLanguage();
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className={desktopColumns ? 'flex flex-col gap-md lg:grid lg:grid-cols-2 lg:gap-lg' : 'flex flex-col gap-md'}>
-      {/* ---------------------------------------------------------------- */}
-      {/* Apparence : trois choix visibles, pas de cycle                    */}
-      {/* ---------------------------------------------------------------- */}
       <section className="rounded-[14px] border border-border-default bg-bg-card p-lg shadow-sm">
         <header className="mb-md flex items-center gap-md">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-tint text-primary-container">
@@ -64,9 +52,6 @@ export default function ParametresPanel({ desktopColumns = false }: { desktopCol
         </p>
       </section>
 
-      {/* ---------------------------------------------------------------- */}
-      {/* Langue : les cinq langues en liste                                */}
-      {/* ---------------------------------------------------------------- */}
       <section className="rounded-[14px] border border-border-default bg-bg-card p-lg shadow-sm">
         <header className="mb-md flex items-center gap-md">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-tint text-primary-container">

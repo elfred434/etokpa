@@ -1,4 +1,4 @@
-/** Données de la commande, gardées pour le retour FedaPay (rechargement complet, sans state React). */
+// Mémorise localement les informations de confirmation de paiement entre redirections.
 export interface ConfirmationMemory {
   orderId?: number;
   total?: number;
@@ -14,10 +14,12 @@ export interface ConfirmationMemory {
 const LAST_KEY = 'tokpa_confirmation';
 const MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
+// Helper keyFor : réalise le traitement métier associé.
 function keyFor(ref: string) {
   return `${LAST_KEY}:${ref}`;
 }
 
+// Récupère et normalise les données pour read.
 function read(key: string): ConfirmationMemory | null {
   try {
     const raw = localStorage.getItem(key);
@@ -30,6 +32,7 @@ function read(key: string): ConfirmationMemory | null {
   }
 }
 
+// Enregistre ou crée les données via saveConfirmation.
 export function saveConfirmation(payload: ConfirmationMemory): void {
   const data = { ...payload, savedAt: Date.now() };
   const raw = JSON.stringify(data);
@@ -37,7 +40,7 @@ export function saveConfirmation(payload: ConfirmationMemory): void {
   if (payload.paymentRef) localStorage.setItem(keyFor(String(payload.paymentRef)), raw);
 }
 
-/** Retrouve la commande du retour `?id=` FedaPay, sinon la dernière créée dans cet onglet. */
+// Récupère et normalise les données pour loadConfirmation.
 export function loadConfirmation(fedapayId?: string): ConfirmationMemory | null {
   if (fedapayId) {
     const byId = read(keyFor(fedapayId));
@@ -49,7 +52,7 @@ export function loadConfirmation(fedapayId?: string): ConfirmationMemory | null 
   return last;
 }
 
-/** Statut renvoyé par la page de paiement FedaPay (`?status=`). */
+// Helper statutFromFedaPayReturn : réalise le traitement métier associé.
 export function statutFromFedaPayReturn(status: string | undefined): 'reussi' | 'echoue' | 'en_attente' | null {
   const s = (status ?? '').toLowerCase();
   if (['approved', 'transferred', 'paid', 'reussi'].includes(s)) return 'reussi';

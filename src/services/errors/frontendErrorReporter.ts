@@ -1,3 +1,4 @@
+// Capture, déduplique et stocke les erreurs frontend inattendues pour le diagnostic.
 export type FrontendErrorSource =
   | 'api'
   | 'react-boundary'
@@ -33,6 +34,7 @@ const DEDUPE_WINDOW_MS = 30_000;
 let reports = readStoredReports();
 let removeGlobalHandlers: (() => void) | null = null;
 
+// Helper safeErrorType : réalise le traitement métier associé.
 function safeErrorType(error: unknown): string {
   if (!error || typeof error !== 'object') return 'UnknownError';
   const name = (error as { name?: unknown }).name;
@@ -41,6 +43,7 @@ function safeErrorType(error: unknown): string {
     : 'UnknownError';
 }
 
+// Helper safeStatus : réalise le traitement métier associé.
 function safeStatus(error: unknown, explicit?: number | null): number | undefined {
   const responseStatus = error && typeof error === 'object'
     ? (error as { response?: { status?: unknown } }).response?.status
@@ -51,7 +54,7 @@ function safeStatus(error: unknown, explicit?: number | null): number | undefine
     : undefined;
 }
 
-/** A route may contain IDs or email-like segments; omit query and fragment entirely. */
+// Helper safeRoute : réalise le traitement métier associé.
 function safeRoute(): string {
   try {
     if (typeof window === 'undefined') return '/';
@@ -61,7 +64,6 @@ function safeRoute(): string {
       try {
         decoded = decodeURIComponent(segment);
       } catch {
-        // Keep the original path segment, then apply the conservative rules below.
       }
       if (
         /^\d+$/.test(decoded) ||
@@ -80,15 +82,18 @@ function safeRoute(): string {
   }
 }
 
+// Helper makeReference : réalise le traitement métier associé.
 function makeReference(now: number): string {
   const suffix = Math.random().toString(36).slice(2, 7).toUpperCase().padEnd(5, '0');
   return `TKP-${now.toString(36).toUpperCase()}-${suffix}`;
 }
 
+// Helper reportKey : réalise le traitement métier associé.
 function reportKey(report: FrontendErrorReport): string {
   return [report.source, report.errorType, report.route, report.status ?? ''].join('|');
 }
 
+// Récupère et normalise les données pour readStoredReports.
 function readStoredReports(): FrontendErrorReport[] {
   try {
     if (typeof sessionStorage === 'undefined') return [];
@@ -112,30 +117,27 @@ function readStoredReports(): FrontendErrorReport[] {
   }
 }
 
+// Helper persistReports : réalise le traitement métier associé.
 function persistReports(): void {
   try {
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(reports.slice(-MAX_REPORTS)));
     }
   } catch {
-    // Private browsing or disabled storage: the in-memory queue still works.
   }
 }
 
+// Helper emitReport : réalise le traitement métier associé.
 function emitReport(report: FrontendErrorReport): void {
   try {
     if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
       window.dispatchEvent(new CustomEvent('tokpa:frontend-error', { detail: { ...report } }));
     }
   } catch {
-    // Error reporting must never create a second application error.
   }
 }
 
-/**
- * Capture a safe, local diagnostic reference. Raw messages, stacks, URLs, request
- * bodies, user identity and credentials are deliberately never stored or emitted.
- */
+// Helper captureFrontendError : réalise le traitement métier associé.
 export function captureFrontendError(
   error: unknown,
   context: FrontendErrorContext,
@@ -180,39 +182,41 @@ export function captureFrontendError(
   return { ...candidate };
 }
 
-/** Safe summaries held only in memory/sessionStorage for this browser tab. */
+// Récupère et normalise les données pour getFrontendErrorReports.
 export function getFrontendErrorReports(): FrontendErrorReport[] {
   return reports.map((report) => ({ ...report }));
 }
 
+// Supprime ou nettoie les éléments via clearFrontendErrorReports.
 export function clearFrontendErrorReports(): void {
   reports = [];
   try {
     if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(STORAGE_KEY);
   } catch {
-    // Ignore storage failures.
   }
 }
 
+// Vérifie la condition métier isExpectedCancellation.
 function isExpectedCancellation(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
   const value = error as { name?: unknown; code?: unknown };
   return value.name === 'AbortError' || value.name === 'CanceledError' || value.code === 'ERR_CANCELED';
 }
 
-/** Capture uncaught runtime errors without suppressing the browser's dev diagnostics. */
+// Helper installGlobalErrorHandlers : réalise le traitement métier associé.
 export function installGlobalErrorHandlers(): () => void {
   if (typeof window === 'undefined') return () => undefined;
   if (removeGlobalHandlers) return removeGlobalHandlers;
 
+  // Gère l’action utilisateur Error.
   const onError = (event: Event) => {
     const errorEvent = event as ErrorEvent;
-    // Ignore failed images/fonts/etc.; capture uncaught script errors only.
     if (errorEvent.target !== window && !errorEvent.error) return;
     captureFrontendError(errorEvent.error, { source: 'window' });
     if (!import.meta.env.DEV) event.preventDefault();
   };
 
+  // Gère l’action utilisateur UnhandledRejection.
   const onUnhandledRejection = (event: Event) => {
     const rejectionEvent = event as PromiseRejectionEvent;
     if (isExpectedCancellation(rejectionEvent.reason)) return;
@@ -223,6 +227,7 @@ export function installGlobalErrorHandlers(): () => void {
   window.addEventListener('error', onError);
   window.addEventListener('unhandledrejection', onUnhandledRejection);
 
+  // Helper cleanup : réalise le traitement métier associé.
   const cleanup = () => {
     window.removeEventListener('error', onError);
     window.removeEventListener('unhandledrejection', onUnhandledRejection);

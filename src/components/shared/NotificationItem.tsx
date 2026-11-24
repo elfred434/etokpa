@@ -1,3 +1,4 @@
+// Ligne individuelle d’une notification avec icône, message et horodatage.
 import clsx from 'clsx';
 import {
   IconShoppingBag,
@@ -10,7 +11,6 @@ import type { AppNotification, NotificationType } from '../../types/models';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
-
 const STYLES: Record<NotificationType, { icon: TablerIcon; circle: string }> = {
   order: { icon: IconShoppingBag, circle: 'bg-success-light text-success-dark' },
   promo: { icon: IconTag, circle: 'bg-amber-light text-amber-text' },
@@ -20,16 +20,16 @@ const STYLES: Record<NotificationType, { icon: TablerIcon; circle: string }> = {
 
 interface NotificationItemProps {
   notification: AppNotification;
-  /** Version compacte pour le dropdown de la cloche */
   compact?: boolean;
   onClick?: () => void;
 }
 
-/** Ligne de notification (maquette historique) : cercle icône, titre, message, temps, pastille non lue. */
+// Composant React NotificationItem : prépare l’état et affiche son interface.
 export default function NotificationItem({ notification, compact, onClick }: NotificationItemProps) {
   useLanguage();
   const { icon: Icon, circle } = STYLES[notification.type];
 
+  // Retourne le rendu JSX du composant.
   return (
     <button
       type="button"

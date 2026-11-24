@@ -1,3 +1,4 @@
+// Page des préférences client (langue et thème d’affichage).
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import ParametresPanel from '../../../components/settings/ParametresPanel';
@@ -5,16 +6,11 @@ import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
-/**
- * Paramètres (espace client) — `/parametres`.
- *
- * Regroupe les deux réglages qui encombraient la barre de navigation :
- * le thème (clair / sombre / système) et la langue (fr → pt). Accessible par
- * l'icône ⚙ de la barre et par l'entrée « Paramètres » de la page Profil.
- */
+// Composant de la page Parametres : gère le chargement des données et le rendu.
 export default function ParametresPage() {
   useLanguage();
   useAuthGuard();
+  // Retourne le rendu JSX du composant.
   return (
     <div className="min-h-screen bg-warm pb-24">
       <ClientNavbar />

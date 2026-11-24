@@ -1,9 +1,11 @@
+// Champ téléphone préfixé (+229 Bénin) avec drapeau.
 import { useId } from 'react';
 import type { InputHTMLAttributes } from 'react';
 import clsx from 'clsx';
 
-/** Drapeau du Bénin en SVG inline (vert / jaune / rouge). */
+// Composant React BeninFlag : prépare l’état et affiche son interface.
 function BeninFlag() {
+  // Retourne le rendu JSX du composant.
   return (
     <svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true" className="shrink-0 rounded-[2px]">
       <rect width="8" height="14" fill="#008751" />
@@ -18,11 +20,12 @@ interface PhoneInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 't
   error?: boolean;
 }
 
-/** Téléphone béninois : préfixe +229 séparé par une bordure verticale (maquette inscription). */
+// Composant React PhoneInput : prépare l’état et affiche son interface.
 export default function PhoneInput({ label, error, className, id, ...rest }: PhoneInputProps) {
   const autoId = useId();
   const inputId = id ?? autoId;
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="w-full">
       <label htmlFor={inputId} className="label">

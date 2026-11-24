@@ -1,3 +1,4 @@
+// Tableau de bord administrateur : indicateurs globaux, revenus par période et activité récente.
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -16,8 +17,6 @@ import { buildReceiptData } from '../../services/receipts/receiptData';
 import { downloadReceiptPdf } from '../../services/receipts/receiptPdf';
 import { localeRecu, receiptLabels } from '../../services/receipts/receiptLabels';
 
-
-/** Activité récente — données statiques du design Stitch (copie conforme). */
 interface Activity {
   id: string;
   orderId: number;
@@ -42,25 +41,19 @@ interface Activity {
   cta: string;
 }
 
-
-/** Couleurs du thème pour l'anneau « Ventes par Zone » (3 premières zones + « Autres »). */
 const ZONE_COLORS = [
   { cls: 'bg-primary-container', css: 'var(--color-primary-container)' },
   { cls: 'bg-secondary-container', css: 'var(--color-secondary-container)' },
   { cls: 'bg-tertiary-container', css: 'var(--color-tertiary-container)' },
   { cls: 'bg-border-default', css: 'var(--color-border-default)' },
 ];
-/** Seuil « stock faible » (même règle que le catalogue client : 1 à 5, 0 = rupture). */
 const LOW_STOCK = 5;
-/** GET /admin/orders est paginé par 20 sans per_page : on parcourt au plus 25 pages (500 commandes). */
 const MAX_ORDER_PAGES = 25;
 
+// Helper dayKey : réalise le traitement métier associé.
 const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 
-/**
- * AdminDashboardPage — « Tableau de bord global » — copie conforme statique du
- * design Stitch (`tableau_de_bord_global_admin_tokpa/code.html`).
- */
+// Composant de la page AdminDashboard : gère le chargement des données et le rendu.
 export default function AdminDashboardPage() {
   useLanguage();
   const navigate = useNavigate();
@@ -68,19 +61,19 @@ export default function AdminDashboardPage() {
   const { rows: commandes, err, loading } = useLiveRows(() => adminApi.getOrders({ page: 1 }));
   const refreshTick = useGlobalRefreshTick();
   const [dash, setDash] = useState<any>(null);
+  // Composant React SC : prépare l’état et affiche son interface.
   const SC = (s: string) => (s || '').includes('attente') ? 'bg-amber-light text-amber-text'
     : (s || '').includes('annul') || (s || '').includes('litige') ? 'bg-error-container text-error'
     : (s || '').includes('term') || (s || '').includes('livr') ? 'bg-success-light text-success'
     : 'bg-info-light text-info';
-  // Zones (id → nom) : les commandes ne portent que landmark.zone_id.
   const [zoneNames, setZoneNames] = useState<Map<number, string>>(new Map());
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     adminApi
       .getZones()
       .then((r: any) => setZoneNames(new Map(listOf(unwrap(r)).map((z: any) => [Number(z.id), String(z.nom ?? '—')]))))
       .catch(() => undefined);
   }, [refreshTick]);
-  // OrderResource enveloppe chaque commande dans { success, message, data } : on déballe.
   const orders = commandes.map((r: any) => r?.data ?? r);
   const activities: Activity[] = orders.slice(0, 6).map((o: any) => ({
     id: `CMD-${o.id}`,
@@ -92,7 +85,7 @@ export default function AdminDashboardPage() {
     statusColor: SC(o.statut),
     date: (o.created_at ?? '').slice(0, 10),
     time: (o.created_at ?? '').slice(11, 16),
-    userName: o.client?.nom_complet ?? '—', // OrderResource n'expose pas encore le client
+    userName: o.client?.nom_complet ?? '—',
     userRole: 'client',
     userPhone: o.client?.telephone ?? '—',
     userZone: zoneNames.get(Number(o.landmark?.zone_id)) ?? o.landmark?.nom ?? '—',
@@ -105,16 +98,15 @@ export default function AdminDashboardPage() {
     audit: `Commande n°${o.id}`,
     cta: tx("Voir la commande"),
   }));
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     adminApi.getDashboard().then((r: any) => setDash(unwrap(r))).catch(() => undefined);
   }, [refreshTick]);
-  // KPI réels (AdminDashboardController : ca, commandes, utilisateurs_actifs, par_statut)
   const parStatut: Record<string, number> = dash?.par_statut ?? {};
   const nbLivrees = Number(parStatut.livre ?? 0);
   const nbNonAnnulees = Number(dash?.commandes ?? 0) - Number(parStatut.annule ?? 0);
   const tauxLivraison = dash && nbNonAnnulees > 0 ? `${((nbLivrees / nbNonAnnulees) * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %` : '—';
 
-  // « Croissance des ventes » + « Ventes par Zone » : calculés depuis les vraies commandes de la période
   const [range, setRange] = useState<1 | 7 | 30>(7);
   const [periodOrders, setPeriodOrders] = useState<any[] | null>(null);
   const [capped, setCapped] = useState(false);
@@ -125,6 +117,7 @@ export default function AdminDashboardPage() {
     d.setDate(d.getDate() - (range - 1));
     return d;
   }, [range]);
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) {
@@ -209,9 +202,9 @@ export default function AdminDashboardPage() {
     return `conic-gradient(${parts.join(', ')})`;
   })();
 
-  // « Alertes Système » : vrais produits indisponibles ou en stock faible (GET /admin/products) ; plus d'alertes inventées
   const [lowStock, setLowStock] = useState<{ id: number; nom: string; stock: number | null }[] | null>(null);
   const [lowStockErr, setLowStockErr] = useState<string | null>(null);
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     adminApi
       .getProducts({ per_page: 100 })
@@ -235,6 +228,7 @@ export default function AdminDashboardPage() {
   }, [refreshTick]);
   const [selected, setSelected] = useState<Activity | null>(null);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!selected?.lineItems?.length) return;
     const lines = selected.lineItems;
@@ -265,6 +259,7 @@ export default function AdminDashboardPage() {
     return () => { alive = false; };
   }, [selected]);
 
+  // Retourne le rendu JSX du composant.
   return (
     <AdminLayout currentPath="/admin">
       {err && (
@@ -274,7 +269,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
       {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
-      {/* KPI SECTION */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
         <div className="stat-card-gradient p-lg rounded-lg border border-border-default hover:shadow-lg transition-all duration-300">
           <div className="flex justify-between items-start mb-sm">
@@ -348,9 +342,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* CHARTS SECTION */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg">
-        {/* Croissance des ventes */}
         <div className="lg:col-span-2 bg-bg-card p-lg rounded-lg border border-border-default">
           <div className="flex justify-between items-center mb-xl">
             <div>
@@ -396,7 +388,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Ventes par Zone */}
         <div className="bg-bg-card p-lg rounded-lg border border-border-default">
           <h3 className="font-h2 text-h2 text-on-surface mb-xl">{tx("Ventes par Zone")}</h3>
           <div className="relative h-[220px] flex items-center justify-center">
@@ -426,9 +417,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* LOWER SECTION: TABLE & ALERTS */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-lg items-start">
-        {/* RECENT ACTIVITIES TABLE */}
         <div className="xl:col-span-3 bg-bg-card rounded-lg border border-border-default overflow-hidden shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-default p-4 sm:p-lg">
             <h3 className="font-h2 text-h2 text-on-surface">{tx("Activités Récentes de la Plateforme")}</h3>
@@ -473,7 +462,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* SYSTEM ALERTS */}
         <div className="space-y-md">
           <div className="bg-bg-card p-lg rounded-lg border border-border-default border-l-4 border-l-error">
             <div className="flex items-center gap-sm mb-md text-error">
@@ -510,7 +498,6 @@ export default function AdminDashboardPage() {
             </ul>
           </div>
 
-          {/* Support card */}
           <div className="bg-primary text-white p-lg rounded-lg shadow-md relative overflow-hidden">
             <div className="relative z-10">
               <h4 className="font-h3 text-h3 font-bold mb-xs">{tx("Besoin d'aide ?")}</h4>
@@ -533,7 +520,6 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* MODALE DÉTAIL ACTIVITÉ — copie conforme du design */}
       {selected && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
@@ -545,7 +531,6 @@ export default function AdminDashboardPage() {
             className="bg-bg-card rounded-xl shadow-2xl border border-border-default w-full max-w-[600px] max-h-[90vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* En-tête */}
             <div className="px-6 py-4 border-b border-border-default flex items-center justify-between bg-surface-container-low shrink-0">
               <div className="flex items-center gap-2">
                 <MIcon name="receipt_long" className="text-primary text-xl" />
@@ -568,7 +553,6 @@ export default function AdminDashboardPage() {
               </button>
             </div>
 
-            {/* Corps */}
             <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div className="flex items-start justify-between gap-4 pb-3 border-b border-border-default">
                 <div>
@@ -587,7 +571,6 @@ export default function AdminDashboardPage() {
                 </span>
               </div>
 
-              {/* Profil de l'acteur */}
               <div className="bg-bg-secondary p-3.5 rounded-lg border border-border-default space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
@@ -614,7 +597,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Montant / Frais */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-surface-container-low p-3 rounded-lg border border-border-default">
                   <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold block mb-1">
@@ -632,7 +614,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Articles */}
               <div className="space-y-1.5">
                 <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
                   <MIcon name="shopping_bag" className="text-sm" />
@@ -643,7 +624,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Journal d'audit */}
               <div className="space-y-1 pt-1">
                 <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
                   <MIcon name="verified" className="text-sm" />
@@ -655,7 +635,6 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Pied de modale */}
             <div className="px-6 py-4 bg-bg-secondary border-t border-border-default flex items-center justify-between gap-3 shrink-0">
               <button
                 type="button"

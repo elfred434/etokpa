@@ -1,3 +1,4 @@
+// Menu latéral de navigation admin et super-admin (sections Métier et DevOps).
 import { Link, useRouterState } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 import LogoutButton from '../../shared/LogoutButton';
@@ -5,7 +6,6 @@ import { currentRole, currentUserName, initialsOf, useAuthRevision } from '../..
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import { usePreservedScroll } from '../../../hooks/usePreservedScroll';
-
 
 interface AdminSidebarProps {
   currentPath?: string;
@@ -20,7 +20,6 @@ interface NavItem {
   to: string;
 }
 
-/** Gestion Métier (Admin) + DevOps (super-admin) — libellés des designs Stitch. */
 const METIER_ITEMS: NavItem[] = [
   { key: 'dashboard', icon: 'dashboard', label: 'Dashboard Global', to: '/admin' },
   { key: 'commandes', icon: 'shopping_cart', label: 'Commandes', to: '/admin/commandes' },
@@ -48,10 +47,7 @@ const ACTIVE_CLASS =
 const IDLE_CLASS =
   'flex items-center gap-3 px-4 py-3 text-white transition-colors hover:bg-primary-hover/10 rounded-lg active:scale-[0.97]';
 
-/**
- * AdminSidebar — chrome latéral admin (design Stitch) : groupe Gestion Métier
- * + groupe DevOps & Core Engine (super-admin) + bloc profil.
- */
+// Composant de mise en page AdminSidebar.
 export default function AdminSidebar({ currentPath, open = false, onClose }: AdminSidebarProps) {
   useLanguage();
   useAuthRevision();
@@ -60,6 +56,7 @@ export default function AdminSidebar({ currentPath, open = false, onClose }: Adm
   const asideRef = usePreservedScroll<HTMLElement>('admin-sidebar-aside');
   const navRef = usePreservedScroll<HTMLElement>('admin-sidebar-nav');
 
+  // Helper renderItem : réalise le traitement métier associé.
   const renderItem = (item: NavItem) => {
     const active =
       item.to === '/admin'
@@ -79,12 +76,14 @@ export default function AdminSidebar({ currentPath, open = false, onClose }: Adm
     );
   };
 
+  // Helper groupLabel : réalise le traitement métier associé.
   const groupLabel = (label: string) => (
     <p className="px-4 pt-3 pb-1 font-secondary text-micro uppercase tracking-widest opacity-50 text-surface-variant">
       {label}
     </p>
   );
 
+  // Retourne le rendu JSX du composant.
   return (
     <aside
       ref={asideRef}
@@ -115,7 +114,6 @@ export default function AdminSidebar({ currentPath, open = false, onClose }: Adm
         className="mt-auto pt-md border-t border-white/10 px-2"
         style={{ borderColor: 'rgba(249, 115, 22, 0.15)' }}
       >
-        {/* Bascule vers l'espace client (l'admin y a accès) */}
         <Link to="/manager" className={IDLE_CLASS} onClick={onClose}>
           <MIcon name="supervisor_account" />
           <span className="font-secondary text-body">{tx("Espace manager")}</span>
@@ -128,7 +126,6 @@ export default function AdminSidebar({ currentPath, open = false, onClose }: Adm
           <MIcon name="account_circle" />
           <span className="font-secondary text-body">{tx("Profil")}</span>
         </Link>
-        {/* Utilisateur réellement connecté (plus de profil générique) */}
         <Link
           to="/profil"
           title={tx("Ouvrir le profil")}

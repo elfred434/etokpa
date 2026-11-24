@@ -1,3 +1,4 @@
+// Composant image affichant automatiquement un repli visuel en cas d’erreur de chargement.
 import { useState, type ReactNode } from "react";
 
 type ImageWithFallbackProps = {
@@ -8,7 +9,7 @@ type ImageWithFallbackProps = {
   loading?: "eager" | "lazy";
 };
 
-/** Image de catalogue tolérante aux URL absentes ou en échec, avec rendu de repli fourni par l'appelant. */
+// Composant React ImageWithFallback : prépare l’état et affiche son interface.
 export default function ImageWithFallback({
   src,
   alt,
@@ -21,6 +22,7 @@ export default function ImageWithFallback({
 
   if (!source || failedSource === source) return fallback;
 
+  // Retourne le rendu JSX du composant.
   return (
     <img
       src={source}

@@ -1,3 +1,4 @@
+// Initialise et gère la connexion Laravel Echo / Reverb pour les canaux privés temps réel.
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { apiOriginFromBase } from '../../utils/apiBaseUrl';
@@ -10,36 +11,14 @@ declare global {
   }
 }
 
-/**
- * Client temps réel TOKPa — Laravel Echo (Reverb, protocole Pusher).
- *
- * Le backend (Laravel 11) expose :
- *  - Broadcast::routes(['middleware' => ['auth:sanctum']])
- *    → POST {API_ORIGIN}/broadcasting/auth (Bearer token Sanctum)
- *  - Canaux privés :
- *      tracking.{orderId}        (propriétaire | livreur | admin)
- *      chat.{conversationId}     (participants | admin)
- *      notifications.{userId}    (l'utilisateur)
- *      manager.{zoneId}          (admin | manager de la zone)
- *  - Événements :
- *      order.status.changed     {order_id, statut, previous}
- *      livreur.position.updated {order_id, livreur_id, latitude, longitude, horodatage}
- *      message.sent             {id, conversation_id, sender_id, contenu, created_at}
- *      delivery.assigned        (modèle Commande)
- *      budget.responded         (modèle BudgetPropose)
- *      payment.confirmed        (modèle Payment)
- *
- * `window.Echo` est exposé pour rétrocompatibilité avec les hooks existants.
- */
-
 const env = import.meta.env as Record<string, string | undefined>;
 
-/** Origine de l'API sans le préfixe /api (ex. http://localhost:8000). */
+// Récupère et normalise les données pour getApiOrigin.
 export function getApiOrigin(): string {
   return apiOriginFromBase(env.VITE_API_BASE_URL);
 }
 
-/** Permet de désactiver Echo lorsque le backend ne publie pas de WebSocket. */
+// Vérifie la condition métier isReverbEnabled.
 export function isReverbEnabled(value = env.VITE_REVERB_ENABLED): boolean {
   return value?.trim().toLowerCase() !== 'false';
 }
@@ -53,6 +32,7 @@ export interface ReverbConfig {
   appId: string;
 }
 
+// Récupère et normalise les données pour getReverbConfig.
 export function getReverbConfig(): ReverbConfig {
   const isHttps = typeof window !== 'undefined' && window.location?.protocol === 'https:';
   const defaultScheme: 'ws' | 'wss' = isHttps ? 'wss' : 'ws';
@@ -73,10 +53,7 @@ export function getReverbConfig(): ReverbConfig {
 
 let boundToken: string | null = null;
 
-/**
- * Démarre (ou renouvelle) la connexion Reverb avec le token Sanctum courant.
- * Sans token → déconnecte et retourne null.
- */
+// Helper initEcho : réalise le traitement métier associé.
 export function initEcho(): Echo<'pusher'> | null {
   if (!isReverbEnabled()) {
     shutdownEcho();
@@ -84,7 +61,6 @@ export function initEcho(): Echo<'pusher'> | null {
   }
 
   let token = localStorage.getItem('tokpa_token');
-  // Token démo legacy (avant l'alignement API) : plus valide, on le purge proprement.
   if (token === 'demo_token_sanctum_123') {
     localStorage.removeItem('tokpa_token');
     localStorage.removeItem('tokpa_user');
@@ -104,12 +80,6 @@ export function initEcho(): Echo<'pusher'> | null {
     const { host, port, wssPort, scheme, key } = getReverbConfig();
     (window as unknown as { Pusher: typeof Pusher }).Pusher = Pusher;
 
-    // IMPORTANT (pusher-js 8.x) :
-    //  - `cluster` est OBLIGATOIRE dans les options (sinon throw « Options object
-    //    must provide a cluster ») — Reverb l'ignore quand host/port sont donnés.
-    //    (Le broadcaster « reverb » de laravel-echo 2.x l'injecte automatiquement ;
-    //    on le passe explicitement pour garder le typage Echo<'pusher'>.)
-    //  - pusher-js lit `host`/`port` (PAS `wsHost`/`wsPort`) pour cibler le serveur.
     window.Echo = new Echo({
       broadcaster: 'pusher',
       key,
@@ -130,32 +100,30 @@ export function initEcho(): Echo<'pusher'> | null {
     boundToken = token;
     return window.Echo;
   } catch (error) {
-    // Le temps réel est un confort : un échec ne doit JAMAIS bloquer le rendu de l'app.
     captureFrontendError(error, { source: 'realtime' });
     shutdownEcho();
     return null;
   }
 }
 
-/** Coupe la connexion Reverb (déconnexion / perte de token). */
+// Helper shutdownEcho : réalise le traitement métier associé.
 export function shutdownEcho(): void {
   if (window.Echo) {
     try {
       window.Echo.disconnect();
     } catch {
-      /* noop */
     }
     window.Echo = undefined;
   }
   boundToken = null;
 }
 
-/** Renvoie l'instance Echo courante (sans la créer). */
+// Helper windowEcho : réalise le traitement métier associé.
 export function windowEcho(): Echo<'pusher'> | null {
   return window.Echo ?? null;
 }
 
-/** Écoute un événement nommé sur un canal privé (helper typé). */
+// Helper listenPrivate : réalise le traitement métier associé.
 export function listenPrivate(channel: string, event: string, callback: (payload: unknown) => void) {
   const echo = window.Echo;
   if (!echo) return { stop: () => undefined };

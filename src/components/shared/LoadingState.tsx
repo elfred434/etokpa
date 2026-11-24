@@ -1,3 +1,4 @@
+// Affiche le squelette de chargement adapté à chaque type d’écran.
 import clsx from 'clsx';
 import MIcon from './MIcon';
 import { useLanguage } from '../../context/LanguageContext';
@@ -44,10 +45,7 @@ export type LoadingVariant =
   | 'detail'
   | 'tracking';
 
-/**
- * État de chargement adaptatif : affiche un squelette fidèle à la mise en page
- * de la section ou page demandée.
- */
+// Composant React LoadingState : prépare l’état et affiche son interface.
 export default function LoadingState({
   label,
   className,
@@ -93,6 +91,7 @@ export default function LoadingState({
     );
   }
 
+  // Retourne le rendu JSX du composant.
   return (
     <div
       role="status"

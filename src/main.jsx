@@ -1,3 +1,4 @@
+// Point d’entrée de l’application React : monte le routeur, le store Redux et les contextes globaux.
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from '@tanstack/react-router';
@@ -13,11 +14,8 @@ import { initEcho } from './services/realtime/echo';
 import AppErrorBoundary from './components/errors/AppErrorBoundary';
 import { captureFrontendError, installGlobalErrorHandlers } from './services/errors/frontendErrorReporter';
 
-// Runtime faults are captured as safe, session-local references. No raw exception
-// message, stack, URL parameters or request credentials are sent or persisted.
 installGlobalErrorHandlers();
 
-// Realtime is optional and must never prevent the application from rendering.
 try {
   initEcho();
 } catch (error) {

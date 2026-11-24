@@ -1,3 +1,4 @@
+// Champ mot de passe avec bouton d’affichage/masquage.
 import { useState } from 'react';
 import type { InputHTMLAttributes, ReactNode } from 'react';
 import { IconEye, IconEyeOff, IconLock } from '@tabler/icons-react';
@@ -7,11 +8,10 @@ interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
   label: string;
   error?: boolean;
   labelRight?: ReactNode;
-  /** Maquette inscription étape 2 : champ sans cadenas à gauche */
   showLockIcon?: boolean;
 }
 
-/** Champ mot de passe : cadenas à gauche (optionnel), bascule œil / œil barré à droite. */
+// Composant React PasswordInput : prépare l’état et affiche son interface.
 export default function PasswordInput({
   label,
   error,
@@ -21,6 +21,7 @@ export default function PasswordInput({
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
 
+  // Retourne le rendu JSX du composant.
   return (
     <TextField
       label={label}

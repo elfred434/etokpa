@@ -1,3 +1,4 @@
+// Gestion de toutes les commandes de la plateforme (recherche, filtres, transitions de statut, assignation).
 import { useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -19,7 +20,6 @@ import { tr, tx } from '../../i18n/tx';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-/** Toutes les commandes de la plateforme — GET /admin/orders, sans filtre de zone par défaut. */
 const ACTIONS_PAR_STATUT: Record<string, Array<{ statut: AdminOrderStatus; label: string }>> = {
   en_attente: [
     { statut: 'en_preparation', label: 'Démarrer la préparation' },
@@ -32,6 +32,7 @@ const ACTIONS_PAR_STATUT: Record<string, Array<{ statut: AdminOrderStatus; label
   en_livraison: [{ statut: 'livre', label: 'Marquer comme livrée' }],
 };
 
+// Composant de la page AdminOrders : gère le chargement des données et le rendu.
 export default function AdminOrdersPage() {
   useLanguage();
   const navigate = useNavigate();
@@ -46,6 +47,7 @@ export default function AdminOrdersPage() {
   const [assigning, setAssigning] = useState(false);
   const [assignErr, setAssignErr] = useState<string | null>(null);
 
+  // Helper openAssignModal : réalise le traitement métier associé.
   const openAssignModal = async (order: PlatformOrder) => {
     setAssignation(order);
     setLivreurChoisi('');
@@ -72,6 +74,7 @@ export default function AdminOrdersPage() {
     }
   };
 
+  // Valide et transmet l’action confirmerAssignation.
   const confirmerAssignation = async () => {
     if (!assignation || assigning) return;
     if (!livreurChoisi) {
@@ -95,6 +98,7 @@ export default function AdminOrdersPage() {
     }
   };
 
+  // Met à jour les données ou l’état via changerStatut.
   const changerStatut = async (order: PlatformOrder, statut: AdminOrderStatus, label: string) => {
     if (busyOrderId != null) return;
     if (statut === 'annule') {
@@ -120,6 +124,7 @@ export default function AdminOrdersPage() {
     }
   };
 
+  // Helper renderActions : réalise le traitement métier associé.
   const renderActions = (order: PlatformOrder) => {
     const actions = ACTIONS_PAR_STATUT[order.statut ?? ''] ?? [];
     const canAssign = !order.livreur?.id && !['livre', 'annule'].includes(order.statut ?? '');
@@ -158,6 +163,7 @@ export default function AdminOrdersPage() {
     zoneCommande ? filterLivreursDisponiblesDansZone(livreurs, zoneCommande) : livreurs.filter((l) => isLivreurDisponible(l))
   ).filter((l) => String(l?.statut ?? 'actif').toLowerCase() === 'actif');
 
+  // Retourne le rendu JSX du composant.
   return (
     <AdminLayout currentPath="/admin/commandes">
       {error && (

@@ -1,3 +1,4 @@
+// Mise en page principale de l’espace admin (barre latérale, recherche globale, cloche, aide).
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import AdminSidebar from './AdminSidebar';
@@ -12,15 +13,13 @@ import { currentUserName, useAuthRevision } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
 
-
 interface AdminLayoutProps {
   children: ReactNode;
   currentPath?: string;
   mainClassName?: string;
 }
 
-/** Le décalage `ml-64` des pages Stitch ne doit pas coller le contenu sous la sidebar sur téléphone,
- *  et `p-lg` ne doit pas écraser `pt-[52px]` sous la barre fixe du haut. */
+// Helper responsiveMain : réalise le traitement métier associé.
 function responsiveMain(mainClassName?: string) {
   const base = mainClassName ?? 'ml-64 pt-[52px] min-h-screen p-lg space-y-lg';
   const hasLargePadding = /(^|\s)p-lg(?=\s|$)/.test(base);
@@ -37,11 +36,7 @@ function responsiveMain(mainClassName?: string) {
     .trim();
 }
 
-/**
- * AdminLayout — chrome complet admin, copie conforme du design Stitch :
- * sidebar sombre + top bar fixe (recherche, notifications, aide, profil) + canvas.
- * Sous `lg`, la sidebar est un tiroir : le contenu prend toute la largeur.
- */
+// Composant de mise en page AdminLayout.
 export default function AdminLayout({ children, currentPath, mainClassName }: AdminLayoutProps) {
   useLanguage();
   useAuthRevision();
@@ -51,6 +46,7 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
   const [helpOpen, setHelpOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  // Helper goToGlobalSearch : réalise le traitement métier associé.
   const goToGlobalSearch = (scope: 'orders' | 'users') => {
     const q = globalSearch.trim();
     if (!q) return;
@@ -61,10 +57,12 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
       search: { q },
     });
   };
+  // Valide et transmet l’action submitGlobalSearch.
   const submitGlobalSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     goToGlobalSearch('orders');
   };
+  // Retourne le rendu JSX du composant.
   return (
     <div className="bg-bg-app text-on-surface font-body min-h-screen">
       {navOpen && (
@@ -77,7 +75,6 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
       )}
       <AdminSidebar currentPath={currentPath} open={navOpen} onClose={() => setNavOpen(false)} />
 
-      {/* TOP APP BAR */}
       <header className="fixed top-0 right-0 left-0 z-30 flex h-[52px] items-center justify-between gap-2 border-b border-border-default bg-bg-card px-3 sm:px-lg lg:left-64">
         <button
           type="button"
@@ -149,7 +146,6 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
           <RefreshButton withLabel />
           <SettingsLink to="/admin/parametres" />
           <LogoutButton className="lg:hidden" />
-          {/* Vraies notifications (GET /notifications) : compteur, liste, marquer comme lue */}
           <AdminNotificationBell
             className="cursor-pointer rounded-full p-2 text-text-secondary transition-all hover:bg-bg-app active:scale-[0.97]"
             icon={<MIcon name="notifications" />}
@@ -212,7 +208,6 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
         </div>
       </header>
 
-      {/* MAIN CONTENT CANVAS */}
       <main id="admin-main" className={responsiveMain(mainClassName)}>{children}</main>
       <MobileTableBridge rootId="admin-main" />
     </div>

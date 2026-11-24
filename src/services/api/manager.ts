@@ -1,13 +1,15 @@
+// Appels API réservés au manager de zone (commandes, assignation, livreurs, statistiques).
 import { apiClient } from './client';
 
+// Regroupe les appels API du module manager.
 export const managerApi = {
-  // GET /api/manager/orders -> commandes de la zone du manager
+  // Appelle GET /manager/orders via le client API.
   getOrders: async (params?: { statut?: string; page?: number }) => {
     const response = await apiClient.get('/manager/orders', { params });
     return response.data;
   },
 
-  // POST /api/manager/assign -> assignation livreur
+  // Appelle POST /manager/assign via le client API.
   assignLivreur: async (orderId: number, livreurId: number) => {
     const response = await apiClient.post('/manager/assign', {
       order_id: orderId,
@@ -16,13 +18,13 @@ export const managerApi = {
     return response.data;
   },
 
-  // GET /api/manager/livreurs -> liste livreurs de la zone
+  // Appelle GET /manager/livreurs via le client API.
   getLivreurs: async () => {
     const response = await apiClient.get('/manager/livreurs');
     return response.data;
   },
 
-  // GET /api/manager/stats -> statistiques
+  // Appelle GET /manager/stats via le client API.
   getStats: async (period: 'jour' | 'semaine' | 'mois' = 'jour') => {
     const response = await apiClient.get('/manager/stats', { params: { period } });
     return response.data;

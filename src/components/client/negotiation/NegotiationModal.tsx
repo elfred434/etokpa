@@ -1,3 +1,4 @@
+// Modale client permettant d’envoyer ou d’ajuster une proposition de prix.
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import MIcon from '../../shared/MIcon';
 import { DIALOG_CANCEL_BTN_CLASS, DialogFrame } from '../../shared/DialogFrame';
@@ -12,6 +13,7 @@ interface NegotiationModalProps {
   onClose: () => void;
 }
 
+// Composant modale NegotiationModal : gère l’ouverture, les actions et la fermeture.
 export default function NegotiationModal({ isOpen, onClose }: NegotiationModalProps) {
   const dispatch = useAppDispatch();
   const { isFr } = useLanguage();
@@ -19,6 +21,7 @@ export default function NegotiationModal({ isOpen, onClose }: NegotiationModalPr
 
   if (!isOpen) return null;
 
+  // Gère l’action utilisateur AddToCart.
   const handleAddToCart = (neg: typeof history[0]) => {
     const product: Product = {
       id: neg.productId,
@@ -37,6 +40,7 @@ export default function NegotiationModal({ isOpen, onClose }: NegotiationModalPr
     toast.success(isFr ? `Ajouté au panier au prix de ${neg.proposedPrice} FCFA` : `Added to cart at ${neg.proposedPrice} FCFA`);
   };
 
+  // Gère l’action utilisateur AcceptCounter.
   const handleAcceptCounter = (productId: string, counterPrice: number) => {
     dispatch(acceptCounterOffer({ productId }));
     toast.success(isFr ? `Contre-offre de ${counterPrice} FCFA acceptée !` : `Counter-offer of ${counterPrice} FCFA accepted!`);
@@ -46,6 +50,7 @@ export default function NegotiationModal({ isOpen, onClose }: NegotiationModalPr
     .filter((n) => n.status === 'accepted')
     .reduce((sum, n) => sum + (n.originalPrice - n.proposedPrice), 0);
 
+  // Retourne le rendu JSX du composant.
   return (
     <DialogFrame
       icon="handshake"

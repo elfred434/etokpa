@@ -1,9 +1,10 @@
+// Configure et exporte le store Redux principal (panier et négociations).
 import { configureStore } from '@reduxjs/toolkit';
 import cartReducer from './slices/cart/cartSlice';
 import negotiationReducer from './slices/negotiation/negotiationSlice';
 import { readCartStorage, writeCartStorage } from '../utils/cartStorage';
 
-/** Store Redux global — état client (CDC §8 impose Redux), avec persistance locale du panier. */
+// Enregistre ou crée les données via createAppStore.
 export function createAppStore() {
   const appStore = configureStore({
     reducer: {

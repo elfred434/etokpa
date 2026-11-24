@@ -1,23 +1,5 @@
-/**
- * Packs créés par le CLIENT, enregistrés sur l'appareil (localStorage).
- *
- * Pourquoi du stockage local ? Côté backend (lecture seule pour nous), la seule
- * route de création de packs est POST /api/admin/bundles derrière `role:admin` :
- * un client y reçoit 403 et le modèle `Pack` n'a pas de colonne propriétaire
- * (pas de user_id). En attendant l'ouverture d'une route client
- * (voir extrait/A_FAIRE_BACKEND.txt, note 19), la page « Mes packs »
- * (pages/client/mes-packs/MesPacksPage.tsx) :
- *  1. tente l'enregistrement serveur avec le contrat EXACT de
- *     AdminBundleController@store — prêt pour le jour où la route s'ouvre ;
- *  2. en cas de 403/404/405, conserve le pack ici (brouillon) sans rien perdre :
- *     il reste modifiable, supprimable et surtout AJOUTABLE AU PANIER
- *     (le panier ne connaît que des produits : on y met les lignes du pack).
- *
- * Chaque brouillon garde un instantané complet de ses produits (nom, prix,
- * stock, disponibilité, image) pour que la galerie et le panier fonctionnent
- * même hors ligne ou si le catalogue change.
- */
 
+// Sauvegarde et gère localement les brouillons de packs personnalisés.
 export type PackDraftProduit = {
   id: number;
   qte: number;
@@ -30,9 +12,7 @@ export type PackDraftProduit = {
 };
 
 export type PackDraft = {
-  /** Identifiant local (préfixe `d` + horodatage) — clé d'upsert. */
   localId: string;
-  /** Id serveur (`packs.id`) si l'API a accepté le pack ; null = brouillon local. */
   serverId: number | null;
   nom: string;
   description: string | null;
@@ -42,19 +22,18 @@ export type PackDraft = {
   disponible: boolean;
   produits: PackDraftProduit[];
   createdAt: string;
-  /** Date du dernier enregistrement ACCEPTÉ par le serveur (null = jamais). */
   syncedAt: string | null;
 };
 
 const KEY = 'tokpa_mes_packs_v1';
 
+// Récupère et normalise les données pour lire.
 function lire(): PackDraft[] {
   try {
     const brut = window.localStorage.getItem(KEY);
     if (!brut) return [];
     const parsed = JSON.parse(brut);
     if (!Array.isArray(parsed)) return [];
-    // Tolérance : ne garder que les entrées exploitables (nom + produits).
     return parsed.filter(
       (d): d is PackDraft =>
         Boolean(d) &&
@@ -68,21 +47,21 @@ function lire(): PackDraft[] {
   }
 }
 
+// Helper ecrire : réalise le traitement métier associé.
 function ecrire(liste: PackDraft[]): PackDraft[] {
   try {
     window.localStorage.setItem(KEY, JSON.stringify(liste));
   } catch {
-    // Stockage plein/indisponible : la liste en mémoire reste utilisable.
   }
   return liste;
 }
 
-/** Liste des packs de l'appareil, du plus récent au plus ancien. */
+// Helper listPackDrafts : réalise le traitement métier associé.
 export function listPackDrafts(): PackDraft[] {
   return lire().sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
-/** Crée ou remplace un pack (même `localId`) ; renvoie la liste à jour. */
+// Enregistre ou crée les données via savePackDraft.
 export function savePackDraft(draft: PackDraft): PackDraft[] {
   const liste = lire();
   const i = liste.findIndex((d) => d.localId === draft.localId);
@@ -91,7 +70,7 @@ export function savePackDraft(draft: PackDraft): PackDraft[] {
   return ecrire(liste);
 }
 
-/** Supprime un pack local ; renvoie la liste à jour. */
+// Supprime ou nettoie les éléments via deletePackDraft.
 export function deletePackDraft(localId: string): PackDraft[] {
   return ecrire(lire().filter((d) => d.localId !== localId));
 }

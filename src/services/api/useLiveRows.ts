@@ -1,3 +1,4 @@
+// Hook générique chargeant des lignes API avec mise à jour silencieuse sur rafraîchissement global.
 import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { invokeDesign } from '../../utils/designRuntime';
@@ -7,16 +8,13 @@ import { backgroundRefreshActive, onGlobalRefresh, silentRefreshActive } from '.
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-/**
- * useLiveRows — charge des données RÉELLES pour les pages design Stitch :
- * remplit les tableaux (copie conforme conservée) sans fausse donnée.
- * Erreurs API verbeuses (phase dev) + états chargement / vide.
- */
+// Hook React useLiveRows : encapsule l’état et les effets associés.
 export function useLiveRows(fetcher: () => Promise<unknown>, deps: unknown[] = []) {
   const [rows, setRows] = useState<any[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Helper reload : réalise le traitement métier associé.
   const reload = (): Promise<void> => {
     const silent = silentRefreshActive();
     const background = backgroundRefreshActive();
@@ -37,6 +35,7 @@ export function useLiveRows(fetcher: () => Promise<unknown>, deps: unknown[] = [
       });
   };
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     setLoading(true);
@@ -51,9 +50,9 @@ export function useLiveRows(fetcher: () => Promise<unknown>, deps: unknown[] = [
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
-  // Rafraîchissement global (bouton / silencieux) : recharge le tableau en place.
   const reloadRef = useRef(reload);
   reloadRef.current = reload;
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(
     () =>
       onGlobalRefresh(() => reloadRef.current()),
@@ -63,15 +62,15 @@ export function useLiveRows(fetcher: () => Promise<unknown>, deps: unknown[] = [
   return { rows, err, loading, reload };
 }
 
-/** Nom de zone depuis un objet ZoneResource ou une chaîne (évite le crash « object as React child »). */
+// Helper zoneNom : réalise le traitement métier associé.
 export const zoneNom = (z: unknown): string =>
   z && typeof z === 'object' ? String((z as any).nom ?? '—') : String((z as any) ?? '—') || '—';
 
-/** Échappe une valeur pour un handler `data-onclick="fn('…')"` du design. */
+// Helper escArg : réalise le traitement métier associé.
 export const escArg = (s: unknown): string =>
   String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
-/** Dispatche le `data-onclick` de l'élément courant dans le scope du design. */
+// Helper fireDesign : réalise le traitement métier associé.
 export function fireDesign(e: MouseEvent<HTMLElement>): void {
   const el = e.currentTarget;
   const code = el.getAttribute('data-onclick') || '';
@@ -79,7 +78,7 @@ export function fireDesign(e: MouseEvent<HTMLElement>): void {
   invokeDesign(code, el, e.nativeEvent ?? (e as unknown as Event));
 }
 
-/** Initiales (avatar rond du design). */
+// Extrait deux initiales à partir d’un nom complet.
 export const initials = (nom: unknown): string =>
   String(nom ?? '')
     .split(/\s+/)
@@ -88,5 +87,5 @@ export const initials = (nom: unknown): string =>
     .map((m) => m[0]!.toUpperCase())
     .join('') || '—';
 
-/** Date courte honnête depuis un ISO. */
+// Helper dateShort : réalise le traitement métier associé.
 export const dateShort = (s: unknown): string => String(s ?? '').slice(0, 10) || '—';

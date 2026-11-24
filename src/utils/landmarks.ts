@@ -1,10 +1,11 @@
+// Parse les listes de points de repère issues de l’API.
 export interface ParsedLandmark {
   key: string;
   nom: string;
   description: string;
 }
 
-/** Repères stockés dans `profil.point_repere` (chaîne ou objet). */
+// Transforme ou formate les données via parseLandmarks.
 export function parseLandmarks(profil: Record<string, unknown> | undefined): ParsedLandmark[] {
   const raw = profil?.point_repere;
   if (!Array.isArray(raw)) return [];

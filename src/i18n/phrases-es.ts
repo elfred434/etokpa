@@ -1,9 +1,4 @@
-/**
- * Dictionnaire FR → espagnol (es) des phrases passées à tx()/useTx().
- * Couverture complète des phrases statiques du code (1310 entrées (1295 + 15 « Mes packs » client)).
- * Repli restant : anglais (EN) puis français — voir src/i18n/tx.ts.
- * Généré le 12/10/2026.
- */
+// Dictionnaire des phrases traduites en espagnol.
 export const ES: Record<string, string> = {
   "Adresse de livraison": "Dirección de entrega",
   "Clair": "Claro",
@@ -1345,12 +1340,10 @@ export const ES: Record<string, string> = {
   "Actualisation automatique": "Actualización automática",
   "Toutes les 30 secondes": "Cada 30 segundos",
   "Informations actualisées.": "Información actualizada.",
-  // Pedidos — detalle (modales de cliente, administración y gerente)
   "Aucun article rattaché à cette commande.": "Ningún artículo vinculado a este pedido.",
   "Détail de la commande": "Detalle del pedido",
   "Livreur en cours d’assignation…": "Repartidor en asignación…",
   "Précisions": "Indicaciones",
-  // Ajustes — apariencia e idioma (página Ajustes de los cuatro espacios)
   "Langue et thème": "Idioma y tema",
   "Langue de l'interface": "Idioma de la interfaz",
   "Suit le réglage de votre appareil": "Sigue la configuración de tu dispositivo",

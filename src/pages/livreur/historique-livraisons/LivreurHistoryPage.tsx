@@ -1,3 +1,4 @@
+// Historique complet des livraisons effectuées par le livreur.
 import { useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import LivreurLayout from '../../../components/layout/livreur/LivreurLayout';
@@ -13,30 +14,27 @@ import { tr, tx } from '../../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { orderLineName } from '../../../utils/orderLine';
 
-
 const PER_PAGE = 10;
 type Filtre = 'all' | 'week' | 'month';
 
+// Helper startOfWeek : réalise le traitement métier associé.
 const startOfWeek = () => {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // lundi
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   return d;
 };
+// Helper startOfMonth : réalise le traitement métier associé.
 const startOfMonth = () => {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   d.setDate(1);
   return d;
 };
+// Helper sameDay : réalise le traitement métier associé.
 const sameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
-/**
- * Historique des livraisons — design Stitch « historique_des_livraisons_tokpa », données réelles :
- * GET /livreur/history (toutes les pages, au plus 500 courses) + GET /zones. Dates = date de la
- * commande (l'API ne donne pas l'heure de livraison en liste). Retirés (aucune donnée dans l'API) :
- * distance, note, versements/virement, palier bonus, téléphone du client, horodatages, reçu.
- */
+// Composant de la page LivreurHistory : gère le chargement des données et le rendu.
 export default function LivreurHistoryPage() {
   useLanguage();
   const [data, setData] = useState<{ orders: LivreurOrder[]; total: number; capped: boolean } | null>(null);
@@ -48,6 +46,7 @@ export default function LivreurHistoryPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const refreshTick = useGlobalRefreshTick();
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setData(null);
@@ -78,7 +77,6 @@ export default function LivreurHistoryPage() {
   const visible = filtered.slice((current - 1) * PER_PAGE, current * PER_PAGE);
   const cumul = orders.reduce((s, o) => s + Number(o.frais_livraison ?? 0), 0);
 
-  // Frais de livraison de la semaine en cours, jour par jour (lundi → dimanche)
   const week = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
@@ -89,10 +87,12 @@ export default function LivreurHistoryPage() {
   const fmtJour = (d: Date) => d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
 
   const zoneOf = (o: LivreurOrder) => (o.landmark?.zone_id ? (zones.get(Number(o.landmark.zone_id)) ?? `Zone #${o.landmark.zone_id}`) : '—');
+  // Helper chooseFiltre : réalise le traitement métier associé.
   const chooseFiltre = (f: Filtre) => {
     setFiltre(f);
     setPage(1);
   };
+  // Helper filterBtn : réalise le traitement métier associé.
   const filterBtn = (f: Filtre, label: string) => (
     <button
       type="button"
@@ -108,11 +108,11 @@ export default function LivreurHistoryPage() {
     </button>
   );
 
+  // Retourne le rendu JSX du composant.
   return (
     <LivreurLayout>
       <div className="flex-1 p-xl">
         <div className="mx-auto max-w-[1200px]">
-          {/* Header Section */}
           <div className="mb-xl flex items-center justify-between">
             <div className="flex items-center gap-md">
               <div className="flex items-center justify-center rounded-lg bg-primary p-sm text-on-primary">
@@ -133,7 +133,6 @@ export default function LivreurHistoryPage() {
             <LoadingState variant="livreur-history" label={tx("Chargement de l'historique…")} />
           ) : (
             <>
-              {/* Stats Summary */}
               <div className="mb-xl grid grid-cols-1 gap-lg md:grid-cols-4">
                 <div className="rounded-xl border border-border-default bg-bg-card p-lg shadow-sm transition-colors hover:border-primary/30">
                   <p className="mb-xs font-label text-label text-text-secondary">{tx("Frais de livraison cumulés")}</p>
@@ -155,7 +154,6 @@ export default function LivreurHistoryPage() {
               </div>
 
               <div className="grid grid-cols-1 gap-xl lg:grid-cols-12">
-                {/* Left Column: Table & Filters */}
                 <div className="space-y-lg lg:col-span-8">
                   <div className="flex flex-wrap gap-sm">
                     {filterBtn('all', tx("Toutes les courses"))}
@@ -215,7 +213,6 @@ export default function LivreurHistoryPage() {
                         </tbody>
                       </table>
                     </div>
-                    {/* Pagination/Footer */}
                     <div className="flex items-center justify-between bg-bg-secondary px-lg py-md">
                       <span className="text-label text-text-secondary">
                         {filtered.length === 0
@@ -261,7 +258,6 @@ export default function LivreurHistoryPage() {
                   </div>
                 </div>
 
-                {/* Right Column: Frais de la semaine (réels) */}
                 <div className="space-y-lg lg:col-span-4">
                   <div className="rounded-xl border border-border-default bg-bg-card p-lg shadow-sm">
                     <div className="mb-lg flex items-center justify-between">
@@ -296,7 +292,6 @@ export default function LivreurHistoryPage() {
         </div>
       </div>
 
-      {/* Delivery Details Modal */}
       {selected && (
         <DialogFrame
           icon="local_shipping"

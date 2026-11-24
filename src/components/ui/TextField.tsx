@@ -1,20 +1,17 @@
+// Champ texte générique stylisé avec libellé et message d’erreur.
 import { useId } from 'react';
 import type { InputHTMLAttributes, ReactNode } from 'react';
 import clsx from 'clsx';
 
 interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
-  /** Icône Tabler affichée à gauche dans le champ */
   iconLeft?: ReactNode;
-  /** Élément interactif à droite (ex : œil mot de passe) */
   rightSlot?: ReactNode;
-  /** Bordure rouge (état erreur, cf. maquette Stitch) */
   error?: boolean;
-  /** Élément aligné à droite du label (ex : lien « Mot de passe oublié ? ») */
   labelRight?: ReactNode;
 }
 
-/** Champ label + input, fidèle au design system TOKPa (design.md §4.2). */
+// Composant React TextField : prépare l’état et affiche son interface.
 export default function TextField({
   label,
   iconLeft,
@@ -28,6 +25,7 @@ export default function TextField({
   const autoId = useId();
   const inputId = id ?? autoId;
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="w-full">
       <div className="mb-[6px] flex items-center justify-between gap-sm">

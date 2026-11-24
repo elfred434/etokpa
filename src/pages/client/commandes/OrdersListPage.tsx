@@ -1,3 +1,4 @@
+// Liste paginée des commandes du client avec filtre par statut, export CSV, détails et annulation.
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -40,7 +41,6 @@ interface ApiOrderItem {
   prix_unitaire: number;
 }
 
-/** Commande — exactement `OrderResource::$data` (GET /orders, GET /orders/{id}). */
 interface ApiOrder {
   id: number;
   montant_total?: number;
@@ -63,7 +63,6 @@ const STATUT_LABELS: Record<string, { fr: string; en: string }> = {
   annule: { fr: 'Annulée', en: 'Cancelled' },
 };
 
-/** Pastilles de statut — design de base (comme Profil / commandes récentes). */
 const STATUT_BADGE: Record<string, string> = {
   en_attente: 'bg-amber-light text-amber-text border-amber',
   en_preparation: 'bg-primary-tint text-primary-dark border-primary-light',
@@ -72,7 +71,6 @@ const STATUT_BADGE: Record<string, string> = {
   annule: 'bg-error-light text-error-dark border-error/20',
 };
 
-/** Pastilles `.status-*` du thème — uniquement dans la modale (validée en l'état). */
 const STATUT_CLASS: Record<string, string> = {
   en_attente: 'status-pending',
   en_preparation: 'status-preparing',
@@ -81,21 +79,16 @@ const STATUT_CLASS: Record<string, string> = {
   annule: 'status-cancelled',
 };
 
-/** Libellé traduit d'un statut de commande (les 5 langues via tx). */
+// Helper libelleStatut : réalise le traitement métier associé.
 const libelleStatut = (statut: string) => {
   const l = STATUT_LABELS[statut];
   return l ? tx(l.fr) : statut;
 };
 
+// Helper articlesCount : réalise le traitement métier associé.
 const articlesCount = (o: ApiOrder) => (o.items ?? []).reduce((s, it) => s + Number(it.quantite ?? 0), 0);
 
-/**
- * OrdersListPage — Mes commandes (route /commandes) :
- *   - GET /api/orders?page={n}  → tableau paginé (OrderResource, paginate(15))
- *   - clic sur une ligne        → modale détails complète (items, totaux, livraison, livreur, paiement)
- *   - bouton « Suivre »         → /commandes/suivi?order={id}
- *   - bouton « Annuler »        → DELETE /api/orders/{id} (modale, statut en_attente uniquement — F-13)
- */
+// Composant de la page OrdersList : gère le chargement des données et le rendu.
 export default function OrdersListPage() {
   const { isFr } = useLanguage();
   const navigate = useNavigate();
@@ -112,9 +105,9 @@ export default function OrdersListPage() {
   const [selected, setSelected] = useState<ApiOrder | null>(null);
   const paymentMapRef = useRef<Map<number, OrderPaymentSummary>>(new Map());
 
-  // Actualisation globale (bouton / silencieuse) : rejoue la liste sans squelette.
   const tick = useGlobalRefreshTick();
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     if (!isAuthenticated) return;
     let alive = true;
@@ -172,7 +165,7 @@ export default function OrdersListPage() {
     return () => { alive = false; };
   }, [isAuthenticated, page, statusFilter, tick]);
 
-  // Si la fiche d'une commande est ouverte pendant le refresh, relire aussi son détail complet.
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     const id = selected?.id;
     if (!isAuthenticated || !id || tick === 0) return;
@@ -193,6 +186,7 @@ export default function OrdersListPage() {
   }, [isAuthenticated, selected?.id, tick]);
 
   const payLock = useRef(false);
+  // Gère l’action utilisateur Payer.
   const handlePayer = async (order: ApiOrder) => {
     if (payLock.current || paying) return;
     if (order.payment?.statut === 'reussi') {
@@ -248,13 +242,13 @@ export default function OrdersListPage() {
 
   const search = useSearch({ from: '/commandes' }) as unknown as { detail?: string };
 
+  // Gère l’action utilisateur Suivre.
   const handleSuivre = (id: number) => {
     navigate({ to: '/commandes/suivi', search: { order: String(id) } });
   };
 
-  // Annulation client — DELETE /api/orders/{id}. Le backend n'accepte que le statut
-  // en_attente (sinon 422 « Seule une commande en attente peut être annulée. »).
   const [cancelling, setCancelling] = useState(false);
+  // Gère l’action utilisateur Annuler.
   const handleAnnuler = async (o: ApiOrder) => {
     if (cancelling) return;
     const confirme = await adminDialogs.confirm(
@@ -275,7 +269,7 @@ export default function OrdersListPage() {
     }
   };
 
-  // Ouverture de la modale via ?detail={id} (profil → « Détails ») — garde-fou anti-IDOR
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     const raw = search.detail;
     if (!raw || !isAuthenticated || loading) return;
@@ -319,9 +313,9 @@ export default function OrdersListPage() {
   const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR') : '—');
   const fmtDateTime = (iso?: string) => (iso ? new Date(iso).toLocaleString('fr-FR') : '—');
   const money = (n?: number) => `${Number(n ?? 0).toLocaleString('fr-FR')} ${selected?.devise ?? 'FCFA'}`;
-  /** Devise de la commande ouverte (les montants de la modale restent homogènes). */
   const devise = selected?.devise ?? 'FCFA';
 
+  // Génère et déclenche l’export via exportOrdersCsv.
   const exportOrdersCsv = () => {
     downloadCsvFile(
       `commandes-tokpa-${new Date().toISOString().slice(0, 10)}.csv`,
@@ -346,13 +340,13 @@ export default function OrdersListPage() {
     );
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="bg-bg-app font-body text-on-surface antialiased min-h-screen flex flex-col">
       <ClientNavbar />
 
       <main className="flex-grow px-4 py-xl pb-[80px] pt-[52px] sm:px-lg lg:pb-0">
         <div className="mx-auto w-full max-w-[1200px]">
-          {/* En-tête */}
           <div className="flex flex-wrap items-center justify-between gap-2 mb-lg">
             <h1 className="font-h1 text-h1 text-on-surface">{isFr ? tx("Mes commandes") : 'My orders'}</h1>
             <div className="flex flex-wrap items-center gap-2">
@@ -406,7 +400,6 @@ export default function OrdersListPage() {
               />
             </div>
           ) : (
-            /* Tableau — design de base (sans barre de défilement : colonnes responsives + scrollbar masquée) */
             <div className="bg-bg-card rounded-lg border border-border-default overflow-hidden">
               <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <table className="w-full text-left text-body">
@@ -429,7 +422,6 @@ export default function OrdersListPage() {
                           key={o.id}
                           onClick={() => {
                             setSelected(o);
-                            // recharge la version COMPLÈTE (payment chargé par show()) sans fermer la modale
                             ordersApi
                               .getOrder(o.id)
                               .then((res) => {
@@ -519,14 +511,10 @@ export default function OrdersListPage() {
             </div>
           )}
 
-          {/* Pagination — MÊME composant que Notifications / Profil (carrés 40px, page active orange) */}
           {lastPage > 1 && <Pagination page={page} pageCount={lastPage} onChange={setPage} className="mt-8" />}
         </div>
       </main>
 
-      {/* MODALE DÉTAILS COMMANDE — gabarit commun (ModalShell), identique à la modale de
-          paiement : en-tête icône + titre + sous-titre, bandeau #id / date / montant /
-          statut, cartes de section sur fond bg-bg-secondary, pied d'actions. */}
       {selected && (
         <ModalShell
           testId={`order-modal-${selected.id}`}
@@ -581,7 +569,6 @@ export default function OrdersListPage() {
             </>
           }
         >
-          {/* Bandeau : identifiant, date, montant, statut */}
           <BandeauFiche
             id={selected.id}
             date={fmtDateTime(selected.created_at)}
@@ -593,7 +580,6 @@ export default function OrdersListPage() {
             }
           />
 
-          {/* Articles */}
           <FicheCard icone="shopping_bag" titre={tx("Articles")} colonnes={1}>
             {(selected.items ?? []).length > 0 ? (
               <>
@@ -641,7 +627,6 @@ export default function OrdersListPage() {
             )}
           </FicheCard>
 
-          {/* Livraison */}
           <FicheCard icone="local_shipping" titre={tx("Livraison")}>
             <LigneFiche icone="location_on" etiquette={tx("Point de repère")} large>
               {selected.landmark?.nom ?? '—'}
@@ -678,7 +663,6 @@ export default function OrdersListPage() {
             </LigneFiche>
           </FicheCard>
 
-          {/* Paiement */}
           <FicheCard icone="credit_card" titre={tx("Paiement")}>
             {selected.payment ? (
               <>

@@ -1,3 +1,4 @@
+// Tiroir de filtres responsive utilisé sur mobile.
 import { useEffect, type ReactNode } from 'react';
 import MIcon from './MIcon';
 import { tx } from '../../i18n/tx';
@@ -9,12 +10,14 @@ export interface MobileFilterTriggerProps {
   className?: string;
 }
 
+// Composant React MobileFilterTrigger : prépare l’état et affiche son interface.
 export function MobileFilterTrigger({
   onClick,
   activeCount = 0,
   label,
   className = '',
 }: MobileFilterTriggerProps) {
+  // Retourne le rendu JSX du composant.
   return (
     <button
       type="button"
@@ -43,10 +46,7 @@ export interface MobileFilterDrawerProps {
   children: ReactNode;
 }
 
-/**
- * Tiroir de filtres mobile en bas d'écran (identique au motif du catalogue client) :
- * garde la barre complète sur desktop (`md+`) et offre un panneau compact sur téléphone.
- */
+// Composant React MobileFilterDrawer : prépare l’état et affiche son interface.
 export function MobileFilterDrawer({
   open,
   title,
@@ -57,6 +57,7 @@ export function MobileFilterDrawer({
   applyLabel,
   children,
 }: MobileFilterDrawerProps) {
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -71,6 +72,7 @@ export function MobileFilterDrawer({
 
   if (!open) return null;
 
+  // Retourne le rendu JSX du composant.
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col bg-black/50 md:hidden"

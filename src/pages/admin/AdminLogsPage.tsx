@@ -1,3 +1,4 @@
+// Consultation et export CSV/PDF du journal d’audit des actions sensibles.
 import { useEffect, useState } from 'react';
 import { adminApi } from '../../services/api';
 import { listOf } from '../../services/api/unwrap';
@@ -12,16 +13,15 @@ import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// Feuille de styles intégrée (DESIGN_CSS) injectée pour le rendu de la vue.
 const DESIGN_CSS = `
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
         .timeline-line { width: 2px; background-color: var(--color-border-default); left: 16px; top: 0; bottom: 0; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
     `;
 
-/** Couleurs des catégories — reprises des badges de la maquette. */
 const COULEUR: Record<string, string> = {
   CATALOGUE: '#F97316',
   CONFIG: '#F97316',
@@ -43,12 +43,7 @@ const TYPES: [string, string][] = [
   ['CONFIG', 'Zones & configuration'],
   ['AUTH', 'Authentification'],
 ];
-/**
- * AdminLogsPage — design Stitch (code.html) conservé, données RÉELLES : GET /admin/audit-logs
- * (30 par page, filtres serveur `action` et `from`). Catégorie, titre et détail sont déduits de
- * chaque entrée (middleware d'audit et événements critiques). Le filtre « Rôle » et le choix
- * 10 / 25 / 50 par page restent décoratifs : aucun paramètre/API n'est disponible pour eux.
- */
+// Composant de la page AdminLogs : gère le chargement des données et le rendu.
 export default function AdminLogsPage() {
   useLanguage();
   const [logs, setLogs] = useState<any[]>([]);
@@ -66,6 +61,7 @@ export default function AdminLogsPage() {
   const [perPage, setPerPage] = useState<10 | 25 | 50>(25);
   const refreshTick = useGlobalRefreshTick();
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setLoading(true);
@@ -84,10 +80,12 @@ export default function AdminLogsPage() {
     };
   }, [page, perPage, applied, refreshTick]);
 
+  // Helper appliquer : réalise le traitement métier associé.
   const appliquer = () => {
     setApplied({ ...(search.trim() ? { action: search.trim() } : {}), ...(from ? { from } : {}) });
     setPage(1);
   };
+  // Helper resetFiltres : réalise le traitement métier associé.
   const resetFiltres = () => {
     setSearch('');
     setType('');
@@ -114,6 +112,7 @@ export default function AdminLogsPage() {
   });
   const visibles = filteredLogs.slice(0, perPage);
 
+  // Récupère et normalise les données pour chargerLogsPourExport.
   const chargerLogsPourExport = async () => {
     const acc: any[] = [];
     let lastPage = 1;
@@ -126,6 +125,7 @@ export default function AdminLogsPage() {
     return acc.filter((log) => !type || categorie(log) === type);
   };
 
+  // Helper exporterPdf : réalise le traitement métier associé.
   const exporterPdf = async () => {
     setExporting(true);
     try {
@@ -138,6 +138,7 @@ export default function AdminLogsPage() {
     }
   };
 
+  // Helper exporterCsv : réalise le traitement métier associé.
   const exporterCsv = async () => {
     setExporting(true);
     try {
@@ -162,6 +163,7 @@ export default function AdminLogsPage() {
 
   const numeros = Array.from({ length: meta.last }, (_, i) => i + 1).filter((n) => n === 1 || n === meta.last || Math.abs(n - meta.page) <= 1);
 
+  // Retourne le rendu JSX du composant.
   return (
     <AdminLayout currentPath="/admin/logs">
       <style>{DESIGN_CSS}</style>
@@ -206,7 +208,6 @@ export default function AdminLogsPage() {
           <p>{err}</p>
         </div>
       )}
-      {/* Barre de filtres compacte mobile */}
       <div className="mb-lg flex items-center gap-2 md:hidden">
         <div className="relative min-w-0 flex-1">
           <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"></i>

@@ -1,11 +1,4 @@
-/**
- * Reçu de paiement — rendu PDF (jsPDF).
- *
- * A4 portrait construit ligne à ligne (texte vectoriel : net à l'impression,
- * quelques kilo-octets). Mise en page sur deux colonnes :
- *   gauche  = paiement + client · droite = commande + livraison + livreur.
- * Les libellés viennent de `receiptLabels()` : le reçu suit la langue de l'app.
- */
+// Génère et télécharge le reçu officiel de commande au format PDF via jsPDF.
 import { jsPDF } from 'jspdf';
 import type { ReceiptData } from './receiptData';
 import { nomFichierRecu } from './receiptData';
@@ -38,13 +31,13 @@ export type ReceiptLabels = {
   statusLabels: Record<string, string>;
 };
 
-const M = 16;               // marge (mm)
+const M = 16;
 const PAGE_W = 210;
 const PAGE_H = 297;
-const RIGHT = PAGE_W - M;   // 194
-const COL_G = M;            // colonne gauche
-const COL_D = M + 87;       // colonne droite (109)
-const LARG = 87;            // largeur d'une colonne
+const RIGHT = PAGE_W - M;
+const COL_G = M;
+const COL_D = M + 87;
+const LARG = 87;
 
 const COLOR_PRIMARY: [number, number, number] = [249, 115, 22];
 const COLOR_TEXT: [number, number, number] = [33, 33, 33];
@@ -55,18 +48,19 @@ const COLOR_OK_TX: [number, number, number] = [22, 101, 52];
 const COLOR_KO_BG: [number, number, number] = [254, 226, 226];
 const COLOR_KO_TX: [number, number, number] = [153, 27, 27];
 
+// Helper pdfSafeText : réalise le traitement métier associé.
 function pdfSafeText(text: string): string {
-  // jsPDF (police WinAnsi helvetica) corrompt les espaces insécables (\u202f, \u00a0)
-  // produites par Intl/toLocaleString('fr-FR') en « / » (ex. « 1 000 » → « 1/000 »).
   return text.replace(/[\u00a0\u2007\u2009\u202f]/g, ' ');
 }
 
+// Transforme ou formate les données via fmtMontant.
 export function fmtMontant(n: number | null | undefined, locale = 'fr-FR'): string {
   const value = Number(n ?? 0);
   const formatted = Number.isFinite(value) ? value.toLocaleString(locale) : '0';
   return `${pdfSafeText(formatted)} FCFA`;
 }
 
+// Transforme ou formate les données via fmtDate.
 export function fmtDate(iso: string | null | undefined, locale = 'fr-FR'): string {
   if (!iso) return '—';
   const d = new Date(iso);
@@ -76,7 +70,7 @@ export function fmtDate(iso: string | null | undefined, locale = 'fr-FR'): strin
   );
 }
 
-/** Titre de section souligné, propre à une colonne. */
+// Helper titreSection : réalise le traitement métier associé.
 function titreSection(doc: jsPDF, texte: string, y: number, x = COL_G, largeur = LARG): number {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
@@ -87,7 +81,7 @@ function titreSection(doc: jsPDF, texte: string, y: number, x = COL_G, largeur =
   return y + 6.5;
 }
 
-/** « Élibellé : valeur » — la valeur se replie dans la largeur de la colonne. */
+// Helper ligneChamp : réalise le traitement métier associé.
 function ligneChamp(
   doc: jsPDF,
   etiquette: string,
@@ -98,8 +92,6 @@ function ligneChamp(
 ): number {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.6);
-  // Largeur du libellé mesurée dans la police : évite tout chevauchement
-  // avec la valeur (« Référence de transaction » est le plus long).
   const libelle = pdfSafeText(`${etiquette} :`);
   const labW = Math.min(doc.getTextWidth(libelle) + 1.6, largeur * 0.62);
   doc.setTextColor(...COLOR_MUTED);
@@ -110,7 +102,7 @@ function ligneChamp(
   return y + 4.3 * Math.max(lignes.length, 1) + 1.4;
 }
 
-/** Construit le document (sans le sauvegarder) — pratique pour les tests. */
+// Transforme ou formate les données via buildReceiptPdf.
 export function buildReceiptPdf(
   data: ReceiptData,
   labels: ReceiptLabels,
@@ -118,7 +110,6 @@ export function buildReceiptPdf(
 ): jsPDF {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-  // ---------- En-tête ----------
   doc.setFillColor(...COLOR_PRIMARY);
   doc.rect(0, 0, PAGE_W, 4, 'F');
 
@@ -145,7 +136,6 @@ export function buildReceiptPdf(
   doc.setDrawColor(...COLOR_LINE);
   doc.line(M, 33, RIGHT, 33);
 
-  // ---------- Bandeau de statut ----------
   const paye = data.paye;
   doc.setFillColor(...(paye ? COLOR_OK_BG : COLOR_KO_BG));
   doc.roundedRect(M, 37, PAGE_W - 2 * M, 12, 2, 2, 'F');
@@ -159,7 +149,6 @@ export function buildReceiptPdf(
     44.5,
   );
 
-  // ---------- Colonne gauche : paiement, puis client ----------
   let g = titreSection(doc, labels.paymentSection, 58);
   g = ligneChamp(doc, labels.method, data.methode ?? '—', g);
   g = ligneChamp(doc, labels.reference, data.reference ?? '—', g);
@@ -171,7 +160,6 @@ export function buildReceiptPdf(
   g = ligneChamp(doc, 'Nom', data.client.nom ?? '—', g);
   g = ligneChamp(doc, labels.phone, data.client.telephone ?? '—', g);
 
-  // ---------- Colonne droite : commande, livraison, livreur ----------
   let d = titreSection(doc, labels.order, 58, COL_D);
   d = ligneChamp(doc, labels.order, data.orderId ? `#${data.orderId}` : '—', d, COL_D);
   d = ligneChamp(doc, labels.delivery, data.zoneLivraison ?? '—', d, COL_D);
@@ -181,7 +169,6 @@ export function buildReceiptPdf(
   d = ligneChamp(doc, 'Nom', data.livreur.nom ?? '—', d, COL_D);
   d = ligneChamp(doc, labels.phone, data.livreur.telephone ?? '—', d, COL_D);
 
-  // ---------- Détail des articles ----------
   let bas = Math.max(g, d) + 6;
   bas = titreSection(doc, labels.items, bas, M, PAGE_W - 2 * M);
 
@@ -189,6 +176,7 @@ export function buildReceiptPdf(
   const colUnit = 160;
   const colTotal = RIGHT;
 
+  // Helper enteteTableau : réalise le traitement métier associé.
   const enteteTableau = () => {
     doc.setFillColor(243, 244, 246);
     doc.rect(M, bas, PAGE_W - 2 * M, 7.5, 'F');
@@ -231,7 +219,6 @@ export function buildReceiptPdf(
     }
   }
 
-  // ---------- Totaux (bloc aligné à droite) ----------
   const lignesTotaux: Array<[string, string, boolean]> = [];
   if (data.sousTotal != null) lignesTotaux.push([labels.subtotal, fmtMontant(data.sousTotal, locale), false]);
   if (data.fraisLivraison != null) lignesTotaux.push([labels.deliveryFee, fmtMontant(data.fraisLivraison, locale), false]);
@@ -256,7 +243,6 @@ export function buildReceiptPdf(
     yTotal += gras ? 8 : 6;
   }
 
-  // ---------- Pied de page (dernière page) ----------
   const derniere = (doc as unknown as { internal: { getNumberOfPages(): number } }).internal.getNumberOfPages();
   doc.setPage(derniere);
   doc.setDrawColor(...COLOR_LINE);
@@ -270,7 +256,7 @@ export function buildReceiptPdf(
   return doc;
 }
 
-/** Génère le reçu et déclenche le téléchargement. Renvoie le nom du fichier. */
+// Génère et déclenche l’export via downloadReceiptPdf.
 export function downloadReceiptPdf(
   data: ReceiptData,
   labels: ReceiptLabels,

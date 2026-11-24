@@ -1,16 +1,10 @@
+// Helpers de chargement et de formatage des livraisons et de l’historique livreur.
 import { authApi, catalogApi, livreurApi } from '../../services/api';
 import { uiLang } from '../../i18n/tx';
 import { listOf, unwrap } from '../../services/api/unwrap';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-/**
- * Données de l'espace livreur — UNIQUEMENT l'API (routes `role:livreur` + `zone`) :
- *  GET /livreur/deliveries (courses assignées en_attente / en_preparation / en_livraison, non paginé),
- *  GET /livreur/history (livrées, 20 par page), PATCH …/accept | refuse | status, POST /livreur/position,
- *  GET /dashboard (commandes, en_cours du livreur), GET /profile (disponibilité, zone), GET /zones.
- * ⚠️ OrderResource n'expose ni le client (nom, téléphone) ni les coordonnées du point de repère (B-25).
- */
 export interface LivreurOrderItem {
   id: number;
   product_id?: number | null;
@@ -31,12 +25,13 @@ export interface LivreurOrder {
   landmark?: { id?: number; nom?: string | null; zone_id?: number | null } | null;
 }
 
-/** OrderResource enveloppe chaque commande dans { success, message, data } (même en liste). */
+// Helper unwrapOrder : réalise le traitement métier associé.
 export const unwrapOrder = (r: any): LivreurOrder => {
   const order = (r?.data && typeof r.data === 'object' && 'id' in r.data ? r.data : r) as LivreurOrder;
   return { ...order, id: Number(order?.id) };
 };
 
+// Helper tokRef : réalise le traitement métier associé.
 export const tokRef = (id: number | string) => `#TOK-${id}`;
 
 export const STATUT_LABEL: Record<string, string> = {
@@ -55,17 +50,19 @@ const STATUT_LABEL_EN: Record<string, string> = {
   annule: 'Cancelled',
 };
 
+// Helper statutLabel : réalise le traitement métier associé.
 export const statutLabel = (s: string) =>
   (uiLang() !== 'fr' ? STATUT_LABEL_EN[s] : STATUT_LABEL[s]) ?? STATUT_LABEL[s] ?? s;
 
-/** Destination lisible : nom du point de repère + précision saisie par le client. */
+// Helper destination : réalise le traitement métier associé.
 export const destination = (o: LivreurOrder) =>
   [o.landmark?.nom, o.description_lieu].filter(Boolean).join(' — ') ||
   (uiLang() !== 'fr' ? 'Destination not provided' : 'Destination non renseignée');
 
+// Helper articlesCount : réalise le traitement métier associé.
 export const articlesCount = (o: LivreurOrder) => (o.items ?? []).reduce((s, it) => s + Number(it.quantite ?? 0), 0);
 
-/** Date et heure « 25/09 · 14:20 » (date de la commande : l'API ne donne pas l'heure de livraison en liste). */
+// Helper dateHeure : réalise le traitement métier associé.
 export function dateHeure(iso?: string | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
@@ -75,11 +72,12 @@ export function dateHeure(iso?: string | null): string {
   })}`;
 }
 
+// Récupère et normalise les données pour fetchDeliveries.
 export async function fetchDeliveries(): Promise<LivreurOrder[]> {
   return listOf(await livreurApi.getDeliveries()).map(unwrapOrder);
 }
 
-/** Historique complet (20 par page) : au plus `maxPages` pages, `capped` si la limite est atteinte. */
+// Récupère et normalise les données pour fetchAllHistory.
 export async function fetchAllHistory(maxPages = 25): Promise<{ orders: LivreurOrder[]; total: number; capped: boolean }> {
   const orders: LivreurOrder[] = [];
   let total = 0;
@@ -92,13 +90,12 @@ export async function fetchAllHistory(maxPages = 25): Promise<{ orders: LivreurO
   return { orders, total, capped: true };
 }
 
-/** Zones (id → nom) via GET /zones (public). */
+// Récupère et normalise les données pour fetchZoneNames.
 export async function fetchZoneNames(): Promise<Map<number, string>> {
   const list = listOf(unwrap(await catalogApi.getZones()));
   return new Map(list.map((z: any) => [Number(z.id), String(z.nom ?? '—')]));
 }
 
-/** Profil du livreur (GET /profile) : disponibilité réelle et zone assignée. */
 export interface LivreurProfile {
   id?: number;
   nom?: string;
@@ -113,6 +110,7 @@ export interface LivreurProfile {
 
 let profileCache: { at: number; value: LivreurProfile } | null = null;
 
+// Récupère et normalise les données pour fetchLivreurProfile.
 export async function fetchLivreurProfile(force = false): Promise<LivreurProfile> {
   if (!force && profileCache && Date.now() - profileCache.at < 60_000) return profileCache.value;
   const u: any = unwrap(await authApi.getProfile());
@@ -132,6 +130,7 @@ export async function fetchLivreurProfile(force = false): Promise<LivreurProfile
   return value;
 }
 
+// Helper forgetLivreurProfile : réalise le traitement métier associé.
 export function forgetLivreurProfile() {
   profileCache = null;
 }

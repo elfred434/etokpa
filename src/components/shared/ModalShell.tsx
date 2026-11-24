@@ -1,41 +1,21 @@
+// Gabarit de modale fiche détaillée (bandeau, cartes d’informations et pied d’actions).
 import type { ReactNode } from 'react';
 import MIcon from './MIcon';
 import { tx } from '../../i18n/tx';
 
-/**
- * Gabarit unique des modales de détail — repris **au caractère près** de la
- * modale de paiement (`PaymentsPanel`), qui sert de référence :
- *
- *   en-tête   : fond surface basse, icône orange, titre + sous-titre, fermer rond
- *   corps     : bandeau d'identité (pastille #id, date, montant, statut),
- *               puis des cartes `bg-bg-secondary` à étiquette majuscule
- *   pied      : fond `bg-bg-secondary`, filet haut, actions à droite
- *
- * Les modales de commande (client et administration/manager) l'utilisent ; la
- * modale de paiement reste la référence écrite à la main, elle sera migrée si
- * besoin sans changer son rendu.
- */
-
 type ModalShellProps = {
-  /** Titre de l'en-tête (ex. « Commande #42 », « Paiement #16 »). */
   titre: ReactNode;
-  /** Sous-titre explicatif sous le titre. */
   sousTitre?: ReactNode;
-  /** Icône Material Symbols de l'en-tête. */
   icone: string;
   onFermer: () => void;
-  /** Contenu du corps (bandeau + cartes). */
   children: ReactNode;
-  /** Contenu du pied de modale (actions). */
   pied?: ReactNode;
-  /** Largeur maximale du panneau ; 620px comme la modale de paiement. */
   maxWidth?: number;
-  /** Au-dessus des barres collantes (z-70 comme la modale de paiement). */
   zIndex?: number;
-  /** Identifiant de test du panneau. */
   testId?: string;
 };
 
+// Composant modale ModalShell : gère l’ouverture, les actions et la fermeture.
 export function ModalShell({
   titre,
   sousTitre,
@@ -47,6 +27,7 @@ export function ModalShell({
   zIndex = 70,
   testId,
 }: ModalShellProps) {
+  // Retourne le rendu JSX du composant.
   return (
     <div
       className="fixed inset-0 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
@@ -61,7 +42,6 @@ export function ModalShell({
         style={{ maxWidth: `${maxWidth}px` }}
         onClick={(event) => event.stopPropagation()}
       >
-        {/* En-tête */}
         <div className="px-6 py-4 border-b border-border-default flex items-center justify-between bg-surface-container-low shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <MIcon name={icone} className="text-primary text-xl" />
@@ -82,10 +62,8 @@ export function ModalShell({
           </button>
         </div>
 
-        {/* Corps */}
         <div className="p-6 space-y-4 overflow-y-auto flex-1">{children}</div>
 
-        {/* Pied de modale */}
         {pied && (
           <div className="px-6 py-4 bg-bg-secondary border-t border-border-default flex flex-wrap items-center justify-between gap-3 shrink-0">
             {pied}
@@ -96,7 +74,7 @@ export function ModalShell({
   );
 }
 
-/** Bandeau d'identité : pastille #id, date, montant, statut — comme les paiements. */
+// Composant React BandeauFiche : prépare l’état et affiche son interface.
 export function BandeauFiche({
   id,
   date,
@@ -108,6 +86,7 @@ export function BandeauFiche({
   montant?: ReactNode;
   statut?: ReactNode;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div className="flex items-start justify-between gap-4 pb-3 border-b border-border-default">
       <div>
@@ -124,10 +103,7 @@ export function BandeauFiche({
   );
 }
 
-/**
- * Carte de section : fond `bg-bg-secondary`, filet, étiquette majuscule avec
- * icône, puis contenu en grille à deux colonnes (une colonne sur mobile).
- */
+// Composant React FicheCard : prépare l’état et affiche son interface.
 export function FicheCard({
   icone,
   titre,
@@ -139,6 +115,7 @@ export function FicheCard({
   children: ReactNode;
   colonnes?: 1 | 2;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div className="bg-bg-secondary p-3.5 rounded-lg border border-border-default space-y-2">
       <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
@@ -152,7 +129,7 @@ export function FicheCard({
   );
 }
 
-/** Ligne étiquetée d'une carte : icône, libellé discret, valeur en gras. */
+// Composant React LigneFiche : prépare l’état et affiche son interface.
 export function LigneFiche({
   icone,
   etiquette,
@@ -162,9 +139,9 @@ export function LigneFiche({
   icone: string;
   etiquette: string;
   children: ReactNode;
-  /** Occupe toute la largeur (adresses, références longues). */
   large?: boolean;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div className={`flex ${large ? 'items-start' : 'items-center'} gap-2 ${large ? 'md:col-span-2' : ''}`}>
       <MIcon name={icone} className="text-text-tertiary text-base" />
@@ -174,8 +151,9 @@ export function LigneFiche({
   );
 }
 
-/** Bouton secondaire du pied de modale (« Fermer »). */
+// Composant React BoutonFermer : prépare l’état et affiche son interface.
 export function BoutonFermer({ onClick, children }: { onClick: () => void; children?: ReactNode }) {
+  // Retourne le rendu JSX du composant.
   return (
     <button
       type="button"
@@ -187,7 +165,7 @@ export function BoutonFermer({ onClick, children }: { onClick: () => void; child
   );
 }
 
-/** Bouton principal du pied de modale (action recommandée). */
+// Composant React BoutonPrincipal : prépare l’état et affiche son interface.
 export function BoutonPrincipal({
   onClick,
   icone,
@@ -199,6 +177,7 @@ export function BoutonPrincipal({
   children: ReactNode;
   disabled?: boolean;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <button
       type="button"

@@ -1,3 +1,2 @@
-// Même écran que /manager/parametres (les deux maquettes param_tres_manager_1/2 = deux états
-// de la même page) — cette route garde l'URL historique du design.
+// Préférences opérationnelles propres à la zone gérée par le manager.
 export { default } from './ManagerParametresPage';

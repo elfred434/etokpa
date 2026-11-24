@@ -1,3 +1,4 @@
+// Barre de navigation inférieure mobile pour l’espace client.
 import { Link, useRouterState } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 import { useAppSelector } from '../../../hooks/useStore';
@@ -5,10 +6,7 @@ import { selectCount } from '../../../store/slices/cart/cartSlice';
 import { useLanguage } from '../../../context/LanguageContext';
 import { hasSession } from '../../../routes/authGuard';
 
-/**
- * ClientBottomNav — Composant commun de navigation mobile pour toutes les pages client.
- * Fixe en bas de l'écran (lg:hidden).
- */
+// Composant React ClientBottomNav : prépare l’état et affiche son interface.
 export default function ClientBottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const cartCount = useAppSelector((s) => selectCount(s.cart.items));
@@ -23,6 +21,7 @@ export default function ClientBottomNav() {
   const isPanier = pathname.startsWith('/panier');
   const isProfil = pathname.startsWith('/profil');
 
+  // Retourne le rendu JSX du composant.
   return (
     <nav className="fixed bottom-0 left-0 z-50 flex w-full items-center justify-around border-t border-line bg-warm px-2 py-2 shadow-lg lg:hidden">
       <Link

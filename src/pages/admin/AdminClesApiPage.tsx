@@ -1,3 +1,4 @@
+// Interface de gestion des clés API et webhooks.
 import { useDesignScript } from '../../utils/designRuntime';
 import DESIGN_SCRIPT from './_scripts/AdminClesApiPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
@@ -6,17 +7,15 @@ import TableRowActions from '../../components/shared/TableRowActions';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
-
+// Feuille de styles intégrée (DESIGN_CSS) injectée pour le rendu de la vue.
 const DESIGN_CSS = `@layer base{html,body{margin:0;padding:0;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}`;
 
-/**
- * AdminClesApiPage — copie conforme statique du design Stitch (code.html).
- * Interactions : script du design exécuté via useDesignScript (comportement copié).
- */
+// Composant de la page AdminClesApi : gère le chargement des données et le rendu.
 export default function AdminClesApiPage() {
   useLanguage();
   useDesignScript(DESIGN_SCRIPT);
 
+  // Retourne le rendu JSX du composant.
   return (
     <AdminLayout currentPath="/admin/cles-api">
       <style>{DESIGN_CSS}</style>
@@ -63,7 +62,7 @@ export default function AdminClesApiPage() {
           {tx("Annuler")}
         </button> <button className="px-4 py-2 rounded-xl bg-primary-container hover:bg-primary-hover text-white font-label text-label shadow-md shadow-primary-container/20 transition-all active:scale-[0.97]" data-onclick="submitNewKey()" type="button">
           {tx("Créer Clé Sécurisée")}
-        </button> </div> </div> </div>  <div className="fixed bottom-6 right-6 z-50 hidden transform transition-all duration-300" id="toast"> <div className="flex items-center gap-sm px-4 py-3 rounded-xl bg-console text-white shadow-2xl border border-[#1F2937]"> <MIcon name="check_circle" className="text-[20px] text-success" /> <span className="font-label text-label" id="toast-msg">{tx("Action effectuée avec succès")}</span> </div> </div> </div>  
+        </button> </div> </div> </div>  <div className="fixed bottom-6 right-6 z-50 hidden transform transition-all duration-300" id="toast"> <div className="flex items-center gap-sm px-4 py-3 rounded-xl bg-console text-white shadow-2xl border border-[#1F2937]"> <MIcon name="check_circle" className="text-[20px] text-success" /> <span className="font-label text-label" id="toast-msg">{tx("Action effectuée avec succès")}</span> </div> </div> </div>
     </AdminLayout>
   );
 }

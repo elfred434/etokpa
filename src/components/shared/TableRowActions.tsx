@@ -1,3 +1,4 @@
+// Regroupe les boutons d’action d’une ligne de tableau (inline ou menu déroulant).
 import {
   Children,
   Fragment,
@@ -18,15 +19,14 @@ import { tr } from '../../i18n/tx';
 
 type Props = {
   children: ReactNode;
-  /** Alignement du groupe dans la cellule (`right` par défaut pour les colonnes Actions). */
   align?: 'left' | 'right';
-  /** Seuil au-delà duquel les boutons excédentaires passent dans le menu « Plus d'actions ». */
   maxInline?: number;
   className?: string;
 };
 
 type AnyElement = ReactElement<Record<string, unknown>>;
 
+// Helper flattenElements : réalise le traitement métier associé.
 function flattenElements(node: ReactNode, out: AnyElement[] = []): AnyElement[] {
   Children.forEach(node, (child) => {
     if (child == null || typeof child === 'boolean') return;
@@ -44,6 +44,7 @@ function flattenElements(node: ReactNode, out: AnyElement[] = []): AnyElement[] 
   return out;
 }
 
+// Transforme ou formate les données via extractText.
 function extractText(node: ReactNode): string {
   if (typeof node === 'string' || typeof node === 'number') return String(node).trim();
   if (Array.isArray(node)) return node.map(extractText).filter(Boolean).join(' ').trim();
@@ -54,6 +55,7 @@ function extractText(node: ReactNode): string {
   return '';
 }
 
+// Vérifie la condition métier isIconOnlyChild.
 function isIconOnlyChild(node: ReactNode): boolean {
   if (node == null || typeof node === 'boolean') return false;
   if (typeof node === 'string' || typeof node === 'number') return String(node).trim().length === 0;
@@ -66,6 +68,7 @@ function isIconOnlyChild(node: ReactNode): boolean {
   return false;
 }
 
+// Helper findIconNode : réalise le traitement métier associé.
 function findIconNode(node: ReactNode): ReactNode {
   if (!isValidElement(node)) return null;
   if (node.type === MIcon || node.type === 'i') return node;
@@ -81,13 +84,7 @@ function findIconNode(node: ReactNode): ReactNode {
   return null;
 }
 
-/**
- * Colonne `Actions` des tableaux :
- * - jusqu'à `maxInline` (2) actions : boutons affichés directement côte à côte ;
- * - au-delà de 2 actions : garde l'action principale visible et regroupe le reste
- *   dans un menu déroulant « Plus d'actions » (`⋮`) rendu en portail pour ne jamais
- *   être rogné par `overflow-hidden` / `overflow-x-auto`.
- */
+// Composant React TableRowActions : prépare l’état et affiche son interface.
 export default function TableRowActions({
   children,
   align = 'right',
@@ -101,6 +98,7 @@ export default function TableRowActions({
   const menuRef = useRef<HTMLDivElement | null>(null);
   const menuId = useId();
 
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     if (!open) return;
     const updatePosition = () => {
@@ -160,6 +158,7 @@ export default function TableRowActions({
   const primary = items[0];
   const overflow = items.slice(1);
 
+  // Helper renderOverflowItem : réalise le traitement métier associé.
   const renderOverflowItem = (el: AnyElement, idx: number) => {
     const props = el.props ?? {};
     const labelText =
@@ -173,7 +172,6 @@ export default function TableRowActions({
     const isDanger = /\btext-error\b|\btext-red-/.test(origClass);
     const dataOnclick = typeof props['data-onclick'] === 'string' ? props['data-onclick'] : null;
 
-    // Si c'est un <Link> ou un lien sans onClick, on clone l'élément en style menuitem
     if (el.type !== 'button' && !props.onClick && !dataOnclick) {
       return cloneElement(el, {
         key: el.key ?? idx,
@@ -213,6 +211,7 @@ export default function TableRowActions({
     );
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div
       className={`inline-flex items-center ${justify} gap-1.5 whitespace-nowrap ${className}`}

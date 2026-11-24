@@ -1,3 +1,4 @@
+// Système global de boîtes de dialogue in-app (alert, confirm, prompt) remplaçant window.alert/confirm.
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import {
   DIALOG_CANCEL_BTN_CLASS,
@@ -48,19 +49,23 @@ let activeDialog: PendingDialog | null = null;
 const dialogQueue: PendingDialog[] = [];
 const listeners = new Set<() => void>();
 
+// Helper notify : réalise le traitement métier associé.
 function notify() {
   listeners.forEach((listener) => listener());
 }
 
+// Helper subscribe : réalise le traitement métier associé.
 function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
 
+// Récupère et normalise les données pour getSnapshot.
 function getSnapshot() {
   return activeDialog;
 }
 
+// Helper enqueue : réalise le traitement métier associé.
 function enqueue<T extends DialogValue>(
   request: Omit<PendingDialog, 'id' | 'resolve'>,
 ): Promise<T> {
@@ -76,6 +81,7 @@ function enqueue<T extends DialogValue>(
   });
 }
 
+// Helper settle : réalise le traitement métier associé.
 function settle(id: number, value: DialogValue) {
   if (!activeDialog || activeDialog.id !== id) return;
   const current = activeDialog;
@@ -84,6 +90,7 @@ function settle(id: number, value: DialogValue) {
   notify();
 }
 
+// Helper cancelActive : réalise le traitement métier associé.
 function cancelActive() {
   if (!activeDialog) return;
   const result: DialogValue = activeDialog.kind === 'confirm'
@@ -94,6 +101,7 @@ function cancelActive() {
   settle(activeDialog.id, result);
 }
 
+// Helper normalized : réalise le traitement métier associé.
 function normalized(message: string, kind: DialogKind, options: AdminDialogOptions, initialValue = '') {
   return {
     kind,
@@ -108,7 +116,6 @@ function normalized(message: string, kind: DialogKind, options: AdminDialogOptio
   };
 }
 
-/** API asynchrone partagée pour les confirmations, informations et saisies admin. */
 export const adminDialogs = {
   alert(message: string, options: AdminDialogOptions = {}): Promise<void> {
     return enqueue<void>(normalized(message, 'alert', options));
@@ -127,13 +134,14 @@ declare global {
   }
 }
 
-/** Hôte global des modales admin. La largeur est bornée en CSS, pas par max-w-lg/md. */
+// Composant React AdminActionDialogHost : prépare l’état et affiche son interface.
 export function AdminActionDialogHost() {
   useLanguage();
   const request = useSyncExternalStore(subscribe, getSnapshot, () => null);
   const promptRef = useRef<HTMLTextAreaElement | null>(null);
   const cancelRef = useRef<HTMLButtonElement | null>(null);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     window.tokpaAdminDialogs = adminDialogs;
     return () => {
@@ -141,6 +149,7 @@ export function AdminActionDialogHost() {
     };
   }, []);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!request) return;
     if (request.kind === 'prompt') promptRef.current?.focus();
@@ -149,11 +158,13 @@ export function AdminActionDialogHost() {
 
   if (!request) return null;
 
+  // Valide et transmet l’action submitPrompt.
   const submitPrompt = () => {
     if (request.kind !== 'prompt') return;
     settle(request.id, promptRef.current?.value ?? request.initialValue);
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <DialogFrame
       danger={request.danger}

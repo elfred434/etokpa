@@ -1,14 +1,9 @@
+// Garde de navigation côté client : vérifie la session, le rôle utilisateur et les redirections autorisées.
 import { useEffect, useState } from 'react';
 import { redirect, type AnyRouter } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import { tr, tx } from '../i18n/tx';
 
-/**
- * Garde de connexion (décision du 24/09) : sans session, toute page redirige vers /connexion,
- * SAUF l'accueil, le catalogue, le profil et les écrans d'authentification (sinon boucle).
- * Session = token Sanctum dans le localStorage ; sa validité réelle est vérifiée par l'API
- * (401 → services/api/client.ts émet `tokpa:session-expired`).
- */
 export const PUBLIC_PATHS: readonly string[] = [
   '/',
   '/connexion',
@@ -22,31 +17,31 @@ export const PUBLIC_PATHS: readonly string[] = [
 
 const AUTH_TOAST_ID = 'auth-required';
 const ROLE_TOAST_ID = 'role-denied';
-/** Page demandée avant la connexion, conservée pour l'onglet pendant la 2FA (et un détour par l'inscription). */
 const REDIRECT_KEY = 'tokpa_redirect';
 
-/** Rôles du backend (App\Models\Role). */
 export type AppRole = 'super_admin' | 'admin' | 'manager' | 'livreur' | 'client';
 
+// Normalise un chemin URL en retirant les slashs finaux.
 const normPath = (pathname: string) => pathname.replace(/\/+$/, '') || '/';
+// Vérifie si un chemin correspond à une route de base ou à un sous-chemin.
 const under = (path: string, base: string) => path === base || path.startsWith(`${base}/`);
 
-/** Chemin public ? (tolère un « / » final : /connexion/ = /connexion). */
+// Vérifie la condition métier isPublicPath.
 export function isPublicPath(pathname: string): boolean {
   const path = normPath(pathname);
-  // La fiche produit fait partie du catalogue public (GET /products/{id} sans jeton).
   if (path === '/produit' || path.startsWith('/produit/')) return true;
   return PUBLIC_PATHS.includes(path);
 }
 
-/** Une session est-elle ouverte côté front ? */
+// Vérifie la condition métier hasSession.
 export function hasSession(): boolean {
   return !!localStorage.getItem('tokpa_token');
 }
 
-/** Re-rend la barre et le pied de page quand la session change, sans recharger la page. */
+// Hook React useAuthRevision : encapsule l’état et les effets associés.
 export function useAuthRevision(): number {
   const [rev, setRev] = useState(0);
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     if (!hasSession() && localStorage.getItem('tokpa_user')) {
       localStorage.removeItem('tokpa_user');
@@ -73,6 +68,7 @@ type StoredUser = {
   role?: string | { nom?: string } | null;
   profil?: { zone_id?: number; zone?: { id?: number; nom?: string } | null } | null;
 };
+// Lit et décode l’utilisateur connecté depuis localStorage.
 function storedUser(): StoredUser | null {
   try {
     const raw = localStorage.getItem('tokpa_user');
@@ -82,21 +78,20 @@ function storedUser(): StoredUser | null {
   }
 }
 
-/** Rôle de l'utilisateur connecté (tokpa_user.role = chaîne ou objet { nom } selon la réponse 2FA). */
+// Helper currentRole : réalise le traitement métier associé.
 export function currentRole(): string | null {
-  // Sans jeton, un ancien tokpa_user ne doit pas faire croire qu'on est admin.
   if (!hasSession()) return null;
   const u = storedUser();
   const role = typeof u?.role === 'string' ? u.role : u?.role?.nom;
   return role || null;
 }
 
-/** Un admin ou un super-admin. Le backend les laisse aussi passer sur les routes manager. */
+// Vérifie la condition métier isAdminRole.
 export function isAdminRole(role: string | null = currentRole()): boolean {
   return role === 'admin' || role === 'super_admin';
 }
 
-/** Nom affichable de l'utilisateur connecté (barres admin / manager / livreur), sinon null. */
+// Helper currentUserName : réalise le traitement métier associé.
 export function currentUserName(): string | null {
   const u = storedUser();
   const fromParts = [u?.prenom, u?.nom]
@@ -107,31 +102,31 @@ export function currentUserName(): string | null {
   return nom || null;
 }
 
-/** Id du compte connecté, sinon null. */
+// Helper currentUserId : réalise le traitement métier associé.
 export function currentUserId(): number | null {
   const id = Number(storedUser()?.id);
   return id > 0 ? id : null;
 }
 
-/** Téléphone de l'utilisateur connecté, sinon null. */
+// Helper currentUserPhone : réalise le traitement métier associé.
 export function currentUserPhone(): string | null {
   const tel = storedUser()?.telephone;
   return typeof tel === 'string' && tel.trim() ? tel.trim() : null;
 }
 
-/** Zone du manager / livreur connecté (UserResource.profil.zone, chargée à la 2FA), sinon null. */
+// Helper currentUserZone : réalise le traitement métier associé.
 export function currentUserZone(): string | null {
   return storedUser()?.profil?.zone?.nom || null;
 }
 
-/** Libellé de zone dans l'espace manager (un admin sans fiche manager supervise toutes les zones). */
+// Helper managerZoneLabel : réalise le traitement métier associé.
 export function managerZoneLabel(): string {
   const zone = currentUserZone();
   if (zone) return `Zone ${zone}`;
   return isAdminRole() ? tx('Toutes les zones') : tx('Zone non attribuée');
 }
 
-/** Garde la zone choisie pour l'en-tête, en attendant le prochain profil renvoyé par l'API. */
+// Helper rememberUserZone : réalise le traitement métier associé.
 export function rememberUserZone(zoneId: number, nom?: string) {
   try {
     const raw = localStorage.getItem('tokpa_user');
@@ -144,11 +139,10 @@ export function rememberUserZone(zoneId: number, nom?: string) {
     };
     localStorage.setItem('tokpa_user', JSON.stringify(u));
   } catch {
-    /* l'affichage reprendra la zone au prochain profil */
   }
 }
 
-/** Fusionne la fiche renvoyée par GET/PUT /profile dans la session affichée. */
+// Helper rememberSessionUser : réalise le traitement métier associé.
 export function rememberSessionUser(patch: Record<string, unknown>) {
   try {
     const raw = localStorage.getItem('tokpa_user');
@@ -166,17 +160,16 @@ export function rememberSessionUser(patch: Record<string, unknown>) {
     localStorage.setItem('tokpa_user', serialized);
     window.dispatchEvent(new Event('tokpa:auth-changed'));
   } catch {
-    /* session illisible */
   }
 }
 
-/** Initiales d'un nom (« Awa Dossou » → « AD »). */
+// Helper initialsOf : réalise le traitement métier associé.
 export function initialsOf(nom: string | null, fallback = '?'): string {
   const parts = (nom ?? '').trim().split(/\s+/).filter(Boolean);
   return parts.length ? parts.slice(0, 2).map((p) => p[0]!.toUpperCase()).join('') : fallback;
 }
 
-/** Espace de travail d'un rôle (lien « Mon espace … » de la barre client), null pour un client. */
+// Helper staffSpace : réalise le traitement métier associé.
 export function staffSpace(role: string | null): { to: '/admin' | '/manager' | '/livreur'; icon: string; label: string } | null {
   if (role === 'admin' || role === 'super_admin') return { to: '/admin', icon: 'admin_panel_settings', label: 'Mon espace admin' };
   if (role === 'manager') return { to: '/manager', icon: 'supervisor_account', label: 'Mon espace manager' };
@@ -184,22 +177,15 @@ export function staffSpace(role: string | null): { to: '/admin' | '/manager' | '
   return null;
 }
 
-/** Espace de chaque rôle : arrivée après connexion (sans page demandée) et renvoi si accès refusé. */
+// Helper homeForRole : réalise le traitement métier associé.
 export function homeForRole(role: string | null): '/admin' | '/manager' | '/livreur' | '/' {
   if (role === 'admin' || role === 'super_admin') return '/admin';
   if (role === 'manager') return '/manager';
   if (role === 'livreur') return '/livreur';
-  return '/'; // client, rôle inconnu
+  return '/';
 }
 
-/**
- * Rôles autorisés pour une page — décision du 26/09 :
- *  - admin, manager et livreur vérifient le rôle uniquement dans leur espace ;
- *  - un admin peut aussi ouvrir l'espace manager (le backend accepte déjà role:manager,admin) ;
- *  - l'espace clientèle ne vérifie pas le rôle : chacun y voit ses propres achats ;
- *  - /profil est public : sans session, une icône de connexion s'y affiche.
- * null = pas de contrôle de rôle (clientèle, ou page inconnue).
- */
+// Helper pageRoles : réalise le traitement métier associé.
 export function pageRoles(pathname: string): { roles: AppRole[]; label: string } | null {
   const p = normPath(pathname);
   if (under(p, '/admin')) return { roles: ['admin', 'super_admin'], label: 'aux administrateurs' };
@@ -208,17 +194,14 @@ export function pageRoles(pathname: string): { roles: AppRole[]; label: string }
   return null;
 }
 
-/** Ce rôle peut-il ouvrir cette page ? (pages publiques : toujours) */
+// Vérifie la condition métier canAccess.
 export function canAccess(pathname: string, role: string | null): boolean {
   if (isPublicPath(pathname)) return true;
   const rule = pageRoles(pathname);
   return !rule || (role !== null && (rule.roles as string[]).includes(role));
 }
 
-/**
- * Adresse de retour sûre : chemin interne uniquement (pas de « //site », « https:… », « /\… » qui
- * mèneraient hors de TOKPa), et jamais un écran d'authentification (boucle). Sinon null.
- */
+// Helper safeRedirect : réalise le traitement métier associé.
 export function safeRedirect(target: unknown): string | null {
   if (typeof target !== 'string') return null;
   if (/[\u0000-\u001F\u007F]/.test(target)) return null;
@@ -238,29 +221,22 @@ export function safeRedirect(target: unknown): string | null {
   return target;
 }
 
-/** Mémorise (ou oublie) la page demandée ; appelé à l'arrivée sur /connexion avec son ?redirect=. */
+// Helper rememberRedirect : réalise le traitement métier associé.
 export function rememberRedirect(target: unknown): void {
   const safe = safeRedirect(target);
   if (safe) sessionStorage.setItem(REDIRECT_KEY, safe);
   else sessionStorage.removeItem(REDIRECT_KEY);
 }
 
-/** Destination après la 2FA : la page demandée si ce rôle y a droit, sinon l'espace de son rôle. */
+// Helper postLoginTarget : réalise le traitement métier associé.
 export function postLoginTarget(role: string | null): string {
   const saved = safeRedirect(sessionStorage.getItem(REDIRECT_KEY));
   sessionStorage.removeItem(REDIRECT_KEY);
-  // Une ouverture directe de /connexion ne constitue pas une destination de retour.
-  // Après la 2FA, on doit toujours rejoindre l’espace du rôle, jamais rester sur /connexion.
   if (saved && normPath(saved.split(/[?#]/)[0]) !== '/connexion' && canAccess(saved.split(/[?#]/)[0], role)) return saved;
   return homeForRole(role);
 }
 
-/**
- * beforeLoad de la route racine : exécuté avant tout rendu, donc la page refusée n'est jamais
- * affichée et ses appels API ne partent pas. Toute nouvelle route est protégée par défaut.
- *  1. pas de session → /connexion?redirect=<page demandée> (retour automatique après la 2FA) ;
- *  2. mauvais rôle → espace de son rôle (« Accès refusé »).
- */
+// Helper guardRoute : réalise le traitement métier associé.
 export function guardRoute({
   location,
   preload,
@@ -283,15 +259,12 @@ export function guardRoute({
   }
 }
 
-/**
- * Session perdue en cours de navigation (401 : token expiré au bout de 24 h, révoqué, ou base
- * réinitialisée) → retour à la connexion, sauf si l'on est sur une page publique.
- */
+// Helper redirectOnSessionExpired : réalise le traitement métier associé.
 export function redirectOnSessionExpired(router: AnyRouter): () => void {
+  // Gère l’action utilisateur Expired.
   const onExpired = () => {
     if (isPublicPath(router.state.location.pathname)) return;
     toast.error(tx('Session expirée : veuillez vous reconnecter.'), { id: AUTH_TOAST_ID });
-    // retour à la même page après la reconnexion
     const current = router.state.location;
     const requestedUrl = `${current.pathname}${current.searchStr ?? ''}${current.hash ?? ''}`;
     void router.navigate({ to: '/connexion', search: { redirect: requestedUrl }, replace: true });

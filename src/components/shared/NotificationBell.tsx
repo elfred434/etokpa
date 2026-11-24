@@ -1,3 +1,4 @@
+// Cloche de notifications client avec badge de non-lus.
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { IconBell } from '@tabler/icons-react';
@@ -10,12 +11,13 @@ interface NotificationBellProps {
   notifications: AppNotification[];
 }
 
-/** Cloche de la navbar : compteur non lues + panneau dropdown (F-20). */
+// Composant React NotificationBell : prépare l’état et affiche son interface.
 export default function NotificationBell({ notifications }: NotificationBellProps) {
   useLanguage();
   const [open, setOpen] = useState(false);
   const unread = notifications.filter((n) => n.unread).length;
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="relative">
       <button
@@ -34,7 +36,6 @@ export default function NotificationBell({ notifications }: NotificationBellProp
 
       {open && (
         <>
-          {/* Backdrop pour fermer au clic extérieur */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
           <div className="fixed inset-x-3 top-[58px] z-50 overflow-hidden rounded-[14px] border-0.5 border-line bg-card shadow-lg sm:inset-x-auto sm:top-auto sm:absolute sm:right-0 sm:mt-sm sm:w-[340px]">
             <div className="flex items-center justify-between border-b-0.5 border-line p-md">

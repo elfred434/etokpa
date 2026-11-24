@@ -1,15 +1,6 @@
+// Appels API de paiement FedaPay (initialisation, consultation et historique client).
 import { apiClient } from './client';
 
-/**
- * Délai spécifique aux lectures de paiements.
- *
- * Ces routes interrogent FedaPay une fois par paiement en attente côté serveur
- * (voir NOTE_22) : leur durée augmente avec le nombre de paiements. Le délai
- * global de 10 s est trop court dès que la connexion à FedaPay est lente, ce
- * qui produisait « timeout of 10000ms exceeded » sur la page Paiements.
- * Le vrai correctif est côté serveur (patch fourni) ; ce délai évite l'échec
- * immédiat en attendant.
- */
 const TIMEOUT_PAIEMENTS = 30000;
 
 export interface InitPaymentPayload {
@@ -34,8 +25,9 @@ export interface InitPaymentResponse {
   currency?: string;
 }
 
+// Regroupe les appels API du module payments.
 export const paymentsApi = {
-  // POST /api/payments/init -> initialise le paiement FedaPay
+  // Appelle POST /payments/init via le client API.
   initPayment: async (payload: InitPaymentPayload, idempotencyKey?: string) => {
     const response = await apiClient.post('/payments/init', payload, {
       headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
@@ -43,25 +35,25 @@ export const paymentsApi = {
     return response.data;
   },
 
-  // GET /api/payments/{id} -> détails du paiement
+  // Appelle GET /payments/${id} via le client API.
   getPayment: async (id: number | string) => {
     const response = await apiClient.get(`/payments/${id}`, { timeout: TIMEOUT_PAIEMENTS });
     return response.data;
   },
 
-  // GET /api/payments -> paiements du compte connecté
+  // Appelle GET /payments via le client API.
   listMine: async () => {
     const response = await apiClient.get('/payments', { timeout: TIMEOUT_PAIEMENTS });
     return response.data;
   },
 
-  // GET /api/admin/payments -> tous les paiements
+  // Appelle GET /admin/payments via le client API.
   listAll: async () => {
     const response = await apiClient.get('/admin/payments', { timeout: TIMEOUT_PAIEMENTS });
     return response.data;
   },
 
-  // GET /api/admin/clients/payments -> paiements du compte connecté, côté admin
+  // Appelle GET /admin/clients/payments via le client API.
   listOwnAsAdmin: async () => {
     const response = await apiClient.get('/admin/clients/payments', { timeout: TIMEOUT_PAIEMENTS });
     return response.data;

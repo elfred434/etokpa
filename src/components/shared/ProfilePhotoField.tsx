@@ -1,3 +1,4 @@
+// Champ d’upload et aperçu de photo de profil convertie en WebP.
 import { useRef } from 'react';
 import toast from 'react-hot-toast';
 import MIcon from './MIcon';
@@ -12,9 +13,11 @@ type Props = {
   onClear: () => void;
 };
 
+// Composant React ProfilePhotoField : prépare l’état et affiche son interface.
 export default function ProfilePhotoField({ name, photo, onChange, onClear }: Props) {
   const input = useRef<HTMLInputElement>(null);
 
+  // Helper pick : réalise le traitement métier associé.
   const pick = async (file: File | undefined) => {
     if (!file) return;
     try {
@@ -25,6 +28,7 @@ export default function ProfilePhotoField({ name, photo, onChange, onClear }: Pr
     }
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="flex items-center gap-md">
       <UserAvatar name={name} photo={photo} fallback="TK" className="h-16 w-16 border border-primary-light bg-primary-tint text-xl text-primary-dark" />

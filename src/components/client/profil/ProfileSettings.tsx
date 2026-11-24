@@ -1,3 +1,4 @@
+// Raccourcis de paramètres (langue, thème, sécurité) dans le profil.
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -10,16 +11,14 @@ import {
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
-
-/**
- * ProfileSettings — Encart Paramètres & Sécurité (mot de passe, notifications, langue, déconnexion).
- */
+// Composant React ProfileSettings : prépare l’état et affiche son interface.
 export default function ProfileSettings() {
   const navigate = useNavigate();
   const { language, toggleLanguage, t } = useLanguage();
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [pwForm, setPwForm] = useState({ oldPw: '', newPw: '', confirmPw: '' });
 
+  // Gère l’action utilisateur PasswordSubmit.
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (pwForm.newPw !== pwForm.confirmPw) {
@@ -31,18 +30,19 @@ export default function ProfileSettings() {
     toast.success(tx("Mot de passe modifié avec succès"));
   };
 
+  // Gère l’action utilisateur Logout.
   const handleLogout = () => {
     toast.success(tx("Déconnexion réussie"));
     navigate({ to: '/connexion' });
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <>
       <section className="mb-xl">
         <h3 className="mb-sm font-h3 text-h3 text-ink">{t('profile.settingsAndSecurity')}</h3>
 
         <div className="overflow-hidden rounded-[14px] border border-line bg-bg-card shadow-sm">
-          {/* Changer mot de passe */}
           <button
             type="button"
             onClick={() => setPasswordOpen(true)}
@@ -55,7 +55,6 @@ export default function ProfileSettings() {
             <MIcon name="chevron_right" className="text-ink-3" />
           </button>
 
-          {/* Notifications */}
           <button
             type="button"
             onClick={() => toast(tx("Paramètres notifications SMS / App enregistrés"))}
@@ -68,7 +67,6 @@ export default function ProfileSettings() {
             <span className="text-xs font-semibold text-success">{tx("Activées")}</span>
           </button>
 
-          {/* Langue (Interrupteur FR / EN) */}
           <button
             type="button"
             onClick={() => {
@@ -87,7 +85,6 @@ export default function ProfileSettings() {
             </div>
           </button>
 
-          {/* Déconnexion */}
           <button
             type="button"
             onClick={handleLogout}
@@ -99,7 +96,6 @@ export default function ProfileSettings() {
         </div>
       </section>
 
-      {/* Modal Changement Mot de Passe */}
       {passwordOpen && (
         <DialogFrame
           icon="lock"

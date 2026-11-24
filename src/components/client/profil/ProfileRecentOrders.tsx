@@ -1,8 +1,8 @@
+// Liste résumée des commandes récentes affichée sur le profil client.
 import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
-
 
 const RECENT_ORDERS = [
   { id: 'TOK-2847', date: 'Aujourd’hui', totalLabel: '3 980 FCFA', statusFr: 'En livraison', statusEn: 'Out for delivery', active: true },
@@ -10,12 +10,11 @@ const RECENT_ORDERS = [
   { id: 'TOK-2831', date: '02 Oct 2023', totalLabel: '5 200 FCFA', statusFr: 'Livré', statusEn: 'Delivered', active: false },
 ];
 
-/**
- * ProfileRecentOrders — Carte des commandes récentes du client.
- */
+// Composant React ProfileRecentOrders : prépare l’état et affiche son interface.
 export default function ProfileRecentOrders() {
   const { t, isFr } = useLanguage();
 
+  // Retourne le rendu JSX du composant.
   return (
     <section className="mb-md">
       <div className="mb-sm flex items-center justify-between">

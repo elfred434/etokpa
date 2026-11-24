@@ -1,3 +1,4 @@
+// ErrorBoundary React interceptant les erreurs de rendu non gérées.
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { captureFrontendError } from '../../services/errors/frontendErrorReporter';
 import { getDevelopmentErrorMessage } from '../../utils/developmentErrorMessage';
@@ -13,7 +14,7 @@ interface AppErrorBoundaryState {
   developmentMessage?: string;
 }
 
-/** Catches render/lifecycle failures and replaces them with a safe recovery page. */
+// Classe AppErrorBoundary : gère le comportement et le rendu associés.
 export default class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorBoundaryState> {
   state: AppErrorBoundaryState = { hasError: false };
 

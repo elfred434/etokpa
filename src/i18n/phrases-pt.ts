@@ -1,9 +1,4 @@
-/**
- * Dictionnaire FR → portugais (pt) des phrases passées à tx()/useTx().
- * Couverture complète des phrases statiques du code (1310 entrées (1295 + 15 « Mes packs » client)).
- * Repli restant : anglais (EN) puis français — voir src/i18n/tx.ts.
- * Généré le 12/10/2026.
- */
+// Dictionnaire des phrases traduites en portugais.
 export const PT: Record<string, string> = {
   "Adresse de livraison": "Endereço de entrega",
   "Clair": "Claro",
@@ -1345,12 +1340,10 @@ export const PT: Record<string, string> = {
   "Actualisation automatique": "Atualização automática",
   "Toutes les 30 secondes": "A cada 30 segundos",
   "Informations actualisées.": "Informações atualizadas.",
-  // Encomendas — detalhe (modais do cliente, administração e gestor)
   "Aucun article rattaché à cette commande.": "Nenhum artigo vinculado a este pedido.",
   "Détail de la commande": "Detalhes do pedido",
   "Livreur en cours d’assignation…": "Entregador em atribuição…",
   "Précisions": "Indicações",
-  // Configurações — aparência e idioma (página Configurações dos quatro espaços)
   "Langue et thème": "Idioma e tema",
   "Langue de l'interface": "Idioma da interface",
   "Suit le réglage de votre appareil": "Segue a configuração do seu dispositivo",

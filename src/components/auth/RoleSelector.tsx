@@ -1,3 +1,4 @@
+// Sélecteur visuel de rôle pour la connexion ou le choix d’espace.
 import clsx from 'clsx';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
@@ -34,12 +35,10 @@ interface RoleSelectorProps {
   error?: boolean;
 }
 
-/**
- * Panneau « Je suis… » de l'inscription :
- * Cartes rôles (Client, Livreur, Manager, Admin, Super Admin).
- */
+// Composant React RoleSelector : prépare l’état et affiche son interface.
 export default function RoleSelector({ value, onChange, error }: RoleSelectorProps) {
   useLanguage();
+  // Retourne le rendu JSX du composant.
   return (
     <fieldset className="rounded-[12px] bg-primary-lighter p-md">
       <legend className="mb-md px-xs text-[13px] font-medium text-primary-dark">{tx("Je suis…")}</legend>

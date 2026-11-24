@@ -1,3 +1,4 @@
+// Contient les libellés statiques de traduction de base de l’interface.
 export const TRANSLATIONS = {
   fr: {
     common: {

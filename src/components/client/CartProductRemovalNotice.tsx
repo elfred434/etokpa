@@ -1,14 +1,16 @@
+// Affiche une bannière quand un produit supprimé du catalogue a été retiré du panier.
 import { useAppDispatch, useAppSelector } from '../../hooks/useStore';
 import { clearProductRemovalNotices } from '../../store/slices/cart/cartSlice';
 import { tr, tx } from '../../i18n/tx';
 import MIcon from '../shared/MIcon';
 
-/** Avertit le client lorsque le serveur constate la suppression d'un produit encore au panier. */
+// Composant React CartProductRemovalNotice : prépare l’état et affiche son interface.
 export default function CartProductRemovalNotice() {
   const dispatch = useAppDispatch();
   const removedProducts = useAppSelector((state) => state.cart.removedProducts);
   if (removedProducts.length === 0) return null;
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="mb-lg flex min-w-0 items-start gap-3 rounded-xl border border-amber-hover/20 bg-amber-light px-4 py-3 text-amber-text" role="alert" aria-live="assertive">
       <MIcon name="info" className="mt-0.5 shrink-0 text-[20px]" />

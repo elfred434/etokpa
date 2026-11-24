@@ -1,3 +1,4 @@
+// Carte Leaflet centrée sur Cotonou affichant le marché Dantokpa, le livreur et la destination.
 import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -5,13 +6,10 @@ import 'leaflet/dist/leaflet.css';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
 
+export const DANTOKPA_COORDS: [number, number] = [6.3725, 2.4332];
+export const RIDER_COORDS: [number, number] = [6.367, 2.421];
+export const CLIENT_COORDS: [number, number] = [6.362, 2.410];
 
-// Coordonnées réelles du Bénin (Cotonou / Marché Dantokpa / Cadjehoun)
-export const DANTOKPA_COORDS: [number, number] = [6.3725, 2.4332]; // Marché Dantokpa
-export const RIDER_COORDS: [number, number] = [6.367, 2.421]; // Position actuelle Livreur Jean Kouassi sur Boulevard St Michel
-export const CLIENT_COORDS: [number, number] = [6.362, 2.410]; // Destination Cadjehoun Cotonou
-
-// Icônes personnalisées Leaflet Tokpa avec Material Symbols
 const sellerIcon = L.divIcon({
   className: 'custom-leaflet-marker',
   html: `
@@ -45,9 +43,11 @@ const clientIcon = L.divIcon({
   iconAnchor: [20, 20],
 });
 
+// Composant React MapRecenterController : prépare l’état et affiche son interface.
 function MapRecenterController({ center }: { center: [number, number] }) {
   useLanguage();
   const map = useMap();
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     map.setView(center, map.getZoom(), { animate: true });
   }, [center, map]);
@@ -55,17 +55,14 @@ function MapRecenterController({ center }: { center: [number, number] }) {
 }
 
 interface RealBeninMapProps {
-  /** Position GPS réelle du livreur (endpoints tracking/Reverb) — null = aucun marqueur livreur (pas de simulation). */
   riderCoords?: [number, number] | null;
-  /** Nom réel du livreur (GET /orders/{id} → livreur.nom_complet). */
   riderName?: string;
-  /** Destination RÉELLE de la commande (landmark du point_reperes) — null = aucun marqueur destination (plus de coordonnées de test). */
   destinationCoords?: [number, number] | null;
-  /** Libellé réel de la destination (landmark.nom + description_lieu). */
   destinationLabel?: string;
   onRecenterRider?: () => void;
 }
 
+// Composant React RealBeninMap : prépare l’état et affiche son interface.
 export default function RealBeninMap({
   riderCoords = null,
   riderName,
@@ -81,6 +78,7 @@ export default function RealBeninMap({
     ...(destinationCoords ? [destinationCoords] : []),
   ];
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="relative w-full h-full min-h-[450px] z-10 dark:ring-1 dark:ring-border-default dark:ring-offset-0 dark:[&_.leaflet-tile-pane]:brightness-90 dark:[&_.leaflet-tile-pane]:contrast-105">
       <MapContainer
@@ -90,7 +88,6 @@ export default function RealBeninMap({
         className="w-full h-full rounded-b-none"
         style={{ height: '100%', width: '100%', minHeight: '450px' }}
       >
-        {/* Même fond de carte OSM France que la carte d'administration (sans clé API). */}
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; OSM France'
           maxZoom={19}
@@ -99,10 +96,8 @@ export default function RealBeninMap({
 
         <MapRecenterController center={mapCenter} />
 
-        {/* Tracé de l’itinéraire dynamique Cotonou */}
         <Polyline positions={routePath} color="#f97316" weight={5} opacity={0.85} dashArray="10, 8" />
 
-        {/* Marqueur Marché Dantokpa */}
         <Marker position={DANTOKPA_COORDS} icon={sellerIcon}>
           <Popup>
             <div className="text-center font-sans p-1">
@@ -112,7 +107,6 @@ export default function RealBeninMap({
           </Popup>
         </Marker>
 
-        {/* Marqueur Livreur — SEULEMENT avec une position GPS réelle (aucune donnée inventée) */}
         {riderCoords && (
           <Marker position={riderCoords} icon={riderIcon}>
             <Popup>
@@ -124,7 +118,6 @@ export default function RealBeninMap({
           </Marker>
         )}
 
-        {/* Marqueur Destination RÉELLE de la commande (landmark) — aucune donnée de test */}
         {destinationCoords && (
           <Marker position={destinationCoords} icon={clientIcon}>
             <Popup>
@@ -137,7 +130,6 @@ export default function RealBeninMap({
         )}
       </MapContainer>
 
-      {/* Floating Control Button */}
       <button
         type="button"
         onClick={onRecenterRider}

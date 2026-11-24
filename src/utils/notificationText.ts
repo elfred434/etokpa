@@ -1,10 +1,7 @@
+// Traduit et formate les libellés des notifications temps réel.
 import type { ApiNotification } from '../services/api';
 import type { NotificationType } from '../types/models';
 
-/**
- * Texte d'une notification de l'API (type, titre, message, commande liée) et heure relative.
- * Partagé par la page Notifications (client) et la cloche de l'espace admin.
- */
 const STATUT_TEXT: Record<string, { fr: string; en: string }> = {
   en_attente: { fr: 'en attente de confirmation', en: 'pending confirmation' },
   en_preparation: { fr: 'en cours de préparation', en: 'being prepared' },
@@ -16,10 +13,7 @@ const STATUT_TEXT: Record<string, { fr: string; en: string }> = {
   expire: { fr: 'expirée', en: 'expired' },
 };
 
-/**
- * Traduction type backend → (catégorie, titre, message).
- * Le backend ne fournit PAS title/message dans `data` — c'est ici qu'on les construit.
- */
+// Helper describeNotification : réalise le traitement métier associé.
 export function describeNotification(n: ApiNotification, isFr: boolean): { type: NotificationType; title: string; message: string; orderId?: number } {
   const d = n.data ?? {};
   const orderId = d.order_id !== undefined ? Number(d.order_id) : undefined;
@@ -102,7 +96,7 @@ export function describeNotification(n: ApiNotification, isFr: boolean): { type:
 
 export type DeliveryAssignmentRecipient = 'livreur' | 'client' | 'manager' | 'admin' | 'super_admin' | null;
 
-/** Extrait l’identifiant de commande des formes d’événement broadcastées connues. */
+// Helper assignedOrderId : réalise le traitement métier associé.
 export function assignedOrderId(payload: unknown): number | undefined {
   if (!payload || typeof payload !== 'object') return undefined;
   const row = payload as { id?: unknown; order_id?: unknown; order?: { id?: unknown } | null };
@@ -110,7 +104,7 @@ export function assignedOrderId(payload: unknown): number | undefined {
   return Number.isInteger(id) && id > 0 ? id : undefined;
 }
 
-/** Texte du toast `delivery.assigned`, adapté au rôle qui reçoit le broadcast. */
+// Helper deliveryAssignmentToastMessage : réalise le traitement métier associé.
 export function deliveryAssignmentToastMessage(
   recipient: string | null,
   orderId: number | undefined,
@@ -132,6 +126,7 @@ export function deliveryAssignmentToastMessage(
     : `A rider was assigned${orderId ? ` to your order${suffix}` : ' to your order'}.`;
 }
 
+// Transforme ou formate les données via formatTime.
 export function formatTime(iso: string, isFr: boolean): string {
   const date = new Date(iso);
   if (isNaN(date.getTime())) return '—';
@@ -142,8 +137,3 @@ export function formatTime(iso: string, isFr: boolean): string {
   return `${date.toLocaleDateString(isFr ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })} ${time}`;
 }
 
-/**
- * Page Historique des Notifications — Protected Route + UI Stitch 100% fidèle + Backend Laravel.
- * GET /api/notifications (paginé) — `lu === false` = non lue ; PATCH /notifications/{id}/read.
- * Rafraîchissement temps réel via le bus SystemBridge (canal notifications.{userId}).
- */

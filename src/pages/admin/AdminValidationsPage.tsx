@@ -1,3 +1,4 @@
+// Validation des propositions de budget client (accepter, refuser ou envoyer une contre-proposition).
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { adminApi } from '../../services/api';
@@ -22,9 +23,9 @@ import { subscribeRealtimeRefresh } from '../../hooks/useRealtimeNotifications';
 import { landmarkFromProposal } from '../../utils/negotiationLandmark';
 import { extractCounterOfferPrice, formatCounterProposalMessage } from '../../utils/negotiationCounter';
 
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// Feuille de styles intégrée (DESIGN_CSS) injectée pour le rendu de la vue.
 const DESIGN_CSS = `
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -57,20 +58,18 @@ const STATUT: Record<string, { label: string; cls: string }> = {
   refuse: { label: 'Refusée', cls: 'text-error' },
   expire: { label: 'Expirée', cls: 'text-text-secondary' },
 };
+// Helper nomClient : réalise le traitement métier associé.
 const nomClient = (pr: any) => pr?.client?.nom_complet || [pr?.client?.prenom, pr?.client?.nom].filter(Boolean).join(' ') || `Client #${pr?.client_id ?? '?'}`;
+// Helper heure : réalise le traitement métier associé.
 const heure = (iso?: string | null) => (iso ? new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '');
+// Helper ecart : réalise le traitement métier associé.
 const ecart = (pr: any) => {
   const prix = Number(pr?.product?.prix);
   const propose = Number(pr?.prix_propose);
   return prix > 0 && Number.isFinite(propose) ? Math.round(((propose - prix) / prix) * 100) : null;
 };
 
-/**
- * AdminValidationsPage — design Stitch (code.html) conservé, données RÉELLES :
- * GET /admin/budget-proposals (toutes les pages, au plus 500) → compteur, onglets, tableau, écart,
- * pagination, panneau (produit, catégorie, chronologie, historique du client calculé sur ses
- * propositions) ; PATCH /admin/budget-proposals/{id} → accepter / refuser / contre-proposer (+ message au client).
- */
+// Composant de la page AdminValidations : gère le chargement des données et le rendu.
 export default function AdminValidationsPage() {
   useLanguage();
   const [proposals, setProposals] = useState<any[]>([]);
@@ -81,8 +80,10 @@ export default function AdminValidationsPage() {
   const reload = () => setReloadKey((k) => k + 1);
   const refreshTick = useGlobalRefreshTick();
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => subscribeRealtimeRefresh(['proposals'], reload), []);
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setLoading(true);
@@ -104,6 +105,7 @@ export default function AdminValidationsPage() {
     };
   }, [reloadKey, refreshTick]);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     adminApi
       .getCategories()
@@ -129,7 +131,6 @@ export default function AdminValidationsPage() {
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selected = proposals.find((p) => p.id === selectedId) ?? enAttente[0] ?? proposals[0] ?? null;
-  // Historique du client : calculé sur ses propositions (aucune fidélité ni statistique client dans l'API)
   const histo = useMemo(() => {
     if (!selected) return null;
     const siennes = proposals.filter((p) => p.client_id === selected.client_id);
@@ -146,6 +147,7 @@ export default function AdminValidationsPage() {
   const [counterNote, setCounterNote] = useState('');
   const [counterError, setCounterError] = useState('');
 
+  // Helper decider : réalise le traitement métier associé.
   const decider = async (pr: any, decision: 'accepte' | 'refuse', admin_response?: string, successMsg?: string) => {
     const clientLandmark = decision === 'accepte' ? landmarkFromProposal(pr) : null;
     setBusy(true);
@@ -174,6 +176,7 @@ export default function AdminValidationsPage() {
       setBusy(false);
     }
   };
+  // Helper refuserEtNotifier : réalise le traitement métier associé.
   const refuserEtNotifier = async (pr: any) => {
     const message = await adminDialogs.prompt(
       tx("Message envoyé au client (motif du refus) :"),
@@ -183,6 +186,7 @@ export default function AdminValidationsPage() {
     if (message === null) return;
     await decider(pr, 'refuse', message.trim() || undefined);
   };
+  // Helper ouvrirContreProposition : réalise le traitement métier associé.
   const ouvrirContreProposition = (pr: any) => {
     const prixVendeur = Number(pr?.product?.prix ?? 0);
     const prixMin = Number(pr?.product?.prix_minimum ?? 0);
@@ -196,6 +200,7 @@ export default function AdminValidationsPage() {
     setCounterNote('');
     setCounterError('');
   };
+  // Valide et transmet l’action envoyerContreProposition.
   const envoyerContreProposition = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!counterModal) return;
@@ -239,6 +244,7 @@ export default function AdminValidationsPage() {
   const selImage = absImageUrl(selected?.product?.image_url);
   const selCat = cats.get(Number(selected?.product?.categorie_id));
 
+  // Retourne le rendu JSX du composant.
   return (
     <AdminLayout currentPath="/admin/validations">
       {err && (

@@ -1,4 +1,4 @@
-/** Plus grand côté envoyé au catalogue. Au-delà, on réduit pour un affichage net et un fichier léger. */
+// Redimensionne et compresse une image en format WebP côté navigateur.
 const COTE_MAX = 1600;
 const QUALITE = 0.82;
 const OCTETS_MAX = 4 * 1024 * 1024;
@@ -6,22 +6,21 @@ const SOURCE_MAX = 20 * 1024 * 1024;
 
 const TYPES = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp']);
 
+// Classe ImageWebpError : gère le comportement et le rendu associés.
 export class ImageWebpError extends Error {
   constructor(readonly code: 'format' | 'lourde' | 'lecture' | 'webp' | 'taille') {
     super(code);
   }
 }
 
+// Helper blobWebp : réalise le traitement métier associé.
 function blobWebp(canvas: HTMLCanvasElement, qualite: number) {
   return new Promise<Blob | null>((resolve) => {
     canvas.toBlob((blob) => resolve(blob), 'image/webp', qualite);
   });
 }
 
-/**
- * Décode l'image choisie, la ramène à une taille d'affichage, puis l'encode en WebP
- * avant l'envoi au backend.
- */
+// Helper fichierEnWebp : réalise le traitement métier associé.
 export async function fichierEnWebp(file: File): Promise<File> {
   if (!TYPES.has(file.type)) throw new ImageWebpError('format');
   if (file.size > SOURCE_MAX) throw new ImageWebpError('lourde');

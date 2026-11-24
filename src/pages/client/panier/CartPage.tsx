@@ -1,3 +1,4 @@
+// Page panier et validation de commande (quantités, point de repère, frais de livraison, paiement FedaPay).
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -42,6 +43,7 @@ type LieuDraft = {
   descriptionLieu: string;
 };
 
+// Récupère et normalise les données pour readLieuDraft.
 function readLieuDraft(): LieuDraft | null {
   try {
     const raw = localStorage.getItem(LIEU_KEY) ?? sessionStorage.getItem(LIEU_KEY);
@@ -61,21 +63,21 @@ function readLieuDraft(): LieuDraft | null {
   }
 }
 
+// Enregistre ou crée les données via saveLieuDraft.
 function saveLieuDraft(draft: LieuDraft) {
   try {
     localStorage.setItem(LIEU_KEY, JSON.stringify(draft));
     sessionStorage.removeItem(LIEU_KEY);
   } catch {
-    /* ignore */
   }
 }
 
+// Supprime ou nettoie les éléments via clearLieuDraft.
 function clearLieuDraft() {
   try {
     localStorage.removeItem(LIEU_KEY);
     sessionStorage.removeItem(LIEU_KEY);
   } catch {
-    /* ignore */
   }
 }
 
@@ -95,7 +97,6 @@ interface ApiZone {
   points_repere?: ApiLandmark[];
 }
 
-/** Un « point de repère » de l'utilisateur : ligne réelle point_reperes (rowId) ou entrée profil JSON. */
 interface MyLandmark {
   key: string;
   nom: string;
@@ -104,6 +105,7 @@ interface MyLandmark {
   zoneId?: number;
 }
 
+// Helper asOrderRow : réalise le traitement métier associé.
 function asOrderRow(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object') return null;
   const row = value as Record<string, unknown>;
@@ -112,7 +114,7 @@ function asOrderRow(value: unknown): Record<string, unknown> | null {
   return 'id' in row ? row : null;
 }
 
-/** Si le POST a abouti mais que la page a été rechargée avant la réponse, on reprend cette commande. */
+// Helper findRecentMatchingOrder : réalise le traitement métier associé.
 async function findRecentMatchingOrder(lines: CartLine[], landmarkId: number, description: string) {
   const wanted = checkoutFingerprint(lines, landmarkId, description);
   const listRes = await ordersApi.getOrders(1);
@@ -149,20 +151,12 @@ interface ConfirmationPayload {
   zoneNom: string;
   landmarkNom: string;
   nbItems: number;
-  /** Données du paiement renvoyées par POST /payments/init → relues par la confirmation. */
   paymentId?: number;
   paymentRef?: string;
   paymentCurrency?: string;
 }
 
-/**
- * Page Panier & Caisse — 100 % API backend :
- *   - GET  /api/zones                → zones + points de repère (réels, seedés)
- *   - POST /api/orders               → landmark_id requis (point_reperes), description_lieu, payment_method
- *   - POST /api/payments/init        → FedaPay (sandbox dev : token local, url {APP_URL}/payments/sandbox/{token})
- * Le frais de livraison affiché = `km_prix` de la zone (DeliveryFeeCalculator du backend).
- * Le panier est synchronisé avec le serveur par SystemBridge (useCartSync).
- */
+// Composant de la page Cart : gère le chargement des données et le rendu.
 export default function CartPage() {
   useLanguage();
   const navigate = useNavigate();
@@ -170,7 +164,6 @@ export default function CartPage() {
   const items = useAppSelector((s) => s.cart.items);
   const count = useAppSelector((s) => selectCount(s.cart.items));
 
-  // Zones + points de repère (backend). Le lieu saisi survit à « Continuer les achats ».
   const lieuInitial = readLieuDraft();
   const [zones, setZones] = useState<ApiZone[]>([]);
   const [zonesLoading, setZonesLoading] = useState(true);
@@ -188,6 +181,7 @@ export default function CartPage() {
   const autoDescRef = useRef<string | null>(null);
   const refreshTick = useGlobalRefreshTick();
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     if (!localStorage.getItem('tokpa_token')) return;
     let alive = true;
@@ -221,6 +215,7 @@ export default function CartPage() {
     return () => { alive = false; };
   }, [refreshTick]);
 
+  // Helper itemPricing : réalise le traitement métier associé.
   const itemPricing = (item: (typeof items)[number]) => {
     const catalogue = item.product.negotiated?.oldPrice ?? item.product.prix;
     const negocie = offres.get(Number(item.product.id));
@@ -258,7 +253,7 @@ export default function CartPage() {
   const deliveryFee = selectedZone ? Number(selectedZone.km_prix) : 0;
   const grandTotal = Math.max(0, subtotal + deliveryFee);
 
-  // 1) Chargement des zones de livraison (GET /api/zones)
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     catalogApi
       .getZones()
@@ -273,7 +268,7 @@ export default function CartPage() {
       .finally(() => setZonesLoading(false));
   }, [refreshTick]);
 
-  // 2) Mes points de repère à MOI : lignes réelles (GET /landmarks) + entrées du profil (client.point_repere)
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -295,7 +290,6 @@ export default function CartPage() {
           });
         });
       } catch {
-        /* GET /landmarks indisponible ou hors ligne */
       }
       try {
         const res = await authApi.getProfile();
@@ -315,7 +309,6 @@ export default function CartPage() {
           });
         }
       } catch {
-        /* profil indisponible */
       }
       if (alive && successfulSources > 0) setMyLandmarks(list);
     })();
@@ -324,10 +317,12 @@ export default function CartPage() {
     };
   }, [refreshTick]);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     saveLieuDraft({ zoneId, landmarkId, landmarkSel, landmarkNomSel, descriptionLieu });
   }, [zoneId, landmarkId, landmarkSel, landmarkNomSel, descriptionLieu]);
 
+  // Gère l’action utilisateur ZoneChange.
   const handleZoneChange = (id: number) => {
     setZoneId(id);
     setLandmarkId(null);
@@ -339,6 +334,7 @@ export default function CartPage() {
     }
   };
 
+  // Gère l’action utilisateur Paid.
   const handlePaid = async () => {
     if (payLock.current) return;
     if (!selectedZone) {
@@ -514,22 +510,18 @@ export default function CartPage() {
     }
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="min-h-screen flex flex-col bg-bg-app font-body text-text-main">
       <ClientNavbar />
 
-      {/* Main Content Container */}
       <main className="mt-[52px] md:mt-[64px] flex-grow w-full max-w-[1200px] mx-auto px-md md:px-lg py-xl pb-24">
         <CartProductRemovalNotice />
-        {/* Progress Bar Stepper */}
         <div className="mb-xl w-full">
           <div className="relative flex items-start justify-between gap-1 px-1 py-2 sm:px-xl">
-            {/* Line Background */}
             <div className="absolute top-[22px] left-[12%] right-[12%] h-[3px] bg-border-default -z-10 rounded-full" />
-            {/* Active Line Fill */}
             <div className="absolute top-[22px] left-[12%] w-[25%] h-[3px] bg-primary-container -z-10 rounded-full" />
 
-            {/* Step 1: Panier (Completed) */}
             <div className="flex w-[23%] flex-col items-center gap-1 text-primary-container sm:gap-sm">
               <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary-container bg-bg-card font-bold text-primary-container transition-all duration-300 sm:h-9 sm:w-9 sm:text-h3">
                 <MIcon name="check" style={{ fontSize: 18 }} />
@@ -537,7 +529,6 @@ export default function CartPage() {
               <span className="text-center text-[11px] font-medium leading-tight text-primary-container sm:text-label">{tx("Panier")}</span>
             </div>
 
-            {/* Step 2: Livraison (Active) */}
             <div className="flex w-[23%] flex-col items-center gap-1 text-primary-container sm:gap-sm">
               <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary-container bg-primary-container font-bold text-white shadow-md transition-all duration-300 sm:h-9 sm:w-9 sm:text-h3">
                 2
@@ -545,7 +536,6 @@ export default function CartPage() {
               <span className="text-center text-[11px] font-bold leading-tight text-primary-container sm:text-label">{tx("Livraison")}</span>
             </div>
 
-            {/* Step 3: Paiement */}
             <div className="flex w-[23%] flex-col items-center gap-1 text-text-tertiary sm:gap-sm">
               <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border-default bg-bg-app font-bold text-text-tertiary transition-all duration-300 sm:h-9 sm:w-9 sm:text-h3">
                 3
@@ -553,7 +543,6 @@ export default function CartPage() {
               <span className="text-center text-[11px] font-medium leading-tight text-text-tertiary sm:text-label">{tx("Paiement")}</span>
             </div>
 
-            {/* Step 4: Confirmation */}
             <div className="flex w-[23%] flex-col items-center gap-1 text-text-tertiary sm:gap-sm">
               <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border-default bg-bg-app font-bold text-text-tertiary transition-all duration-300 sm:h-9 sm:w-9 sm:text-h3">
                 4
@@ -564,9 +553,7 @@ export default function CartPage() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-lg">
-          {/* Left Column: Basket & Delivery */}
           <div className="lg:w-[60%] flex flex-col gap-lg">
-            {/* Articles Section */}
             <div className="bg-bg-card rounded-lg p-lg shadow-sm border border-border-default/50">
               <div className="mb-lg flex flex-wrap items-center gap-sm border-b border-border-default pb-md">
                 <MIcon name="shopping_cart" className="text-primary-container" />
@@ -596,7 +583,6 @@ export default function CartPage() {
                 )}
               </div>
 
-              {/* Article List */}
               {items.length === 0 ? (
                 <EmptyState
                   icon={<MIcon name="shopping_cart" className="text-4xl text-primary" />}
@@ -638,7 +624,6 @@ export default function CartPage() {
                           }}
                           className="flex min-w-0 flex-1 items-center gap-md rounded-lg transition-opacity hover:opacity-85 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-container"
                         >
-                          {/* Thumbnail */}
                           <div className="w-20 h-20 rounded-lg flex-shrink-0 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center relative overflow-hidden">
                             <ImageWithFallback
                               src={item.product.image}
@@ -648,7 +633,6 @@ export default function CartPage() {
                             />
                           </div>
 
-                          {/* Info */}
                           <div className="flex-grow min-w-0">
                             <div className="flex items-center gap-sm mb-xs flex-wrap">
                               <h3 className="font-h3 text-h3 text-on-surface truncate font-bold transition-colors group-hover:text-primary-container">
@@ -677,7 +661,6 @@ export default function CartPage() {
                           </div>
                         </a>
 
-                        {/* Quantity & Delete */}
                         <div className="ml-auto flex w-full flex-row items-center justify-end gap-md sm:w-auto sm:flex-col sm:items-end">
                           <div className="flex items-center bg-bg-app rounded-[6px] p-0.5 border border-border-default">
                             <button
@@ -716,7 +699,6 @@ export default function CartPage() {
               )}
             </div>
 
-            {/* Point de Repère Section — zones + points de repère réels (GET /api/zones) */}
             <div className="bg-bg-card rounded-lg p-lg shadow-sm border border-border-default/50">
               <div className="flex items-center gap-sm mb-lg">
                 <MIcon name="location_on" className="text-primary-container" />
@@ -771,12 +753,9 @@ export default function CartPage() {
                           if (personal) {
                             setLandmarkNomSel(personal.nom);
                             if (personal.rowId) {
-                              // Ligne point_reperes réelle → landmark_id direct (frais de sa zone)
                               setLandmarkId(personal.rowId);
                               if (personal.zoneId) setZoneId(personal.zoneId);
                             } else {
-                              // Repère du profil (JSON) → ancrage = 1er point public de la zone
-                              // (l'API exige un landmark_id exists:point_reperes ; le vrai lieu part dans description_lieu)
                               setLandmarkId(selectedZone?.points_repere?.[0]?.id ?? null);
                             }
                             const nextAuto = personal.description ? `${personal.nom} — ${personal.description}` : personal.nom;
@@ -865,7 +844,6 @@ export default function CartPage() {
             </div>
           </div>
 
-          {/* Right Column: Summary (Sticky) */}
           <div className="lg:w-[40%]">
             <div className="bg-bg-card rounded-lg p-lg shadow-sm border border-border-default/50 sticky top-[72px]">
               <h2 className="font-h2 text-h2 text-on-surface mb-lg">{tx("Récapitulatif")}</h2>

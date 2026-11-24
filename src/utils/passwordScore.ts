@@ -1,4 +1,4 @@
-/** Score 0–4 du mot de passe d'inscription (longueur, chiffre, majuscule, symbole ou 12 caractères). */
+// Calcule le score de robustesse d’un mot de passe.
 export function passwordScore(pw: string): number {
   let score = 0;
   if (pw.length >= 8) score += 1;

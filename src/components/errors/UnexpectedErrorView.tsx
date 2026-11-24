@@ -1,3 +1,4 @@
+// Vue générique d’erreur inattendue avec bouton de réessai et référence technique.
 import { tr } from '../../i18n/tx';
 
 interface UnexpectedErrorViewProps {
@@ -6,10 +7,11 @@ interface UnexpectedErrorViewProps {
   onRetry?: () => void;
 }
 
-/** Production fallback is generic; development may show one bounded, redacted message, never a stack. */
+// Composant React UnexpectedErrorView : prépare l’état et affiche son interface.
 export default function UnexpectedErrorView({ reference, developmentMessage, onRetry }: UnexpectedErrorViewProps) {
   const retry = onRetry ?? (() => window.location.reload());
 
+  // Retourne le rendu JSX du composant.
   return (
     <main
       role="alert"

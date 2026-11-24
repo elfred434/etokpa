@@ -1,3 +1,4 @@
+// Page d’inscription en deux étapes (profil puis sécurité/consentements) avec envoi du code 2FA.
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -14,7 +15,7 @@ import { startTwoFaSession } from '../../utils/twoFaTimer';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
-
+// Helper profilSchema : réalise le traitement métier associé.
 const profilSchema = () => z.object({
   prenom: z.string().min(2, tx('Prénom requis')),
   nom: z.string().min(2, tx('Nom requis')),
@@ -24,6 +25,7 @@ const profilSchema = () => z.object({
   quartier: z.string().max(100, tx('Le quartier ne peut pas dépasser 100 caractères')),
 });
 
+// Helper securitySchema : réalise le traitement métier associé.
 const securitySchema = () => z.object({
   password: z
     .string()
@@ -50,9 +52,7 @@ const STRENGTH = [
 type ProfilErrors = Partial<Record<'prenom' | 'nom' | 'email' | 'telephone' | 'ville' | 'quartier', string>>;
 type SecurityErrors = Partial<Record<'password' | 'confirm' | 'cgu', string>>;
 
-/**
- * Page Inscription (Profil + Sécurité) — Intégration API Backend Laravel + UI Stitch
- */
+// Composant de la page Inscription : gère le chargement des données et le rendu.
 export default function InscriptionPage() {
   useLanguage();
   const navigate = useNavigate();
@@ -82,6 +82,7 @@ export default function InscriptionPage() {
   const setProfilField = <K extends keyof typeof profil>(key: K, value: string) =>
     setProfil((f) => ({ ...f, [key]: value }));
 
+  // Gère l’action utilisateur ProfilSubmit.
   const handleProfilSubmit = (e: FormEvent) => {
     e.preventDefault();
     const result = profilSchema().safeParse(profil);
@@ -99,6 +100,7 @@ export default function InscriptionPage() {
     window.scrollTo({ top: 0 });
   };
 
+  // Gère l’action utilisateur SecuritySubmit.
   const handleSecuritySubmit = async (e: FormEvent) => {
     e.preventDefault();
     setApiError(null);
@@ -116,7 +118,6 @@ export default function InscriptionPage() {
     setLoading(true);
 
     try {
-      // API call POST /api/auth/register
       const res = await authApi.register({
         nom: profil.nom.trim(),
         prenom: profil.prenom.trim(),
@@ -140,7 +141,6 @@ export default function InscriptionPage() {
       setApiError(text);
       toast.error(text);
 
-      // Erreurs de champs (422) → sous les inputs correspondants
       const profilNext: ProfilErrors = {};
       const securityNext: SecurityErrors = {};
       for (const [field, msgs] of Object.entries(info.fieldErrors)) {
@@ -158,6 +158,7 @@ export default function InscriptionPage() {
     }
   };
 
+  // Gère l’action utilisateur GeneratePassword.
   const handleGeneratePassword = () => {
     const generated = generatePassword();
     setSecurity((s) => ({ ...s, password: generated, confirm: generated }));
@@ -174,11 +175,11 @@ export default function InscriptionPage() {
   const score = passwordScore(security.password);
   const strength = STRENGTH[score];
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-bg-app p-4 md:p-6 font-body text-text-main">
       <div className="fixed right-4 top-4 z-50"><LangToggle /></div>
       <div className="w-full max-w-[700px] overflow-hidden rounded-2xl bg-bg-card shadow-sm border border-border-default">
-        {/* Header Banner */}
         <header className="relative h-28 overflow-hidden bg-primary-tint border-b border-primary-light flex items-center justify-center">
           <div className="flex flex-col items-center">
             <Link to="/" className="text-2xl font-bold tracking-tight text-primary-container">
@@ -196,14 +197,12 @@ export default function InscriptionPage() {
           )}
         </header>
 
-        {/* Body */}
         <div className="p-6 md:p-8">
           <div className="mb-6 text-center">
             <h1 className="text-h2 font-bold text-text-main">{tx("Créer votre compte")}</h1>
             <p className="mt-1 text-sm text-text-secondary">{tx("Rejoignez le marché digital béninois")}</p>
           </div>
 
-          {/* Stepper */}
           <div className="flex items-center justify-center gap-4 mb-8">
             <div className="flex items-center gap-2">
               <div
@@ -236,7 +235,6 @@ export default function InscriptionPage() {
             </div>
           </div>
 
-          {/* STEP 1: PROFIL */}
           {step === 1 && (
             <form className="space-y-4" onSubmit={handleProfilSubmit}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -370,7 +368,6 @@ export default function InscriptionPage() {
             </form>
           )}
 
-          {/* STEP 2: SÉCURITÉ */}
           {step === 2 && (
             <form className="space-y-4" onSubmit={handleSecuritySubmit}>
               <div>
@@ -511,7 +508,6 @@ export default function InscriptionPage() {
         </div>
       </div>
 
-      {/* Trust Footer */}
       {step === 2 && (
         <p className="mt-4 flex items-center gap-2 text-xs text-text-tertiary">
           <MIcon name="verified_user" className="text-success text-sm" />

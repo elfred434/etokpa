@@ -1,3 +1,4 @@
+// Fiche produit détaillée permettant l’ajout au panier, la commande directe et la négociation de prix.
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import clsx from 'clsx';
@@ -28,11 +29,9 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 
-/* ---- Fiche produit 100 % API : GET /api/products/{id} (route /produit/$productId) ---- */
-
 type TabId = 'description' | 'origine' | 'avis';
 
-/** Fiche produit avec module de négociation F-10 — données réelles Backend API Laravel. */
+// Composant de la page Product : gère le chargement des données et le rendu.
 export default function ProductPage() {
   const { isFr } = useLanguage();
   const dispatch = useAppDispatch();
@@ -42,7 +41,6 @@ export default function ProductPage() {
   const [apiProduct, setApiProduct] = useState<ApiProduct | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  // Échec autre que 404 (500, serveur arrêté…) : message de l'API + Réessayer (avant : « Produit introuvable »).
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const refreshTick = useGlobalRefreshTick();
@@ -57,7 +55,7 @@ export default function ProductPage() {
     product ? state.negotiation.activeNegotiations[product.id] : undefined,
   );
 
-  // GET /api/products/{id}
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!silentRefreshActive()) setIsLoading(true);
     setNotFound(false);
@@ -68,14 +66,12 @@ export default function ProductPage() {
         const p = (res?.data ?? res) as ApiProduct;
         if (p && p.id) {
           setApiProduct(p);
-          // Suggestion d'offre : -10 % du prix, arrondi
           setOfferInput((current) => current || String(Math.max(1, Math.round(Number(p.prix) * 0.9))));
         } else {
           setNotFound(true);
         }
       })
       .catch((err) => {
-        // 404 = produit inexistant ; les autres échecs sont présentés via le formateur sûr (pas de produit factice)
         if (apiErrorStatus(err) === 404) setNotFound(true);
         else {
           const message = alertApiError(err, 'product-load');
@@ -85,7 +81,7 @@ export default function ProductPage() {
       .finally(() => setIsLoading(false));
   }, [productId, reloadKey, refreshTick]);
 
-  // Synchronise la négociation en cours sur ce produit depuis GET /api/budget-proposals
+  // Synchronise l’état avec le stockage local du navigateur.
   useEffect(() => {
     if (!localStorage.getItem('tokpa_token') || !negotiationApi?.getProposals) return;
     let alive = true;
@@ -146,6 +142,7 @@ export default function ProductPage() {
     };
   }, [productId, refreshTick, dispatch]);
 
+  // Gère l’action utilisateur SendOffer.
   const handleSendOffer = async () => {
     if (!product) return;
     const numPrice = parseInt(offerInput.replace(/[^0-9]/g, ''), 10);
@@ -164,7 +161,6 @@ export default function ProductPage() {
 
     setIsSubmitting(true);
     try {
-      // POST /api/budget-proposals (le backend rejette aussi < prix_minimum en 422)
       const created = await negotiationApi.createProposal({
         product_id: Number(product.id),
         prix_propose: numPrice,
@@ -191,6 +187,7 @@ export default function ProductPage() {
     }
   };
 
+  // Gère l’action utilisateur AddNegotiatedToCart.
   const handleAddNegotiatedToCart = (price: number) => {
     if (!product) return;
     const negotiatedProduct: Product = {
@@ -202,19 +199,20 @@ export default function ProductPage() {
     toast.success(tr(`Ajouté au panier au prix négocié de ${price.toLocaleString('fr-FR')} FCFA !`, `Added to cart at the negotiated price of ${price.toLocaleString('fr-FR')} FCFA!`));
   };
 
+  // Enregistre ou crée les données via addToCart.
   const addToCart = () => {
     if (!product) return;
     dispatch(add({ product, quantity }));
     toast.success(tx("Ajouté au panier"));
   };
 
+  // Helper buyNow : réalise le traitement métier associé.
   const buyNow = () => {
     if (!product) return;
     dispatch(add({ product, quantity }));
     navigate({ to: '/panier' });
   };
 
-  /* ---------- États de chargement / erreur ---------- */
   if (isLoading) {
     return (
       <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
@@ -272,15 +270,14 @@ export default function ProductPage() {
   }
 
   const categoryNom = apiProduct?.categorie?.nom ?? tx("Catalogue");
-  // Commandable = disponible et (si stock chiffré présent) stock > 0.
   const unavailable = !apiProduct || apiProduct.disponible === false || (apiProduct.stock != null && Number(apiProduct.stock) <= 0);
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-bg-secondary font-body text-ink">
       <ClientNavbar />
       <div className="flex flex-1 justify-center px-3 pb-[80px] pt-[64px] sm:px-6 md:px-12 md:pb-8 md:pt-[72px] lg:px-20 xl:px-40">
         <div className="flex w-full max-w-[1200px] flex-1 flex-col">
-          {/* ---- Breadcrumbs (catégorie réelle de l'API) ---- */}
           <div className="flex flex-wrap gap-2 py-3 md:px-10">
             <Link to="/" className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">
               {tx("Accueil")}
@@ -293,9 +290,7 @@ export default function ProductPage() {
             <span className="text-xs font-medium leading-normal text-on-surface sm:text-sm">{product.nom}</span>
           </div>
 
-          {/* ---- Main Product Content ---- */}
           <main className="grid grid-cols-1 gap-6 rounded-xl bg-bg-card p-4 pb-8 shadow-sm md:gap-8 md:px-10 md:pb-12 lg:grid-cols-2">
-            {/* LEFT COLUMN: Images */}
             <div className="flex flex-col gap-4 md:gap-6">
               <div className="relative flex h-[260px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-primary-lighter to-primary-light sm:h-[320px] md:h-[400px]">
                 <div
@@ -337,7 +332,6 @@ export default function ProductPage() {
               )}
             </div>
 
-            {/* RIGHT COLUMN: Details */}
             <div className="flex flex-col gap-6">
               <div>
                 <p className="mb-1 text-micro uppercase tracking-widest text-ink-3">{categoryNom}</p>
@@ -357,7 +351,6 @@ export default function ProductPage() {
                 </span>
               </div>
 
-              {/* Quantity Selector */}
               <div className="flex items-center gap-4">
                 <span className="text-label text-ink">{tx("Quantité")}</span>
                 <div className="flex items-center rounded-lg border border-line">
@@ -381,7 +374,6 @@ export default function ProductPage() {
                 </div>
               </div>
 
-              {/* DYNAMIC NEGOTIATION MODULE (F-10) — prix réels de l'API */}
               <div className="flex flex-col gap-4 rounded-lg border-l-[3px] border-[#F59E0B] bg-amber-light p-4 transition-all">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -395,7 +387,6 @@ export default function ProductPage() {
                   </span>
                 </div>
 
-                {/* State: Idle or submitting */}
                 {(!activeNeg || activeNeg.status === 'idle') && (
                   <>
                     <div className="flex items-center gap-3">
@@ -431,7 +422,6 @@ export default function ProductPage() {
                   </>
                 )}
 
-                {/* State: Pending (offre envoyée, en attente du marché) */}
                 {activeNeg?.status === 'pending' && (
                   <div className="space-y-3 rounded-lg border border-amber-text/40 bg-amber-light p-3">
                     <div className="flex items-center gap-2 text-amber-text">
@@ -460,7 +450,6 @@ export default function ProductPage() {
                   </div>
                 )}
 
-                {/* State: Accepted */}
                 {activeNeg?.status === 'accepted' && (
                   <div className="space-y-3 rounded-lg border border-success/40 bg-success-light/50 p-3">
                     <div className="flex items-center gap-2 text-success-dark">
@@ -495,7 +484,6 @@ export default function ProductPage() {
                   </div>
                 )}
 
-                {/* State: Counter Offer (simulation locale avant réponse du marché) */}
                 {activeNeg?.status === 'counter_offer' && (
                   <div className="space-y-3 rounded-lg border border-amber-text/40 bg-amber-light p-3">
                     <div className="flex items-center gap-2 text-amber-text">
@@ -549,7 +537,6 @@ export default function ProductPage() {
                   </div>
                 )}
 
-                {/* State: Rejected */}
                 {activeNeg?.status === 'rejected' && (
                   <div className="space-y-3 rounded-lg border border-error/40 bg-error-light p-3">
                     <p className="text-xs font-bold text-error">
@@ -568,7 +555,6 @@ export default function ProductPage() {
                   </div>
                 )}
 
-                {/* State: Expired (> 12h) */}
                 {activeNeg?.status === 'expired' && (
                   <div className="space-y-3 rounded-lg border border-border-default bg-bg-secondary p-3">
                     <p className="text-xs font-bold text-text-main">
@@ -594,7 +580,6 @@ export default function ProductPage() {
                 )}
               </div>
 
-              {/* Main Action Buttons */}
               <div className="flex flex-col gap-3">
                 <button
                   type="button"
@@ -617,7 +602,6 @@ export default function ProductPage() {
             </div>
           </main>
 
-          {/* ---- Bottom Section: Tabs ---- */}
           <section className="mx-auto mt-8 mb-20 w-full max-w-[1200px] overflow-hidden rounded-xl bg-bg-card shadow-sm">
             <div className="flex flex-wrap border-b border-line">
               {(

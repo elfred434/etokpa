@@ -1,4 +1,4 @@
-/** Statut FedaPay (query `?status=`) ramené au vocabulaire Payment::statut. */
+// Normalise les libellés de statut de paiement FedaPay.
 export function fedapayStatus(status?: string): string | null {
   const value = (status ?? '').toLowerCase();
   if (['approved', 'transferred', 'paid', 'reussi'].includes(value)) return 'reussi';

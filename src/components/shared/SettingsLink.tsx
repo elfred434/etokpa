@@ -1,30 +1,23 @@
+// Lien raccourci vers la page de paramètres de l’espace courant.
 import { Link, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
 import MIcon from './MIcon';
 import { tx } from '../../i18n/tx';
 
-/** Pages Paramètres des quatre espaces. */
 export type CheminParametres = '/parametres' | '/admin/parametres' | '/manager/parametres' | '/livreur/parametres';
 
 interface SettingsLinkProps {
-  /** Page Paramètres de l'espace courant. */
   to: CheminParametres;
   className?: string;
-  /** Affiche le libellé à côté de l'icône. */
   withLabel?: boolean;
 }
 
-/**
- * Accès unique aux Paramètres depuis les barres supérieures.
- *
- * Remplace les deux pastilles « langue » et « thème » : un seul engrenage, qui
- * mène à la page Paramètres de l'espace (client `/parametres`, admin, manager,
- * livreur). Les réglages eux-mêmes vivent dans `ParametresPanel`.
- */
+// Composant React SettingsLink : prépare l’état et affiche son interface.
 export default function SettingsLink({ to, className = '', withLabel = false }: SettingsLinkProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const actif = pathname === to;
 
+  // Retourne le rendu JSX du composant.
   return (
     <Link
       to={to}

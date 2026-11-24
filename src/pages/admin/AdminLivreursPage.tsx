@@ -1,3 +1,4 @@
+// Vue dédiée au suivi des livreurs et à l’assignation directe de commandes.
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { adminApi } from '../../services/api';
@@ -16,9 +17,9 @@ import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// Feuille de styles intégrée (DESIGN_CSS) injectée pour le rendu de la vue.
 const DESIGN_CSS = `
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -29,6 +30,7 @@ const DESIGN_CSS = `
 const PER_PAGE = 10;
 const MAX_PAGES = 25;
 
+// Helper ilYa : réalise le traitement métier associé.
 const ilYa = (iso?: string | null) => {
   if (!iso) return '—';
   const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -45,14 +47,7 @@ const ACTIVITE: Record<string, string> = {
   annule: 'Annulée',
 };
 
-/**
- * AdminLivreursPage — design Stitch (code.html) conservé, données et actions RÉELLES :
- * GET /admin/users?role=livreur (toutes les pages), GET /admin/orders (au plus 500 commandes :
- * activité, taux de succès = livrées / (livrées + annulées), course en cours), GET /admin/zones,
- * PUT /admin/users/{id} (zone, disponibilité, statut), DELETE /admin/users/{id} (désactivation),
- * POST /admin/assign (assignation d'une commande au livreur sélectionné).
- * Laissé tel quel (aucune donnée backend) : ligne « Véhicule ».
- */
+// Composant de la page AdminLivreurs : gère le chargement des données et le rendu.
 export default function AdminLivreursPage() {
   useLanguage();
   const [livreurs, setLivreurs] = useState<any[]>([]);
@@ -64,6 +59,7 @@ export default function AdminLivreursPage() {
   const reload = () => setReloadKey((k) => k + 1);
   const refreshTick = useGlobalRefreshTick();
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setLoading(true);
@@ -87,7 +83,7 @@ export default function AdminLivreursPage() {
       .then(([ls, os]) => {
         if (!alive) return;
         setLivreurs(ls);
-        setOrders(os.map((r: any) => r?.data ?? r)); // OrderResource enveloppe chaque commande
+        setOrders(os.map((r: any) => r?.data ?? r));
       })
       .catch((e) => alive && setErr(alertApiError(e, 'admin-livreurs')))
       .finally(() => alive && setLoading(false));
@@ -96,6 +92,7 @@ export default function AdminLivreursPage() {
     };
   }, [reloadKey, refreshTick]);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     adminApi
       .getZones()
@@ -103,7 +100,6 @@ export default function AdminLivreursPage() {
       .catch(() => undefined);
   }, [refreshTick]);
 
-  // Commandes par livreur (activité, taux de succès, course en cours)
   const parLivreur = useMemo(() => {
     const m = new Map<number, any[]>();
     orders.forEach((o) => {
@@ -114,6 +110,7 @@ export default function AdminLivreursPage() {
     });
     return m;
   }, [orders]);
+  // Helper perf : réalise le traitement métier associé.
   const perf = (id: number) => {
     const os = parLivreur.get(id) ?? [];
     const livrees = os.filter((o) => o.statut === 'livre').length;
@@ -137,6 +134,7 @@ export default function AdminLivreursPage() {
   const [editStatut, setEditStatut] = useState('actif');
   const [saving, setSaving] = useState(false);
 
+  // Helper openDetails : réalise le traitement métier associé.
   const openDetails = (l: any, edit = false) => {
     setSelectedId(Number(l.id));
     setPanelOpen(true);
@@ -146,6 +144,7 @@ export default function AdminLivreursPage() {
     setEditStatut(String(l?.statut ?? 'actif').toLowerCase());
   };
 
+  // Helper save : réalise le traitement métier associé.
   const save = async () => {
     if (!selected) return;
     setSaving(true);
@@ -165,6 +164,7 @@ export default function AdminLivreursPage() {
     }
   };
 
+  // Helper desactiver : réalise le traitement métier associé.
   const desactiver = async (l: any) => {
     if (String(l?.statut ?? '').toLowerCase() === 'inactif') return;
     const nom = l.nom_complet ?? '—';
@@ -207,6 +207,7 @@ export default function AdminLivreursPage() {
     });
   }, [orders, selected, selZoneId]);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     setAssignErr(null);
     if (assignableOrders.length === 1) {
@@ -217,6 +218,7 @@ export default function AdminLivreursPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id, assignableOrders]);
 
+  // Valide et transmet l’action confirmerAssignation.
   const confirmerAssignation = async () => {
     if (!selected || assigning) return;
     if (!selActif) {
@@ -281,6 +283,7 @@ export default function AdminLivreursPage() {
     }
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <AdminLayout currentPath="/admin/livreurs" mainClassName="ml-64 h-screen pt-[52px] p-lg flex flex-col lg:flex-row gap-lg overflow-hidden">
       {err && (

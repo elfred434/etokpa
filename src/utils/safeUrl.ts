@@ -1,25 +1,22 @@
-/**
- * Utilitaires de validation stricte d'URL côté client :
- * - bloque `javascript:`, `data:text/html`, `data:image/svg+xml`, `vbscript:`, `file:`
- * - prévient les redirections ouvertes (`//evil.com`, `/\evil.com`, caractères de contrôle)
- * - limite les redirections de paiement aux chemins internes ou aux domaines FedaPay HTTPS.
- */
 
+// Valide les URLs d’images et de redirections (protection contre URLs dangereuses).
 const CONTROL_CHARS_RE = /[\u0000-\u001F\u007F]/;
 const RASTER_DATA_URL_RE = /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/i;
 const APPROVED_PAYMENT_HOSTS = ['fedapay.com'];
 
+// Vérifie la condition métier isLocalHost.
 function isLocalHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
   return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
 }
 
+// Vérifie la condition métier isHostAllowed.
 function isHostAllowed(hostname: string, allowedSuffixes: string[]): boolean {
   const host = hostname.toLowerCase();
   return allowedSuffixes.some((suffix) => host === suffix || host.endsWith(`.${suffix}`));
 }
 
-/** Valide une URL d'image (rejette `javascript:`, `data:image/svg+xml`, `data:text/html`, etc.). */
+// Transforme ou formate les données via sanitizeImageUrl.
 export function sanitizeImageUrl(raw?: string | null): string | null {
   if (typeof raw !== 'string') return null;
   const trimmed = raw.trim();
@@ -48,7 +45,7 @@ export function sanitizeImageUrl(raw?: string | null): string | null {
   return trimmed;
 }
 
-/** Valide une URL de redirection externe sûre (HTTPS, ou HTTP local en dev, ou chemin interne). */
+// Helper safeExternalRedirectUrl : réalise le traitement métier associé.
 export function safeExternalRedirectUrl(
   raw: unknown,
   allowedHostSuffixes?: string[],
@@ -84,7 +81,7 @@ export function safeExternalRedirectUrl(
   return parsed.toString();
 }
 
-/** Valide une URL de paiement (chemin interne, hôte courant ou FedaPay HTTPS). */
+// Helper safePaymentRedirectUrl : réalise le traitement métier associé.
 export function safePaymentRedirectUrl(raw: unknown): string | null {
   return safeExternalRedirectUrl(raw, APPROVED_PAYMENT_HOSTS);
 }

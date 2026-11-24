@@ -1,3 +1,4 @@
+// Appels API de messagerie client ↔ livreur (conversations et messages).
 import { apiClient } from './client';
 
 export interface ConversationItem {
@@ -25,14 +26,15 @@ export interface MessageItem {
   };
 }
 
+// Regroupe les appels API du module chat.
 export const chatApi = {
-  // GET /api/conversations -> liste des conversations
+  // Appelle GET /conversations via le client API.
   getConversations: async () => {
     const response = await apiClient.get<{ data: ConversationItem[] }>('/conversations');
     return response.data;
   },
 
-  // GET /api/conversations/{id}/messages -> messages d'une conversation
+  // Appelle GET /conversations/${conversationId}/messages via le client API.
   getMessages: async (conversationId: number | string, page = 1) => {
     const response = await apiClient.get(`/conversations/${conversationId}/messages`, {
       params: { page },
@@ -40,7 +42,7 @@ export const chatApi = {
     return response.data;
   },
 
-  // POST /api/conversations/{id}/messages -> envoyer un message
+  // Appelle POST /conversations/${conversationId}/messages via le client API.
   sendMessage: async (conversationId: number | string, contenu: string) => {
     const response = await apiClient.post<{ data: MessageItem }>(
       `/conversations/${conversationId}/messages`,

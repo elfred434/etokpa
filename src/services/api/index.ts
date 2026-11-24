@@ -1,3 +1,4 @@
+// Point d’export centralisé de tous les clients API.
 export * from './client';
 export * from './auth';
 export * from './catalog';

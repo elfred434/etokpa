@@ -1,3 +1,4 @@
+// Page de retour après paiement FedaPay vérifiant le statut de la transaction.
 import { useEffect, useRef, useState } from 'react';
 import { useRouterState, useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -11,22 +12,17 @@ import { tx } from '../../../i18n/tx';
 import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { loadConfirmation, statutFromFedaPayReturn, type ConfirmationMemory } from './confirmationMemory';
 
-/**
- * Données passées par CartPage après POST /api/orders (vraies valeurs backend).
- */
 interface ConfirmationState {
   orderId?: number;
   total?: number;
   zoneNom?: string;
   landmarkNom?: string;
   nbItems?: number;
-  /** id du paiement (POST /payments/init) → statut réel via GET /payments/{id}. */
   paymentId?: number;
   paymentRef?: string;
   paymentCurrency?: string;
 }
 
-/** Message selon `Payment::statut` — « reussi » = texte exact de la maquette Stitch. */
 const PAY_MSG: Record<string, string> = {
   reussi: 'Votre paiement a été accepté par FedaPay',
   en_attente: 'Paiement en attente de confirmation FedaPay',
@@ -34,10 +30,7 @@ const PAY_MSG: Record<string, string> = {
   rembourse: 'Votre paiement a été remboursé',
 };
 
-/**
- * Page Confirmation de Commande — Reproduction 100% intégrale et fidèle de Stitch HTML `confirmation_de_commande_tokpa/code.html`
- * Les valeurs affichées proviennent de la commande réellement créée (state) ; fallbacks neutres si accès direct.
- */
+// Helper asOrder : réalise le traitement métier associé.
 function asOrder(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object') return null;
   const row = value as Record<string, unknown>;
@@ -46,6 +39,7 @@ function asOrder(value: unknown): Record<string, unknown> | null {
   return row;
 }
 
+// Composant de la page Confirmation : gère le chargement des données et le rendu.
 export default function ConfirmationPage() {
   useLanguage();
   const navigate = useNavigate();
@@ -56,9 +50,8 @@ export default function ConfirmationPage() {
   const refreshTick = useGlobalRefreshTick();
   const state = passed?.orderId ? passed : restored ?? passed;
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
-    // Le webhook backend (/webhooks/fedapay ou /webhook) redirige parfois vers /confirmation sans query params :
-    // si le client est connecté et que la mémoire locale est vide, on relit sa dernière commande.
     if (passed?.orderId || restored?.orderId) return;
     if (!localStorage.getItem('tokpa_token')) return;
     let alive = true;
@@ -109,10 +102,9 @@ export default function ConfirmationPage() {
   const paymentCurrency = state?.paymentCurrency ?? 'XOF';
   const returnStatut = statutFromFedaPayReturn(status);
 
-  // Statut réel du paiement — GET /api/payments/{id}. Relu toutes les 5 s tant qu'il est
-  // « en_attente » (3 min max) et au retour sur l'onglet (le client revient de FedaPay).
   const [payStatut, setPayStatut] = useState<string | null>(null);
   const finalRef = useRef(false);
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     if (!paymentId) return;
     let alive = true;
@@ -146,12 +138,11 @@ export default function ConfirmationPage() {
     };
   }, [paymentId, refreshTick]);
 
-  // Le webhook local n'est pas toujours joignable. Le retour FedaPay (?status=approved) fait foi
-  // tant que l'API dit encore en_attente.
   const shownStatut = payStatut && payStatut !== 'en_attente' ? payStatut : (returnStatut ?? payStatut);
   const payMessage = tx((shownStatut && PAY_MSG[shownStatut]) || "Votre commande a bien été enregistrée");
   const totalLabel = shownStatut === "reussi" || shownStatut === "rembourse" ? tx("Total payé") : tx("Total à payer");
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="bg-bg-app font-body text-text-main flex flex-col min-h-screen">
       <ClientNavbar />
@@ -159,12 +150,10 @@ export default function ConfirmationPage() {
       <main className="flex-grow flex items-center justify-center px-md py-xl mt-[52px] md:mt-[64px] pb-24">
         <div className="flex w-full max-w-[520px] flex-col items-center rounded-xl border border-border-default/50 bg-bg-card p-4 text-center shadow-sm sm:p-lg md:p-xl lg:grid lg:max-w-[1000px] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-x-8 lg:gap-y-md lg:p-8">
           <div className="flex w-full flex-col items-center lg:col-start-1 lg:row-start-1">
-            {/* Success Animation Container */}
             <div className="relative mb-lg">
               <div className="w-20 h-20 bg-success-light rounded-full flex items-center justify-center z-10 relative">
                 <MIcon name="check" className="text-[40px] text-success" />
               </div>
-              {/* Discrete Confetti Dots */}
               <div
                 className="absolute w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"
                 style={{ top: '-5px', left: '-10px' }}
@@ -187,13 +176,11 @@ export default function ConfirmationPage() {
               />
             </div>
 
-            {/* Title & Messaging */}
             <h1 className="font-h1 text-h1 text-text-main mb-sm font-bold">{tx("Commande confirmée !")}</h1>
             <p className={`font-body text-body mb-md ${shownStatut === "echoue" ? 'text-error' : 'text-text-secondary'}`}>
               {payMessage}
             </p>
 
-            {/* Order Number Badge — numéro réel de la commande backend */}
             {orderNumber && (
               <div className="bg-primary-tint text-primary-dark font-label text-label px-md py-sm rounded-lg mb-lg border border-primary-light font-bold">
                 {orderNumber}
@@ -201,7 +188,6 @@ export default function ConfirmationPage() {
             )}
           </div>
 
-          {/* Summary Box */}
           <div className="w-full bg-bg-secondary rounded-lg p-md mb-lg space-y-md text-left border border-border-default/50 lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:mb-0">
             <div className="flex justify-between items-center">
               <span className="font-body text-text-secondary">{totalLabel}</span>
@@ -244,7 +230,6 @@ export default function ConfirmationPage() {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="w-full space-y-md lg:col-start-1 lg:row-start-2 lg:self-start">
             <button
               type="button"
@@ -265,7 +250,6 @@ export default function ConfirmationPage() {
             </button>
           </div>
 
-          {/* Footer Link */}
           <button
             type="button"
             onClick={() => toast(tx("Support client TOKPa — ouvert 7j/7"))}
@@ -275,7 +259,6 @@ export default function ConfirmationPage() {
             {tx("Besoin d'aide ? Contactez le support")}
           </button>
 
-          {/* Promo Banner */}
           <button
             type="button"
             onClick={() => toast.success(tx("Lien de parrainage copié ! Partagez-le avec vos proches."))}

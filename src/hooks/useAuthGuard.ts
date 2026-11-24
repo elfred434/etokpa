@@ -1,3 +1,4 @@
+// Vérifie l’authentification locale et redirige vers /connexion si la session est absente ou expirée.
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -15,15 +16,14 @@ export interface AuthUser {
   statut?: string;
 }
 
-/**
- * Hook pour sécuriser les routes nécessitant une authentification Sanctum (Token Bearer)
- */
+// Hook React useAuthGuard : encapsule l’état et les effets associés.
 export function useAuthGuard(redirectTo = '/connexion') {
   const navigate = useNavigate();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Synchronise l’état avec le stockage local du navigateur.
   useEffect(() => {
     const token = localStorage.getItem('tokpa_token');
     const storedUser = localStorage.getItem('tokpa_user');

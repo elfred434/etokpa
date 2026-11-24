@@ -1,3 +1,4 @@
+// Atelier permettant au client de composer, modifier, sauvegarder et commander ses packs personnalisés.
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { Link } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -27,23 +28,6 @@ import {
   type PackDraft,
   type PackDraftProduit,
 } from '../../../utils/packDrafts';
-
-/* ---- Mes packs (client) — route /mes-packs ----
- * Même atelier que l'admin (AdminPacksPage) : page blanche où l'on glisse les
- * produits (grand écran) ou fenêtre « Choisir des produits » (téléphone), prix
- * total = somme automatique des produits × quantités, prix minimum négociable,
- * photo de pack choisie parmi les produits.
- *
- * Différences client :
- * - le rayon produits vient de l'API PUBLIQUE (GET /products), pas de l'API admin ;
- * - la création serveur vise POST /api/bundles et mappe les quantités locales
- *   vers `products[].qte`, le champ validé par le backend actuel. À la première
- *   erreur réseau/serveur, le pack est conservé sur l'appareil (utils/packDrafts)
- *   et reste ajoutable au panier — aucun travail perdu. La correction du contrat
- *   ne règle pas les contrôles de propriété/IDOR qui restent à faire côté backend ;
- * - « Ajouter au panier » décompose le pack en produits (le panier ne connaît
- *   que des produits — même règle que la fiche pack /pack/$packId).
- */
 
 const CARD_W = 176;
 const CARD_H = 208;
@@ -76,11 +60,13 @@ type Pression = {
   moved: boolean;
 };
 
+// Helper prixDe : réalise le traitement métier associé.
 function prixDe(p?: Produit | PackDraftProduit | null) {
   const n = Number(p?.prix ?? 0);
   return Number.isFinite(n) ? n : 0;
 }
 
+// Helper slot : réalise le traitement métier associé.
 function slot(index: number) {
   const cols = 3;
   return {
@@ -89,12 +75,14 @@ function slot(index: number) {
   };
 }
 
+// Helper dansLaPage : réalise le traitement métier associé.
 function dansLaPage(el: HTMLElement | null, x: number, y: number) {
   if (!el) return false;
   const r = el.getBoundingClientRect();
   return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
 }
 
+// Helper positionDans : réalise le traitement métier associé.
 function positionDans(el: HTMLElement, clientX: number, clientY: number, offsetX: number, offsetY: number) {
   const r = el.getBoundingClientRect();
   const x = clientX - r.left - offsetX;
@@ -105,7 +93,7 @@ function positionDans(el: HTMLElement, clientX: number, clientY: number, offsetX
   };
 }
 
-/** Rayon produits via l'API PUBLIQUE GET /products (paginé, comme l'admin). */
+// Récupère et normalise les données pour chargerProduits.
 async function chargerProduits() {
   const acc: Produit[] = [];
   for (let page = 1; page <= 10; page++) {
@@ -117,11 +105,13 @@ async function chargerProduits() {
   return acc;
 }
 
+// Helper mediaGrandEcran : réalise le traitement métier associé.
 function mediaGrandEcran(): MediaQueryList | null {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
   return window.matchMedia('(min-width: 1024px)');
 }
 
+// Composant React Vignette : prépare l’état et affiche son interface.
 function Vignette({ produit, className }: { produit?: Produit | PackDraftProduit | null; className?: string }) {
   const src = absImageUrl(produit?.image_url);
   if (!src) {
@@ -131,6 +121,7 @@ function Vignette({ produit, className }: { produit?: Produit | PackDraftProduit
       </div>
     );
   }
+  // Retourne le rendu JSX du composant.
   return (
     <ImageWithFallback
       src={src}
@@ -145,7 +136,7 @@ function Vignette({ produit, className }: { produit?: Produit | PackDraftProduit
   );
 }
 
-/** Ligne de pack → modèle du panier (mêmes règles que la fiche pack). */
+// Helper toCartProduct : réalise le traitement métier associé.
 function toCartProduct(l: PackDraftProduit): Product {
   const asApiProduct: ApiProduct = {
     id: l.id,
@@ -161,6 +152,7 @@ function toCartProduct(l: PackDraftProduit): Product {
   return mapApiProduct(asApiProduct);
 }
 
+// Composant de la page MesPacks : gère le chargement des données et le rendu.
 export default function MesPacksPage() {
   useLanguage();
   const dispatch = useAppDispatch();
@@ -173,7 +165,6 @@ export default function MesPacksPage() {
   const [err, setErr] = useState('');
   const [infoSync, setInfoSync] = useState('');
 
-  // ---- État atelier (calqué sur AdminPacksPage) ----
   const [enEdition, setEnEdition] = useState<PackDraft | null>(null);
   const [qProduit, setQProduit] = useState('');
   const [catRail, setCatRail] = useState('');
@@ -195,7 +186,7 @@ export default function MesPacksPage() {
   const pressRef = useRef<Pression | null>(null);
   const brouillonsLocauxAuMontage = useRef(drafts.some((draft) => !draft.serverId));
 
-  // Un toast ponctuel remplace le bandeau d'état; chaque brouillon garde aussi son badge.
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!brouillonsLocauxAuMontage.current) return;
     brouillonsLocauxAuMontage.current = false;
@@ -206,9 +197,9 @@ export default function MesPacksPage() {
     });
   }, []);
 
-  // Actualisation globale : rejoue le chargement (produits + packs) en place.
   const tick = useGlobalRefreshTick();
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let stop = false;
     (async () => {
@@ -229,6 +220,7 @@ export default function MesPacksPage() {
     return () => { stop = true; };
   }, [tick]);
 
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     const mq = mediaGrandEcran();
     if (!mq) return;
@@ -250,17 +242,19 @@ export default function MesPacksPage() {
     return map;
   }, [produits, extras]);
 
-  /** Prix total = somme des produits × quantités (jamais saisi, comme l'admin). */
   const somme = lignes.reduce((total, ligne) => total + prixDe(parId.get(ligne.id)) * ligne.qte, 0);
 
+  // Helper produitDe : réalise le traitement métier associé.
   function produitDe(id: number) {
     return parId.get(id);
   }
 
+  // Helper imageDe : réalise le traitement métier associé.
   function imageDe(id: number) {
     return absImageUrl(produitDe(id)?.image_url);
   }
 
+  // Helper ouvrirAtelier : réalise le traitement métier associé.
   function ouvrirAtelier(draft?: PackDraft | null) {
     setErreurForm('');
     if (draft) {
@@ -289,6 +283,7 @@ export default function MesPacksPage() {
     setVue('atelier');
   }
 
+  // Helper retourGalerie : réalise le traitement métier associé.
   async function retourGalerie() {
     if (nom.trim() || lignes.length > 0) {
       const confirme = await adminDialogs.confirm(tx("Quitter sans enregistrer ?"), {
@@ -302,6 +297,7 @@ export default function MesPacksPage() {
     setVue('galerie');
   }
 
+  // Helper poser : réalise le traitement métier associé.
   function poser(id: number, pos: { x: number; y: number } | 'suivant') {
     setLignes((prev) => {
       const deja = prev.find((l) => l.id === id);
@@ -316,10 +312,12 @@ export default function MesPacksPage() {
     window.setTimeout(() => setPulse((cur) => (cur === id ? null : cur)), 450);
   }
 
+  // Helper retirer : réalise le traitement métier associé.
   function retirer(id: number) {
     setLignes((prev) => prev.filter((l) => l.id !== id));
   }
 
+  // Met à jour les données ou l’état via changerQte.
   function changerQte(id: number, delta: number) {
     setLignes((prev) => prev.flatMap((l) => {
       if (l.id !== id) return [l];
@@ -328,6 +326,7 @@ export default function MesPacksPage() {
     }));
   }
 
+  // Helper dragProps : réalise le traitement métier associé.
   function dragProps(mode: 'new' | 'move', id: number) {
     return {
       onPointerDown: (e: ReactPointerEvent<HTMLElement>) => {
@@ -386,6 +385,7 @@ export default function MesPacksPage() {
     };
   }
 
+  // Helper enregistrer : réalise le traitement métier associé.
   async function enregistrer() {
     setErreurForm('');
     if (!nom.trim()) {
@@ -404,8 +404,6 @@ export default function MesPacksPage() {
       setErreurForm(tx("Le prix minimum ne peut pas dépasser le prix total."));
       return;
     }
-    // Payload BundleController@store — products[].qte suit la validation
-    // du backend actuel. prix_minimum et img_url restent des champs locaux.
     const payload: PackPayload = {
       nom: nom.trim(),
       description: description.trim() || null,
@@ -448,7 +446,6 @@ export default function MesPacksPage() {
       const serverId = Number(res?.data?.id ?? res?.id ?? 0) || draft.serverId;
       savePackDraft({ ...draft, serverId, syncedAt: new Date().toISOString() });
       setDrafts(listPackDrafts());
-      // Recharge la liste publique : un pack accepté devient visible (fiche /pack/$id).
       packsApi.getBundles()
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((r: any) => setPublics(listOf(r?.data ?? r) as ApiBundle[]))
@@ -456,9 +453,6 @@ export default function MesPacksPage() {
       toast.success(tx("Pack enregistré."));
       setVue('galerie');
     } catch {
-      // En cas d'erreur réseau/validation/serveur, garder le brouillon local :
-      // la correction du contrat `qte` ne doit jamais faire perdre le pack.
-      // Les autorisations de propriété restent à garantir côté backend.
       savePackDraft(draft);
       setDrafts(listPackDrafts());
       setInfoSync(tx("Le serveur n'a pas pu enregistrer ce pack : il est conservé sur cet appareil et peut être ajouté au panier."));
@@ -469,6 +463,7 @@ export default function MesPacksPage() {
     }
   }
 
+  // Supprime ou nettoie les éléments via supprimerDraft.
   async function supprimerDraft(draft: PackDraft) {
     const confirme = await adminDialogs.confirm(
       tx("Supprimer ce pack ? Il disparaîtra de cet appareil."),
@@ -483,7 +478,7 @@ export default function MesPacksPage() {
     toast.success(tx("Pack supprimé."));
   }
 
-  /** Le panier ne connaît pas les packs : on y met les produits, avec leurs quantités. */
+  // Enregistre ou crée les données via ajouterAuPanier.
   function ajouterAuPanier(draft: PackDraft) {
     if (draft.produits.length === 0) return;
     const indisponibles = draft.produits.filter((p) => !p.disponible || (p.stock != null && p.stock <= 0));
@@ -537,6 +532,7 @@ export default function MesPacksPage() {
     </div>
   );
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-bg-secondary font-body text-ink">
       <ClientNavbar />
@@ -551,7 +547,6 @@ export default function MesPacksPage() {
       `}</style>
       <div className="flex flex-1 justify-center px-3 pb-[88px] pt-[64px] sm:px-6 md:px-12 md:pt-[72px] lg:px-20 lg:pb-8 xl:px-40">
         <div className="flex w-full max-w-[1200px] flex-1 flex-col">
-          {/* ---- Breadcrumbs ---- */}
           <div className="flex flex-wrap gap-2 py-3 md:px-1">
             <Link to="/" className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">
               {tx("Accueil")}
@@ -606,8 +601,6 @@ export default function MesPacksPage() {
 
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {drafts.map((draft) => {
-                  // « Publié » = accepté par le serveur (serverId) ; la fiche publique
-                  // n'est liée que si le pack apparaît dans GET /bundles (disponible).
                   const publie = Boolean(draft.serverId);
                   const fichePublique = publie && idPublics.has(Number(draft.serverId));
                   const cover = absImageUrl(draft.img_url) || draft.produits.map((p) => absImageUrl(p.image_url)).find(Boolean) || '';
@@ -875,7 +868,6 @@ export default function MesPacksPage() {
         </div>
       </div>
 
-      {/* ---- Fenêtre produits (téléphone) : choisir, puis fermer pour voir le pack ---- */}
       {choixOuvert && !large && (
         <DialogFrame
           icon="inventory_2"
@@ -905,7 +897,6 @@ export default function MesPacksPage() {
         </DialogFrame>
       )}
 
-      {/* ---- Fantôme de glisser-déposer (grand écran) ---- */}
       {ghost && ghostProduit && (
         <div className="pointer-events-none fixed z-[90]" style={{ left: ghost.x - 88, top: ghost.y - 28, width: CARD_W }}>
           <div className={`rounded-2xl bg-bg-card shadow-2xl ring-2 ${surPage ? 'ring-primary' : 'ring-black/10'}`}>

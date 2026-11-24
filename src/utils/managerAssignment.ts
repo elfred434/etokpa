@@ -1,3 +1,4 @@
+// Filtre les livreurs disponibles appartenant à la zone de la commande.
 import { tx } from '../i18n/tx';
 
 export type ManagerZoneId = number | string | null | undefined;
@@ -15,12 +16,13 @@ export interface ManagerAssignableLivreur {
   } | null;
 }
 
+// Helper validId : réalise le traitement métier associé.
 function validId(value: ManagerZoneId): number | null {
   const id = Number(value);
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
-/** Lit la zone dans les variantes de UserResource déjà renvoyées par l'API. */
+// Helper livreurZoneId : réalise le traitement métier associé.
 export function livreurZoneId(livreur: ManagerAssignableLivreur): number | null {
   return (
     validId(livreur.profil?.zone_id) ??
@@ -30,7 +32,7 @@ export function livreurZoneId(livreur: ManagerAssignableLivreur): number | null 
   );
 }
 
-/** Fail-closed : un livreur sans disponibilité explicite n'est pas proposé à l'assignation. */
+// Vérifie la condition métier isLivreurDisponible.
 export function isLivreurDisponible(livreur: ManagerAssignableLivreur): boolean {
   const value = livreur.profil?.disponibilite ?? livreur.disponibilite;
   if (typeof value === 'boolean') return value;
@@ -41,7 +43,7 @@ export function isLivreurDisponible(livreur: ManagerAssignableLivreur): boolean 
   return false;
 }
 
-/** Livre uniquement les livreurs explicitement disponibles de la zone de la commande. */
+// Helper filterLivreursDisponiblesDansZone : réalise le traitement métier associé.
 export function filterLivreursDisponiblesDansZone<T extends ManagerAssignableLivreur>(
   livreurs: readonly T[],
   zoneId: ManagerZoneId,
@@ -53,7 +55,7 @@ export function filterLivreursDisponiblesDansZone<T extends ManagerAssignableLiv
   );
 }
 
-/** Libellé de zone dans l'espace manager (un admin sans fiche manager supervise toutes les zones). */
+// Transforme ou formate les données via formatManagerZoneLabel.
 export function formatManagerZoneLabel(zone: string | null | undefined, isAdmin = false): string {
   if (zone) return `Zone ${zone}`;
   return isAdmin ? tx('Toutes les zones') : tx('Zone non attribuée');

@@ -1,3 +1,4 @@
+// En-tête de la page profil affichant avatar, nom et informations du compte.
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
@@ -9,7 +10,6 @@ import {
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
-
 interface ProfileData {
   prenom: string;
   nom: string;
@@ -19,9 +19,7 @@ interface ProfileData {
   quartier: string;
 }
 
-/**
- * ProfileHeader — En-tête de profil utilisateur (avatar, nom, statut vérifié, édition).
- */
+// Composant React ProfileHeader : prépare l’état et affiche son interface.
 export default function ProfileHeader() {
   const { t, isFr } = useLanguage();
   const [user, setUser] = useState<ProfileData>({
@@ -36,6 +34,7 @@ export default function ProfileHeader() {
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState<ProfileData>(user);
 
+  // Gère l’action utilisateur Save.
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     setUser(form);
@@ -45,6 +44,7 @@ export default function ProfileHeader() {
 
   const initials = `${user.prenom[0] ?? ''}${user.nom[0] ?? ''}`.toUpperCase();
 
+  // Retourne le rendu JSX du composant.
   return (
     <>
       <section className="mb-md flex flex-col justify-between gap-md rounded-[14px] border border-line bg-bg-card p-4 sm:p-lg sm:flex-row sm:items-center">
@@ -84,7 +84,6 @@ export default function ProfileHeader() {
         </button>
       </section>
 
-      {/* Modal de modification de profil */}
       {editOpen && (
         <DialogFrame
           icon="edit"

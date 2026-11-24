@@ -1,3 +1,4 @@
+// Gère l’état Redux des propositions de budget et contre-propositions côté client.
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
@@ -13,15 +14,10 @@ export interface NegotiationItem {
   proposedPrice: number;
   counterPrice?: number;
   minPrice: number;
-  /** Quantité proposée (backend `quantite`). */
   quantite?: number;
-  /** Commande créée à l'acceptation, si l'API la renvoie ou si elle est retrouvée. */
   orderId?: number;
-  /** Réponse/justification de l'admin (backend `admin_response`). */
   adminResponse?: string;
-  /** Date ISO de fin de validité (12 h après acceptation). */
   expiresAt?: string;
-  /** Point de repère choisi par le client (API si présent, sinon mémoire locale). */
   landmarkId?: number;
   landmarkNom?: string;
   landmarkZone?: string;
@@ -30,7 +26,7 @@ export interface NegotiationItem {
 }
 
 interface NegotiationState {
-  activeNegotiations: Record<string, NegotiationItem>; // key: productId
+  activeNegotiations: Record<string, NegotiationItem>;
   history: NegotiationItem[];
 }
 
@@ -39,14 +35,13 @@ const initialState: NegotiationState = {
   history: [],
 };
 
+// Slice Redux negotiationSlice : définit l’état initial et les actions associées.
 const negotiationSlice = createSlice({
   name: 'negotiation',
   initialState,
   reducers: {
     setProposals(state, action: PayloadAction<NegotiationItem[]>) {
       state.history = action.payload;
-      // L'API renvoie `latest()` (plus récent en premier) : conserver la première occurrence par produit
-      // pour ne pas écraser une nouvelle offre par une ancienne offre expirée/refusée.
       const latestByProduct: Record<string, NegotiationItem> = {};
       for (const item of action.payload) {
         if (!item.productId) continue;
@@ -72,9 +67,6 @@ const negotiationSlice = createSlice({
     ) {
       const { id, productId, productName, productImage, vendorName, originalPrice, proposedPrice, minPrice, quantite } = action.payload;
 
-      // L'offre part à l'administrateur (POST /budget-proposals, CDC §4.1 : il accepte ou refuse) : elle
-      // reste « en attente » jusqu'à sa réponse réelle (GET /budget-proposals + temps réel
-      // budget.responded). Plus de réponse inventée côté front (acceptée / contre-offre / refusée).
       const status: NegotiationStatus = 'pending';
       const counterPrice: number | undefined = undefined;
 

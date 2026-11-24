@@ -1,3 +1,4 @@
+// Messagerie temps réel client ↔ livreur liée aux commandes assignées.
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import clsx from 'clsx';
@@ -50,11 +51,14 @@ const STATUT_LABELS: Record<string, string> = {
   annule: 'Annulée',
 };
 
+// Formate une date ISO en heure lisible (HH:MM).
 const fmtTime = (iso?: string) =>
   iso ? new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
 
+// Formate un montant numérique en francs CFA (FCFA).
 const fmtFCFA = (v: number) => `${Math.round(v).toLocaleString('fr-FR')} FCFA`;
 
+// Extrait deux initiales à partir d’un nom complet.
 const initials = (name: string) =>
   name
     .split(/\s+/)
@@ -63,17 +67,7 @@ const initials = (name: string) =>
     .map((p) => p[0]?.toUpperCase() ?? '')
     .join('') || 'LK';
 
-/**
- * MessagingPage — Tchat Client ↔ Livreur (CDC F-17)
- * Branché 100 % sur le backend :
- *   - GET /api/conversations
- *   - GET /api/conversations/{id}/messages
- *   - POST /api/conversations/{id}/messages
- *   - GET /api/orders/{id} (contexte commande + livreur de la conversation)
- *   - Temps réel Reverb : canal privé `chat.{conversationId}`, événement `message.sent`
- *
- * Le chat n'existe qu'une fois un livreur assigné à une commande (CDC §4.4).
- */
+// Composant de la page Messaging : gère le chargement des données et le rendu.
 export default function MessagingPage() {
   const { isFr } = useLanguage();
   const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
@@ -99,7 +93,7 @@ export default function MessagingPage() {
     }
   })();
 
-  // 1) Conversations — GET /api/conversations
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -124,7 +118,6 @@ export default function MessagingPage() {
               };
             });
             setConversations((prev) => {
-              // Conserver les noms de livreurs déjà chargés
               return mapped.map((m) => {
                 const known = prev.find((p) => p.id === m.id);
                 return known ? { ...m, riderName: known.riderName, riderInitials: known.riderInitials } : m;
@@ -156,8 +149,6 @@ export default function MessagingPage() {
     };
 
     load();
-    // Rafraîchir quand une assignation arrive en temps réel; le scope « all »
-    // est laissé au tick global ci-dessous pour ne lancer qu'une seule requête.
     return subscribeRealtimeRefresh(['orders'], (event) => {
       if (event.scope === 'orders') load();
     });
@@ -166,7 +157,7 @@ export default function MessagingPage() {
   const activeConv = conversations.find((c) => c.id === activeConvId) ?? null;
   const activeConvOrderId = activeConv?.orderId ?? null;
 
-  // 2) Contexte commande active — GET /api/orders/{orderId} (livreur + total + statut)
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!isAuthenticated || !activeConvId || !activeConvOrderId) {
       setActiveOrder(null);
@@ -216,7 +207,7 @@ export default function MessagingPage() {
     };
   }, [isAuthenticated, activeConvId, activeConvOrderId, isFr, refreshTick]);
 
-  // 3) Messages — GET /api/conversations/{id}/messages
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!isAuthenticated || !activeConvId) {
       setMessages([]);
@@ -252,7 +243,7 @@ export default function MessagingPage() {
     };
   }, [isAuthenticated, activeConvId, currentUserId, refreshTick]);
 
-  // 4) Temps réel — canal privé `chat.{conversationId}`, événement `message.sent`
+  // Abonne le composant au canal temps réel Reverb et nettoie l’écoute au démontage.
   useEffect(() => {
     if (!isAuthenticated || !activeConvId || !currentUserId) return;
     const echo = windowEcho();
@@ -260,7 +251,7 @@ export default function MessagingPage() {
 
     const channel = echo.private(`chat.${activeConvId}`);
     const handler = (data: { sender_id: number; contenu: string; created_at?: string; id?: number }) => {
-      if (data.sender_id === currentUserId) return; // déjà ajouté en local (optimiste)
+      if (data.sender_id === currentUserId) return;
       setMessages((prev) => [
         ...prev,
         {
@@ -287,6 +278,7 @@ export default function MessagingPage() {
     );
   }
 
+  // Gère l’action utilisateur SendMessage.
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const currentText = inputText.trim();
@@ -305,7 +297,7 @@ export default function MessagingPage() {
       try {
         await chatApi.sendMessage(activeConvId, currentText);
       } catch (err) {
-        alertApiError(err, 'chat-send'); // message non envoyé : le client doit le savoir
+        alertApiError(err, 'chat-send');
       }
     }
   };
@@ -323,16 +315,13 @@ export default function MessagingPage() {
     !conversations.some((c) => Number(c.orderId) === Number(commandeRecherche)),
   );
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="bg-bg-app font-body text-text-main flex h-[100dvh] flex-col overflow-hidden pb-20 lg:pb-0">
-      {/* TopNavBar */}
       <ClientNavbar />
 
-      {/* Main Layout */}
       <main className="mt-[52px] flex min-h-0 flex-1">
-        {/* Sidebar - Conversations List */}
         <aside className={`${activeConvId ? 'hidden lg:flex' : 'flex'} h-full w-full flex-col border-r border-border-default bg-bg-card lg:w-[320px]`}>
-          {/* Header */}
           <div className="p-md flex justify-between items-center">
             <h2 className="font-h2 text-h2 text-text-main font-bold">{isFr ? 'Messages' : 'Messages'}</h2>
             <Link
@@ -345,7 +334,6 @@ export default function MessagingPage() {
             </Link>
           </div>
 
-          {/* Conversation Items */}
           <div className="flex-1 overflow-y-auto">
             {conversations.length === 0 ? (
               <div className="p-md">
@@ -395,9 +383,7 @@ export default function MessagingPage() {
           </div>
         </aside>
 
-        {/* Main Chat Area */}
         <section className={`${activeConvId ? 'flex' : 'hidden lg:flex'} relative h-full min-w-0 flex-1 flex-col bg-bg-app`}>
-          {/* Chat Header */}
           <header className="z-10 flex h-[64px] items-center justify-between gap-2 border-b border-border-default bg-bg-card px-3 sm:px-lg">
             <div className="flex min-w-0 items-center gap-2 sm:gap-md">
               <button
@@ -443,7 +429,6 @@ export default function MessagingPage() {
             </div>
           </header>
 
-          {/* Order Context Banner */}
           {trackOrderId && (
             <div className="m-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary-light bg-primary-tint px-3 py-2 sm:m-md sm:px-md">
               <div className="flex min-w-0 items-center gap-sm">
@@ -470,7 +455,6 @@ export default function MessagingPage() {
             </div>
           )}
 
-          {/* Messages Area */}
           <div className="flex flex-1 flex-col gap-md overflow-y-auto px-3 pb-xl sm:px-lg">
             {requestedConversationMissing && (
               <div role="status" className="mt-3 rounded-lg border border-border-default bg-bg-card p-3 text-sm text-text-secondary">
@@ -529,7 +513,6 @@ export default function MessagingPage() {
             )}
           </div>
 
-          {/* Input Area */}
           <footer className="relative flex items-center gap-2 border-t border-border-default bg-bg-card p-3 sm:gap-md sm:px-lg">
             {emojiOpen && (
               <div className="absolute bottom-full right-14 mb-2 flex items-center gap-1 rounded-xl border border-border-default bg-bg-card p-2 shadow-lg z-20">
@@ -599,7 +582,6 @@ export default function MessagingPage() {
         </section>
       </main>
 
-      {/* BottomNavBar */}
       <ClientBottomNav />
     </div>
   );

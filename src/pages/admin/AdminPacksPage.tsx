@@ -1,3 +1,4 @@
+// Gestion CRUD des packs promotionnels côté administration.
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -56,15 +57,18 @@ type Pression = {
   moved: boolean;
 };
 
+// Helper inclusDe : réalise le traitement métier associé.
 function inclusDe(pack?: Pack | null) {
   return pack?.produits ?? pack?.products ?? [];
 }
 
+// Helper prixDe : réalise le traitement métier associé.
 function prixDe(p?: Produit | null) {
   const n = Number(p?.prix ?? 0);
   return Number.isFinite(n) ? n : 0;
 }
 
+// Helper slot : réalise le traitement métier associé.
 function slot(index: number) {
   const cols = 3;
   return {
@@ -73,12 +77,14 @@ function slot(index: number) {
   };
 }
 
+// Helper dansLaPage : réalise le traitement métier associé.
 function dansLaPage(el: HTMLElement | null, x: number, y: number) {
   if (!el) return false;
   const r = el.getBoundingClientRect();
   return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
 }
 
+// Helper positionDans : réalise le traitement métier associé.
 function positionDans(el: HTMLElement, clientX: number, clientY: number, offsetX: number, offsetY: number) {
   const r = el.getBoundingClientRect();
   const x = clientX - r.left - offsetX;
@@ -89,6 +95,7 @@ function positionDans(el: HTMLElement, clientX: number, clientY: number, offsetX
   };
 }
 
+// Récupère et normalise les données pour chargerProduits.
 async function chargerProduits() {
   const acc: Produit[] = [];
   for (let page = 1; page <= 10; page++) {
@@ -99,6 +106,7 @@ async function chargerProduits() {
   return acc;
 }
 
+// Composant React Vignette : prépare l’état et affiche son interface.
 function Vignette({ produit, className }: { produit?: Produit | null; className?: string }) {
   const src = absImageUrl(produit?.image_url);
   if (!src) {
@@ -108,6 +116,7 @@ function Vignette({ produit, className }: { produit?: Produit | null; className?
       </div>
     );
   }
+  // Retourne le rendu JSX du composant.
   return (
     <ImageWithFallback
       src={src}
@@ -122,6 +131,7 @@ function Vignette({ produit, className }: { produit?: Produit | null; className?
   );
 }
 
+// Composant de la page AdminPacks : gère le chargement des données et le rendu.
 export default function AdminPacksPage() {
   useLanguage();
   const navigate = useNavigate();
@@ -158,6 +168,7 @@ export default function AdminPacksPage() {
   const packOuvert = packs.find((p) => Number(p.id) === Number(search.pack));
   const packEdite = packs.find((p) => Number(p.id) === Number(search.edit));
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let stop = false;
     (async () => {
@@ -178,6 +189,7 @@ export default function AdminPacksPage() {
     return () => { stop = true; };
   }, [refreshTick]);
 
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
     const sync = () => {
@@ -189,6 +201,7 @@ export default function AdminPacksPage() {
     return () => mq.removeEventListener('change', sync);
   }, []);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     const cle = search.edit ? `e${search.edit}` : search.nouveau ? 'n' : '';
     if (!cle) {
@@ -245,20 +258,12 @@ export default function AdminPacksPage() {
 
   const somme = lignes.reduce((total, ligne) => total + prixDe(parId.get(ligne.id)) * ligne.qte, 0);
 
-  /**
-   * Le prix du pack n'est plus saisi : il est toujours la somme de ses produits.
-   * 0 produit → 0 · 1 produit à 100 → 100 · + un produit à 500 → 600.
-   * Le prix suit aussi les quantités (quantité 2 sur un produit à 100 = 200).
-   */
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (vue !== 'composer') return;
     setPrixTotal(String(Math.round(somme)));
   }, [somme, vue]);
 
-  /**
-   * Un pack enregistré avant ce changement peut porter un prix différent de la somme.
-   * L'enregistrement le remplacera : on le signale plutôt que de le faire en silence.
-   */
   const prixEnregistre =
     packEdite?.prix_total == null || packEdite.prix_total === '' ? null : Number(packEdite.prix_total);
   const ecartPrix =
@@ -267,10 +272,12 @@ export default function AdminPacksPage() {
     prixEnregistre !== null &&
     Math.round(prixEnregistre) !== Math.round(somme);
 
+  // Helper aller : réalise le traitement métier associé.
   function aller(params: Recherche) {
     navigate({ to: '/admin/packs', search: { pack: undefined, edit: undefined, nouveau: undefined, ...params } });
   }
 
+  // Helper retour : réalise le traitement métier associé.
   async function retour() {
     if (vue === 'composer' && (nom.trim() || lignes.length > 0)) {
       const confirme = await adminDialogs.confirm(tr('Quitter sans enregistrer ?', 'Leave without saving?'), {
@@ -284,14 +291,17 @@ export default function AdminPacksPage() {
     aller({});
   }
 
+  // Helper produitDe : réalise le traitement métier associé.
   function produitDe(id: number) {
     return parId.get(id);
   }
 
+  // Helper imageDe : réalise le traitement métier associé.
   function imageDe(id: number) {
     return absImageUrl(produitDe(id)?.image_url);
   }
 
+  // Helper poser : réalise le traitement métier associé.
   function poser(id: number, pos: { x: number; y: number } | 'suivant') {
     setLignes((prev) => {
       const deja = prev.find((l) => l.id === id);
@@ -306,10 +316,12 @@ export default function AdminPacksPage() {
     window.setTimeout(() => setPulse((cur) => (cur === id ? null : cur)), 450);
   }
 
+  // Helper retirer : réalise le traitement métier associé.
   function retirer(id: number) {
     setLignes((prev) => prev.filter((l) => l.id !== id));
   }
 
+  // Met à jour les données ou l’état via changerQte.
   function changerQte(id: number, delta: number) {
     setLignes((prev) => prev.flatMap((l) => {
       if (l.id !== id) return [l];
@@ -318,6 +330,7 @@ export default function AdminPacksPage() {
     }));
   }
 
+  // Helper dragProps : réalise le traitement métier associé.
   function dragProps(mode: 'new' | 'move', id: number) {
     return {
       onPointerDown: (e: ReactPointerEvent<HTMLElement>) => {
@@ -376,6 +389,7 @@ export default function AdminPacksPage() {
     };
   }
 
+  // Helper enregistrer : réalise le traitement métier associé.
   async function enregistrer() {
     if (!nom.trim()) {
       await adminDialogs.alert(tx("Le nom du pack est obligatoire."), { title: tx("Vérifiez les champs") });
@@ -420,6 +434,7 @@ export default function AdminPacksPage() {
     }
   }
 
+  // Valide et transmet l’action confirmerSuppression.
   async function confirmerSuppression() {
     if (!aSupprimer) return;
     setSupprime(true);
@@ -458,6 +473,7 @@ export default function AdminPacksPage() {
   const ghostProduit = ghost ? produitDe(ghost.id) : null;
   const hauteurPage = Math.max(640, ...lignes.map((l) => l.y + CARD_H + 36), 640);
 
+  // Retourne le rendu JSX du composant.
   return (
     <AdminLayout
       currentPath="/admin/packs"
@@ -874,10 +890,12 @@ export default function AdminPacksPage() {
   );
 }
 
+// Hook React useCanvasRef : encapsule l’état et les effets associés.
 function useCanvasRef() {
   return useRef<HTMLDivElement>(null);
 }
 
+// Composant React DetailPack : prépare l’état et affiche son interface.
 function DetailPack({
   pack,
   pret,
@@ -893,6 +911,7 @@ function DetailPack({
 }) {
   const inclus = inclusDe(pack);
   const somme = inclus.reduce((total, p) => total + prixDe(p) * Math.max(1, Number(p.pivot?.qte ?? 1)), 0);
+  // Retourne le rendu JSX du composant.
   return (
     <div className="flex min-h-[70vh] flex-col lg:h-[calc(100vh-52px)] lg:min-h-[640px]">
       <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-black/5 bg-bg-card px-3 py-3 sm:gap-3 sm:px-4">

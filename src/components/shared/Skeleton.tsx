@@ -1,9 +1,7 @@
+// Squelettes animés réutilisables pour tableaux, cartes et détails.
 import clsx from 'clsx';
 
-/**
- * Briques de squelette adaptatif (thème clair/sombre) pour remplacer les textes
- * « Chargement… » bruts et refléter fidèlement la mise en page de chaque vue.
- */
+// Composant React SkeletonBlock : prépare l’état et affiche son interface.
 export function SkeletonBlock({
   className,
   as = 'div',
@@ -12,6 +10,7 @@ export function SkeletonBlock({
   as?: 'div' | 'span';
 }) {
   const Tag = as;
+  // Retourne le rendu JSX du composant.
   return (
     <Tag
       aria-hidden="true"
@@ -20,10 +19,7 @@ export function SkeletonBlock({
   );
 }
 
-/**
- * Lignes squelettes à insérer directement dans un `<tbody>` existant afin de
- * conserver les en-têtes réels du tableau pendant le chargement.
- */
+// Composant React TableBodySkeletonRows : prépare l’état et affiche son interface.
 export function TableBodySkeletonRows({
   rows = 5,
   cols = 6,
@@ -35,6 +31,7 @@ export function TableBodySkeletonRows({
   withAvatar?: boolean;
   label?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <>
       {Array.from({ length: rows }).map((_, rIdx) => (
@@ -60,6 +57,7 @@ export function TableBodySkeletonRows({
   );
 }
 
+// Composant React TableSkeleton : prépare l’état et affiche son interface.
 export function TableSkeleton({
   rows = 6,
   cols = 5,
@@ -71,6 +69,7 @@ export function TableSkeleton({
   label?: string;
   className?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div
       role="status"
@@ -104,6 +103,7 @@ export function TableSkeleton({
   );
 }
 
+// Composant React CardsGridSkeleton : prépare l’état et affiche son interface.
 export function CardsGridSkeleton({
   count = 6,
   cols = 3,
@@ -124,6 +124,7 @@ export function CardsGridSkeleton({
         ? 'grid-cols-1 md:grid-cols-2'
         : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
 
+  // Retourne le rendu JSX du composant.
   return (
     <div
       role="status"
@@ -177,7 +178,7 @@ export function CardsGridSkeleton({
   );
 }
 
-/** Grille de catégories de HomePage (icône centrée + titre). */
+// Composant React CategoryGridSkeleton : prépare l’état et affiche son interface.
 export function CategoryGridSkeleton({
   count = 4,
   label = 'Chargement des catégories…',
@@ -187,6 +188,7 @@ export function CategoryGridSkeleton({
   label?: string;
   className?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div
       role="status"
@@ -208,7 +210,7 @@ export function CategoryGridSkeleton({
   );
 }
 
-/** Liste horizontale pour le catalogue en mode liste. */
+// Composant React CatalogListSkeleton : prépare l’état et affiche son interface.
 export function CatalogListSkeleton({
   count = 5,
   label = 'Chargement des produits…',
@@ -216,6 +218,7 @@ export function CatalogListSkeleton({
   count?: number;
   label?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div role="status" aria-live="polite" aria-busy="true" aria-label={label} className="flex flex-col gap-3 sm:gap-4">
       {Array.from({ length: count }).map((_, idx) => (
@@ -240,7 +243,7 @@ export function CatalogListSkeleton({
   );
 }
 
-/** Squelette 2 colonnes de ProductPage et PackPage. */
+// Composant React ProductDetailSkeleton : prépare l’état et affiche son interface.
 export function ProductDetailSkeleton({
   label = 'Chargement de la fiche…',
   className,
@@ -248,6 +251,7 @@ export function ProductDetailSkeleton({
   label?: string;
   className?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div role="status" aria-live="polite" aria-busy="true" aria-label={label} className={clsx('space-y-4', className)}>
       <div className="flex gap-2 py-2">
@@ -283,7 +287,7 @@ export function ProductDetailSkeleton({
   );
 }
 
-/** Squelette du tableau des commandes client (OrdersListPage). */
+// Composant React OrdersTableSkeleton : prépare l’état et affiche son interface.
 export function OrdersTableSkeleton({
   rows = 5,
   label = 'Chargement de vos commandes…',
@@ -291,6 +295,7 @@ export function OrdersTableSkeleton({
   rows?: number;
   label?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div
       role="status"
@@ -329,12 +334,13 @@ export function OrdersTableSkeleton({
   );
 }
 
-/** Squelette 2 colonnes carte + panneau de suivi (OrderTrackingPage). */
+// Composant React OrderTrackingShellSkeleton : prépare l’état et affiche son interface.
 export function OrderTrackingShellSkeleton({
   label = 'Chargement du suivi…',
 }: {
   label?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div
       role="status"
@@ -354,6 +360,7 @@ export function OrderTrackingShellSkeleton({
   );
 }
 
+// Composant React NotificationRowsSkeleton : prépare l’état et affiche son interface.
 export function NotificationRowsSkeleton({
   count = 5,
   label = 'Chargement des notifications…',
@@ -361,6 +368,7 @@ export function NotificationRowsSkeleton({
   count?: number;
   label?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div role="status" aria-live="polite" aria-busy="true" aria-label={label} className="space-y-3">
       {Array.from({ length: count }).map((_, i) => (
@@ -379,7 +387,7 @@ export function NotificationRowsSkeleton({
   );
 }
 
-/** Squelette sidebar + liste verticale de notifications (NotificationsPage). */
+// Composant React NotificationsListSkeleton : prépare l’état et affiche son interface.
 export function NotificationsListSkeleton({
   count = 5,
   label = 'Chargement des notifications…',
@@ -387,6 +395,7 @@ export function NotificationsListSkeleton({
   count?: number;
   label?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div role="status" aria-live="polite" aria-busy="true" aria-label={label} className="flex flex-1 max-w-[1200px] w-full mx-auto pb-24">
       <aside className="hidden md:flex w-64 border-r border-border-default bg-bg-card flex-col p-4 gap-3 shrink-0">
@@ -409,7 +418,7 @@ export function NotificationsListSkeleton({
   );
 }
 
-/** Squelette carte clé/valeur 2 colonnes (AdminUserDetailPage). */
+// Composant React KeyValueGridSkeleton : prépare l’état et affiche son interface.
 export function KeyValueGridSkeleton({
   rows = 8,
   label = 'Chargement de la fiche…',
@@ -419,6 +428,7 @@ export function KeyValueGridSkeleton({
   label?: string;
   className?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div
       role="status"
@@ -439,12 +449,13 @@ export function KeyValueGridSkeleton({
   );
 }
 
-/** Squelette 2 panneaux messagerie (MessagingPage). */
+// Composant React MessagingShellSkeleton : prépare l’état et affiche son interface.
 export function MessagingShellSkeleton({
   label = 'Chargement de la messagerie…',
 }: {
   label?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div role="status" aria-live="polite" aria-busy="true" aria-label={label} className="mt-[52px] flex min-h-0 flex-1">
       <aside className="flex h-full w-full flex-col border-r border-border-default bg-bg-card lg:w-[320px]">
@@ -490,7 +501,7 @@ export function MessagingShellSkeleton({
   );
 }
 
-/** Squelette liste verticale de cartes de négociation (NegotiationsPage). */
+// Composant React NegotiationsListSkeleton : prépare l’état et affiche son interface.
 export function NegotiationsListSkeleton({
   count = 3,
   label = 'Chargement des négociations…',
@@ -498,6 +509,7 @@ export function NegotiationsListSkeleton({
   count?: number;
   label?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div role="status" aria-live="polite" aria-busy="true" aria-label={label} className="space-y-md">
       {Array.from({ length: count }).map((_, i) => (
@@ -525,12 +537,13 @@ export function NegotiationsListSkeleton({
   );
 }
 
-/** Squelette fidèle à la grille 2 colonnes de ProfilePage. */
+// Composant React ProfilePageSkeleton : prépare l’état et affiche son interface.
 export function ProfilePageSkeleton({
   label = 'Chargement du profil…',
 }: {
   label?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div
       role="status"
@@ -573,12 +586,13 @@ export function ProfilePageSkeleton({
   );
 }
 
-/** Squelette carte de course active (LivreurDashboardPage / LivreurCoursePage). */
+// Composant React LivreurActiveCardSkeleton : prépare l’état et affiche son interface.
 export function LivreurActiveCardSkeleton({
   label = 'Chargement de la course…',
 }: {
   label?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div
       role="status"
@@ -607,12 +621,13 @@ export function LivreurActiveCardSkeleton({
   );
 }
 
-/** Squelette LivreurHistoryPage (4 KPIs + tableau 8 cols + carte latérale 4 cols). */
+// Composant React LivreurHistorySkeleton : prépare l’état et affiche son interface.
 export function LivreurHistorySkeleton({
   label = 'Chargement de l’historique…',
 }: {
   label?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div role="status" aria-live="polite" aria-busy="true" aria-label={label} className="space-y-xl">
       <div className="grid grid-cols-1 gap-lg md:grid-cols-4">
@@ -640,12 +655,13 @@ export function LivreurHistorySkeleton({
   );
 }
 
-/** Squelette LivreurRecapPage (en-tête centré + 2 colonnes résumé). */
+// Composant React LivreurRecapSkeleton : prépare l’état et affiche son interface.
 export function LivreurRecapSkeleton({
   label = 'Chargement du récapitulatif…',
 }: {
   label?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div role="status" aria-live="polite" aria-busy="true" aria-label={label} className="space-y-xl">
       <div className="flex flex-col items-center gap-3">
@@ -668,12 +684,13 @@ export function LivreurRecapSkeleton({
   );
 }
 
-/** Squelette LivreurSettingsPage (grille 12 colonnes : 7 formulaire + 5 zone/statut). */
+// Composant React LivreurSettingsSkeleton : prépare l’état et affiche son interface.
 export function LivreurSettingsSkeleton({
   label = 'Chargement de votre profil…',
 }: {
   label?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div role="status" aria-live="polite" aria-busy="true" aria-label={label} className="grid grid-cols-1 gap-lg lg:grid-cols-12">
       <div className="rounded-[14px] bg-bg-card p-lg shadow-sm lg:col-span-7 space-y-4">
@@ -701,6 +718,7 @@ export function LivreurSettingsSkeleton({
   );
 }
 
+// Composant React DetailPanelSkeleton : prépare l’état et affiche son interface.
 export function DetailPanelSkeleton({
   label = 'Chargement du détail…',
   className,
@@ -708,6 +726,7 @@ export function DetailPanelSkeleton({
   label?: string;
   className?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div
       role="status"
@@ -741,6 +760,7 @@ export function DetailPanelSkeleton({
   );
 }
 
+// Composant React TrackingSkeleton : prépare l’état et affiche son interface.
 export function TrackingSkeleton({
   label = 'Chargement du suivi…',
   className,
@@ -748,6 +768,7 @@ export function TrackingSkeleton({
   label?: string;
   className?: string;
 }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div
       role="status"

@@ -1,3 +1,4 @@
+// Liste des livreurs rattachés à la zone du manager et statut de disponibilité.
 import { useEffect, useMemo, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
@@ -12,11 +13,11 @@ import { currentUserZone, isAdminRole } from '../../routes/authGuard';
 import { formatManagerZoneLabel } from '../../utils/managerAssignment';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 const STATUSES = ['Tous les statuts', 'en ligne', 'en course', 'hors ligne'];
 
+// Composant de la page ManagerEquipe : gère le chargement des données et le rendu.
 export default function ManagerEquipePage() {
   useLanguage();
   const [livreurs, setLivreurs] = useState<any[]>([]);
@@ -26,6 +27,7 @@ export default function ManagerEquipePage() {
   const [ajout, setAjout] = useState(false);
   const refreshTick = useGlobalRefreshTick();
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setLoading(true);
@@ -47,6 +49,7 @@ export default function ManagerEquipePage() {
 
   const actifs = livreurs.filter((l) => String(l.statut ?? '').toLowerCase() !== "hors ligne").length;
 
+  // Retourne le rendu JSX du composant.
   return (
     <ManagerLayout currentPath="/manager/equipe">
       <div className="space-y-6">

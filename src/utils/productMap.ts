@@ -1,3 +1,4 @@
+// Convertit les produits bruts de l’API au modèle Product du frontend.
 import type { ApiProduct } from '../services/api/catalog';
 import type { CategoryId, Product } from '../types/models';
 import { absImageUrl } from './imageUrl';
@@ -17,7 +18,7 @@ const SLUG_TO_CATEGORY: Record<string, CategoryId> = {
   pack: 'pack',
 };
 
-/** Fiche produit : ProductResource -> modèle d'affichage. */
+// Transforme ou formate les données via mapApiProduct.
 export function mapApiProduct(p: ApiProduct): Product {
   const slug = p.categorie?.slug ?? '';
   const available = p.disponible !== false && (p.stock == null || Number(p.stock) > 0);

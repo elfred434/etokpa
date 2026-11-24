@@ -1,3 +1,4 @@
+// Suivi en direct d’une commande avec carte Leaflet, étape actuelle et position GPS du livreur.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -31,7 +32,6 @@ interface ApiRider {
   telephone?: string;
 }
 
-/** Un item de commande — exactement `OrderResource::$items`. */
 interface ApiOrderItem {
   id: number;
   product_id?: number | null;
@@ -40,7 +40,6 @@ interface ApiOrderItem {
   prix_unitaire: number;
 }
 
-/** Commande — exactement `OrderResource::$data` (GET /orders et GET /orders/{id}). */
 interface ApiOrder {
   id: number;
   montant_total?: number;
@@ -55,7 +54,6 @@ interface ApiOrder {
   payment?: { id: number; montant: number; statut: string; methode: string } | null;
 }
 
-/** Position GPS — modèle `SuiviLivraison` sérialisé (decimal:7 → parfois string). */
 interface TrackingPosition {
   latitude: number | string;
   longitude: number | string;
@@ -64,7 +62,6 @@ interface TrackingPosition {
   statut?: string;
 }
 
-/** GET /orders/{id}/tracking — exactement `TrackingController::show`. */
 interface TrackingInfo {
   order_id?: number;
   statut?: string;
@@ -72,7 +69,6 @@ interface TrackingInfo {
   distance_km?: number | string | null;
 }
 
-/** Ordre du stepper d'après la machine à états du backend (Commande::STATUT_*). */
 const STATUT_FLOW: Record<string, number> = {
   en_attente: 0,
   en_preparation: 1,
@@ -80,16 +76,7 @@ const STATUT_FLOW: Record<string, number> = {
   livre: 3,
 };
 
-/** Libellés FR des statuts réels (dont `annule`). */
-
-/**
- * OrderTrackingPage — Suivi de commande avec GPS temps réel (route protégée).
- * - `?order={id}` (liens Confirmation / Panier) ; sinon liste des commandes + plus récente par défaut.
- * - GET /api/orders/{id}           → statut, montant, livreur assigné (nom + téléphone réels)
- * - GET /api/orders/{id}/tracking  → position + distance restante
- * - Reverb tracking.{id}           → livreur.position.updated (hook useRiderLocation)
- * - Reverb notifications.{userId}  → order.status.changed → rechargement du statut
- */
+// Composant de la page OrderTracking : gère le chargement des données et le rendu.
 export default function OrderTrackingPage() {
   const { isFr } = useLanguage();
   const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
@@ -123,6 +110,7 @@ export default function OrderTrackingPage() {
     promise: Promise<{ list: ApiOrder[]; lastPage: number; error: unknown | null }>;
   } | null>(null);
 
+  // Gère l’action utilisateur Repayer.
   const handleRepayer = async (target: ApiOrder) => {
     if (payLock.current || paying) return;
     clearPaymentIntent(target.id);
@@ -166,7 +154,7 @@ export default function OrderTrackingPage() {
     }
   };
 
-  // Chargement de la liste (pour le sélecteur quand pas de ?order=, et page 1 partagée avec la vérif d'appartenance)
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!isAuthenticated) return;
     let alive = true;
@@ -189,7 +177,6 @@ export default function OrderTrackingPage() {
         setAllOrders(list);
         setOrdersError(null);
         if (!selectedId && !hasInvalidOrderParam && list.length > 0) {
-          // sans ?order= : seulement une commande encore en cours. Une commande annulée n'est pas suivie.
           const active = list.find((o) => ['en_attente', 'en_preparation', 'en_livraison'].includes(o.statut));
           if (active) setSelectedId(active.id);
         }
@@ -203,23 +190,20 @@ export default function OrderTrackingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, refreshTick]);
 
-  // Sync URL (?order=) → sélection (édition manuelle de l'URL et ?order=%2256%22 inclus)
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (requestedOrderId !== null) {
       setSelectedId(requestedOrderId);
     }
   }, [requestedOrderId]);
 
-  // Chargement commande + tracking — UNIQUEMENT si la commande figure dans MES commandes
-  // (anti-IDOR côté UI : aucune donnée d'une commande étrangère n'est jamais affichée, y compris session admin/manager)
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     if (!isAuthenticated || !selectedId) return;
 
     const isNewSelection = prevSelectedIdRef.current !== selectedId;
     prevSelectedIdRef.current = selectedId;
 
-    // Si cette commande a déjà été refusée, ne jamais réinitialiser deniedOrderId sur un refreshTick
-    // (évite de flasher brièvement des infos avant de réafficher l'erreur toutes les 30s).
     if (!isNewSelection && deniedOrderId === selectedId) {
       return;
     }
@@ -290,7 +274,6 @@ export default function OrderTrackingPage() {
           const t = await ordersApi.getTracking(selectedId);
           if (alive) setTracking(t as TrackingInfo);
         } catch {
-          /* Le endpoint /tracking est optionnel tant qu'aucune position GPS n'est disponible. */
         }
       } catch (err) {
         if (!alive) return;
@@ -319,7 +302,7 @@ export default function OrderTrackingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, selectedId, refreshTick]);
 
-  // Destination RÉELLE de la commande : landmark (zones + repères perso + anti-mer + géocodage)
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     if (!order?.landmark?.id && !order?.description_lieu) {
       setDestCoords(null);
@@ -356,7 +339,6 @@ export default function OrderTrackingPage() {
         setDestZoneName(zoneName);
       })
       .catch(() => {
-        /* zones indisponibles → pas de marqueur destination (honnête) */
       });
     return () => {
       alive = false;
@@ -366,7 +348,7 @@ export default function OrderTrackingPage() {
   const accessDenied = hasInvalidOrderParam || (!!selectedId && deniedOrderId === selectedId);
   const isVerifiedOrder = !!selectedId && verifiedOrderId === selectedId && !!order && !accessDenied;
 
-  // Rafraîchissement temps réel sur les événements de statut (notifications.{userId})
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     if (!isAuthenticated || !isVerifiedOrder || !selectedId) return;
     return subscribeRealtimeRefresh(['orders'], (e) => {
@@ -377,7 +359,6 @@ export default function OrderTrackingPage() {
     });
   }, [isAuthenticated, isVerifiedOrder, selectedId]);
 
-  // Position GPS réelle (GET /orders/{id}/tracking → position) : priorité sur la simulation
   const realPosition = useMemo<[number, number] | null>(() => {
     const p = tracking?.position;
     if (!p) return null;
@@ -390,8 +371,8 @@ export default function OrderTrackingPage() {
     orderId: isVerifiedOrder && selectedId ? String(selectedId) : undefined,
     enabled: isAuthenticated && isVerifiedOrder && order?.statut !== 'annule',
     realPosition,
-    destinationCoords: destCoords ?? undefined, // ETA vers la destination RÉELLE de la commande
-    allowSimulation: search.simu === '1', // démo opt-in uniquement : sans ça, aucune position inventée
+    destinationCoords: destCoords ?? undefined,
+    allowSimulation: search.simu === '1',
     simulatedSpeedMs: 2500,
   });
 
@@ -436,12 +417,12 @@ export default function OrderTrackingPage() {
   const fetchError = accessDenied ? null : (detailError ?? (showOrderContent ? null : ordersError));
   const hideMapLayout = !showOrderContent || isCancelled;
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="bg-bg-app font-body text-on-surface antialiased min-h-screen flex flex-col">
       <ClientNavbar />
 
       <main className="relative flex flex-grow flex-col overflow-hidden pt-[52px] pb-[80px] lg:pb-0 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)] lg:items-stretch lg:gap-lg lg:px-lg lg:pb-lg">
-        {/* Pas de carte ni de suivi GPS si accès refusé, chargement ou commande annulée. */}
         {!hideMapLayout && (
           <section className="relative h-[420px] w-full overflow-hidden bg-info-light sm:h-[520px] lg:h-auto lg:min-h-[620px] lg:rounded-[20px]">
             <RealBeninMap
@@ -453,7 +434,6 @@ export default function OrderTrackingPage() {
           </section>
         )}
 
-        {/* STATUS PANEL (Floating Bottom Sheet) */}
         <section className={`relative z-40 ${hideMapLayout ? 'mt-md' : '-mt-8'} flex-grow overflow-y-auto rounded-t-[20px] bg-bg-card px-lg pt-lg pb-xl shadow-[0_-8px_30px_rgba(0,0,0,0.08)] mx-auto w-full max-w-[800px] lg:mt-0 lg:rounded-[20px] lg:shadow-sm ${hideMapLayout ? 'lg:col-span-2 lg:max-w-[920px] lg:justify-self-center' : 'lg:max-w-none lg:px-xl lg:pt-xl lg:pb-xl'}`}>
           <div className="w-12 h-1.5 bg-border-default rounded-full mx-auto mb-lg" />
 
@@ -505,7 +485,6 @@ export default function OrderTrackingPage() {
             </div>
           ) : !showOrderContent ? null : (
             <>
-              {/* Commande suivie — EN LECTURE SEULE (aucune sélection de statut : réservée au livreur assigné) */}
               <div className="flex justify-between items-center mb-md">
                 <span className="font-label text-label text-text-secondary">
                   {isFr ? tx("Commande") : 'Order'} #{selectedId}
@@ -515,7 +494,6 @@ export default function OrderTrackingPage() {
                 </Link>
               </div>
 
-              {/* Header Status with Live GPS Badge */}
               <div className="flex flex-wrap justify-between items-start mb-lg gap-2">
                 <div>
                   <div
@@ -577,7 +555,6 @@ export default function OrderTrackingPage() {
                 )}
               </div>
 
-              {/* Progress Stepper — pas de suivi si la commande est annulée */}
               {!isCancelled && (
               <div className="relative flex justify-between items-center mb-xl px-sm">
                 <div className="absolute left-md right-md h-[3px] bg-border-default top-1/2 -translate-y-1/2 z-0" />
@@ -620,7 +597,6 @@ export default function OrderTrackingPage() {
               </div>
               )}
 
-              {/* Rider Info Card — pas de suivi livreur si la commande est annulée */}
               {!isCancelled && (
               <div className="mb-lg flex flex-wrap items-center justify-between gap-3 rounded-lg bg-bg-secondary p-md">
                 <div className="flex items-center gap-md">
@@ -671,7 +647,6 @@ export default function OrderTrackingPage() {
               </div>
               )}
 
-              {/* Order Summary Card — données réelles */}
               {order && (
                 <div className="border border-border-default rounded-lg p-md">
                   <div className="flex justify-between items-center mb-xs">
@@ -702,8 +677,6 @@ export default function OrderTrackingPage() {
                       {order.description_lieu ? ` — ${order.description_lieu}` : ''}
                     </p>
                   )}
-                  {/* Reçu de paiement — uniquement lorsque la livraison est lancée/livrée
-                      avec un livreur assigné + bouton Repayer si le paiement a échoué */}
                   {((order.payment?.id && (!isCancelled || canDownloadReceipt(order))) ||
                     (!isCancelled && order.payment?.statut === 'echoue')) ? (
                     <div className="mt-sm border-t border-border-default pt-sm flex flex-wrap items-center justify-between gap-2">

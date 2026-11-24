@@ -1,3 +1,4 @@
+// Gestion des zones de livraison, polygones cartographiques et points de repère.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import L from 'leaflet';
@@ -16,7 +17,7 @@ import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 
-
+// Feuille de styles intégrée (DESIGN_CSS) injectée pour le rendu de la vue.
 const DESIGN_CSS = `
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -40,7 +41,6 @@ const DESIGN_CSS = `
         .design-modal-scroll::-webkit-scrollbar-track { background: transparent; }
     `;
 
-/** Tuiles réelles sans clé API (Calques = bascule de fond de carte). */
 const TILE_URLS = [
   'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
@@ -49,7 +49,7 @@ const VUE_BENIN: L.LatLngExpression = [8.0, 2.3];
 
 type Pt = { nom: string; lat: number; lng: number };
 
-/** Points d'un polygone_geo (tableau de [lat, lng], d'objets, ou GeoJSON). */
+// Helper polyPoints : réalise le traitement métier associé.
 const polyPoints = (pg: any): Array<{ lat: number; lng: number }> => {
   if (!pg) return [];
   let coords: any = pg;
@@ -66,18 +66,13 @@ const polyPoints = (pg: any): Array<{ lat: number; lng: number }> => {
       const a = Number(pt[0]);
       const b = Number(pt[1]);
       if (!Number.isFinite(a) || !Number.isFinite(b)) continue;
-      // heuristique Bénin : lat (≈6-12) > lng (≈1-4) → [lat, lng] si a > b
       pts.push(a >= b ? { lat: a, lng: b } : { lat: b, lng: a });
     }
   }
   return pts;
 };
 
-/**
- * Forme d'une zone = DÉLIMITATION de ses points de repère : l'enveloppe convexe
- * (enveloppe = sommets à la limite ; les points à l'intérieur ne changent pas la
- * forme). 3 points = triangle, 6 = hexagone…
- */
+// Helper hullPoly : réalise le traitement métier associé.
 const hullPoly = (pts: Array<{ lat: number; lng: number }>): Array<[number, number]> | null => {
   if (pts.length < 3) return null;
   const sorted = pts.map((p) => ({ x: p.lng, y: p.lat })).sort((a, b) => a.x - b.x || a.y - b.y);
@@ -97,6 +92,7 @@ const hullPoly = (pts: Array<{ lat: number; lng: number }>): Array<[number, numb
   return hull.length >= 3 ? hull.map((p) => [Number(p.y.toFixed(6)), Number(p.x.toFixed(6))] as [number, number]) : null;
 };
 
+// Helper shapeName : réalise le traitement métier associé.
 const shapeName = (n: number): string =>
   n < 3 ? 'pas encore de forme'
     : n === 3 ? 'triangle'
@@ -110,7 +106,7 @@ const shapeName = (n: number): string =>
 const LM_INIT = { zone_id: '', nom: '', description: '', latitude: '', longitude: '' };
 const ZONE_INIT = { nom: '', km_prix: '', description: '', manager: '' };
 
-/** Recherche de lieu type Google Maps : on tape un nom, on clique une proposition. */
+// Composant React PlaceSearch : prépare l’état et affiche son interface.
 function PlaceSearch({ onPick, placeholder }: { onPick: (p: GeoPlace) => void; placeholder: string }) {
   const [q, setQ] = useState('');
   const [res, setRes] = useState<GeoPlace[]>([]);
@@ -118,6 +114,7 @@ function PlaceSearch({ onPick, placeholder }: { onPick: (p: GeoPlace) => void; p
   const [busy, setBusy] = useState(false);
   const [serr, setSerr] = useState('');
 
+  // Planifie le rafraîchissement ou minuteur périodique et le nettoie au démontage.
   useEffect(() => {
     const query = q.trim();
     if (query.length < 3) {
@@ -143,6 +140,7 @@ function PlaceSearch({ onPick, placeholder }: { onPick: (p: GeoPlace) => void; p
     return () => window.clearTimeout(t);
   }, [q]);
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="relative">
       <input
@@ -178,12 +176,7 @@ function PlaceSearch({ onPick, placeholder }: { onPick: (p: GeoPlace) => void; p
   );
 }
 
-/**
- * AdminZonesPage — une ZONE = la délimitation de plusieurs points de repère :
- * la forme (polygone_geo) = l'enveloppe de ses points à la limite (3 = triangle,
- * 6 = hexagone) ; les points à l'intérieur ne changent pas la forme. Tout se
- * recalcule dès qu'un repère est ajouté ou supprimé.
- */
+// Composant de la page AdminZones : gère le chargement des données et le rendu.
 export default function AdminZonesPage() {
   useLanguage();
   useDesignScript(DESIGN_SCRIPT);
@@ -191,7 +184,6 @@ export default function AdminZonesPage() {
   const { rows: landmarks, reload: reloadLm } = useLiveRows(() => adminApi.getLandmarks());
   const { rows: managers } = useLiveRows(() => adminApi.getUsers({ role: 'manager', per_page: 100 }));
   const { rows: livreurs } = useLiveRows(() => adminApi.getUsers({ role: 'livreur', per_page: 100 }));
-  // Teintes des repères cartographiques, accordées au thème (voir plus bas).
   const { sombre } = useTheme();
   const teinteRepere = sombre ? '#fdba74' : '#9d4300';
   const teinteRepereInactive = sombre ? '#1c1917' : '#ffffff';
@@ -203,7 +195,7 @@ export default function AdminZonesPage() {
   const [choix, setChoix] = useState<any | null>(null);
   const [jeu, setJeu] = useState(false);
   const [lmForm, setLmForm] = useState(LM_INIT);
-  const [lmEditId, setLmEditId] = useState<number | null>(null); // null = création, sinon PUT /admin/landmarks/{id}
+  const [lmEditId, setLmEditId] = useState<number | null>(null);
   const [zoneForm, setZoneForm] = useState(ZONE_INIT);
   const [zonePts, setZonePts] = useState<Pt[]>([]);
 
@@ -212,6 +204,7 @@ export default function AdminZonesPage() {
   const countRole = (rows: any[], id: any) =>
     rows.filter((u: any) => String(u.zone?.id ?? u.zone_id ?? u.profil?.zone?.id ?? '') === String(id)).length;
 
+  // Helper selectZone : réalise le traitement métier associé.
   const selectZone = (z: any) => {
     setRefus('');
     setSelId(z.id);
@@ -222,16 +215,19 @@ export default function AdminZonesPage() {
       manager: String(z.manager_id ?? z.manager?.id ?? ''),
     });
   };
+  // Helper ouvrirChoix : réalise le traitement métier associé.
   const ouvrirChoix = (z: any) => {
     selectZone(z);
     setJeu(false);
     setChoix(z);
   };
+  // Helper voirCarte : réalise le traitement métier associé.
   const voirCarte = (z: any) => {
     selectZone(z);
     setChoix(null);
     setJeu(true);
   };
+  // Enregistre ou crée les données via ajouterRepere.
   const ajouterRepere = (z: any) => {
     selectZone(z);
     setChoix(null);
@@ -240,9 +236,11 @@ export default function AdminZonesPage() {
     setLmForm({ ...LM_INIT, zone_id: String(z.id) });
     setModal('lm');
   };
+  // Helper resetForm : réalise le traitement métier associé.
   const resetForm = () => {
     if (sel) selectZone(sel);
   };
+  // Enregistre ou crée les données via saveZone.
   const saveZone = async () => {
     if (!sel) return;
     const payload = {
@@ -267,6 +265,7 @@ export default function AdminZonesPage() {
       void adminDialogs.alert(formatApiError(extractApiError(e)), { title: tx("Erreur API"), danger: true });
     }
   };
+  // Supprime ou nettoie les éléments via delZone.
   const delZone = async () => {
     if (!sel) return;
     const confirme = await adminDialogs.confirm(
@@ -287,7 +286,7 @@ export default function AdminZonesPage() {
     }
   };
 
-  /** Recalcule la forme de la zone depuis ses points (enveloppe) et l'enregistre. */
+  // Enregistre ou crée les données via saveZoneShape.
   const saveZoneShape = async (zoneId: number, pts: Array<{ lat: number; lng: number }>) => {
     const hull = hullPoly(pts);
     try {
@@ -296,22 +295,25 @@ export default function AdminZonesPage() {
       void adminDialogs.alert(formatApiError(extractApiError(e)), { title: tx("Erreur API"), danger: true });
     }
   };
+  // Helper geoPtsOf : réalise le traitement métier associé.
   const geoPtsOf = (zoneId: number, list: any[] = landmarks) =>
     list
       .filter((l: any) => String(l.zone_id) === String(zoneId))
       .map((l: any) => ({ lat: Number(l.latitude), lng: Number(l.longitude) }))
       .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
 
-  /* ---------- Modale « Nouvelle zone » (la zone = ses points à la limite) ---------- */
+  // Helper openZoneModal : réalise le traitement métier associé.
   const openZoneModal = () => {
     setZoneForm(ZONE_INIT);
     setZonePts([]);
     setModal('zone');
   };
+  // Enregistre ou crée les données via addZonePoint.
   const addZonePoint = (nom: string, lat: number, lng: number) => {
     setZonePts((prev) => [...prev, { nom: nom || `Point ${prev.length + 1}`, lat, lng }]);
     setZoneForm((prev) => ({ ...prev, nom: prev.nom || nom }));
   };
+  // Enregistre ou crée les données via saveZoneModal.
   const saveZoneModal = async () => {
     const z = zoneForm;
     if (!z.nom.trim()) {
@@ -354,6 +356,7 @@ export default function AdminZonesPage() {
     }
   };
 
+  // Helper pickPlaceLm : réalise le traitement métier associé.
   const pickPlaceLm = (p: GeoPlace) => {
     setLmForm((prev) => ({ ...prev, nom: prev.nom || p.nom, latitude: String(p.lat), longitude: String(p.lng) }));
     const map = mapRef.current;
@@ -364,7 +367,7 @@ export default function AdminZonesPage() {
     }
   };
 
-  /* ---------- Modale « Nouveau point de repère » (intérieur ou à la limite) ---------- */
+  // Helper openLmModal : réalise le traitement métier associé.
   const openLmModal = () => {
     if (!zones.length) {
       void adminDialogs.alert(tx("Créez d'abord une zone (avec ses points à la limite)."), { title: tx("Zone requise") });
@@ -374,7 +377,7 @@ export default function AdminZonesPage() {
     setLmForm({ ...LM_INIT, zone_id: String(sel?.id ?? zones[0].id) });
     setModal('lm');
   };
-  /* Modification d'un repère existant : même modale, pré-remplie (PUT /admin/landmarks/{id}) */
+  // Helper openLmEdit : réalise le traitement métier associé.
   const openLmEdit = (lm: any) => {
     setLmEditId(Number(lm.id));
     setLmForm({
@@ -386,6 +389,7 @@ export default function AdminZonesPage() {
     });
     setModal('lm');
   };
+  // Enregistre ou crée les données via saveLm.
   const saveLm = async () => {
     const zoneId = Number(lmForm.zone_id);
     if (!zoneId) {
@@ -410,8 +414,6 @@ export default function AdminZonesPage() {
       if (lmEditId !== null) {
         const old: any = landmarks.find((l: any) => Number(l.id) === lmEditId);
         await adminApi.updateLandmark(lmEditId, payload);
-        // La zone = enveloppe de ses points : si la position ou la zone change, on recalcule
-        // la forme de la zone du repère (et celle de l'ancienne zone s'il a changé de zone).
         const oldZoneId = Number(old?.zone_id);
         const moved =
           !old ||
@@ -425,7 +427,6 @@ export default function AdminZonesPage() {
         }
       } else {
         await adminApi.createLandmark(payload);
-        // La forme suit ses points : si le nouveau point est à la limite, il élargit la zone
         if (hasGeo) await saveZoneShape(zoneId, [...geoPtsOf(zoneId), { lat, lng }]);
       }
       setModal(null);
@@ -436,6 +437,7 @@ export default function AdminZonesPage() {
       void adminDialogs.alert(formatApiError(extractApiError(e)), { title: tx("Erreur API"), danger: true });
     }
   };
+  // Supprime ou nettoie les éléments via delLm.
   const delLm = async (lm: any) => {
     const confirme = await adminDialogs.confirm(
       tr(`Supprimer le point de repère « ${lm.nom} » ?`, `Delete landmark “${lm.nom}”?`),
@@ -466,17 +468,18 @@ export default function AdminZonesPage() {
 
   const hullZonePts = useMemo(() => hullPoly(zonePts), [zonePts]);
 
-  /* ---------- Carte Leaflet ---------- */
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const tileRef = useRef<L.TileLayer | null>(null);
   const vecRef = useRef<L.LayerGroup | null>(null);
   const tempRef = useRef<L.Layer | null>(null);
 
+  // Helper showTemp : réalise le traitement métier associé.
   const showTemp = (layer: L.Layer, map: L.Map) => {
     if (tempRef.current) map.removeLayer(tempRef.current);
     tempRef.current = layer.addTo(map);
   };
+  // Supprime ou nettoie les éléments via clearTemp.
   const clearTemp = (map: L.Map) => {
     if (tempRef.current) {
       map.removeLayer(tempRef.current);
@@ -484,6 +487,7 @@ export default function AdminZonesPage() {
     }
   };
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!mapElRef.current || mapRef.current) return;
     const map = L.map(mapElRef.current, { zoomControl: false, attributionControl: false, minZoom: 5 });
@@ -501,6 +505,7 @@ export default function AdminZonesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Planifie le rafraîchissement ou minuteur périodique et le nettoie au démontage.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -522,6 +527,7 @@ export default function AdminZonesPage() {
     return () => window.clearTimeout(timer);
   }, [jeu, selId, zones, landmarks]);
 
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     if (!jeu) return;
     const onKey = (e: KeyboardEvent) => {
@@ -536,6 +542,7 @@ export default function AdminZonesPage() {
     };
   }, [jeu, modal]);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     const t = tileRef.current;
     const map = mapRef.current;
@@ -544,7 +551,7 @@ export default function AdminZonesPage() {
     tileRef.current = L.tileLayer(TILE_URLS[tileIdx], { maxZoom: 19 }).addTo(map);
   }, [tileIdx]);
 
-  // Échap ferme la modale ; clic sur la carte = ajouter un point (limite zone) ou poser le repère
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     if (!modal) return;
     const onKey = (e: KeyboardEvent) => {
@@ -574,7 +581,7 @@ export default function AdminZonesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modal]);
 
-  // Aperçu vivant : la forme grandit avec les points (triangle → hexagone…)
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || modal !== 'zone' || zonePts.length === 0) return;
@@ -590,13 +597,13 @@ export default function AdminZonesPage() {
     else if (hullZonePts) map.fitBounds(L.latLngBounds(hullZonePts), { padding: [60, 60], maxZoom: 16, animate: true });
   }, [zonePts, modal, hullZonePts]);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     const map = mapRef.current;
     const grp = vecRef.current;
     if (!map || !grp) return;
     grp.clearLayers();
     const cadrage: L.LatLngExpression[] = [];
-    // Une zone s'affiche individuellement : si sélection → SES formes uniquement
     const zonesToDraw: any[] = selId != null ? zones.filter((z: any) => z.id === selId) : zones;
     const lmsToDraw: any[] = selId != null ? landmarks.filter((l: any) => String(l.zone_id) === String(selId)) : landmarks;
     for (const z of zonesToDraw) {
@@ -616,8 +623,6 @@ export default function AdminZonesPage() {
       const active = String(lm.zone_id) === String(selId);
       L.circleMarker([lat, lng], {
         radius: active ? 7 : 4,
-        // Couleurs lues dans le thème courant : un repère blanc éblouirait sur
-        // la carte sombre, un repère brun foncé disparaîtrait.
         color: teinteRepere,
         weight: 2,
         fillColor: active ? teinteRepere : teinteRepereInactive,
@@ -627,7 +632,6 @@ export default function AdminZonesPage() {
         .bindTooltip(String(lm.nom ?? ''), { permanent: active, direction: 'top', offset: [0, -6] });
       if (active) cadrage.push([lat, lng]);
     }
-    // Cadrage : la zone active est encadrée en fonction de ses repères entrés
     if (selId != null) {
       if (cadrage.length >= 2) map.fitBounds(L.latLngBounds(cadrage), { padding: [50, 50], maxZoom: 16, animate: true });
       else if (cadrage.length === 1) map.setView(cadrage[0], 15, { animate: true });
@@ -645,6 +649,7 @@ export default function AdminZonesPage() {
     }
   }, [zones, landmarks, selId, sombre]);
 
+  // Retourne le rendu JSX du composant.
   return (
     <AdminLayout currentPath="/admin/zones">
       <style>{DESIGN_CSS}</style>
@@ -768,7 +773,6 @@ export default function AdminZonesPage() {
         </div>
       )}
 
-      {/* Modale « Nouvelle zone » : la zone = la délimitation de ses points */}
       {modal === 'zone' && (
         <div className="fixed inset-0 z-[1200] bg-black/40 flex items-center justify-center p-4 pointer-events-none" role="dialog" aria-modal="true" aria-label={tx("Nouvelle zone")}>
           <div className="bg-bg-card rounded-[14px] shadow-xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto design-modal-scroll p-4 sm:p-lg pointer-events-auto" onClick={(e) => e.stopPropagation()}>
@@ -836,7 +840,6 @@ export default function AdminZonesPage() {
         </div>
       )}
 
-      {/* Modale « Nouveau / Modifier le point de repère » (intérieur ou à la limite) */}
       {modal === 'lm' && (
         <div className={`fixed inset-0 z-[1200] flex justify-center bg-black/40 p-4 pointer-events-none ${jeu ? 'items-end' : 'items-center'}`} role="dialog" aria-modal="true" aria-label={lmEditId !== null ? tx("Modifier le point de repère") : tx("Nouveau point de repère")}>
           <div className={`pointer-events-auto w-full max-w-[480px] overflow-y-auto rounded-[14px] bg-bg-card p-4 shadow-xl design-modal-scroll sm:p-lg ${jeu ? 'max-h-[48vh]' : 'max-h-[90vh]'}`} onClick={(e) => e.stopPropagation()}>

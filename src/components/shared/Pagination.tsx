@@ -1,8 +1,8 @@
+// Barre de pagination accessible (pages précédente, numérotées et suivante).
 import clsx from 'clsx';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
-
 
 interface PaginationProps {
   page: number;
@@ -11,7 +11,7 @@ interface PaginationProps {
   className?: string;
 }
 
-/** Pagination carrés 40px : actif orange, ellipsis si beaucoup de pages (maquettes). */
+// Composant React Pagination : prépare l’état et affiche son interface.
 export default function Pagination({ page, pageCount, onChange, className }: PaginationProps) {
   useLanguage();
   const pages: (number | '…')[] =
@@ -26,6 +26,7 @@ export default function Pagination({ page, pageCount, onChange, className }: Pag
   const cell =
     'flex h-10 w-10 items-center justify-center rounded-[10px] text-sm font-medium transition-colors duration-150 active:scale-[0.97]';
 
+  // Retourne le rendu JSX du composant.
   return (
     <nav className={clsx('flex items-center justify-center gap-sm', className)} aria-label="Pagination">
       <button

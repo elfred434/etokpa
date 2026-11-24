@@ -1,9 +1,4 @@
-/**
- * Dictionnaire FR → allemand (de) des phrases passées à tx()/useTx().
- * Couverture complète des phrases statiques du code (1310 entrées (1295 + 15 « Mes packs » client)).
- * Repli restant : anglais (EN) puis français — voir src/i18n/tx.ts.
- * Généré le 12/10/2026.
- */
+// Dictionnaire des phrases traduites en allemand.
 export const DE: Record<string, string> = {
   "Adresse de livraison": "Lieferadresse",
   "Clair": "Hell",
@@ -1345,12 +1340,10 @@ export const DE: Record<string, string> = {
   "Actualisation automatique": "Automatische Aktualisierung",
   "Toutes les 30 secondes": "Alle 30 Sekunden",
   "Informations actualisées.": "Informationen aktualisiert.",
-  // Bestellungen — Detail (Modale für Kunden, Verwaltung und Manager)
   "Aucun article rattaché à cette commande.": "Keine Artikel mit dieser Bestellung verknüpft.",
   "Détail de la commande": "Bestelldetails",
   "Livreur en cours d’assignation…": "Fahrer wird zugewiesen…",
   "Précisions": "Weitere Angaben",
-  // Einstellungen — Darstellung und Sprache (Seite „Einstellungen“ aller vier Bereiche)
   "Langue et thème": "Sprache und Design",
   "Langue de l'interface": "Sprache der Oberfläche",
   "Suit le réglage de votre appareil": "Folgt der Einstellung Ihres Geräts",

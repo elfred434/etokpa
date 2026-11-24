@@ -1,3 +1,4 @@
+// Historique et gestion des négociations client (édition d’offre et acceptation de contre-proposition).
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import clsx from 'clsx';
@@ -34,9 +35,7 @@ import { tx } from '../../../i18n/tx';
 
 type FilterTab = 'all' | 'pending' | 'accepted' | 'rejected' | 'expired';
 
-/**
- * Page dédiée Mes Négociations — Synchronisée 100% avec l'API Backend Laravel GET /api/budget-proposals
- */
+// Composant de la page Negotiations : gère le chargement des données et le rendu.
 export default function NegotiationsPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -47,7 +46,6 @@ export default function NegotiationsPage() {
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [isApiLoading, setIsApiLoading] = useState(true);
 
-  // Load real budget proposals from Backend GET /api/budget-proposals
   const loadProposals = useCallback(() => {
     if (!silentRefreshActive()) setIsApiLoading(true);
 
@@ -74,7 +72,7 @@ export default function NegotiationsPage() {
               productId: String(p.product_id ?? p.product?.id ?? ''),
               productName: p.product?.nom || `Produit #${p.product_id ?? p.product?.id ?? '?'}`,
               productImage: absImageUrl(p.product?.image_url) ?? undefined,
-              vendorName: '', // l'API ne rattache aucun produit à un marché : pas de provenance inventée
+              vendorName: '',
               originalPrice: Number(p.product?.prix) || rawProposed,
               proposedPrice: p.statut === 'accepte' && counterPrice != null ? counterPrice : rawProposed,
               ...(counterPrice != null ? { counterPrice } : {}),
@@ -101,17 +99,17 @@ export default function NegotiationsPage() {
       .finally(() => setIsApiLoading(false));
   }, [isAuthenticated, dispatch]);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (isAuthenticated) loadProposals();
   }, [isAuthenticated, loadProposals]);
 
-  // Temps réel : budget.responded sur notifications.{userId} → rechargement silencieux
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!isAuthenticated) return;
     return subscribeRealtimeRefresh(['proposals'], () => loadProposals());
   }, [isAuthenticated, loadProposals]);
 
-  // ---- Modal « Modifier mon offre » (PUT /api/budget-proposals/{id}) ----
   const [editModal, setEditModal] = useState<NegotiationItem | null>(null);
   const [editPrice, setEditPrice] = useState('');
   const [editQuantity, setEditQuantity] = useState('1');
@@ -144,6 +142,7 @@ export default function NegotiationsPage() {
     return true;
   });
 
+  // Gère l’action utilisateur AddToCart.
   const handleAddToCart = (neg: NegotiationItem) => {
     const product: Product = {
       id: neg.productId,
@@ -166,6 +165,7 @@ export default function NegotiationsPage() {
     );
   };
 
+  // Gère l’action utilisateur AcceptCounter.
   const handleAcceptCounter = async (neg: NegotiationItem, counterPrice: number) => {
     setAcceptingId(neg.id);
     try {
@@ -188,6 +188,7 @@ export default function NegotiationsPage() {
     }
   };
 
+  // Gère l’action utilisateur DiscussionClick.
   const handleDiscussionClick = (neg: NegotiationItem) => {
     if (neg.status === 'accepted') {
       navigate({ to: '/messagerie' });
@@ -201,6 +202,7 @@ export default function NegotiationsPage() {
     );
   };
 
+  // Helper openEditOffer : réalise le traitement métier associé.
   const openEditOffer = (neg: NegotiationItem) => {
     setEditModal(neg);
     setEditPrice(String(neg.proposedPrice));
@@ -208,6 +210,7 @@ export default function NegotiationsPage() {
     setEditError(null);
   };
 
+  // Valide et transmet l’action submitEditOffer.
   const submitEditOffer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editModal) return;
@@ -254,14 +257,12 @@ export default function NegotiationsPage() {
     }
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="bg-bg-app min-h-screen pb-24 font-body">
-      {/* TopNavBar */}
       <ClientNavbar />
 
-      {/* Main Container */}
       <main className="mx-auto w-full max-w-[1200px] px-md pt-[92px] md:px-lg lg:px-xl">
-        {/* Header Section */}
         <div className="mb-lg">
           <h1 className="font-h1 text-h1 text-on-surface mb-xs">
             {isFr ? tx("Mes Négociations") : 'My Negotiations'}
@@ -274,9 +275,7 @@ export default function NegotiationsPage() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-lg">
-          {/* Main Content: Negotiations List */}
           <div className="min-w-0 flex-1 space-y-md">
-            {/* Filters/Tabs */}
             <nav className="flex flex-wrap gap-1 border-b border-border-default mb-md">
               <button
                 type="button"
@@ -330,7 +329,6 @@ export default function NegotiationsPage() {
               </button>
             </nav>
 
-            {/* Negotiation Items */}
             {isApiLoading ? (
               <LoadingState variant="negotiations" count={3} label={tx("Chargement des négociations…")} />
             ) : filteredHistory.length === 0 ? (
@@ -372,7 +370,6 @@ export default function NegotiationsPage() {
                       isExpired && 'border-l-4 border-border-default opacity-75',
                     )}
                   >
-                    {/* Thumbnail matching code.html */}
                     <div className="w-24 h-24 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0">
                       <ImageWithFallback
                         src={neg.productImage}
@@ -382,7 +379,6 @@ export default function NegotiationsPage() {
                       />
                     </div>
 
-                    {/* Content Block */}
                     <div className="flex-1 min-w-0 w-full">
                       <div className="flex justify-between items-start mb-xs">
                         <div>
@@ -395,7 +391,6 @@ export default function NegotiationsPage() {
                           )}
                         </div>
 
-                        {/* Status Badges */}
                         {isPending && (
                           <span className="inline-flex items-center px-sm py-[2px] rounded-full bg-amber-light text-amber-text text-micro font-micro uppercase tracking-wider">
                             <span className="bubble-dot bg-amber-text" />
@@ -427,7 +422,6 @@ export default function NegotiationsPage() {
                         )}
                       </div>
 
-                      {/* Prices comparison */}
                       <div className="flex flex-wrap gap-md mt-md mb-lg">
                         {isCounter ? (
                           <>
@@ -511,7 +505,6 @@ export default function NegotiationsPage() {
                         </p>
                       )}
 
-                      {/* Réponse de l'admin (backend admin_response) */}
                       {isCounter && neg.adminResponse && (
                         <div className="mb-md p-sm bg-primary-tint border border-primary-light rounded-lg">
                           <p className="text-micro font-bold text-primary-deep uppercase tracking-wider mb-xs">
@@ -529,7 +522,6 @@ export default function NegotiationsPage() {
                         </div>
                       )}
 
-                      {/* Action buttons strictly matching code.html */}
                       <div className="flex gap-sm flex-wrap">
                         {isAccepted && (
                           <>
@@ -629,7 +621,6 @@ export default function NegotiationsPage() {
             )}
           </div>
 
-          {/* Sidebar: Guide */}
           <aside className="w-full lg:w-[300px] shrink-0">
             <div className="bg-bg-card rounded-card p-lg border border-border-default shadow-sm sticky top-[80px]">
               <div className="flex items-center gap-sm mb-md text-primary">
@@ -688,7 +679,6 @@ export default function NegotiationsPage() {
         </div>
       </main>
 
-      {/* Modal « Modifier mon offre » — PUT /api/budget-proposals/{id} */}
       {editModal && (
         <DialogFrame
           icon="handshake"
@@ -772,7 +762,6 @@ export default function NegotiationsPage() {
         </DialogFrame>
       )}
 
-      {/* BottomNavBar */}
       <ClientBottomNav />
     </div>
   );

@@ -1,3 +1,4 @@
+// Page de réinitialisation du mot de passe à partir du lien email.
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
@@ -10,13 +11,7 @@ import { extractApiError, formatApiError } from '../../utils/apiError';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
-
-/**
- * Page Réinitialisation du mot de passe — appelée depuis le lien email envoyé
- * par POST /api/auth/forgot-password :
- *   {FRONTEND_URL}/reset-password?token=...&email=...
- * Envoi : POST /api/auth/reset-password {email, token, password, password_confirmation}
- */
+// Composant de la page ResetPassword : gère le chargement des données et le rendu.
 export default function ResetPasswordPage() {
   useLanguage();
   const navigate = useNavigate();
@@ -29,6 +24,7 @@ export default function ResetPasswordPage() {
 
   const missing = !token || !email;
 
+  // Gère l’action utilisateur Submit.
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -59,6 +55,7 @@ export default function ResetPasswordPage() {
     }
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg-app p-4 font-body text-text-main">
       <div className="fixed right-4 top-4 z-50"><LangToggle /></div>

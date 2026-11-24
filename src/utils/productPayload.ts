@@ -1,7 +1,8 @@
+// Construit le FormData/JSON envoyé lors de la création ou modification d’un produit.
 export type ProductFormFields = Record<string, string | number | boolean>;
 export type ProductMutationPayload = FormData | Record<string, string | number | boolean | null>;
 
-/** Construit le payload d’un produit : multipart si image remplacée, null explicite si image retirée. */
+// Transforme ou formate les données via buildProductMutationPayload.
 export function buildProductMutationPayload(
   fields: ProductFormFields,
   imageFile: File | null,

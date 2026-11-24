@@ -1,3 +1,4 @@
+// Tableau réutilisable des paiements (côté client ou admin) avec modale détail et reçu PDF.
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -53,6 +54,7 @@ const STATUT_CLASS: Record<string, string> = {
   rembourse: 'bg-primary-tint text-primary',
 };
 
+// Helper asPayment : réalise le traitement métier associé.
 function asPayment(row: any): PaymentRow {
   const inner = row?.data && typeof row.data === 'object' && 'id' in row.data ? row.data : row;
   return inner as PaymentRow;
@@ -64,6 +66,7 @@ const LOADERS = {
   'own-admin': () => paymentsApi.listOwnAsAdmin(),
 };
 
+// Composant React PaymentsPanel : prépare l’état et affiche son interface.
 export default function PaymentsPanel({ source, title }: { source: PaymentSource; title: string }) {
   useLanguage();
   const [rows, setRows] = useState<PaymentRow[]>([]);
@@ -72,26 +75,16 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
   const [selected, setSelected] = useState<PaymentRow | null>(null);
   const [repayingOrderId, setRepayingOrderId] = useState<number | null>(null);
   const repayLock = useRef(false);
-  // Détail de la commande liée (client, livreur, adresse) — chargé À L'OUVERTURE
-  // de la modale : GET /orders/{id} renvoie les relations (OrderResource), ce
-  // que la liste des paiements ne fournit pas. Aucune modification backend.
   const [detail, setDetail] = useState<ReceiptOrder | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  // Annuaire id → coordonnées client (nom + téléphone). Nécessaire car GET /orders/{id}
-  // ne renvoie PAS le client (OrderController ne charge pas la relation) : sans cet
-  // annuaire, la modale et le reçu ne pouvaient afficher que « #20 ». Réservé à la vue
-  // administration (route /admin/users) — le client n'en a pas besoin.
   type ClientDirectoryEntry = { nom: string; telephone: string | null };
   const [annuaire, setAnnuaire] = useState<Record<number, ClientDirectoryEntry>>({});
 
-  // Actualisation globale (bouton / silencieuse) : recharge les paiements sans squelette.
   const tick = useGlobalRefreshTick();
   const navigate = useNavigate();
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
-    // Vue administration uniquement, et seulement pour un admin : la route
-    // /admin/users est protégée côté backend ; on ne la sollicite pas depuis
-    // la vue clientèle (qui n'a pas besoin des données des autres comptes).
     if (source !== 'all' || !isAdminRole()) return;
     let alive = true;
     type UserRow = { id?: number; nom_complet?: string; prenom?: string; nom?: string; telephone?: string | null };
@@ -119,7 +112,6 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
         }
         setAnnuaire(map);
       } catch {
-        /* repli silencieux sur l'identifiant */
       }
     })();
     return () => {
@@ -127,6 +119,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
     };
   }, [source, tick]);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     const orderId = selected ? selected.order?.id ?? selected.order_id : null;
     if (!selected || !orderId) {
@@ -142,7 +135,6 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
         setDetail((((res as { data?: ReceiptOrder })?.data ?? res) as ReceiptOrder) ?? null);
       })
       .catch(() => {
-        // Conserver le dernier détail affiché pendant une actualisation sans réseau.
       })
       .finally(() => alive && setDetailLoading(false));
     return () => {
@@ -150,6 +142,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
     };
   }, [selected, tick]);
 
+  // Transforme ou formate les données via resolveClientForRow.
   const resolveClientForRow = (row: PaymentRow, orderDetail?: ReceiptOrder | null): ReceiptClientInput | null => {
     const detailNom = orderDetail?.client?.nom_complet?.trim() || null;
     const detailTel = orderDetail?.client?.telephone?.trim() || null;
@@ -167,20 +160,13 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
     return detailNom || detailTel ? { nom_complet: detailNom, telephone: detailTel } : null;
   };
 
-  /**
-   * Nom affiché pour « Client ».
-   * - Vue administration : détail de la commande, sinon annuaire (/admin/users).
-   * - Vue clientèle : le nom de la session, et UNIQUEMENT si la ligne appartient
-   *   à l'utilisateur connecté — sinon l'identifiant, pour ne jamais exposer le
-   *   nom d'un autre compte.
-   */
   const selectedClientInfo = selected ? resolveClientForRow(selected, detail) : null;
   const nomClientAffiche = !selected
     ? '—'
     : selectedClientInfo?.nom_complet ||
       (selected.client_id ? `#${selected.client_id}` : '—');
 
-  /** Ouvre la commande liée au paiement (suivi côté client, liste côté admin). */
+  // Helper ouvrirCommande : réalise le traitement métier associé.
   const ouvrirCommande = (orderId: number) => {
     setSelected(null);
     if (source === 'all' || source === 'own-admin') {
@@ -190,6 +176,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
     }
   };
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     let alive = true;
     const background = backgroundRefreshActive();
@@ -214,6 +201,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
   const hasOrderSucceeded = (orderId?: number | null) =>
     Boolean(orderId && rows.some((r) => (r.order?.id ?? r.order_id) === orderId && r.statut === 'reussi'));
 
+  // Vérifie la condition métier canRepayPayment.
   const canRepayPayment = (p: PaymentRow, orderStatut?: string) => {
     if (source !== 'mine') return false;
     const orderId = p.order?.id ?? p.order_id;
@@ -222,6 +210,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
     return !hasOrderSucceeded(orderId);
   };
 
+  // Gère l’action utilisateur Repayer.
   const handleRepayer = async (orderId: number) => {
     if (repayLock.current || repayingOrderId !== null) return;
     clearPaymentIntent(orderId);
@@ -256,6 +245,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
     }
   };
 
+  // Génère et déclenche l’export via exportPaymentsCsv.
   const exportPaymentsCsv = () => {
     downloadCsvFile(
       `paiements-tokpa-${new Date().toISOString().slice(0, 10)}.csv`,
@@ -285,6 +275,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
     );
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -405,7 +396,6 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
             className="bg-bg-card rounded-xl shadow-2xl border border-border-default w-full max-w-[620px] max-h-[90vh] flex flex-col overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
-            {/* En-tête */}
             <div className="px-6 py-4 border-b border-border-default flex items-center justify-between bg-surface-container-low shrink-0">
               <div className="flex items-center gap-2">
                 <MIcon name="payments" className="text-primary text-xl" />
@@ -428,9 +418,7 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
               </button>
             </div>
 
-            {/* Corps */}
             <div className="p-6 space-y-4 overflow-y-auto flex-1">
-              {/* Bandeau : identifiant, montant, statut */}
               <div className="flex items-start justify-between gap-4 pb-3 border-b border-border-default">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -454,7 +442,6 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                 </span>
               </div>
 
-              {/* Informations de paiement */}
               <div className="bg-bg-secondary p-3.5 rounded-lg border border-border-default space-y-2">
                 <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
                   <MIcon name="credit_card" className="text-sm" />
@@ -491,7 +478,6 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
                 </div>
               </div>
 
-              {/* Commande associée */}
               <div className="bg-bg-secondary p-3.5 rounded-lg border border-border-default space-y-2">
                 <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
                   <MIcon name="receipt_long" className="text-sm" />
@@ -543,7 +529,6 @@ export default function PaymentsPanel({ source, title }: { source: PaymentSource
               </div>
             </div>
 
-            {/* Pied de modale */}
             <div className="px-6 py-4 bg-bg-secondary border-t border-border-default flex flex-wrap items-center justify-between gap-3 shrink-0">
               {!detailLoading && canDownloadReceipt(detail ?? selected.order) ? (
                 <ReceiptButton

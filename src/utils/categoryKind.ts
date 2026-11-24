@@ -1,10 +1,7 @@
-/**
- * Famille d'une catégorie réelle (GET /api/categories, ProductResource.categorie), déduite de son nom/slug.
- * Sert uniquement à choisir l'icône du design : le backend ne persiste pas encore `icone` (B-17).
- * Chaque page associe ensuite la famille à l'icône de SA maquette Stitch (catalogue ≠ accueil).
- */
+// Détermine le type visuel et l’icône d’une catégorie.
 export type CategoryKind = 'vegetable' | 'fish' | 'grain' | 'spice' | 'pack' | 'other';
 
+// Helper categoryKind : réalise le traitement métier associé.
 export function categoryKind(c?: { nom?: string | null; slug?: string | null } | null): CategoryKind {
   const s = `${c?.slug ?? ''} ${c?.nom ?? ''}`.toLowerCase();
   if (/poisson|viande|chair|boeuf|porc|poulet|volaille/.test(s)) return 'fish';

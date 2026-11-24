@@ -1,3 +1,4 @@
+// Cadre accessible partagé pour les modales et boîtes de confirmation.
 import { useEffect, useId, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import MIcon from './MIcon';
@@ -34,10 +35,7 @@ export interface DialogFrameProps {
   footer?: ReactNode;
 }
 
-/**
- * Gabarit unique des modales TOKPa (identique aux dialogs admin `AdminActionDialogHost`),
- * partagé entre les espaces administration, manager, livreur et clientèle.
- */
+// Composant React DialogFrame : prépare l’état et affiche son interface.
 export function DialogFrame({
   icon = 'info',
   title,
@@ -62,6 +60,7 @@ export function DialogFrame({
   const autoTitleId = useId();
   const resolvedTitleId = titleId ?? autoTitleId;
 
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !disabled) {

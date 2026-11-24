@@ -1,3 +1,4 @@
+// Exporte le journal d’audit filtré au format PDF via jsPDF.
 import { jsPDF } from "jspdf";
 import { acteur, categorie, detail, titre } from "./auditLog";
 import { tr, tx, uiLang } from "../i18n/tx";
@@ -66,6 +67,7 @@ const CATEGORY_COLORS: Record<string, RGB> = {
   SYSTEM: [239, 68, 68],
 };
 
+// Helper plainText : réalise le traitement métier associé.
 function plainText(value: unknown, maxLength = 500): string {
   return String(value ?? "—")
     .replace(/[\u00a0\u2007\u2009\u202f]/g, " ")
@@ -75,6 +77,7 @@ function plainText(value: unknown, maxLength = 500): string {
     .slice(0, maxLength) || "—";
 }
 
+// Helper localeAudit : réalise le traitement métier associé.
 function localeAudit(): string {
   switch (uiLang()) {
     case "en": return "en-GB";
@@ -85,6 +88,7 @@ function localeAudit(): string {
   }
 }
 
+// Helper dateComplete : réalise le traitement métier associé.
 function dateComplete(value: string | null | undefined, locale: string): string {
   if (!value) return "—";
   const date = new Date(value);
@@ -92,10 +96,12 @@ function dateComplete(value: string | null | undefined, locale: string): string 
   return date.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" });
 }
 
+// Helper lightColor : réalise le traitement métier associé.
 function lightColor(color: RGB): RGB {
   return color.map((channel) => Math.round(channel * 0.14 + 255 * 0.86)) as RGB;
 }
 
+// Helper wrap : réalise le traitement métier associé.
 function wrap(doc: jsPDF, value: unknown, width: number, size: number, bold = false): string[] {
   doc.setFont("helvetica", bold ? "bold" : "normal");
   doc.setFontSize(size);
@@ -103,10 +109,12 @@ function wrap(doc: jsPDF, value: unknown, width: number, size: number, bold = fa
   return lines.length ? lines : ["—"];
 }
 
+// Helper lineHeight : réalise le traitement métier associé.
 function lineHeight(size: number): number {
   return Math.max(3.4, size * 0.44);
 }
 
+// Helper prepareRecord : réalise le traitement métier associé.
 function prepareRecord(doc: jsPDF, log: AuditLogRecord): PreparedAuditRecord {
   const category = plainText(categorie(log), 40).toUpperCase();
   const actor = acteur(log);
@@ -135,6 +143,7 @@ function prepareRecord(doc: jsPDF, log: AuditLogRecord): PreparedAuditRecord {
   };
 }
 
+// Helper drawHeader : réalise le traitement métier associé.
 function drawHeader(doc: jsPDF, count: number, locale: string, continuation = false): number {
   doc.setFillColor(...COLOR_PRIMARY);
   doc.rect(0, 0, PAGE_W, 4, "F");
@@ -194,6 +203,7 @@ function drawHeader(doc: jsPDF, count: number, locale: string, continuation = fa
   return 58;
 }
 
+// Helper drawSectionTitle : réalise le traitement métier associé.
 function drawSectionTitle(doc: jsPDF, y: number): number {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9.5);
@@ -204,6 +214,7 @@ function drawSectionTitle(doc: jsPDF, y: number): number {
   return y + 7;
 }
 
+// Helper drawLabel : réalise le traitement métier associé.
 function drawLabel(doc: jsPDF, text: string, x: number, y: number): void {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.1);
@@ -211,6 +222,7 @@ function drawLabel(doc: jsPDF, text: string, x: number, y: number): void {
   doc.text(text.toUpperCase(), x, y);
 }
 
+// Helper drawValue : réalise le traitement métier associé.
 function drawValue(doc: jsPDF, lines: string[], x: number, y: number): void {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.2);
@@ -218,6 +230,7 @@ function drawValue(doc: jsPDF, lines: string[], x: number, y: number): void {
   doc.text(lines, x, y);
 }
 
+// Helper drawRecordCard : réalise le traitement métier associé.
 function drawRecordCard(doc: jsPDF, record: PreparedAuditRecord, y: number, locale: string): void {
   const { log, category, color } = record;
   doc.setFillColor(...COLOR_PANEL);
@@ -261,6 +274,7 @@ function drawRecordCard(doc: jsPDF, record: PreparedAuditRecord, y: number, loca
   drawValue(doc, record.detailLines, contentX + DETAIL_LABEL_W + LABEL_GAP, textY);
 }
 
+// Helper drawEmptyState : réalise le traitement métier associé.
 function drawEmptyState(doc: jsPDF, y: number): void {
   doc.setFillColor(...COLOR_PANEL);
   doc.setDrawColor(...COLOR_LINE);
@@ -271,6 +285,7 @@ function drawEmptyState(doc: jsPDF, y: number): void {
   doc.text(tx("Aucun événement à exporter."), PAGE_W / 2, y + 14, { align: "center" });
 }
 
+// Helper drawFooters : réalise le traitement métier associé.
 function drawFooters(doc: jsPDF): void {
   const pageCount = (doc.internal as unknown as { getNumberOfPages: () => number }).getNumberOfPages();
   for (let page = 1; page <= pageCount; page += 1) {
@@ -285,7 +300,7 @@ function drawFooters(doc: jsPDF): void {
   }
 }
 
-/** Génère un PDF paginé au style des reçus TOKPa à partir des journaux déjà renvoyés par l'API. */
+// Génère et déclenche l’export via exportAuditLogsPdf.
 export function exportAuditLogsPdf(
   logs: readonly AuditLogRecord[],
   filename: string,

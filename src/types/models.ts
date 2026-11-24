@@ -1,5 +1,5 @@
-/** Modèles de données frontend — miroir du modèle Eloquent CDC §6. */
 
+// Regroupe les interfaces TypeScript métier partagées (produits, catégories, zones, panier, notifications).
 export type CategoryId = 'vegetable' | 'fish' | 'grain' | 'spice' | 'pack';
 
 export interface Category {
@@ -13,17 +13,15 @@ export type ProductBadge = 'promo' | 'pack' | 'new';
 export interface Product {
   id: string;
   nom: string;
-  origine: string;          // marché d'origine (ex : Marché Dantokpa)
-  quantite: string;         // poids / lot (ex : 1kg, Lot de 3)
-  prix: number;             // FCFA
-  prixMinimum: number;      // FCFA — plancher de négociation (F-10)
+  origine: string;
+  quantite: string;
+  prix: number;
+  prixMinimum: number;
   categorie: CategoryId;
   stock: StockState;
   badges: ProductBadge[];
-  image?: string;           // URL Cloudinary future ; sinon placeholder dégradé
-  /** Description (backend ProductResource.description) */
+  image?: string;
   description?: string;
-  /** Offre de négociation acceptée (badge + prix barré, maquette panier) */
   negotiated?: { oldPrice: number };
 }
 
@@ -55,6 +53,6 @@ export interface AppNotification {
   type: NotificationType;
   title: string;
   message: string;
-  time: string;             // libellé relatif affiché (ex : « Il y a 10 min. »)
+  time: string;
   unread: boolean;
 }

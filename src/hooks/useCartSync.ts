@@ -1,3 +1,4 @@
+// Synchronise le panier local avec l’API serveur et signale les produits supprimés du catalogue.
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { onGlobalRefresh } from '../services/refresh/refreshBus';
@@ -23,11 +24,12 @@ interface ProductSyncDetails {
   prixMinimum?: number;
 }
 
+// Helper responseStatus : réalise le traitement métier associé.
 function responseStatus(error: unknown): number | undefined {
   return (error as { response?: { status?: number } } | null)?.response?.status;
 }
 
-/** Laravel renvoie 422 avec `errors.product_id` si le produit a été supprimé juste avant l'ajout. */
+// Vérifie la condition métier isDeletedProductError.
 function isDeletedProductError(error: unknown): boolean {
   const response = (error as {
     response?: { status?: number; data?: { errors?: Record<string, unknown>; message?: string } };
@@ -40,11 +42,7 @@ function isDeletedProductError(error: unknown): boolean {
   return /product[_ ]id/.test(message) && /(invalid|selected|exist|not found)/.test(message);
 }
 
-/**
- * Le panier serveur (`GET /cart`) ne contient pas d'image : on la reprend du produit
- * (`GET /products/{id}` → `image_url`). Un 404 distingue maintenant un produit supprimé
- * d'une simple panne réseau, afin de purger sa ligne du panier sans perdre les autres.
- */
+// Récupère et normalise les données pour fetchProductDetails.
 async function fetchProductDetails(productId: number): Promise<ProductSyncDetails> {
   try {
     const res = await catalogApi.getProduct(productId);
@@ -61,6 +59,7 @@ async function fetchProductDetails(productId: number): Promise<ProductSyncDetail
   }
 }
 
+// Helper registerDeletedProducts : réalise le traitement métier associé.
 function registerDeletedProducts(notices: CartProductRemovalNotice[]) {
   if (!notices.length) return;
   const known = new Set(store.getState().cart.removedProducts.map((notice) => notice.id));
@@ -75,42 +74,32 @@ function registerDeletedProducts(notices: CartProductRemovalNotice[]) {
   }
 }
 
+// Helper deletedNotice : réalise le traitement métier associé.
 function deletedNotice(id: number | string, name?: string): CartProductRemovalNotice {
   return { id: String(id), name: name?.trim() || tx('Produit supprimé') };
 }
 
+// Supprime ou nettoie les éléments via removeDeletedProduct.
 function removeDeletedProduct(id: number | string) {
   const key = String(id);
   const item = store.getState().cart.items.find((line) => String(line.product.id) === key);
-  // La mutation Redux déclenche ensuite le diff qui purge également le cache serveur.
   registerDeletedProducts([deletedNotice(key, item?.product.nom)]);
 }
 
-/**
- * Synchronisation Panier Redux ⇄ Panier backend (Redis, clé `cart:{user_id}`).
- *
- *  - Au montage d'une session (token présent) : `GET /cart` — si le panier
- *    serveur est non vide et le panier local vide → hydrate Redux depuis le serveur.
- *  - À chaque mutation Redux (après hydratation) : diff local puis appels
- *    `POST /cart/add`, `PUT /cart/update`, `DELETE /cart/remove/{product_id}`
- *    (fire-and-forget : la UI ne bloque jamais, le backend reste la vérité).
- *
- * Le backend vide le panier lui-même à la création de commande (`POST /orders`).
- */
+// Hook React useCartSync : encapsule l’état et les effets associés.
 export function useCartSync(sessionKey: number): void {
   const dispatch = useAppDispatch();
   const items = useAppSelector((s) => s.cart.items);
   const prevItemsRef = useRef<Record<string, number>>({});
   const [hydrated, setHydrated] = useState(false);
-  // Incrémenté à chaque rafraîchissement global (bouton / silencieux) : rejoue
-  // l'hydratation ci-dessous sans toucher au reste de l'application.
   const [revision, setRevision] = useState(0);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => onGlobalRefresh(() => setRevision((r) => r + 1)), []);
 
   const localItems = (): CartItem[] => store.getState().cart.items;
 
-  // 1) Hydratation initiale depuis le serveur (une fois par session)
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     if (sessionKey === 0) {
       setHydrated(false);
@@ -127,7 +116,6 @@ export function useCartSync(sessionKey: number): void {
         const local = localItems();
 
         if (serverItems.length > 0) {
-          // Le panier serveur ne porte pas les images; on vérifie aussi que chaque produit existe encore.
           const details = await Promise.all(serverItems.map((it) => fetchProductDetails(it.product_id)));
           if (cancelled) return;
           const deleted = serverItems.filter((_, index) => details[index].deleted);
@@ -149,8 +137,6 @@ export function useCartSync(sessionKey: number): void {
           const deletedExtras = guestExtras.filter((_, index) => extraDetails[index].deleted);
           const availableExtras = guestExtras.filter((_, index) => !extraDetails[index].deleted);
 
-          // Redis garde les anciennes données du panier même si l'admin a supprimé le produit.
-          // On retire ces lignes du client et du cache serveur sans toucher aux autres articles.
           dispatch(clear());
           if (deleted.length > 0 || deletedExtras.length > 0) {
             registerDeletedProducts([
@@ -162,7 +148,6 @@ export function useCartSync(sessionKey: number): void {
             });
           }
 
-          // Le serveur reste la vérité pour le reste du panier (multi-appareils).
           available.forEach(({ item, details: productDetails }) => {
             const localMatch = localById.get(String(item.product_id))?.product;
             const product: Product = {
@@ -181,7 +166,6 @@ export function useCartSync(sessionKey: number): void {
             dispatch(add({ product, quantity: item.quantite }));
           });
 
-          // Articles ajoutés hors connexion / avant connexion : on les fusionne et les pousse au serveur.
           availableExtras.forEach((it) => {
             dispatch(add({ product: it.product, quantity: it.quantite }));
             const id = Number(it.product.id);
@@ -190,7 +174,6 @@ export function useCartSync(sessionKey: number): void {
             });
           });
         } else if (local.length > 0) {
-          // Panier serveur vide mais panier local non vide : vérifier avant de le pousser.
           const details = await Promise.all(local.map((it) => fetchProductDetails(Number(it.product.id))));
           if (cancelled) return;
           const deleted = local.filter((_, index) => details[index].deleted);
@@ -210,7 +193,6 @@ export function useCartSync(sessionKey: number): void {
       })
       .catch(() => {
         if (cancelled) return;
-        // Backend indisponible : mode local uniquement.
         prevItemsRef.current = snapshot(localItems());
         setHydrated(true);
       });
@@ -220,7 +202,7 @@ export function useCartSync(sessionKey: number): void {
     };
   }, [sessionKey, dispatch, revision]);
 
-  // 2) Diff Redux → appels API (après hydratation)
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     if (!hydrated || sessionKey === 0) return;
     const current = snapshot(items);
@@ -247,7 +229,7 @@ export function useCartSync(sessionKey: number): void {
   }, [items, hydrated, sessionKey]);
 }
 
-/** Snapshot {productId: quantite} du panier. */
+// Helper snapshot : réalise le traitement métier associé.
 function snapshot(items: CartItem[]): Record<string, number> {
   const map: Record<string, number> = {};
   for (const it of items) map[it.product.id] = it.quantite;

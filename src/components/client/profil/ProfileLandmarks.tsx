@@ -1,3 +1,4 @@
+// Section du profil gérant les points de repère favoris du client.
 import { useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
@@ -25,7 +26,7 @@ interface LandmarkItem {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-/** Points de repère du compte : lecture, ajout et suppression via l'API réelle. */
+// Composant React ProfileLandmarks : prépare l’état et affiche son interface.
 export default function ProfileLandmarks() {
   const [landmarks, setLandmarks] = useState<LandmarkItem[]>([]);
   const [zones, setZones] = useState<ApiZone[]>([]);
@@ -38,6 +39,7 @@ export default function ProfileLandmarks() {
   const refreshTick = useGlobalRefreshTick();
   const [form, setForm] = useState({ nom: '', description: '', zoneId: '' });
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     setLoading(true);
@@ -75,6 +77,7 @@ export default function ProfileLandmarks() {
     return () => { alive = false; };
   }, [reloadKey, refreshTick]);
 
+  // Gère l’action utilisateur Save.
   const handleSave = async (event: FormEvent) => {
     event.preventDefault();
     const zoneId = Number(form.zoneId);
@@ -104,6 +107,7 @@ export default function ProfileLandmarks() {
     }
   };
 
+  // Gère l’action utilisateur Delete.
   const handleDelete = async (landmark: LandmarkItem) => {
     const confirmed = await adminDialogs.confirm(
       tx(`Supprimer le point de repère « ${landmark.nom} » ?`),
@@ -129,6 +133,7 @@ export default function ProfileLandmarks() {
   const zoneName = (landmark: LandmarkItem) =>
     zones.find((zone) => Number(zone.id) === landmark.zoneId)?.nom ?? landmark.zoneNom ?? (landmark.zoneId ? `#${landmark.zoneId}` : '—');
 
+  // Retourne le rendu JSX du composant.
   return (
     <section className="mb-md rounded-[14px] border border-border-default bg-bg-card p-lg shadow-xs" aria-labelledby="profile-landmarks-title">
       <div className="mb-md flex flex-wrap items-center justify-between gap-3">

@@ -1,3 +1,4 @@
+// Orchestre le rafraîchissement automatique silencieux (onglet visible, retour d’onglet, reconnexion réseau).
 import { useEffect, useRef, useState } from 'react';
 import {
   onGlobalRefresh,
@@ -10,26 +11,16 @@ import {
   type RefreshState,
 } from '../services/refresh/refreshBus';
 
-/** Intervalle du rafraîchissement silencieux (onglet visible uniquement). */
 export const AUTO_REFRESH_MS = 30_000;
-/** Retour sur l'onglet : on recharge si l'absence a duré plus que ce seuil. */
 const RESUME_AFTER_MS = 8_000;
 
-/**
- * Processus d'actualisation SILENCIEUSE, monté une fois à la racine (SystemBridge) :
- *   - toutes les 30 s tant que l'onglet est visible (aucun toast, aucun squelette) ;
- *   - au retour sur l'onglet après plus de 8 s d'absence ;
- *   - au retour du réseau (`online`).
- *
- * Silencieux ne veut pas dire invisible : le bouton d'actualisation affiche la
- * heure de la dernière mise à jour et tourne brièvement pendant l'appel.
- */
+// Hook React useAutoRefresh : encapsule l’état et les effets associés.
 export function useAutoRefresh(intervalMs: number = AUTO_REFRESH_MS): void {
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     let hiddenAt: number | null = null;
 
     const tick = () => {
-      // Onglet en arrière-plan : on ne consomme pas le réseau/API pour rien.
       if (document.visibilityState === 'visible') void requestRefresh('auto');
     };
 
@@ -57,37 +48,29 @@ export function useAutoRefresh(intervalMs: number = AUTO_REFRESH_MS): void {
   }, [intervalMs]);
 }
 
-/** État observable du rafraîchissement (rotation du bouton, heure de la dernière mise à jour). */
+// Hook React useRefreshState : encapsule l’état et les effets associés.
 export function useRefreshState(): RefreshState {
   const [state, setState] = useState<RefreshState>(() => refreshState());
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => subscribeRefreshState(setState), []);
   return state;
 }
 
-/**
- * Abonnement d'une page/tableau au rafraîchissement global (bouton + silencieux).
- * La fonction peut retourner une promesse : le bouton attend sa fin (plafonné).
- */
+// Hook React useGlobalRefreshListener : encapsule l’état et les effets associés.
 export function useGlobalRefreshListener(listener: (origin: RefreshOrigin) => void | Promise<void>): void {
   const ref = useRef(listener);
   ref.current = listener;
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => onGlobalRefresh((origin) => ref.current(origin)), []);
 }
 
-/**
- * Compteur incrémenté à chaque rafraîchissement global.
- * À mettre dans les dépendances d'un `useEffect` de chargement :
- *   const tick = useGlobalRefreshTick();
- *   useEffect(() => { …charger… }, [page, tick]);
- * `tick` vaut 0 au montage : aucun chargement supplémentaire n'est déclenché.
- */
+// Hook React useGlobalRefreshTick : encapsule l’état et les effets associés.
 export function useGlobalRefreshTick(): number {
   const [tick, setTick] = useState(0);
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     const handler = (ev: Event) => {
       const origin = (ev as CustomEvent<{ origin?: RefreshOrigin }>).detail?.origin;
-      // Un rafraîchissement déclenché par Reverb est déjà traité par les pages abonnées
-      // au bus temps réel : on ne double pas leur rechargement ici.
       if (origin === 'realtime') return;
       setTick((t) => t + 1);
     };

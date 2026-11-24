@@ -1,3 +1,4 @@
+// Boutons permettant au livreur d’accepter ou de refuser une course assignée.
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MIcon from '../../components/shared/MIcon';
@@ -21,7 +22,7 @@ type Props = {
   onRefused?: () => void;
 };
 
-/** Accepter et refuser, sans `confirm()` du navigateur (bloqué sur téléphone et dans l'aperçu). */
+// Composant React LivreurDecisionButtons : prépare l’état et affiche son interface.
 export default function LivreurDecisionButtons({
   orderId,
   accept = true,
@@ -35,6 +36,7 @@ export default function LivreurDecisionButtons({
   const [ask, setAsk] = useState(false);
   const locked = disabled || busy != null;
 
+  // Helper doAccept : réalise le traitement métier associé.
   const doAccept = async () => {
     const id = Number(orderId);
     if (!Number.isInteger(id) || id <= 0) return;
@@ -50,6 +52,7 @@ export default function LivreurDecisionButtons({
     }
   };
 
+  // Helper doRefuse : réalise le traitement métier associé.
   const doRefuse = async () => {
     const id = Number(orderId);
     if (!Number.isInteger(id) || id <= 0) return;
@@ -66,6 +69,7 @@ export default function LivreurDecisionButtons({
     }
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <>
       <div className={layout === 'stack' ? 'flex flex-col gap-2' : 'flex flex-wrap items-center gap-xs'}>

@@ -1,3 +1,4 @@
+// Indexe et associe le paiement effectif de chaque commande.
 import type { PaymentJson } from '../services/api/payments';
 import { listOf, unwrap } from '../services/api/unwrap';
 
@@ -8,6 +9,7 @@ export interface OrderPaymentSummary {
   methode: string;
 }
 
+// Helper rankPayment : réalise le traitement métier associé.
 function rankPayment(p: { id?: number; statut?: string }): number {
   const s = String(p.statut ?? '');
   if (s === 'reussi' || s === 'rembourse') return 3;
@@ -16,11 +18,7 @@ function rankPayment(p: { id?: number; statut?: string }): number {
   return 0;
 }
 
-/**
- * Indexe le paiement effectif par `order_id` depuis `GET /payments`.
- * Utile car `Commande::payment()` côté backend est un `hasOne` sans `latestOfMany()`,
- * et `GET /orders` ne charge pas la relation `payment`.
- */
+// Helper indexEffectivePayments : réalise le traitement métier associé.
 export function indexEffectivePayments(rawResponse: unknown): Map<number, OrderPaymentSummary> {
   const map = new Map<number, OrderPaymentSummary>();
   if (!rawResponse) return map;
@@ -48,6 +46,7 @@ export function indexEffectivePayments(rawResponse: unknown): Map<number, OrderP
   return map;
 }
 
+// Transforme ou formate les données via resolveOrderPayment.
 export function resolveOrderPayment(
   orderId: number,
   apiOrderPayment: OrderPaymentSummary | null | undefined,

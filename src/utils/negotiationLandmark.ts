@@ -1,5 +1,5 @@
-/** Repère choisi par le client pour une négociation. */
 
+// Mémorise le point de repère associé à une négociation.
 export type RememberedLandmark = {
   id: number;
   nom: string;
@@ -8,6 +8,7 @@ export type RememberedLandmark = {
 
 const KEY = 'tokpa_nego_landmark';
 
+// Récupère et normalise les données pour readAll.
 function readAll(): Record<string, RememberedLandmark> {
   try {
     const raw = localStorage.getItem(KEY);
@@ -19,6 +20,7 @@ function readAll(): Record<string, RememberedLandmark> {
   }
 }
 
+// Helper rememberNegotiationLandmark : réalise le traitement métier associé.
 export function rememberNegotiationLandmark(key: number | string, landmark: RememberedLandmark) {
   const all = readAll();
   all[String(key)] = {
@@ -29,6 +31,7 @@ export function rememberNegotiationLandmark(key: number | string, landmark: Reme
   localStorage.setItem(KEY, JSON.stringify(all));
 }
 
+// Récupère et normalise les données pour readNegotiationLandmark.
 export function readNegotiationLandmark(key: number | string): RememberedLandmark | null {
   const item = readAll()[String(key)];
   const id = Number(item?.id);
@@ -36,7 +39,7 @@ export function readNegotiationLandmark(key: number | string): RememberedLandmar
   return { id, nom: String(item.nom ?? ''), zoneNom: String(item.zoneNom ?? '') };
 }
 
-/** Repère déjà renvoyé par l'API, si le contrat le contient. Sinon null. */
+// Helper landmarkFromProposal : réalise le traitement métier associé.
 export function landmarkFromProposal(proposal: {
   landmark_id?: unknown;
   landmark?: { id?: unknown; nom?: unknown; zone?: { nom?: unknown } | null };

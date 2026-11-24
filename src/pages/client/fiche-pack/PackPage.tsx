@@ -1,3 +1,4 @@
+// Fiche détaillée d’un pack avec liste des produits inclus et ajout au panier.
 import { useEffect, useState } from 'react';
 import { Link, useParams } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -19,14 +20,6 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../../hooks/useRefresh';
 
-/* ---- Fiche pack 100 % API (route /pack/$packId) ----
- * Le backend n'expose pas GET /bundles/{id} : la fiche lit la liste publique
- * GET /bundles et retrouve le pack par son identifiant.
- *
- * Le panier n'accepte que des produits : « Ajouter au panier » n'envoie pas le
- * pack, mais chacun de ses produits avec la quantité du pack.
- */
-
 type PackLine = {
   id: number;
   nom: string;
@@ -40,7 +33,7 @@ type PackLine = {
   image: string | null;
 };
 
-/** Produit du pack → modèle du panier. Mêmes règles que la fiche produit (mapApiProduct). */
+// Helper toCartProduct : réalise le traitement métier associé.
 function toCartProduct(l: PackLine): Product {
   const asApiProduct: ApiProduct = {
     id: l.id,
@@ -56,6 +49,7 @@ function toCartProduct(l: PackLine): Product {
   return mapApiProduct(asApiProduct);
 }
 
+// Composant de la page Pack : gère le chargement des données et le rendu.
 export default function PackPage() {
   useLanguage();
   const dispatch = useAppDispatch();
@@ -64,12 +58,11 @@ export default function PackPage() {
   const [pack, setPack] = useState<ApiBundle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  // Échec autre que 404 : message de l'API + Réessayer (pas de pack factice).
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const refreshTick = useGlobalRefreshTick();
 
-  // GET /api/bundles → le pack demandé
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setIsLoading(true);
@@ -86,7 +79,6 @@ export default function PackPage() {
       })
       .catch((err) => {
         if (!alive) return;
-        // 404 = pack inexistant ; les autres échecs passent par le formateur sûr
         if (apiErrorStatus(err) === 404) setNotFound(true);
         else {
           const message = alertApiError(err, 'pack-load');
@@ -101,7 +93,6 @@ export default function PackPage() {
     };
   }, [packId, reloadKey, refreshTick]);
 
-  /* ---------- États de chargement / erreur ---------- */
   if (isLoading) {
     return (
       <div className="bg-bg-app min-h-screen pb-24 font-body text-text-main">
@@ -166,7 +157,6 @@ export default function PackPage() {
     absImageUrl(pack.img_url) ||
     absImageUrl(inclus.map((it) => it.image_url).find(Boolean) ?? null);
 
-  // Somme des produits au prix catalogue : sert de repère, jamais de prix de vente.
   const lignes: PackLine[] = inclus.map((it) => ({
     id: Number(it.id),
     nom: it.nom,
@@ -180,15 +170,11 @@ export default function PackPage() {
     image: absImageUrl(it.image_url ?? it.img_url),
   }));
 
-  // Un produit indisponible bloque la commande entière (le backend refuse en 422).
   const indisponibles = lignes.filter((l) => !l.disponible || (l.stock != null && l.stock <= 0));
   const peutAjouter = lignes.length > 0 && indisponibles.length === 0;
   const sommeProduits = lignes.reduce((s, l) => s + (l.prix ?? 0) * l.qte, 0);
 
-  /**
-   * Le panier ne connaît pas les packs : on y met les produits du pack,
-   * chacun avec la quantité définie par le pack.
-   */
+  // Enregistre ou crée les données via addPackToCart.
   const addPackToCart = () => {
     if (!peutAjouter) {
       toast.error(
@@ -202,12 +188,12 @@ export default function PackPage() {
     );
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-bg-secondary font-body text-ink">
       <ClientNavbar />
       <div className="flex flex-1 justify-center px-3 pb-[80px] pt-[64px] sm:px-6 md:px-12 md:pb-8 md:pt-[72px] lg:px-20 xl:px-40">
         <div className="flex w-full max-w-[1200px] flex-1 flex-col">
-          {/* ---- Breadcrumbs ---- */}
           <div className="flex flex-wrap gap-2 py-3 md:px-10">
             <Link to="/" className="text-xs font-medium leading-normal text-warm-ink sm:text-sm">
               {tx("Accueil")}
@@ -221,7 +207,6 @@ export default function PackPage() {
           </div>
 
           <main className="grid grid-cols-1 gap-6 rounded-xl bg-bg-card p-4 pb-8 shadow-sm md:gap-8 md:px-10 md:pb-12 lg:grid-cols-2">
-            {/* LEFT COLUMN: Image */}
             <div className="flex flex-col gap-4 md:gap-6">
               <div className="relative flex h-[260px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-primary-lighter to-primary-light sm:h-[320px] md:h-[400px]">
                 <div
@@ -249,7 +234,6 @@ export default function PackPage() {
               </div>
             </div>
 
-            {/* RIGHT COLUMN: Details */}
             <div className="flex flex-col gap-6">
               <div>
                 <p className="mb-1 text-micro uppercase tracking-widest text-ink-3">{tx("Packs & Bundles")}</p>
@@ -271,7 +255,6 @@ export default function PackPage() {
                 </span>
               </div>
 
-              {/* Le panier enregistre des produits, pas des packs : le pack y entre par ses produits. */}
               <div className="flex flex-col gap-3">
                 <button
                   type="button"
@@ -308,7 +291,6 @@ export default function PackPage() {
             </div>
           </main>
 
-          {/* ---- Composition du pack ---- */}
           <section className="mx-auto mt-8 mb-20 w-full max-w-[1200px] overflow-hidden rounded-xl bg-bg-card shadow-sm">
             <div className="border-b border-line px-4 py-4 sm:px-8">
               <h3 className="text-h3 text-ink">{tx("Produits inclus")}</h3>

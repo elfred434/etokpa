@@ -1,3 +1,4 @@
+// Fiche détaillée d’un utilisateur avec édition de profil, statut et rôle.
 import { useEffect, useState } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
@@ -9,9 +10,9 @@ import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// Composant de la page AdminUserDetail : gère le chargement des données et le rendu.
 export default function AdminUserDetailPage() {
   useLanguage();
   const search = useSearch({ strict: false }) as { id?: string | number };
@@ -21,11 +22,11 @@ export default function AdminUserDetailPage() {
   const [loading, setLoading] = useState(true);
   const refreshTick = useGlobalRefreshTick();
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setLoading(true);
     setErr(null);
-    // Pas de GET /admin/users/{id} (apiResource except show) → recherche paginée.
     (async () => {
       try {
         let found: any = null;
@@ -53,6 +54,7 @@ export default function AdminUserDetailPage() {
     };
   }, [id, refreshTick]);
 
+  // Retourne le rendu JSX du composant.
   return (
     <AdminLayout currentPath="/admin/utilisateurs">
       <div className="space-y-6">

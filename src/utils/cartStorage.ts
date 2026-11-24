@@ -1,3 +1,4 @@
+// Lit, valide et sauvegarde l’état du panier dans localStorage.
 import type { CartItem, Product } from '../types/models';
 import type { CartProductRemovalNotice } from '../store/slices/cart/cartSlice';
 
@@ -13,6 +14,7 @@ export const EMPTY_CART_STATE: PersistedCartState = {
   removedProducts: [],
 };
 
+// Transforme ou formate les données via sanitizeProduct.
 function sanitizeProduct(raw: unknown): Product | null {
   if (!raw || typeof raw !== 'object') return null;
   const p = raw as Record<string, unknown>;
@@ -45,6 +47,7 @@ function sanitizeProduct(raw: unknown): Product | null {
   return product;
 }
 
+// Transforme ou formate les données via sanitizeCartItem.
 function sanitizeCartItem(raw: unknown): CartItem | null {
   if (!raw || typeof raw !== 'object') return null;
   const entry = raw as Record<string, unknown>;
@@ -55,6 +58,7 @@ function sanitizeCartItem(raw: unknown): CartItem | null {
   return { product, quantite };
 }
 
+// Transforme ou formate les données via sanitizeNotice.
 function sanitizeNotice(raw: unknown): CartProductRemovalNotice | null {
   if (!raw || typeof raw !== 'object') return null;
   const notice = raw as Record<string, unknown>;
@@ -65,6 +69,7 @@ function sanitizeNotice(raw: unknown): CartProductRemovalNotice | null {
   return { id, name };
 }
 
+// Récupère et normalise les données pour readCartStorage.
 export function readCartStorage(): PersistedCartState {
   if (typeof localStorage === 'undefined') return EMPTY_CART_STATE;
   try {
@@ -86,6 +91,7 @@ export function readCartStorage(): PersistedCartState {
   }
 }
 
+// Helper writeCartStorage : réalise le traitement métier associé.
 export function writeCartStorage(state: PersistedCartState): void {
   if (typeof localStorage === 'undefined') return;
   try {
@@ -101,15 +107,14 @@ export function writeCartStorage(state: PersistedCartState): void {
       }),
     );
   } catch {
-    /* quota dépassé ou stockage indisponible */
   }
 }
 
+// Supprime ou nettoie les éléments via clearCartStorage.
 export function clearCartStorage(): void {
   if (typeof localStorage === 'undefined') return;
   try {
     localStorage.removeItem(CART_STORAGE_KEY);
   } catch {
-    /* ignore */
   }
 }

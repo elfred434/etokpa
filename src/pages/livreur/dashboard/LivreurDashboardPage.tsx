@@ -1,3 +1,4 @@
+// Tableau de bord du livreur affichant les courses assignées et les statistiques du jour.
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import LivreurLayout from '../../../components/layout/livreur/LivreurLayout';
@@ -26,12 +27,7 @@ import {
   type LivreurProfile,
 } from '../livreurData';
 
-/**
- * Tableau de bord livreur — design Stitch « tableau_de_bord_livreur_tokpa_fr », données réelles :
- * GET /dashboard (commandes, en_cours), GET /livreur/deliveries, GET /livreur/history, GET /profile.
- * Retirés (aucune donnée dans l'API) : photo, véhicule, étoiles/avis, tendances « vs hier »,
- * interrupteur « Disponible » (la disponibilité réelle est affichée, pas modifiable : B-26).
- */
+// Composant de la page LivreurDashboard : gère le chargement des données et le rendu.
 export default function LivreurDashboardPage() {
   useLanguage();
   const navigate = useNavigate();
@@ -47,6 +43,7 @@ export default function LivreurDashboardPage() {
   const refreshTick = useGlobalRefreshTick();
   const retry = () => setReloadKey((k) => k + 1);
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     setDelivErr(null);
@@ -76,18 +73,16 @@ export default function LivreurDashboardPage() {
 
   const active = deliveries?.find((o) => o.statut === 'en_livraison') ?? null;
   const pending = (deliveries ?? []).filter((o) => o.statut !== 'en_livraison');
-  // Succès = livrées / courses terminées (livrées + annulées) = historique / (commandes − en cours)
   const terminees = dash ? dash.commandes - dash.en_cours : null;
   const succes = terminees && terminees > 0 && histTotal != null ? Math.round((histTotal / terminees) * 100) : null;
 
   const drop = (id: number) => setDeliveries((l) => (l ?? []).filter((x) => x.id !== id));
 
+  // Retourne le rendu JSX du composant.
   return (
     <LivreurLayout>
       <div className="mx-auto max-w-[1280px] space-y-lg p-4 sm:p-lg">
-        {/* Top Section: Profile & Stats */}
         <div className="grid grid-cols-1 gap-md lg:grid-cols-4">
-          {/* Profile Card */}
           <div className="flex flex-col justify-between rounded-lg border border-border-default bg-bg-card p-md shadow-sm lg:col-span-1">
             <div className="mb-md flex items-center justify-between">
               {profile?.disponible != null ? (
@@ -116,7 +111,6 @@ export default function LivreurDashboardPage() {
             </div>
           </div>
 
-          {/* Stat Cards */}
           <div className="grid grid-cols-1 gap-md md:grid-cols-3 lg:col-span-3">
             <div className="flex items-center gap-md rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-tint text-primary">
@@ -153,9 +147,7 @@ export default function LivreurDashboardPage() {
           </div>
         </div>
 
-        {/* Middle Section: Active & Requests */}
         <div className="grid grid-cols-1 gap-lg lg:grid-cols-2">
-          {/* Left: Active Delivery */}
           <section className="space-y-md">
             <h3 className="flex items-center gap-sm font-h2 text-h2 text-text-main">
               <MIcon name="speed" className="text-primary" />
@@ -225,7 +217,6 @@ export default function LivreurDashboardPage() {
             )}
           </section>
 
-          {/* Right: Pending Requests */}
           <section className="space-y-md">
             <h3 className="flex items-center justify-between font-h2 text-h2 text-text-main">
               <span className="flex items-center gap-sm">
@@ -274,7 +265,6 @@ export default function LivreurDashboardPage() {
           </section>
         </div>
 
-        {/* Bottom Section: Recent Deliveries */}
         <section className="space-y-md">
           <h3 className="flex items-center gap-sm font-h2 text-h2 text-text-main">
             <MIcon name="event_available" className="text-success" />

@@ -1,9 +1,10 @@
+// Sélecteur de point de repère utilisé lors d’une proposition de budget.
 import { useEffect, useState } from 'react';
 import { catalogApi, type ApiZone } from '../../services/api';
 import { tx } from '../../i18n/tx';
 import type { RememberedLandmark } from '../../utils/negotiationLandmark';
 
-/** Zone + point de repère réel (GET /zones). Le client choisit, pas l'admin. */
+// Composant React NegotiationLandmarkField : prépare l’état et affiche son interface.
 export default function NegotiationLandmarkField({
   value,
   onChange,
@@ -15,6 +16,7 @@ export default function NegotiationLandmarkField({
   const [zoneId, setZoneId] = useState<number | ''>('');
   const [loadError, setLoadError] = useState('');
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     let alive = true;
     catalogApi
@@ -31,6 +33,7 @@ export default function NegotiationLandmarkField({
     };
   }, []);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!value || zones.length === 0) return;
     const found = zones.find((z) => (z.points_repere ?? []).some((p) => Number(p.id) === value.id));
@@ -40,6 +43,7 @@ export default function NegotiationLandmarkField({
   const zone = zones.find((z) => z.id === zoneId) ?? null;
   const points = zone?.points_repere ?? [];
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="space-y-2">
       <p className="text-xs font-semibold text-amber-text">

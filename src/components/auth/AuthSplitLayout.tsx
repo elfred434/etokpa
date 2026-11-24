@@ -1,8 +1,8 @@
+// Mise en page scindée des écrans de connexion et d’inscription (visuel à gauche, formulaire à droite).
 import type { ReactNode } from 'react';
 import { IconTruckDelivery, IconTags, IconMapPin } from '@tabler/icons-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
-
 
 const BULLETS = [
   { icon: IconTruckDelivery, label: 'Livraison rapide' },
@@ -14,16 +14,12 @@ interface AuthSplitLayoutProps {
   children: ReactNode;
 }
 
-/**
- * Écran scindé de la page Connexion (maquette Stitch) :
- * panneau gauche orange 40 % (logo, illustration marché, 3 puces, slogan)
- * masqué sous 768px ; panneau droit blanc centré, contenu max 440px.
- */
+// Composant de mise en page AuthSplitLayout.
 export default function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
   useLanguage();
+  // Retourne le rendu JSX du composant.
   return (
     <div className="flex min-h-screen flex-col bg-bg-card md:flex-row">
-      {/* Panneau brand orange */}
       <aside className="relative hidden overflow-hidden bg-primary p-lg flex-col justify-between md:flex md:w-[40%]">
         <div
           className="pointer-events-none absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_#ffffff,_transparent,_transparent)]"
@@ -52,7 +48,6 @@ export default function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
         </div>
       </aside>
 
-      {/* Panneau formulaire */}
       <main className="flex flex-1 flex-col items-center justify-center bg-bg-card p-lg md:p-[48px]">
         <span className="mb-lg text-[28px] font-bold tracking-tight text-primary md:hidden">TOKPa</span>
         <div className="w-full max-w-[440px]">{children}</div>

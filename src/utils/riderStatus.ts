@@ -1,4 +1,4 @@
-/** Statut affiché d'un livreur : compte, course en cours, puis disponibilité. */
+// Traduit les statuts opérationnels d’un livreur.
 export function statutLivreur(
   l: { statut?: string; profil?: { disponibilite?: boolean } | null } | null | undefined,
   enCourse: boolean,

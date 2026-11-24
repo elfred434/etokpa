@@ -1,3 +1,4 @@
+// Catalogue client filtrable par catégorie, recherche texte et tri.
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
@@ -21,12 +22,8 @@ import { mapApiCategory } from '../../../utils/catalogMap';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
 
-/* ---- Catalogue : données UNIQUEMENT issues de l'API (plus aucun produit, catégorie ni marché de la maquette) ---- */
-
-/** 'all' | 'pack' (Packs & Bundles = GET /bundles) | `c{id}` = catégorie réelle de l'API. */
 type CatFilter = 'all' | 'pack' | `c${number}`;
 
-/** Icônes de la maquette catalogue, par famille — pour les catégories réelles (icone non persistée, B-17). */
 const KIND_ICON: Record<CategoryKind, string> = {
   vegetable: 'eco',
   fish: 'restaurant',
@@ -36,16 +33,13 @@ const KIND_ICON: Record<CategoryKind, string> = {
   other: 'category',
 };
 
-/** ?cat= (tuiles de l'accueil) → filtre initial : « c{id} » = catégorie API, « pack » = Packs & Bundles. */
+// Transforme ou formate les données via parseCat.
 const parseCat = (v: string): CatFilter => (/^c\d+$/.test(v) ? (v as CatFilter) : v === 'pack' ? 'pack' : 'all');
 
-/** Normalisation recherche : insensible à la casse et aux accents (évite le LIKE sensible à la casse côté PostgreSQL). */
+// Transforme ou formate les données via normalizeSearch.
 const normalizeSearch = (value: string): string =>
   value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-// Entrées fixes de la barre latérale ; entre les deux : les catégories réelles (GET /categories).
-// Le filtre « Zone du marché » de la maquette est retiré : le backend ne rattache aucun produit à un
-// marché (ni colonne, ni route) — il reviendra quand l'API fournira l'information.
 const CAT_ALL = { id: 'all' as CatFilter, icon: 'grid_view', nom: 'Tous les produits' };
 const CAT_PACK = { id: 'pack' as CatFilter, icon: 'shopping_basket', nom: 'Packs & Bundles' };
 
@@ -56,31 +50,22 @@ interface CatalogProduct {
   quantite: string;
   prix: number;
   prixLabel: string;
-  /** Vrai prix minimum négociable (ProductResource.prix_minimum) — plus de « 80 % du prix » inventé. */
   prixMinimum: number;
   prixAncienLabel?: string;
   promo?: string;
   stock: 'available' | 'low' | 'none';
   icon: string;
   cat: CategoryId;
-  /** id réel de ProductResource.categorie (filtre par catégorie API, rattaché à sa racine). */
   catRawId?: number;
-  /** Nom réel de la catégorie (affiché sous le produit dans le panier, à la place d'un faux marché). */
   catNom?: string;
-  /**
-   * Pack réel (GET /bundles) : il a sa propre fiche (/pack/$packId).
-   * Pas d'ajout au panier depuis la carte : le panier n'accepte que des produits.
-   */
   isPack?: boolean;
-  /** id réel du pack (Pack.id), distinct de `id` qui vaut « pack-{id} ». */
   packId?: number;
-  /** Image réelle = ProductResource.image_url résolue par absImageUrl (même source que l'admin) ; absente → dégradé + icône. */
   image?: string | null;
 }
 
 const PER_PAGE = 9;
 
-/** Catalogue — Copie conforme Stitch + Intégration API Backend Laravel */
+// Composant de la page Catalog : gère le chargement des données et le rendu.
 export default function CatalogPage() {
   useLanguage();
   const dispatch = useAppDispatch();
@@ -88,22 +73,17 @@ export default function CatalogPage() {
   const q = useRouterState({ select: (s) => (s.location.search as { q?: string }).q ?? '' });
   const catParam = useRouterState({ select: (s) => (s.location.search as { cat?: string }).cat ?? '' });
 
-  // Produits réels uniquement : vide pendant le chargement, vide + message de l'API en cas d'échec.
   const [productsList, setProductsList] = useState<CatalogProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
-  // « Réessayer » : relance les appels (produits, catégories, packs).
   const [reloadKey, setReloadKey] = useState(0);
-  // Actualisation globale (bouton / silencieuse) : rejoue les trois chargements
-  // (catégories, packs, produits) sans afficher les squelettes (voir silentRefreshActive).
   const tick = useGlobalRefreshTick();
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (tick > 0) setReloadKey((k) => k + 1);
   }, [tick]);
   const [search, setSearch] = useState(q);
   const [cat, setCat] = useState<CatFilter>(() => parseCat(catParam));
-  // Prix max choisi au curseur ; null = aucune limite (la maquette figeait value="7500", ce qui masquait
-  // tout article plus cher dès qu'une catégorie était choisie).
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [dispoOnly, setDispoOnly] = useState(true);
   const [sort, setSort] = useState('pop');
@@ -111,9 +91,8 @@ export default function CatalogPage() {
   const [page, setPage] = useState(1);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-  // Catégories réelles — GET /api/categories (F-07 : impact immédiat sur le catalogue).
-  // null = non chargées (ou en échec) → seulement « Tous les produits » et « Packs & Bundles ».
   const [apiCats, setApiCats] = useState<ApiCategory[] | null>(null);
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     let alive = true;
     catalogApi
@@ -130,10 +109,9 @@ export default function CatalogPage() {
     };
   }, [reloadKey]);
 
-  // Packs réels — GET /api/bundles (F-08 : produits inclus + prix total), affichés quand « Packs & Bundles »
-  // est choisi, avec le design des cartes produit. null = en cours de chargement ; échec → packsError.
   const [apiPacks, setApiPacks] = useState<CatalogProduct[] | null>(null);
   const [packsError, setPacksError] = useState<string | null>(null);
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setApiPacks(null);
@@ -179,15 +157,12 @@ export default function CatalogPage() {
   }, [reloadKey]);
   const packMode = cat === 'pack';
 
-  // Plafond du curseur prix : article le plus cher de la liste affichée (produits, ou packs), arrondi
-  // aux 500 F supérieurs, jamais moins que les 10 000 de la maquette.
   const priceCeil = useMemo(() => {
     const base = packMode ? (apiPacks ?? []) : productsList;
     const top = base.reduce((m, p) => Math.max(m, Number(p.prix) || 0), 0);
     return Math.max(10000, Math.ceil(top / 500) * 500);
   }, [packMode, apiPacks, productsList]);
 
-  // Sous-catégorie → catégorie racine (le filtre de la barre latérale porte sur les racines)
   const rootOf = useMemo(() => {
     const m = new Map<number, number>();
     const walk = (c: ApiCategory, root: number) => {
@@ -213,9 +188,7 @@ export default function CatalogPage() {
 
   const catTitle = tx(cat === 'all' ? CAT_ALL.nom : cat === 'pack' ? CAT_PACK.nom : (categories.find((c) => c.id === cat)?.nom ?? 'Catalogue'));
 
-  // Connection API Backend GET /api/products — charge le catalogue complet (sans `q`) :
-  // évite que le LIKE sensible à la casse côté PostgreSQL n'écrase la liste après le debounce
-  // (ex. « cub » effaçant « Cube d'assaisonnement » 350 ms après l'affichage local).
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setProductsLoading(true);
@@ -271,7 +244,7 @@ export default function CatalogPage() {
     return () => { alive = false; };
   }, [reloadKey]);
 
-  // Curseur prix (bureau + mobile) : ramené tout à droite = plus de limite.
+  // Gère l’action utilisateur PriceChange.
   const onPriceChange = (v: number) => {
     setMaxPrice(v >= priceCeil ? null : v);
     setPage(1);
@@ -290,7 +263,6 @@ export default function CatalogPage() {
       items = items.filter((p) => p.catRawId != null && (rootOf.get(p.catRawId) ?? p.catRawId) === id);
     }
     if (maxPrice !== null) items = items.filter((p) => p.prix <= maxPrice);
-    // « Disponible uniquement » = commandable : stock > 0 et disponible (les stocks faibles 1–5 restent visibles).
     if (dispoOnly) items = items.filter((p) => p.stock !== 'none');
     if (sort === 'asc') items.sort((a, b) => a.prix - b.prix);
     if (sort === 'desc') items.sort((a, b) => b.prix - a.prix);
@@ -298,7 +270,6 @@ export default function CatalogPage() {
     return items;
   }, [search, cat, maxPrice, dispoOnly, sort, productsList, rootOf, packMode, apiPacks]);
 
-  // Liste affichée : chargement initial (jamais de faux produits) ou échec (message de l'API + Réessayer).
   const listLoading = packMode ? apiPacks === null : productsLoading && productsList.length === 0 && !productsError;
   const listError = packMode ? packsError : productsError;
   const retry = () => setReloadKey((k) => k + 1);
@@ -307,6 +278,7 @@ export default function CatalogPage() {
   const currentPage = Math.min(page, totalPages);
   const visible = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
 
+  // Helper resetFilters : réalise le traitement métier associé.
   const resetFilters = () => {
     setCat('all');
     setMaxPrice(null);
@@ -317,8 +289,9 @@ export default function CatalogPage() {
     if (q || catParam) navigate({ to: '/catalogue', search: {} });
   };
 
+  // Enregistre ou crée les données via addToCart.
   const addToCart = (p: CatalogProduct) => {
-    if (p.stock === 'none') return; // rupture : pas d'ajout au panier
+    if (p.stock === 'none') return;
     const product: Product = {
       id: p.id,
       nom: p.nom,
@@ -327,7 +300,7 @@ export default function CatalogPage() {
       prix: p.prix,
       prixMinimum: p.prixMinimum,
       categorie: p.cat,
-      stock: p.stock === 'low' ? 'low' : 'available', // rupture déjà écartée plus haut
+      stock: p.stock === 'low' ? 'low' : 'available',
       badges: p.promo ? ["promo"] : [],
       image: p.image ?? undefined,
     };
@@ -338,9 +311,9 @@ export default function CatalogPage() {
   const openProduct = (id: string | number) =>
     navigate({ to: '/produit/$productId', params: { productId: String(id) } });
 
-  /** Un pack ouvre sa propre fiche, comme un produit ouvre la sienne. */
   const openPack = (id: number) => navigate({ to: '/pack/$packId', params: { packId: String(id) } });
 
+  // Helper openItem : réalise le traitement métier associé.
   const openItem = (p: CatalogProduct) => {
     if (p.isPack) {
       if (p.packId && Number.isFinite(p.packId)) openPack(p.packId);
@@ -349,6 +322,7 @@ export default function CatalogPage() {
     openProduct(p.id);
   };
 
+  // Helper badges : réalise le traitement métier associé.
   const badges = (p: CatalogProduct) => (
     <div className="absolute left-2 top-2 flex flex-col gap-1">
       {p.stock === 'available' && (
@@ -370,6 +344,7 @@ export default function CatalogPage() {
     </div>
   );
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="min-h-screen bg-page pt-[52px] font-body text-on-surface">
       <ClientNavbar
@@ -381,7 +356,6 @@ export default function CatalogPage() {
       />
 
       <main className="mx-auto flex w-full max-w-[1200px] gap-4 px-4 pt-lg pb-[80px] lg:pb-lg">
-        {/* ---- Sidebar Filters ---- */}
         <aside className="hidden w-[260px] flex-shrink-0 space-y-md md:block">
           <div className="rounded-xl border-[0.5px] border-line bg-bg-card p-md shadow-sm">
             <h3 className="mb-md font-h3 text-h3">{tx("Catégories")}</h3>
@@ -463,7 +437,6 @@ export default function CatalogPage() {
           </div>
         </aside>
 
-        {/* ---- Mobile Filter Drawer ---- */}
         {mobileFilterOpen && (
           <div className="fixed inset-0 z-50 flex flex-col bg-black/50 md:hidden">
             <div className="mt-auto max-h-[85vh] w-full overflow-y-auto rounded-t-2xl bg-bg-card p-lg shadow-xl">
@@ -561,9 +534,7 @@ export default function CatalogPage() {
           </div>
         )}
 
-        {/* ---- Main Content Area ---- */}
         <section className="min-w-0 flex-grow">
-          {/* Barre de recherche des produits */}
           <div className="mb-md">
             <div className="relative">
               <svg aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-ink-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" strokeLinecap="round" /></svg>
@@ -593,7 +564,6 @@ export default function CatalogPage() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-              {/* Mobile Filter Button */}
               <button
                 type="button"
                 onClick={() => setMobileFilterOpen(true)}
@@ -639,7 +609,6 @@ export default function CatalogPage() {
             </div>
           </div>
 
-          {/* Vue Packs : accès direct à l'atelier client « Mes packs » (/mes-packs). */}
           {packMode && (
             <Link
               to="/mes-packs"
@@ -793,7 +762,6 @@ export default function CatalogPage() {
             </div>
           )}
 
-          {/* ---- Pagination ---- */}
           <div className="mt-xl flex items-center justify-center gap-2">
             <button
               type="button"

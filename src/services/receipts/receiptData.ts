@@ -1,16 +1,5 @@
-/**
- * Reçu de paiement — préparation des données.
- *
- * Ce module est volontairement PUR (aucune dépendance React ni PDF) :
- * il transforme un paiement (`GET /payments` ou `/admin/payments`) et,
- * si disponible, la commande associée (`GET /orders/{id}`) en un objet
- * `ReceiptData` prêt à être rendu par `receiptPdf.ts`.
- *
- * Contexte : le backend pose aujourd'hui `recu_url = /receipts/payment-N.pdf`
- * (voir NOTE_21_RECUS_BACKEND.md) mais ne sert aucun fichier. Le reçu est donc
- * généré côté front à partir des données réellement renvoyées par l'API.
- */
 
+// Prépare et calcule les données structurées d’un reçu de commande.
 export type ReceiptClientInput = {
   nom_complet?: string | null;
   prenom?: string | null;
@@ -53,12 +42,7 @@ export type ReceiptOrder = {
 
 const STATUTS_AVEC_RECU = new Set(['en_livraison', 'livre', 'livree']);
 
-/**
- * Le reçu n'est disponible qu'une fois la commande prise en charge pour
- * la livraison (`en_livraison` ou `livre`), et — lorsque l'information est
- * connue — avec un livreur effectivement assigné afin que son nom figure
- * sur le PDF. Indisponible en `en_attente`, `en_preparation` ou `annule`.
- */
+// Vérifie la condition métier canDownloadReceipt.
 export function canDownloadReceipt(
   order?: {
     statut?: string | null;
@@ -109,38 +93,38 @@ export type ReceiptData = {
   total: number;
 };
 
+// Helper toNumber : réalise le traitement métier associé.
 export function toNumber(value: number | string | null | undefined): number {
   const n = typeof value === 'string' ? Number(value.replace(',', '.')) : Number(value ?? 0);
   return Number.isFinite(n) ? n : 0;
 }
 
-/** Un paiement n'est « payé » que s'il est réussi (le backend utilise `reussi`). */
+// Vérifie la condition métier estPaye.
 export function estPaye(statut?: string | null): boolean {
   return (statut ?? '').toLowerCase() === 'reussi';
 }
 
-/**
- * Numéro de reçu lisible et stable : TOKPA-RECU-000005-20261014.
- * Il ne dépend que du paiement et de sa date — deux téléchargements
- * du même reçu portent donc le même numéro.
- */
+// Helper numeroRecu : réalise le traitement métier associé.
 export function numeroRecu(paymentId: number, reference?: string | null): string {
   const brut = (reference ?? '').replace(/[^0-9]/g, '').slice(-6);
   const jour = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   return `TOKPA-RECU-${String(paymentId).padStart(6, '0')}${brut ? `-${brut}` : ''}-${jour}`;
 }
 
+// Helper nomFichierRecu : réalise le traitement métier associé.
 export function nomFichierRecu(data: ReceiptData): string {
   const commande = data.orderId ? `-commande-${data.orderId}` : '';
   return `recu-tokpa-paiement-${data.paymentId}${commande}.pdf`;
 }
 
+// Helper cleanField : réalise le traitement métier associé.
 function cleanField(value: string | null | undefined): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed || null;
 }
 
+// Transforme ou formate les données via resolveClientNom.
 function resolveClientNom(source?: ReceiptClientInput | null): string | null {
   if (!source) return null;
   const full = cleanField(source.nom_complet);
@@ -149,13 +133,7 @@ function resolveClientNom(source?: ReceiptClientInput | null): string | null {
   return parts || null;
 }
 
-/**
- * Assemble le reçu. `order` est facultatif : quand il manque (détail non
- * autorisé ou commande supprimée), le reçu reste valable — il porte alors
- * la mention « détail des articles indisponible ».
- * `clientFallback` permet de renseigner nom/téléphone du client lorsque
- * `GET /orders/{id}` ne charge pas la relation `client`.
- */
+// Transforme ou formate les données via buildReceiptData.
 export function buildReceiptData(
   payment: ReceiptPayment,
   order?: ReceiptOrder | null,
@@ -180,7 +158,6 @@ export function buildReceiptData(
   const sommeLignes = detailDisponible ? lignes.reduce((acc, l) => acc + l.total, 0) : null;
   const total = montant > 0 ? montant : toNumber(order?.montant_total);
 
-  // Sous-total : somme des articles si on les a, sinon total − frais de livraison.
   let sousTotal: number | null = sommeLignes;
   if (sousTotal == null && fraisLivraison != null && total > 0) {
     sousTotal = Math.max(total - fraisLivraison, 0);

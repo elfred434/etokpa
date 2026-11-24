@@ -1,6 +1,7 @@
+// Convertit les catégories brutes de l’API au format attendu par le frontend.
 import type { CategoryId } from '../types/models';
 
-/** Catégorie réelle (ProductResource.categorie) -> filtre Stitch du catalogue. */
+// Transforme ou formate les données via mapApiCategory.
 export function mapApiCategory(categorie?: { slug?: string | null; nom?: string | null } | null): CategoryId {
   const s = `${categorie?.slug ?? ''} ${categorie?.nom ?? ''}`.toLowerCase();
   if (/poisson|viande|chair|boeuf|porc|poulet/.test(s)) return 'fish';

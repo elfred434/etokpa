@@ -1,3 +1,4 @@
+// Appels API d’authentification, 2FA, inscription, mot de passe et profil utilisateur.
 import { apiClient } from './client';
 import { initEcho, shutdownEcho } from '../realtime/echo';
 import { clearLocalPhotos } from '../../utils/profilePhoto';
@@ -53,88 +54,80 @@ export interface UserProfile {
   profil?: Record<string, unknown>;
 }
 
+// Regroupe les appels API du module auth.
 export const authApi = {
-  // POST /api/auth/login -> declenche l'envoi du code 2FA
+  // Appelle POST /auth/login via le client API.
   login: async (payload: LoginPayload) => {
     const response = await apiClient.post('/auth/login', payload);
     return response.data;
   },
 
-  // POST /api/auth/verify-2fa -> valide le code OTP et retourne le token Sanctum
+  // Appelle POST /auth/verify-2fa via le client API.
   verify2fa: async (payload: Verify2FAPayload) => {
     const response = await apiClient.post('/auth/verify-2fa', payload);
     const body = response.data ?? {};
     const data = body.data ?? body;
-    // Le backend courant renvoie `token` à la racine; le contrat Sprint 1
-    // documente `data.access_token`. Accepter les deux formes sans ouvrir une
-    // session si la vérification OTP n'a pas réellement délivré de jeton.
     const token = body.token ?? body.access_token ?? data.access_token ?? data.token;
     if (typeof token === 'string' && token.trim()) {
       localStorage.setItem('tokpa_token', token);
-      // Laravel peut renvoyer une JsonResource directement ou sous une enveloppe `data`.
-      // On stocke toujours l'objet utilisateur lui-même afin que currentRole() puisse
-      // calculer correctement l'espace de destination après la 2FA.
       const rawUser = body.user ?? data.user;
       const user = rawUser?.data ?? rawUser;
       localStorage.setItem('tokpa_user', JSON.stringify(user));
-      // Connexion réussie → on branche le temps réel Reverb (canaux privés)
-      // et on notifie le SystemBridge (panier serveur + notifications).
       initEcho();
       window.dispatchEvent(new Event('tokpa:auth-changed'));
     }
     return response.data;
   },
 
-  // POST /api/auth/register -> creation de compte et envoi 2FA
+  // Appelle POST /auth/register via le client API.
   register: async (payload: RegisterPayload) => {
     const response = await apiClient.post('/auth/register', payload);
     return response.data;
   },
 
-  // POST /api/auth/resend-2fa -> renvoi du code 2FA
+  // Appelle POST /auth/resend-2fa via le client API.
   resend2fa: async (email: string) => {
     const response = await apiClient.post('/auth/resend-2fa', { email });
     return response.data;
   },
 
-  // GET /api/profile -> profil utilisateur authentifie
+  // Appelle GET /profile via le client API.
   getProfile: async () => {
     const response = await apiClient.get('/profile');
     return response.data;
   },
 
-  // PUT /api/profile -> mise a jour profil
+  // Appelle PUT /profile via le client API.
   updateProfile: async (data: Partial<UserProfile> & Record<string, unknown>) => {
     const response = await apiClient.put('/profile', data);
     return response.data;
   },
 
-  // GET /api/dashboard -> tableau de bord minimal (F-21), filtre selon le role :
-  // { commandes, en_cours, ca } — ca renseigne pour l'admin uniquement (null sinon)
+  // Appelle GET /dashboard via le client API.
   getDashboard: async (): Promise<{ commandes: number; en_cours: number; ca: number | string | null }> => {
     const response = await apiClient.get('/dashboard');
     return response.data;
   },
 
-  // POST /api/auth/change-password -> changement de mot de passe
+  // Appelle POST /auth/change-password via le client API.
   changePassword: async (payload: { current_password: string; new_password: string; new_password_confirmation: string }) => {
     const response = await apiClient.post('/auth/change-password', payload);
     return response.data;
   },
 
-  // POST /api/auth/forgot-password -> mot de passe oublie
+  // Appelle POST /auth/forgot-password via le client API.
   forgotPassword: async (email: string) => {
     const response = await apiClient.post('/auth/forgot-password', { email });
     return response.data;
   },
 
-  // POST /api/auth/reset-password -> reinitialisation mot de passe
+  // Appelle POST /auth/reset-password via le client API.
   resetPassword: async (payload: { email: string; token: string; password: string; password_confirmation: string }) => {
     const response = await apiClient.post('/auth/reset-password', payload);
     return response.data;
   },
 
-  // POST /api/auth/logout -> deconnexion
+  // Appelle POST /auth/logout via le client API.
   logout: async () => {
     try {
       await apiClient.post('/auth/logout');

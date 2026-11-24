@@ -1,9 +1,7 @@
+// Valide et résout les coordonnées GPS des points de repère à Cotonou.
 import { searchPlaces, type GeoPlace } from '../services/api/geocode';
 
-/**
- * Normalise un libellé de lieu (minuscules, sans accents ni ponctuation superflue)
- * pour la correspondance tolérante des points de repère.
- */
+// Transforme ou formate les données via normalizePlaceKey.
 function normalizePlaceKey(value: string): string {
   return value
     .normalize('NFD')
@@ -15,27 +13,19 @@ function normalizePlaceKey(value: string): string {
     .trim();
 }
 
-/**
- * Détecte si un point GPS tombe dans l'océan Atlantique au large du littoral de Cotonou
- * (ex. coordonnées erronées du seeder backend pour Carrefour Akpakpa 6.3520/2.4500,
- * Wologuèdè 6.3480/2.4550 ou Marina 6.3520/2.4280).
- */
+// Vérifie la condition métier isInCotonouSea.
 export function isInCotonouSea(lat: number, lng: number): boolean {
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
   if (lng < 2.30 || lng > 2.52 || lat < 6.0 || lat > 6.37) return false;
 
   let coastMinLat = 6.347;
-  if (lng >= 2.439) coastMinLat = 6.3575; // Akpakpa / Énagnon / Dodomè
-  else if (lng >= 2.417) coastMinLat = 6.3555; // Port de Cotonou / Placodji
-  else if (lng >= 2.38) coastMinLat = 6.350; // Cadjehoun / Les Cocotiers
+  if (lng >= 2.439) coastMinLat = 6.3575;
+  else if (lng >= 2.417) coastMinLat = 6.3555;
+  else if (lng >= 2.38) coastMinLat = 6.350;
 
   return lat < coastMinLat;
 }
 
-/**
- * Coordonnées vérifiées sur terre (OpenStreetMap / Cotonou) utilisées en secours
- * lorsque la base backend renvoie des coordonnées nulles ou situées en mer.
- */
 const VERIFIED_LANDMARK_COORDS: Record<string, [number, number]> = {
   'carrefour akpakpa': [6.3679, 2.4488],
   'akpakpa': [6.3675, 2.453],
@@ -54,6 +44,7 @@ const VERIFIED_LANDMARK_COORDS: Record<string, [number, number]> = {
   'carrefour godomey': [6.3854, 2.3432],
 };
 
+// Helper lookupVerifiedCoords : réalise le traitement métier associé.
 function lookupVerifiedCoords(nom?: string | null, zoneNom?: string | null): [number, number] | null {
   if (nom) {
     const key = normalizePlaceKey(nom);
@@ -69,16 +60,14 @@ function lookupVerifiedCoords(nom?: string | null, zoneNom?: string | null): [nu
   return null;
 }
 
+// Vérifie la condition métier isValidLandCoords.
 function isValidLandCoords(lat: number, lng: number): boolean {
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
   if (lat === 0 && lng === 0) return false;
   return !isInCotonouSea(lat, lng);
 }
 
-/**
- * Valide des coordonnées issues de la BDD et applique un secours vérifié sur terre
- * si elles sont absentes ou tombent dans la mer.
- */
+// Transforme ou formate les données via sanitizeLandmarkCoords.
 export function sanitizeLandmarkCoords(
   rawLat: unknown,
   rawLng: unknown,
@@ -124,10 +113,7 @@ export interface OrderDestinationInput {
   description_lieu?: string | null;
 }
 
-/**
- * Extrait un indice de lieu réel depuis `description_lieu` quand celui-ci désigne un
- * repère personnel distinct du `landmark.nom` d'ancrage.
- */
+// Transforme ou formate les données via extractDistinctPlaceHint.
 function extractDistinctPlaceHint(description?: string | null, landmarkName?: string | null): string | null {
   if (!description || !description.trim()) return null;
   const primarySegment = description.split('—')[0]?.trim() || description.trim();
@@ -140,12 +126,7 @@ function extractDistinctPlaceHint(description?: string | null, landmarkName?: st
   return primarySegment;
 }
 
-/**
- * Résout la destination réelle de la commande sur la carte à partir :
- * 1) des coordonnées du point de repère choisi (dans `zones.points_repere`, `GET /landmarks` ou `order.landmark`),
- * 2) du repère réel indiqué dans `description_lieu` (si le client a choisi un repère de profil),
- * 3) d'une vérification anti-mer + géocodage Nominatim / référentiel Cotonou sur terre.
- */
+// Transforme ou formate les données via resolveOrderDestinationCoords.
 export async function resolveOrderDestinationCoords({
   order,
   zones,
@@ -194,8 +175,6 @@ export async function resolveOrderDestinationCoords({
     }
   }
 
-  // Si le client a choisi un repère de profil distinct (ancré sur le 1er repère de la zone),
-  // privilégier la localisation de ce lieu réel si connue ou géocodable.
   const distinctHint = extractDistinctPlaceHint(order.description_lieu, matchedName);
   if (distinctHint) {
     const knownCustom = lookupVerifiedCoords(distinctHint, null);
@@ -209,7 +188,6 @@ export async function resolveOrderDestinationCoords({
       );
       if (onLand) return { coords: [onLand.lat, onLand.lng], zoneName: matchedZoneName };
     } catch {
-      /* fallback ci-dessous */
     }
   }
 
@@ -218,7 +196,6 @@ export async function resolveOrderDestinationCoords({
     return { coords: sanitized, zoneName: matchedZoneName };
   }
 
-  // Dernier secours : géocodage du nom du point de repère choisi + zone
   if (matchedName || matchedZoneName) {
     const query = [matchedName, matchedZoneName, 'Bénin'].filter(Boolean).join(', ');
     try {
@@ -228,7 +205,6 @@ export async function resolveOrderDestinationCoords({
       );
       if (onLand) return { coords: [onLand.lat, onLand.lng], zoneName: matchedZoneName };
     } catch {
-      /* aucun résultat */
     }
   }
 

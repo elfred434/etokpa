@@ -1,3 +1,4 @@
+// Messagerie du livreur pour échanger avec le client sur une commande en cours.
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import LivreurLayout from '../../../components/layout/livreur/LivreurLayout';
@@ -20,13 +21,14 @@ interface UiMessage {
   pending?: boolean;
 }
 
+// Vérifie qu’une valeur est un objet dictionnaire exploitable (hors tableaux).
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
 }
 
-/** Accepte les enveloppes Resource et paginées actuellement renvoyées par Laravel. */
+// Helper rowsFrom : réalise le traitement métier associé.
 function rowsFrom(response: unknown): Record<string, unknown>[] {
   if (Array.isArray(response)) return response.map((row) => asRecord(row)).filter((row): row is Record<string, unknown> => row !== null);
   const root = asRecord(response);
@@ -37,6 +39,7 @@ function rowsFrom(response: unknown): Record<string, unknown>[] {
   return [];
 }
 
+// Helper toUiMessage : réalise le traitement métier associé.
 function toUiMessage(row: Record<string, unknown>): UiMessage | null {
   if (typeof row.contenu !== 'string') return null;
   const senderId = Number(row.sender_id);
@@ -50,13 +53,14 @@ function toUiMessage(row: Record<string, unknown>): UiMessage | null {
   };
 }
 
+// Helper timeLabel : réalise le traitement métier associé.
 function timeLabel(value?: string): string {
   if (!value) return '';
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-/** Messagerie du livreur — branchée sur /livreur/conversations et le canal Reverb `chat.{id}`. */
+// Composant de la page LivreurMessaging : gère le chargement des données et le rendu.
 export default function LivreurMessagingPage() {
   const { commande: commandeRecherche } = useSearch({ from: '/livreur/messagerie' });
   const refreshTick = useGlobalRefreshTick();
@@ -96,6 +100,7 @@ export default function LivreurMessagingPage() {
     }
   }, [commandeRecherche, userId]);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     void loadConversations();
     return subscribeRealtimeRefresh(['orders'], (event) => {
@@ -103,6 +108,7 @@ export default function LivreurMessagingPage() {
     });
   }, [loadConversations, refreshTick]);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!activeConversationId) {
       setMessages([]);
@@ -127,6 +133,7 @@ export default function LivreurMessagingPage() {
     };
   }, [activeConversationId, refreshTick]);
 
+  // Abonne le composant au canal temps réel Reverb et nettoie l’écoute au démontage.
   useEffect(() => {
     if (!activeConversationId || !userId) return undefined;
     const echo = windowEcho();
@@ -161,6 +168,7 @@ export default function LivreurMessagingPage() {
     !conversations.some((conversation) => Number(conversation.order_id) === Number(commandeRecherche)),
   );
 
+  // Valide et transmet l’action sendMessage.
   const sendMessage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const content = input.trim();
@@ -193,6 +201,7 @@ export default function LivreurMessagingPage() {
     }
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <LivreurLayout>
       <main className="mx-auto flex w-full max-w-[1280px] flex-col gap-4 p-3 sm:p-lg">

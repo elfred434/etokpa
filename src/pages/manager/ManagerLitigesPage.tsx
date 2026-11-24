@@ -1,9 +1,9 @@
+// Interface de suivi des litiges signalés sur la zone du manager.
 import { useMemo, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
-
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -30,6 +30,7 @@ const ONGLETS = [
   { label: 'Résolus', n: 2, f: 'resolus' },
 ] as const;
 
+// Composant de la page ManagerLitiges : gère le chargement des données et le rendu.
 export default function ManagerLitigesPage() {
   useLanguage();
   const [filtre, setFiltre] = useState<string | null>(null);
@@ -45,6 +46,7 @@ export default function ManagerLitigesPage() {
     [filtre],
   );
 
+  // Retourne le rendu JSX du composant.
   return (
     <ManagerLayout currentPath="/manager/litiges">
       <div className="space-y-6">

@@ -1,12 +1,9 @@
+// Runtime des actions interactives héritées pour les écrans super-administrateur.
 import { useEffect } from 'react';
 import { captureFrontendError } from '../services/errors/frontendErrorReporter';
 import { tx } from '../i18n/tx';
 import { adminDialogs } from '../components/shared/AdminActionDialogs';
 
-/**
- * useDesignScript — exécute les interactions statiques des pages admin Stitch
- * SANS `eval`, SANS `new Function` et SANS `innerHTML` (conforme CSP stricte).
- */
 export type DesignPresetId =
   | 'none'
   | 'admin-bdd'
@@ -30,6 +27,7 @@ const EVENT_FOR: Record<string, string> = {
   'data-onmouseenter': 'mouseenter',
 };
 
+// Feuille de styles intégrée (MODAL_CSS) injectée pour le rendu de la vue.
 const MODAL_CSS = `
 .design-modal-scroll { scrollbar-width: thin; scrollbar-color: rgba(60,45,38,0.35) transparent; }
 .design-modal-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -38,6 +36,7 @@ const MODAL_CSS = `
 `;
 
 let cssInjected = false;
+// Helper injectModalCss : réalise le traitement métier associé.
 function injectModalCss() {
   if (cssInjected || typeof document === 'undefined') return;
   cssInjected = true;
@@ -126,6 +125,7 @@ const WEBHOOK_PAYLOADS: Record<string, string> = {
 
 let currentInspectedId = 'evt_983172';
 
+// Met à jour les données ou l’état via setButtonIconAndLabel.
 function setButtonIconAndLabel(btn: Element, iconName: string, labelText: string, iconColorClass = '') {
   btn.textContent = '';
   const icon = document.createElement('span');
@@ -136,6 +136,7 @@ function setButtonIconAndLabel(btn: Element, iconName: string, labelText: string
   btn.append(icon, label);
 }
 
+// Helper showBddToast : réalise le traitement métier associé.
 function showBddToast(title: string, body: string) {
   const toast = document.getElementById('toast-banner');
   const toastTitle = document.getElementById('toast-title');
@@ -154,6 +155,7 @@ function showBddToast(title: string, body: string) {
   }, 4000);
 }
 
+// Helper showApiToast : réalise le traitement métier associé.
 function showApiToast(message: string, isError = false) {
   const toast = document.getElementById('toast');
   const toastMsg = document.getElementById('toast-msg');
@@ -168,6 +170,7 @@ function showApiToast(message: string, isError = false) {
   setTimeout(() => toast.classList.add('hidden'), 2800);
 }
 
+// Helper closeBddActionModal : réalise le traitement métier associé.
 function closeBddActionModal() {
   const modal = document.getElementById('cli-modal');
   const modalContainer = document.getElementById('modal-container');
@@ -183,7 +186,6 @@ function closeBddActionModal() {
 }
 
 const HANDLERS: Record<string, HandlerFn> = {
-  // AdminParametresPage
   switchTab: ([tabId], el) => {
     const buttons = document.querySelectorAll('.tab-btn');
     const contents = document.querySelectorAll('.tab-content');
@@ -199,7 +201,6 @@ const HANDLERS: Record<string, HandlerFn> = {
     });
   },
 
-  // AdminSecuritePage
   toggleSecret: ([id, rawVal, maskedVal], el) => {
     const target = document.getElementById(String(id));
     if (!target) return;
@@ -212,7 +213,6 @@ const HANDLERS: Record<string, HandlerFn> = {
     }
   },
 
-  // AdminBddPage
   showExplainPlan: ([planText]) => {
     const drawer = document.getElementById('explain-drawer');
     const content = document.getElementById('explain-content');
@@ -299,7 +299,6 @@ const HANDLERS: Record<string, HandlerFn> = {
     showBddToast('Actualisation pg_stat_statements', 'Analyseurs mis à jour avec les requêtes des 10 dernières minutes.');
   },
 
-  // AdminClesApiPage
   switchEnv: ([env]) => {
     const prodBtn = document.getElementById('env-prod');
     const sandBtn = document.getElementById('env-sandbox');
@@ -437,7 +436,6 @@ const HANDLERS: Record<string, HandlerFn> = {
     if (input) input.value = '';
   },
 
-  // AdminSystemePage (sans eval / innerHTML)
   toggleCircuitBreaker: ([variant], el) => {
     const knob = el.firstElementChild;
     if (variant === 'maintenance') {
@@ -542,7 +540,6 @@ const HANDLERS: Record<string, HandlerFn> = {
     if (input) input.value = '';
   },
 
-  // AdminSecuritePage
   exportSecuriteAudit: () => {
     const payload = {
       exported_at: new Date().toISOString(),
@@ -658,6 +655,7 @@ const HANDLERS: Record<string, HandlerFn> = {
   },
 };
 
+// Transforme ou formate les données via parseSafeArgs.
 function parseSafeArgs(rawArgs: string, el: Element, event: Event): unknown[] {
   const args: unknown[] = [];
   let i = 0;
@@ -680,7 +678,7 @@ function parseSafeArgs(rawArgs: string, el: Element, event: Event): unknown[] {
           i += 1;
         }
       }
-      i += 1; // closing quote
+      i += 1;
       args.push(val);
     } else {
       let token = '';
@@ -702,6 +700,7 @@ function parseSafeArgs(rawArgs: string, el: Element, event: Event): unknown[] {
   return args;
 }
 
+// Helper invokeSafeCall : réalise le traitement métier associé.
 function invokeSafeCall(code: string, el: Element, event: Event): void {
   const trimmed = code.trim();
   if (!trimmed) return;
@@ -709,7 +708,6 @@ function invokeSafeCall(code: string, el: Element, event: Event): void {
     event.stopPropagation();
     return;
   }
-  // Supporte `fn(args)` ou `tx('...')` imbriqué dans le premier arg d'openActionModal
   const unwrapped = trimmed.replace(/\btx\((['"])((?:\\.|(?!\1).)*)\1\)/g, '$1$2$1');
   const match = /^([A-Za-z_][A-Za-z0-9_]*)\(([\s\S]*)\)$/.exec(unwrapped);
   if (!match) {
@@ -726,7 +724,7 @@ function invokeSafeCall(code: string, el: Element, event: Event): void {
   fn(args, el, event);
 }
 
-/** Ferme une modale via son attribut de fermeture sûr, sinon masquage direct. */
+// Helper closeViaDesign : réalise le traitement métier associé.
 function closeViaDesign(root: HTMLElement) {
   const candidates = [root, ...Array.from(root.querySelectorAll<HTMLElement>('[data-onclick]'))];
   const closer = candidates.find((el) => /close|toggle|dismiss|hide|ferm/i.test(el.getAttribute('data-onclick') ?? ''));
@@ -736,13 +734,13 @@ function closeViaDesign(root: HTMLElement) {
       invokeSafeCall(code, closer, new Event('click'));
       return;
     } catch {
-      /* bascule sur le masquage direct */
     }
   }
   root.classList.add('hidden');
   root.style.setProperty('display', 'none');
 }
 
+// Helper enhanceModals : réalise le traitement métier associé.
 function enhanceModals(): Array<() => void> {
   injectModalCss();
   const offs: Array<() => void> = [];
@@ -764,6 +762,7 @@ function enhanceModals(): Array<() => void> {
   return offs;
 }
 
+// Helper setupPresetListeners : réalise le traitement métier associé.
 function setupPresetListeners(preset: string): Array<() => void> {
   const offs: Array<() => void> = [];
 
@@ -909,7 +908,7 @@ function setupPresetListeners(preset: string): Array<() => void> {
   return offs;
 }
 
-/** Dispatche un handler `data-on*` via l'annuaire déclaratif sûr (sans `eval`). */
+// Helper invokeDesign : réalise le traitement métier associé.
 export function invokeDesign(code: string, el: Element, event: Event): void {
   try {
     invokeSafeCall(code, el, event);
@@ -918,7 +917,9 @@ export function invokeDesign(code: string, el: Element, event: Event): void {
   }
 }
 
+// Hook React useDesignScript : encapsule l’état et les effets associés.
 export function useDesignScript(presetOrScript: string) {
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     const trimmed = presetOrScript.trim();
     if (!trimmed) return;

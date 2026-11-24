@@ -1,3 +1,4 @@
+// Appels API de gestion du panier côté serveur.
 import { apiClient } from './client';
 
 export interface CartApiItem {
@@ -7,14 +8,15 @@ export interface CartApiItem {
   quantite: number;
 }
 
+// Regroupe les appels API du module cart.
 export const cartApi = {
-  // GET /api/cart -> recupere le panier en cache backend
+  // Appelle GET /cart via le client API.
   getCart: async () => {
     const response = await apiClient.get<{ data: CartApiItem[] }>('/cart');
     return response.data;
   },
 
-  // POST /api/cart/add -> ajoute un produit au panier
+  // Appelle POST /cart/add via le client API.
   addToCart: async (productId: number, quantite = 1) => {
     const response = await apiClient.post<{ data: CartApiItem[] }>('/cart/add', {
       product_id: productId,
@@ -23,7 +25,7 @@ export const cartApi = {
     return response.data;
   },
 
-  // PUT /api/cart/update -> met a jour la quantite d'un produit
+  // Appelle PUT /cart/update via le client API.
   updateCart: async (productId: number, quantite: number) => {
     const response = await apiClient.put<{ data: CartApiItem[] }>('/cart/update', {
       product_id: productId,
@@ -32,7 +34,7 @@ export const cartApi = {
     return response.data;
   },
 
-  // DELETE /api/cart/remove/{id} -> supprime un produit du panier
+  // Appelle DELETE /cart/remove/${productId} via le client API.
   removeFromCart: async (productId: number) => {
     const response = await apiClient.delete<{ data: CartApiItem[] }>(`/cart/remove/${productId}`);
     return response.data;

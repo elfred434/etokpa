@@ -1,3 +1,4 @@
+// Gestion CRUD des catégories du catalogue.
 import { useState } from 'react';
 import { useDesignScript } from '../../utils/designRuntime';
 import { adminApi } from '../../services/api';
@@ -11,7 +12,7 @@ import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 
-
+// Feuille de styles intégrée (DESIGN_CSS) injectée pour le rendu de la vue.
 const DESIGN_CSS = `
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -28,10 +29,7 @@ const DESIGN_CSS = `
         }
     `;
 
-/**
- * AdminCategoriesPage — copie conforme statique du design Stitch (code.html).
- * Interactions : script du design exécuté via useDesignScript (comportement copié).
- */
+// Composant React CAT_ICON : prépare l’état et affiche son interface.
 const CAT_ICON = (nom: string): string =>
   /épic|epic|sauce|assais/i.test(nom) ? 'liquor'
     : /bois|jus|eau|sod/i.test(nom) ? 'local_drink'
@@ -55,11 +53,11 @@ const COLOR_BADGE: Record<string, string> = {
   'on-surface-variant': 'bg-surface-container-high text-on-surface-variant',
 };
 
+// Composant de la page AdminCategories : gère le chargement des données et le rendu.
 export default function AdminCategoriesPage() {
   useLanguage();
   useDesignScript(DESIGN_SCRIPT);
   const { rows: cats, err, loading, reload } = useLiveRows(() => adminApi.getCategories());
-  // Nombre de produits réel par catégorie (l'API ne renvoie pas produits_count, B-17) : calculé sur GET /admin/products
   const { rows: produits } = useLiveRows(async () => {
     const acc: any[] = [];
     for (let page = 1; page <= 10; page++) {
@@ -82,12 +80,14 @@ export default function AdminCategoriesPage() {
   const [fAccueil, setFAccueil] = useState(true);
   const [refus, setRefus] = useState('');
 
+  // Helper showToast : réalise le traitement métier associé.
   const showToast = () => {
     const el = document.getElementById('toast');
     if (!el) return;
     el.classList.remove('translate-y-20', 'opacity-0');
     window.setTimeout(() => el.classList.add('translate-y-20', 'opacity-0'), 2200);
   };
+  // Helper selectCat : réalise le traitement métier associé.
   const selectCat = (c: any) => {
     setRefus('');
     setSel(c);
@@ -97,6 +97,7 @@ export default function AdminCategoriesPage() {
     setFColor(String(c.couleur || 'primary'));
     setFAccueil(c.en_accueil ?? true);
   };
+  // Helper newCat : réalise le traitement métier associé.
   const newCat = () => {
     setRefus('');
     setSel({ id: null });
@@ -106,6 +107,7 @@ export default function AdminCategoriesPage() {
     setFColor('primary');
     setFAccueil(false);
   };
+  // Enregistre ou crée les données via saveCat.
   const saveCat = async () => {
     if (!fNom.trim()) {
       await adminDialogs.alert(tx("Le nom de la catégorie est obligatoire."), { title: tx("Vérifiez les champs") });
@@ -128,6 +130,7 @@ export default function AdminCategoriesPage() {
       await adminDialogs.alert(formatApiError(extractApiError(e)), { title: tx("Erreur API"), danger: true });
     }
   };
+  // Supprime ou nettoie les éléments via delCat.
   const delCat = async (c: any) => {
     const confirme = await adminDialogs.confirm(
       tr(`Supprimer la catégorie « ${c.nom} » ?`, `Delete category “${c.nom}”?`),
@@ -146,6 +149,7 @@ export default function AdminCategoriesPage() {
     }
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <AdminLayout currentPath="/admin/categories" mainClassName="ml-64 h-screen pt-[52px] flex overflow-hidden">
       {err && (
@@ -209,7 +213,7 @@ export default function AdminCategoriesPage() {
                     {tx("Enregistrer les modifications")}
                 </button> <button className="w-full py-3 bg-transparent border border-primary text-primary font-bold rounded-[10px] hover:bg-primary-tint active:scale-[0.97] transition-all" onClick={() => setSel(null)}>
                     {tx("Annuler")}
-                </button> </div> </aside>  <div className="fixed bottom-lg right-lg bg-on-surface text-white px-md py-3 rounded-lg shadow-xl translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3 z-[60]" id="toast"> <MIcon name="check_circle" className="text-success" /> <span className="font-label text-label">{tx("Modification enregistrée avec succès !")}</span> </div> 
+                </button> </div> </aside>  <div className="fixed bottom-lg right-lg bg-on-surface text-white px-md py-3 rounded-lg shadow-xl translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3 z-[60]" id="toast"> <MIcon name="check_circle" className="text-success" /> <span className="font-label text-label">{tx("Modification enregistrée avec succès !")}</span> </div>
     </AdminLayout>
   );
 }

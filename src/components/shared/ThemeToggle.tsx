@@ -1,14 +1,9 @@
+// Bouton de bascule du thème clair/sombre/système.
 import MIcon from './MIcon';
 import { THEMES, useTheme } from '../../context/ThemeContext';
 import { tx } from '../../i18n/tx';
 
-/**
- * Bouton de thème : cycle clair → sombre → système, sur le modèle du sélecteur
- * de langue (même gabarit, même place dans la barre).
- *
- * - `pill` : pastille de la barre client (icône + libellé sur écrans larges) ;
- * - `icon` : bouton rond des en-têtes d'administration, de livreur et de manager.
- */
+// Composant React ThemeToggle : prépare l’état et affiche son interface.
 export default function ThemeToggle({ variant = 'pill' }: { variant?: 'pill' | 'icon' }) {
   const { choix, effectif, cycler } = useTheme();
   const i = THEMES.findIndex((t) => t.code === choix);
@@ -32,6 +27,7 @@ export default function ThemeToggle({ variant = 'pill' }: { variant?: 'pill' | '
     );
   }
 
+  // Retourne le rendu JSX du composant.
   return (
     <button
       type="button"

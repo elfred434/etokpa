@@ -1,9 +1,9 @@
+// Pied de page de l’espace client.
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
-
-/** Footer clair des pages marchandes (maquette panier/caisse). */
+// Composant de mise en page ClientFooter.
 export default function ClientFooter() {
   const { isFr } = useLanguage();
 
@@ -14,6 +14,7 @@ export default function ClientFooter() {
     { label: isFr ? 'Contact' : 'Contact' },
   ];
 
+  // Retourne le rendu JSX du composant.
   return (
     <footer className="mt-auto w-full border-t border-line bg-surface px-lg py-xl">
       <div className="mx-auto flex max-w-[1200px] flex-col justify-between gap-lg md:flex-row md:items-center">

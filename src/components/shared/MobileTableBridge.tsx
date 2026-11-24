@@ -1,3 +1,4 @@
+// Transforme les lignes de tableaux sur mobile en fiche détaillée ouvrable au toucher.
 import { useEffect, useState } from 'react';
 import { DIALOG_CANCEL_BTN_CLASS, DialogFrame } from './DialogFrame';
 import { tx } from '../../i18n/tx';
@@ -6,11 +7,12 @@ type Sheet = { title: string; rows: { label: string; value: string }[] };
 
 const HIDE = 'tokpa-mobile-hide';
 
+// Helper cellText : réalise le traitement métier associé.
 function cellText(cell: Element): string {
   return (cell.textContent ?? '').replace(/\s+/g, ' ').trim();
 }
 
-/** Garde l'identité (2 premières colonnes) et les actions, masque le reste sous 768 px. */
+// Helper compact : réalise le traitement métier associé.
 function compact(root: ParentNode) {
   root.querySelectorAll('table').forEach((table) => {
     const headRow = table.querySelector('thead tr');
@@ -34,6 +36,7 @@ function compact(root: ParentNode) {
   });
 }
 
+// Helper sheetFromRow : réalise le traitement métier associé.
 function sheetFromRow(row: HTMLTableRowElement): Sheet | null {
   const table = row.closest('table');
   if (!table || table.dataset.mobileDetail === 'native') return null;
@@ -47,10 +50,11 @@ function sheetFromRow(row: HTMLTableRowElement): Sheet | null {
   return { title: rows[0].value, rows };
 }
 
-/** Tables admin / manager : colonnes réduites sur téléphone, détail au clic. */
+// Composant React MobileTableBridge : prépare l’état et affiche son interface.
 export default function MobileTableBridge({ rootId }: { rootId: string }) {
   const [sheet, setSheet] = useState<Sheet | null>(null);
 
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     const root = document.getElementById(rootId);
     if (!root) return;
@@ -78,6 +82,7 @@ export default function MobileTableBridge({ rootId }: { rootId: string }) {
   }, [rootId]);
 
   if (!sheet) return null;
+  // Retourne le rendu JSX du composant.
   return (
     <DialogFrame
       icon="info"

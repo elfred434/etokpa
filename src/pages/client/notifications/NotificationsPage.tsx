@@ -1,3 +1,4 @@
+// Centre de notifications client avec filtrage et marquage comme lues.
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import clsx from 'clsx';
@@ -37,7 +38,7 @@ interface UiNotification {
   orderId?: number;
 }
 
-/** Libellés statuts backend (machine à états Commande + BudgetPropose). */
+// Composant de la page Notifications : gère le chargement des données et le rendu.
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
@@ -48,7 +49,6 @@ export default function NotificationsPage() {
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
   const [hasLoaded, setHasLoaded] = useState(false);
-  // Échec du chargement : message de l'API + Réessayer (avant : « Aucune notification », trompeur).
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadPage = useCallback(
@@ -83,11 +83,12 @@ export default function NotificationsPage() {
     [isAuthenticated, isFr],
   );
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     loadPage(page);
   }, [loadPage, page]);
 
-  // Temps réel : un événement push sur notifications.{userId} → rechargement silencieux
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!isAuthenticated) return;
     return subscribeRealtimeRefresh(['notifications'], () => loadPage(page));
@@ -108,12 +109,14 @@ export default function NotificationsPage() {
   const filtered = filter === 'all' ? notifications : notifications.filter((n) => n.type === filter);
   const unreadCount = notifications.filter((n) => n.unread).length;
 
+  // Helper markRead : réalise le traitement métier associé.
   const markRead = (item: UiNotification) => {
     if (!item.unread) return;
     notificationsApi.markRead(item.id).catch(() => {});
     setNotifications((list) => list.map((n) => (n.id === item.id ? { ...n, unread: false } : n)));
   };
 
+  // Helper markAllRead : réalise le traitement métier associé.
   const markAllRead = () => {
     setNotifications((list) =>
       list.map((n) => {
@@ -123,6 +126,7 @@ export default function NotificationsPage() {
     );
   };
 
+  // Gère l’action utilisateur NotificationClick.
   const handleNotificationClick = (item: UiNotification) => {
     markRead(item);
     if (item.orderId) {
@@ -134,12 +138,12 @@ export default function NotificationsPage() {
     }
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="bg-bg-app font-body text-text-main min-h-screen flex flex-col">
       <ClientNavbar />
 
       <div className="mt-[52px] md:mt-[64px] flex flex-1 max-w-[1200px] w-full mx-auto pb-24">
-        {/* Sidebar Navigation */}
         <aside className="hidden md:flex w-64 border-r border-border-default bg-bg-card flex-col p-4 gap-2 shrink-0">
           <div className="px-2 py-3">
             <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider">{tx("Filtres")}</p>
@@ -174,10 +178,8 @@ export default function NotificationsPage() {
           </div>
         </aside>
 
-        {/* Content Area */}
         <section className="flex-1 bg-bg-app p-4 sm:p-6 md:p-8 min-w-0">
           <div className="max-w-4xl mx-auto">
-            {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-h2 md:text-h1 font-bold text-text-main mb-1">
@@ -200,7 +202,6 @@ export default function NotificationsPage() {
               </button>
             </div>
 
-            {/* Mobile Filter Tabs */}
             <div className="flex flex-wrap gap-2 mb-4 md:hidden">
               {FILTERS.map(({ key, label, icon }) => (
                 <button
@@ -220,7 +221,6 @@ export default function NotificationsPage() {
               ))}
             </div>
 
-            {/* Notification List */}
             {loadError && notifications.length === 0 ? (
               <div className="bg-bg-card border border-border-default rounded-xl">
                 <ApiErrorState

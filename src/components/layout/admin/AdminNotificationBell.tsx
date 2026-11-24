@@ -1,3 +1,4 @@
+// Cloche de notifications avec menu déroulant pour les espaces admin et manager.
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import NotificationItem from '../../shared/NotificationItem';
@@ -9,21 +10,13 @@ import type { AppNotification } from '../../../types/models';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
 
-
 interface AdminNotificationBellProps {
-  /** Classes du bouton : chaque barre garde le style de sa maquette. */
   className: string;
-  /** Icône de la cloche (MIcon ou icône Tabler selon la maquette). */
   icon: ReactNode;
-  /** Classes de la pastille « non lues » (affichée seulement s'il y en a). */
   dotClassName?: string;
 }
 
-/**
- * Cloche de l'espace admin — vraies notifications (GET /notifications), compteur des non lues,
- * liste déroulante (dernières notifications), clic = marquée comme lue (PATCH …/read),
- * rafraîchissement en temps réel, lien vers l'historique complet (/notifications).
- */
+// Composant React AdminNotificationBell : prépare l’état et affiche son interface.
 export default function AdminNotificationBell({ className, icon, dotClassName = 'absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full' }: AdminNotificationBellProps) {
   useLanguage();
   const [open, setOpen] = useState(false);
@@ -44,6 +37,7 @@ export default function AdminNotificationBell({ className, icon, dotClassName = 
       .catch((e) => alertApiError(e, 'admin-notifications'));
   }, []);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     load();
     return subscribeRealtimeRefresh(['notifications'], load);
@@ -51,6 +45,7 @@ export default function AdminNotificationBell({ className, icon, dotClassName = 
 
   const unread = items.filter((n) => n.unread).length;
 
+  // Helper markRead : réalise le traitement métier associé.
   const markRead = (n: AppNotification) => {
     setOpen(false);
     if (!n.unread) return;
@@ -58,6 +53,7 @@ export default function AdminNotificationBell({ className, icon, dotClassName = 
     notificationsApi.markRead(n.id).catch((e) => alertApiError(e, 'admin-notifications'));
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="relative">
       <button

@@ -1,3 +1,4 @@
+// Gère l’état Redux du panier client (ajout, quantité, suppression, totaux, persistance locale).
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { CartItem, Product } from '../../../types/models';
@@ -9,12 +10,12 @@ export interface CartProductRemovalNotice {
 
 interface CartState {
   items: CartItem[];
-  /** Produits supprimés du catalogue pendant qu'ils étaient encore dans le panier. */
   removedProducts: CartProductRemovalNotice[];
 }
 
 const initialState: CartState = { items: [], removedProducts: [] };
 
+// Slice Redux cartSlice : définit l’état initial et les actions associées.
 const cartSlice = createSlice({
   name: 'cart',
   initialState,
@@ -57,10 +58,12 @@ const cartSlice = createSlice({
 
 export const { add, setQuantity, remove, productsDeletedFromCart, clearProductRemovalNotices, clear } = cartSlice.actions;
 
-/* ---------- Selectors ---------- */
+// Helper selectCount : réalise le traitement métier associé.
 export const selectCount = (items: CartItem[]) => items.reduce((s, i) => s + i.quantite, 0);
+// Helper selectSubtotal : réalise le traitement métier associé.
 export const selectSubtotal = (items: CartItem[]) =>
   items.reduce((s, i) => s + i.product.prix * i.quantite, 0);
+// Helper selectSavings : réalise le traitement métier associé.
 export const selectSavings = (items: CartItem[]) =>
   items.reduce(
     (s, i) => s + (i.product.negotiated ? (i.product.negotiated.oldPrice - i.product.prix) * i.quantite : 0),

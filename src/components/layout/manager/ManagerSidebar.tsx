@@ -1,3 +1,4 @@
+// Menu latéral de navigation du manager (commandes, équipe, statistiques, litiges).
 import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
 import LogoutButton from '../../shared/LogoutButton';
@@ -6,7 +7,6 @@ import { formatManagerZoneLabel } from '../../../utils/managerAssignment';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import { usePreservedScroll } from '../../../hooks/usePreservedScroll';
-
 
 type Item = { label: string; path: string; icon: string; badge?: string };
 
@@ -21,11 +21,13 @@ const ITEMS: Item[] = [
 
 type Props = { currentPath: string; open?: boolean; onClose?: () => void };
 
+// Composant de mise en page ManagerSidebar.
 export default function ManagerSidebar({ currentPath, open = false, onClose }: Props) {
   useLanguage();
   useAuthRevision();
   const asideRef = usePreservedScroll<HTMLElement>('manager-sidebar-aside');
   const navRef = usePreservedScroll<HTMLElement>('manager-sidebar-nav');
+  // Retourne le rendu JSX du composant.
   return (
     <aside
       ref={asideRef}
@@ -50,7 +52,6 @@ export default function ManagerSidebar({ currentPath, open = false, onClose }: P
         <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2">
           <MIcon name="location_on" className="text-primary-tint text-[18px]" />
           <div className="flex-1">
-            {/* Vraie zone du manager connecté (ou « Toutes les zones » pour un admin sans fiche manager) */}
             <p className="text-label font-semibold text-white">
               {formatManagerZoneLabel(currentUserZone(), isAdminRole())}
             </p>
@@ -91,7 +92,6 @@ export default function ManagerSidebar({ currentPath, open = false, onClose }: P
             <span className="flex-1">{tx("Espace admin")}</span>
           </Link>
         )}
-        {/* Bascule vers l'espace client (le manager y a accès) */}
         <Link
           to="/"
           className="mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-body text-white transition hover:bg-white/10"
@@ -106,7 +106,6 @@ export default function ManagerSidebar({ currentPath, open = false, onClose }: P
           <MIcon name="account_circle" className="text-[18px]" />
           <span className="flex-1">{tx("Profil")}</span>
         </Link>
-        {/* Utilisateur réellement connecté (plus de « Serge Migan » inventé) */}
         <Link
           to="/profil"
           title={tx("Ouvrir le profil")}

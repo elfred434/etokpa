@@ -1,12 +1,10 @@
+// Parse les contre-propositions admin et calcule la validité de 12 h des offres.
 const COUNTER_PREFIX_RE = /contre[- ]proposition\s*[:\-–]\s*([\d\s.,\u00a0\u202f]+)\s*f?\s*cfa/i;
 
 export const NEGOTIATION_VALIDITY_HOURS = 12;
 export const NEGOTIATION_VALIDITY_MS = NEGOTIATION_VALIDITY_HOURS * 60 * 60 * 1000;
 
-/**
- * Formate le message `admin_response` d'une contre-proposition envoyée via
- * `PATCH /admin/budget-proposals/{id}` (`decision: 'refuse'`).
- */
+// Transforme ou formate les données via formatCounterProposalMessage.
 export function formatCounterProposalMessage(amount: number, note?: string): string {
   const clean = Math.round(amount).toLocaleString('fr-FR');
   const trimmed = note?.trim();
@@ -15,7 +13,7 @@ export function formatCounterProposalMessage(amount: number, note?: string): str
     : `Contre-proposition : ${clean} FCFA`;
 }
 
-/** Extrait le montant contre-proposé depuis `admin_response`, sinon `null`. */
+// Transforme ou formate les données via extractCounterOfferPrice.
 export function extractCounterOfferPrice(adminResponse?: string | null): number | null {
   if (!adminResponse) return null;
   const match = adminResponse.match(COUNTER_PREFIX_RE);
@@ -25,7 +23,7 @@ export function extractCounterOfferPrice(adminResponse?: string | null): number 
   return Number.isFinite(amount) && amount > 0 ? amount : null;
 }
 
-/** Date d'expiration (+12 h à partir de `responded_at ?? created_at`), sinon `null`. */
+// Helper negotiationExpiresAt : réalise le traitement métier associé.
 export function negotiationExpiresAt(proposal: {
   responded_at?: string | null;
   created_at?: string | null;
@@ -37,10 +35,7 @@ export function negotiationExpiresAt(proposal: {
   return new Date(ts + NEGOTIATION_VALIDITY_MS);
 }
 
-/**
- * Miroir de `BudgetPropose::isAcceptedAndValid` côté backend :
- * acceptée et dans la fenêtre de validité de 12 h (`responded_at ?? created_at`).
- */
+// Vérifie la condition métier isAcceptedNegotiationValid.
 export function isAcceptedNegotiationValid(
   proposal: {
     statut?: string | null;
@@ -55,7 +50,7 @@ export function isAcceptedNegotiationValid(
   return exp.getTime() > nowMs;
 }
 
-/** Miroir de `CleanupExpiredProposals` : une offre `en_attente` expire après 12 h (`created_at`). */
+// Vérifie la condition métier isPendingNegotiationValid.
 export function isPendingNegotiationValid(
   proposal: {
     statut?: string | null;
@@ -70,7 +65,7 @@ export function isPendingNegotiationValid(
   return ts + NEGOTIATION_VALIDITY_MS > nowMs;
 }
 
-/** Libellé court du temps restant avant expiration (12 h). */
+// Transforme ou formate les données via formatNegotiationRemaining.
 export function formatNegotiationRemaining(expiresAtIso: string | undefined, isFr: boolean, nowMs = Date.now()): string | null {
   if (!expiresAtIso) return null;
   const diffMs = Date.parse(expiresAtIso) - nowMs;

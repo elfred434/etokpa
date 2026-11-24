@@ -1,3 +1,4 @@
+// Bouton d’actualisation manuelle indiquant l’heure de la dernière synchronisation.
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import MIcon from './MIcon';
@@ -6,11 +7,11 @@ import { AUTO_REFRESH_MS, useRefreshState } from '../../hooks/useRefresh';
 import { requestRefresh } from '../../services/refresh/refreshBus';
 
 interface RefreshButtonProps {
-  /** Affiche le libellé à côté de l'icône (en-têtes des espaces admin/manager/livreur). */
   withLabel?: boolean;
   className?: string;
 }
 
+// Helper heureCourte : réalise le traitement métier associé.
 function heureCourte(ts: number): string {
   try {
     return new Date(ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
@@ -19,15 +20,7 @@ function heureCourte(ts: number): string {
   }
 }
 
-/**
- * Bouton « Actualiser » — présent sur toutes les barres supérieures (client, admin,
- * manager, livreur). Il déclenche `requestRefresh('manual')` : toutes les
- * informations affichées (catalogue, commandes, panier, notifications, tableaux
- * staff…) sont rechargées d'un coup, sans rechargement de page.
- *
- * L'icône tourne pendant l'appel ; l'infobulle indique l'heure de la dernière
- * mise à jour et rappelle que l'actualisation automatique est active.
- */
+// Composant React RefreshButton : prépare l’état et affiche son interface.
 export default function RefreshButton({ withLabel = false, className = '' }: RefreshButtonProps) {
   const { busy, lastRefreshAt } = useRefreshState();
 
@@ -40,6 +33,7 @@ export default function RefreshButton({ withLabel = false, className = '' }: Ref
     .filter(Boolean)
     .join(' · ');
 
+  // Gère l’action utilisateur Click.
   const onClick = () => {
     if (busy) return;
     void requestRefresh('manual').then(() => {
@@ -47,6 +41,7 @@ export default function RefreshButton({ withLabel = false, className = '' }: Ref
     });
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <button
       type="button"

@@ -1,7 +1,4 @@
-/**
- * Returns a bounded diagnostic message only in Vite development mode. It never
- * returns stacks, credentials or full URLs; production receives no raw message.
- */
+// Formate les messages d’erreur détaillés en environnement de développement.
 export function getDevelopmentErrorMessage(error: unknown, maxLength = 500): string | undefined {
   if (!import.meta.env.DEV) return undefined;
 

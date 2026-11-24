@@ -1,3 +1,4 @@
+// Déclare toutes les routes TanStack Router (public, client, livreur, manager, admin) et le gestionnaire 404/erreur.
 import { createRootRoute, createRoute, createRouter, Outlet, redirect } from '@tanstack/react-router';
 import { Toaster } from 'react-hot-toast';
 import { currentRole, guardRoute, hasSession, homeForRole, redirectOnSessionExpired } from './authGuard';
@@ -57,8 +58,6 @@ import { AdminActionDialogHost } from '../components/shared/AdminActionDialogs';
 import RouterErrorFallback from '../components/errors/RouterErrorFallback';
 
 const rootRoute = createRootRoute({
-  // Garde globale (authGuard.ts) : non connecté → /connexion sur toute page hors accueil et écrans
-  // d'auth ; mauvais rôle → espace de son rôle. Droits calqués sur ceux du backend.
   beforeLoad: guardRoute,
   component: () => (
     <>
@@ -69,9 +68,6 @@ const rootRoute = createRootRoute({
         position="top-center"
         toastOptions={{
           style: {
-            // Surfaces sombres dans les deux thèmes (contraste garanti), mais
-            // issues des jetons : brun profond en clair, surface élevée en sombre
-            // — sinon la notification se confondrait avec le fond de page.
             background: 'var(--color-inverse-surface)',
             color: '#ffffff',
             borderRadius: '10px',
@@ -92,12 +88,10 @@ const connexionRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/connexion',
   component: ConnexionPage,
-  // ?redirect= : page demandée avant la connexion (garde authGuard.ts), rejouée après la 2FA.
   validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
     redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
   }),
 });
-// Alias /login (lien de l'e-mail RoleChangedNotification) → /connexion ou espace du rôle si déjà connecté.
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
@@ -110,7 +104,6 @@ const loginRoute = createRoute({
 });
 const inscriptionRoute = createRoute({ getParentRoute: () => rootRoute, path: '/inscription', component: InscriptionPage });
 const verificationRoute = createRoute({ getParentRoute: () => rootRoute, path: '/verification-2fa', component: Verification2faPage });
-// Lien envoyé par POST /api/auth/forgot-password : /reset-password?token=...&email=...
 const resetPasswordRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/reset-password',
@@ -127,28 +120,23 @@ const catalogueRoute = createRoute({
   component: CatalogPage,
   validateSearch: (search: Record<string, unknown>): { q?: string; cat?: string } => ({
     q: typeof search.q === 'string' ? search.q : undefined,
-    // ?cat=c{id} (catégorie API) ou ?cat=pack — lien depuis les tuiles de l'accueil
     cat: typeof search.cat === 'string' ? search.cat : undefined,
   }),
 });
 const produitRoute = createRoute({ getParentRoute: () => rootRoute, path: '/produit/$productId', component: ProductPage });
 const packRoute = createRoute({ getParentRoute: () => rootRoute, path: '/pack/$packId', component: PackPage });
-// Mes packs (client) : atelier de création inspiré de l'admin (/admin/packs) —
-// repli local si le serveur n'a pas encore ouvert la création aux clients (note B-19).
 const mesPacksRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mes-packs', component: MesPacksPage });
 const panierRoute = createRoute({ getParentRoute: () => rootRoute, path: '/panier', component: CartPage });
 const confirmationRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/confirmation',
   component: ConfirmationPage,
-  // Retour navigateur FedaPay : /confirmation?status=approved&id=515107
   validateSearch: (search: Record<string, unknown>): { status?: string; id?: string } => ({
     status: typeof search.status === 'string' ? search.status : undefined,
     id: typeof search.id === 'string' || typeof search.id === 'number' ? String(search.id) : undefined,
   }),
 });
 const profilRoute = createRoute({ getParentRoute: () => rootRoute, path: '/profil', component: ProfilePage });
-// Paramètres du client : langue et thème (déplacés hors de la barre de navigation).
 const parametresRoute = createRoute({ getParentRoute: () => rootRoute, path: '/parametres', component: ParametresPage });
 const negociationsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/negociations', component: NegotiationsPage });
 const orderTrackingRoute = createRoute({
@@ -170,6 +158,7 @@ const orderTrackingRoute = createRoute({
     };
   },
 });
+// Helper commandeSearch : réalise le traitement métier associé.
 const commandeSearch = (search: Record<string, unknown>): { commande?: number } => {
   const n = Number(search.commande);
   return { commande: Number.isInteger(n) && n > 0 ? n : undefined };
@@ -238,14 +227,12 @@ const managerLitigesRoute = createRoute({ getParentRoute: () => rootRoute, path:
 const managerParametresRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager/parametres', component: ManagerParametresPage });
 const managerZonePrefsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/manager/parametres/zone', component: ManagerZonePrefsPage });
 
-// Espace livreur (rôle livreur uniquement — authGuard.ts). ?commande=<id> : course ciblée.
 const livreurRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur', component: LivreurDashboardPage });
 const livreurCourseRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/course', component: LivreurCoursePage, validateSearch: commandeSearch });
 const livreurMessagingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/messagerie', component: LivreurMessagingPage, validateSearch: commandeSearch });
 const livreurRecapRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/recapitulatif', component: LivreurRecapPage, validateSearch: commandeSearch });
 const livreurHistoriqueRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/historique', component: LivreurHistoryPage });
 const livreurParametresRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/parametres', component: LivreurSettingsPage });
-// Route temporaire de review des composants (retirée à la fin du Sprint 1).
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -302,7 +289,6 @@ const routeTree = rootRoute.addChildren([
 
 export const router = createRouter({ routeTree, defaultErrorComponent: RouterErrorFallback });
 
-// Session perdue en cours de navigation (401 de l'API) → /connexion hors pages publiques (authGuard.ts).
 redirectOnSessionExpired(router);
 
 declare module '@tanstack/react-router' {

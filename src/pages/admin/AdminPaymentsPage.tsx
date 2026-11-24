@@ -1,13 +1,15 @@
+// Liste globale des transactions et paiements de la plateforme.
 import { useState } from 'react';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import PaymentsPanel from '../../components/payments/PaymentsPanel';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
-/** Tous les paiements, et ceux du compte admin connecté. */
+// Composant de la page AdminPayments : gère le chargement des données et le rendu.
 export default function AdminPaymentsPage() {
   useLanguage();
   const [vue, setVue] = useState<'all' | 'own-admin'>('all');
+  // Retourne le rendu JSX du composant.
   return (
     <AdminLayout currentPath="/admin/paiements">
       <div className="mb-4 flex flex-wrap gap-2">

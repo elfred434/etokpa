@@ -1,3 +1,4 @@
+// Bouton de déconnexion appelant l’API puis réinitialisant la session locale.
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import clsx from 'clsx';
@@ -9,17 +10,13 @@ import { tx } from '../../i18n/tx';
 import MIcon from './MIcon';
 
 interface LogoutButtonProps {
-  /** Classes de présentation adaptées à la barre ou à la navigation latérale. */
   className?: string;
-  /** Affiche « Déconnexion » à côté de l'icône. */
   withLabel?: boolean;
-  /** Ton clair pour les barres latérales sombres ou colorées. */
   tone?: 'default' | 'inverse';
-  /** Action facultative du parent, par exemple fermer le menu mobile. */
   onClick?: () => void;
 }
 
-/** Déconnexion partagée : invalide la session côté API puis nettoie toujours la session locale. */
+// Composant React LogoutButton : prépare l’état et affiche son interface.
 export default function LogoutButton({ className = '', withLabel = false, tone = 'default', onClick }: LogoutButtonProps) {
   useLanguage();
   useAuthRevision();
@@ -28,15 +25,14 @@ export default function LogoutButton({ className = '', withLabel = false, tone =
 
   if (!hasSession()) return null;
 
+  // Helper logout : réalise le traitement métier associé.
   const logout = async () => {
     if (pending) return;
     onClick?.();
     setPending(true);
     try {
-      // authApi.logout() efface la session locale dans son finally, même si le serveur est hors ligne.
       await authApi.logout();
     } catch {
-      // L'utilisateur est tout de même déconnecté localement par le service d'authentification.
     }
     toast.success(tx('Déconnexion effectuée'), { id: 'tokpa-logout-done' });
     try {
@@ -46,6 +42,7 @@ export default function LogoutButton({ className = '', withLabel = false, tone =
     }
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <button
       type="button"

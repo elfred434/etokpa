@@ -1,14 +1,4 @@
-/**
- * Bouton « Reçu » — télécharge le reçu PDF d'un paiement.
- *
- * Utilisé côté client (page Paiements, suivi de commande) et côté
- * administration (page Paiements). Le reçu est généré dans le navigateur
- * à partir des données de l'API : il fonctionne pour tous les statuts de
- * paiement, les non-payés portant la mention « NON PAYÉ » bien visible.
- *
- * Le détail des articles vient de `GET /orders/{id}` ; s'il n'est pas
- * accessible, le reçu est tout de même produit (montant, référence, date).
- */
+// Bouton déclenchant le téléchargement du reçu PDF d’une commande.
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MIcon from '../shared/MIcon';
@@ -32,6 +22,7 @@ import {
 import { downloadReceiptPdf } from '../../services/receipts/receiptPdf';
 import { localeRecu, receiptLabels } from '../../services/receipts/receiptLabels';
 
+// Helper cleanText : réalise le traitement métier associé.
 function cleanText(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
@@ -40,21 +31,16 @@ function cleanText(value: unknown): string | null {
 
 type Props = {
   payment: ReceiptPayment;
-  /** Commande déjà chargée (évite un appel réseau supplémentaire). */
   order?: ReceiptOrder | null;
-  /** Informations client déjà connues (ex. annuaire admin) quand l'API commande ne renvoie pas `client`. */
   client?: ReceiptClientInput | null;
-  /** Autorise le repli sur le profil de la session active quand il s'agit du paiement du client connecté. */
   allowSessionFallback?: boolean;
-  /** `inline` = lien discret (listes) · `button` = bouton bordé (détails). */
   variant?: 'inline' | 'button';
-  /** Nom accessible / identifiant de test. */
   testId?: string;
-  /** Empêche l'ouverture de la modale parente lors du clic. */
   stopPropagation?: boolean;
   className?: string;
 };
 
+// Composant React ReceiptButton : prépare l’état et affiche son interface.
 export default function ReceiptButton({
   payment,
   order = null,
@@ -65,13 +51,14 @@ export default function ReceiptButton({
   stopPropagation = false,
   className = '',
 }: Props) {
-  useLanguage(); // le libellé suit la langue choisie
+  useLanguage();
   const [busy, setBusy] = useState(false);
 
   if (order && !canDownloadReceipt(order)) {
     return null;
   }
 
+  // Helper telecharger : réalise le traitement métier associé.
   const telecharger = async () => {
     if (busy) return;
     setBusy(true);
@@ -82,7 +69,7 @@ export default function ReceiptButton({
           const res = await ordersApi.getOrder(payment.order_id);
           commande = ((res as { data?: ReceiptOrder })?.data ?? res) as ReceiptOrder;
         } catch {
-          commande = null; // reçu produit sans le détail des articles
+          commande = null;
         }
       }
       if (commande && !canDownloadReceipt(commande)) {
@@ -129,7 +116,6 @@ export default function ReceiptButton({
               if (!clientTel) clientTel = cleanText(profile.telephone);
             }
           } catch {
-            // Repli silencieux sur les informations déjà disponibles.
           }
         }
       }
@@ -154,6 +140,7 @@ export default function ReceiptButton({
       ? 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-label font-semibold text-primary hover:bg-primary-tint transition-colors cursor-pointer'
       : 'inline-flex items-center gap-1 font-semibold text-primary hover:underline cursor-pointer';
 
+  // Retourne le rendu JSX du composant.
   return (
     <button
       type="button"

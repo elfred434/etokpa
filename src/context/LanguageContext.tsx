@@ -1,9 +1,9 @@
+// Fournit le contexte React de langue active (fr, en, es, de, pt) avec persistance locale.
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { TRANSLATIONS } from '../constants/translations';
 
 export type Language = 'fr' | 'en' | 'es' | 'de' | 'pt';
 
-/** Ordre de cycle du sélecteur de langue et libellés natifs. */
 export const LANGUAGES: ReadonlyArray<{ code: Language; label: string }> = [
   { code: 'fr', label: 'Français' },
   { code: 'en', label: 'English' },
@@ -14,6 +14,7 @@ export const LANGUAGES: ReadonlyArray<{ code: Language; label: string }> = [
 
 export const LANGUAGE_CODES: Language[] = LANGUAGES.map((l) => l.code);
 
+// Vérifie la condition métier isLanguage.
 export function isLanguage(value: unknown): value is Language {
   return typeof value === 'string' && (LANGUAGE_CODES as string[]).includes(value);
 }
@@ -25,7 +26,6 @@ interface LanguageContextType {
   t: (key: string) => string;
   isFr: boolean;
   isEn: boolean;
-  /** Libellé natif de la langue active (ex: « Español »). */
   languageLabel: string;
 }
 
@@ -33,41 +33,39 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 const LOCAL_STORAGE_KEY = 'tokpa_lang';
 
+// Composant React LanguageProvider : prépare l’état et affiche son interface.
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (isLanguage(saved)) return saved;
     } catch {
-      // Fallback si localStorage non disponible
     }
     return 'fr';
   });
 
+  // Met à jour les données ou l’état via setLanguage.
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, lang);
     } catch {
-      // Ignore storage errors
     }
   };
 
-  /** Cycle fr → en → es → de → pt → fr. */
+  // Helper toggleLanguage : réalise le traitement métier associé.
   const toggleLanguage = () => {
     const index = LANGUAGE_CODES.indexOf(language);
     const next = LANGUAGE_CODES[(index + 1) % LANGUAGE_CODES.length];
     setLanguage(next);
   };
 
-  // Synchronisation avec l'attribut lang de l'élément html
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     document.documentElement.lang = language;
   }, [language]);
 
-  /**
-   * Fonction de traduction par clé imbriquée (ex: "nav.market" ou "home.heroTitle")
-   */
+  // Helper t : réalise le traitement métier associé.
   const t = (key: string): string => {
     const keys = key.split('.');
     let current: unknown = TRANSLATIONS[language];
@@ -76,13 +74,12 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (current && typeof current === 'object' && k in current) {
         current = (current as Record<string, unknown>)[k];
       } else {
-        // Fallback en français si la clé manque dans la langue active
         let fallback: unknown = TRANSLATIONS['fr'];
         for (const fbKey of keys) {
           if (fallback && typeof fallback === 'object' && fbKey in fallback) {
             fallback = (fallback as Record<string, unknown>)[fbKey];
           } else {
-            return key; // Si clé introuvable, retourne la clé
+            return key;
           }
         }
         return typeof fallback === 'string' ? fallback : key;
@@ -92,6 +89,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return typeof current === 'string' ? current : key;
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <LanguageContext.Provider
       value={{
@@ -109,6 +107,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   );
 };
 
+// Hook React useLanguage : encapsule l’état et les effets associés.
 export const useLanguage = (): LanguageContextType => {
   const context = useContext(LanguageContext);
   if (!context) {

@@ -1,3 +1,4 @@
+// Écoute les notifications temps réel Laravel Reverb, affiche les alertes et déclenche le rafraîchissement des vues.
 import { useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
@@ -13,18 +14,18 @@ export interface RealtimeRefreshEvent {
   payload?: Record<string, unknown>;
 }
 
-/** Déclenche un rafraîchissement pour les pages abonnées (via `subscribeRealtimeRefresh`). */
+// Helper emitRealtimeRefresh : réalise le traitement métier associé.
 export function emitRealtimeRefresh(event: RealtimeRefreshEvent): void {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent<RealtimeRefreshEvent>('tokpa:realtime-refresh', { detail: event }));
   }
 }
 
-/** Abonnement typé à `tokpa:realtime-refresh` (scopes multiples). */
+// Helper subscribeRealtimeRefresh : réalise le traitement métier associé.
 export function subscribeRealtimeRefresh(scopes: RealtimeRefreshEvent['scope'][], callback: (e: RealtimeRefreshEvent) => void): () => void {
+  // Helper handler : réalise le traitement métier associé.
   const handler = (ev: Event) => {
     const detail = (ev as CustomEvent<RealtimeRefreshEvent>).detail;
-    // Le scope 'all' émis par Actualiser doit réveiller chaque abonnement ciblé.
     if (detail && (detail.scope === 'all' || scopes.includes('all') || scopes.includes(detail.scope))) {
       callback(detail);
     }
@@ -50,6 +51,7 @@ type StoredRealtimeUser = {
   } | null;
 };
 
+// Récupère et normalise les données pour readRealtimeUser.
 function readRealtimeUser(): StoredRealtimeUser | null {
   try {
     const raw = localStorage.getItem('tokpa_user');
@@ -59,11 +61,13 @@ function readRealtimeUser(): StoredRealtimeUser | null {
   }
 }
 
+// Helper zoneIdOf : réalise le traitement métier associé.
 function zoneIdOf(user: StoredRealtimeUser): number | undefined {
   const id = Number(user.profil?.zone_id ?? user.profil?.zone?.id ?? 0);
   return Number.isInteger(id) && id > 0 ? id : undefined;
 }
 
+// Helper zoneIdsFromResponse : réalise le traitement métier associé.
 function zoneIdsFromResponse(value: unknown): number[] {
   const body = value && typeof value === 'object' && 'data' in value
     ? (value as { data?: unknown }).data
@@ -76,22 +80,13 @@ function zoneIdsFromResponse(value: unknown): number[] {
   }).filter((id) => id > 0))];
 }
 
-/**
- * Hook global temps réel — canal privé `notifications.{userId}` du backend.
- * Événements écoutés (voir app/Events/*.php du backend) :
- *   - order.status.changed   {order_id, statut, previous}
- *   - budget.responded       (modèle BudgetPropose : id, statut, admin_response, commande?)
- *   - payment.confirmed      (modèle Payment : id, order_id, montant)
- *   - delivery.assigned      (commande; envoyé au livreur, au client et aux managers de la zone)
- *
- * Toasts bilingues + émission d'événements de rafraîchissement pour les pages
- * (orders, négociations, notifications) via `subscribeRealtimeRefresh`.
- */
+// Hook React useRealtimeNotifications : encapsule l’état et les effets associés.
 export function useRealtimeNotifications(sessionKey: number): void {
   const { isFr } = useLanguage();
   const isFrRef = useRef(isFr);
   isFrRef.current = isFr;
 
+  // Abonne le composant au canal temps réel Reverb et nettoie l’écoute au démontage.
   useEffect(() => {
     if (!localStorage.getItem('tokpa_token')) return;
 
@@ -216,7 +211,6 @@ export function useRealtimeNotifications(sessionKey: number): void {
     if (role === 'manager') {
       listenManagerZone(zoneIdOf(user));
     } else if (role === 'admin' || role === 'super_admin') {
-      // Les admins peuvent recevoir les assignations de toutes les zones.
       listenManagerZone(zoneIdOf(user));
       void catalogApi.getZones()
         .then((response) => {

@@ -1,21 +1,20 @@
+// Composant d’affichage d’erreur API avec bouton de réessai.
 import EmptyState from './EmptyState';
 import MIcon from './MIcon';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
 interface ApiErrorStateProps {
-  /** Ce qui n'a pas pu être chargé, ex. « Impossible de charger les produits ». */
   title: string;
-  /** Message formaté : détails bornés en développement, résumé filtré en production. */
   message: string;
-  /** Relance l'appel ; absent = pas de bouton. */
   onRetry?: () => void;
   className?: string;
 }
 
-/** Échec API : message formaté selon l'environnement + « Réessayer » (sans données factices). */
+// Composant React ApiErrorState : prépare l’état et affiche son interface.
 export default function ApiErrorState({ title, message, onRetry, className }: ApiErrorStateProps) {
   useLanguage();
+  // Retourne le rendu JSX du composant.
   return (
     <EmptyState
       icon={<MIcon name="cloud_off" className="text-4xl text-primary" />}

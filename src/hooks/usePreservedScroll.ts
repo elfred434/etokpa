@@ -1,17 +1,15 @@
+// Mémorise et restaure la position de défilement d’un conteneur entre deux navigations.
 import { useLayoutEffect, useRef, type RefObject } from 'react';
 
 const scrollPositions = new Map<string, number>();
 
-/** Réinitialise les positions mémorisées (utile en tests unitaires). */
+// Helper resetPreservedScroll : réalise le traitement métier associé.
 export function resetPreservedScroll(key?: string): void {
   if (key) scrollPositions.delete(key);
   else scrollPositions.clear();
 }
 
-/**
- * Conserve `scrollTop` d'un conteneur défilant (ex. barre latérale admin/manager)
- * entre deux navigations lorsque le layout est démonté puis remonté par le routeur.
- */
+// Hook React usePreservedScroll : encapsule l’état et les effets associés.
 export function usePreservedScroll<T extends HTMLElement>(key: string): RefObject<T | null> {
   const ref = useRef<T | null>(null);
 

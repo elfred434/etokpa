@@ -1,3 +1,4 @@
+// Mise en page principale de l’espace manager de zone (barre latérale, cloche, rafraîchissement).
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import MIcon from '../../shared/MIcon';
@@ -23,9 +24,9 @@ import { listOf } from '../../../services/api/unwrap';
 import { alertApiError } from '../../../utils/apiError';
 import toast from 'react-hot-toast';
 
-
 type Props = { children: ReactNode; currentPath: string };
 
+// Composant de mise en page ManagerLayout.
 export default function ManagerLayout({ children, currentPath }: Props) {
   useLanguage();
   useAuthRevision();
@@ -39,6 +40,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
   const [zoneId, setZoneId] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     if (!open) return;
     catalogApi.getZones()
@@ -51,6 +53,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
       .catch((e) => alertApiError(e, 'manager-zones'));
   }, [open, zone, refreshTick]);
 
+  // Met à jour les données ou l’état via changerZone.
   const changerZone = async () => {
     const id = currentUserId();
     if (!id) {
@@ -69,6 +72,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
     }
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="min-h-screen bg-bg-card text-on-surface">
       {navOpen && (

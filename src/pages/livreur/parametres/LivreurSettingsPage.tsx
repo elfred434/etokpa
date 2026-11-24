@@ -1,3 +1,4 @@
+// Page des paramètres du livreur (langue, thème et préférences).
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -17,13 +18,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 
-
-/**
- * Paramètres livreur — design Stitch « param_tres_livreur_tokpa », données réelles : GET /profile
- * (identité, disponibilité, zone), PUT /profile (prénom, nom, téléphone, photo si lien court).
- * La zone reste attribuée par l'administration. L'e-mail est envoyé ; le serveur peut l'ignorer.
- * Retirés (aucune route) : véhicule & documents, reversement des gains, interrupteur de service (B-26).
- */
+// Composant de la page LivreurSettings : gère le chargement des données et le rendu.
 export default function LivreurSettingsPage() {
   useLanguage();
   const navigate = useNavigate();
@@ -39,6 +34,7 @@ export default function LivreurSettingsPage() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     setErr(null);
@@ -68,6 +64,7 @@ export default function LivreurSettingsPage() {
     };
   }, [reloadKey, refreshTick]);
 
+  // Helper save : réalise le traitement métier associé.
   const save = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -115,6 +112,7 @@ export default function LivreurSettingsPage() {
     }
   };
 
+  // Helper logout : réalise le traitement métier associé.
   const logout = async () => {
     await authApi.logout();
     toast.success(tx("Déconnexion effectuée"));
@@ -125,11 +123,11 @@ export default function LivreurSettingsPage() {
   const inputCls =
     'w-full rounded-[10px] border border-border-default bg-bg-card px-md py-sm font-body text-body text-text-main transition-all focus:bg-primary-tint/30 focus:outline-none';
 
+  // Retourne le rendu JSX du composant.
   return (
     <LivreurLayout>
       <div className="w-full bg-bg-app p-lg">
         <div className="flex w-full flex-col">
-          {/* Page Header & statut opérationnel (lecture seule) */}
           <div className="flex flex-col justify-between gap-md pb-lg md:flex-row md:items-center">
             <div>
               <div className="mb-xs flex items-center gap-xs text-micro uppercase tracking-wider text-text-secondary">
@@ -155,7 +153,6 @@ export default function LivreurSettingsPage() {
             )}
           </div>
 
-          {/* Thème et langue */}
           <div className="mb-lg">
             <ParametresPanel desktopColumns />
           </div>
@@ -171,7 +168,6 @@ export default function LivreurSettingsPage() {
             <LoadingState variant="livreur-settings" label={tx("Chargement de votre profil…")} />
           ) : (
             <div className="grid grid-cols-1 gap-lg lg:grid-cols-12">
-              {/* Profil & Identité */}
               <form onSubmit={save} className="flex flex-col gap-md rounded-[14px] bg-bg-card p-lg shadow-sm lg:col-span-7">
                 <div className="flex items-center justify-between pb-sm">
                   <div className="flex items-center gap-sm">
@@ -239,7 +235,6 @@ export default function LivreurSettingsPage() {
                 </div>
               </form>
 
-              {/* Mobile : bascule et déconnexion (la barre latérale est masquée) */}
               <div className="flex flex-col gap-sm lg:hidden">
                 <Link to="/" className="flex items-center justify-center gap-sm rounded-[10px] border border-border-default bg-bg-card py-sm font-label text-label font-semibold text-primary">
                   <MIcon name="storefront" className="text-[18px]" />

@@ -1,3 +1,4 @@
+// Paramètres généraux du compte manager.
 import { useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import { useLanguage } from '../../context/LanguageContext';
@@ -6,11 +7,12 @@ import ParametresPanel from '../../components/settings/ParametresPanel';
 import { currentUserZone, isAdminRole } from '../../routes/authGuard';
 import { formatManagerZoneLabel } from '../../utils/managerAssignment';
 
-
 const ONGLETS = ['Zone & Tarification', 'Règles d’attribution', 'Alertes & Notifications', 'Compte & Sécurité'];
 
+// Composant React Ligne : prépare l’état et affiche son interface.
 function Ligne({ label, aide, children }: { label: string; aide?: string; children: React.ReactNode }) {
   useLanguage();
+  // Retourne le rendu JSX du composant.
   return (
     <div className="flex flex-col gap-3 border-t border-border-default py-3 first:border-t-0 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <div className="min-w-0 flex-1">
@@ -24,16 +26,19 @@ function Ligne({ label, aide, children }: { label: string; aide?: string; childr
 
 const inputCls = 'w-full max-w-full rounded-lg border border-border-default px-3 py-2 text-label sm:w-44';
 
+// Composant de la page ManagerParametres : gère le chargement des données et le rendu.
 export default function ManagerParametresPage() {
   useLanguage();
   const [onglet, setOnglet] = useState(ONGLETS[0]);
   const [enregistre, setEnregistre] = useState(false);
 
+  // Helper enregistrer : réalise le traitement métier associé.
   const enregistrer = () => {
     setEnregistre(true);
     setTimeout(() => setEnregistre(false), 2500);
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <ManagerLayout currentPath="/manager/parametres">
       <div className="space-y-6">
@@ -42,7 +47,6 @@ export default function ManagerParametresPage() {
           <p className="text-label font-semibold text-success">{tx("Zone Ouverte & Opérationnelle")}</p>
         </div>
 
-        {/* Thème et langue : réglages réels */}
         <ParametresPanel desktopColumns />
 
         <div className="flex flex-wrap gap-2 border-b border-border-default pb-2">

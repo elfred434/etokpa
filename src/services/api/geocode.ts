@@ -1,10 +1,7 @@
+// Interroge le service de géocodage OpenStreetMap Nominatim pour rechercher des lieux au Bénin.
 export type GeoPlace = { nom: string; detail: string; lat: number; lng: number };
 
-/**
- * Recherche de lieux (géocodage OpenStreetMap / Nominatim) — comme Google Maps :
- * on tape un nom de lieu, on choisit une proposition, on récupère lat/lng.
- * Usage léger (admin), résultat en français.
- */
+// Helper searchPlaces : réalise le traitement métier associé.
 export async function searchPlaces(q: string): Promise<GeoPlace[]> {
   const url =
     'https://nominatim.openstreetmap.org/search?format=json&limit=6&accept-language=fr&addressdetails=0&q=' +

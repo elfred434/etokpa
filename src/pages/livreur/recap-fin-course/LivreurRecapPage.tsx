@@ -1,3 +1,4 @@
+// Écran récapitulatif affiché une fois la livraison confirmée.
 import { useEffect, useRef, useState } from 'react';
 import { Link, useRouterState, useSearch } from '@tanstack/react-router';
 import LivreurLayout from '../../../components/layout/livreur/LivreurLayout';
@@ -14,12 +15,7 @@ import { tr, tx } from '../../../i18n/tx';
 import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { orderLineName } from '../../../utils/orderLine';
 
-
-/**
- * Récapitulatif de fin de course — design Stitch « r_capitulatif_de_fin_de_course_tokpa », données
- * réelles : la commande livrée (état transmis par la course active, sinon GET /livreur/history).
- * Retirés (aucune donnée dans l'API) : pourboire, distance, temps, note client, vendeurs des articles.
- */
+// Composant de la page LivreurRecap : gère le chargement des données et le rendu.
 export default function LivreurRecapPage() {
   useLanguage();
   const { commande } = useSearch({ from: '/livreur/recapitulatif' });
@@ -32,7 +28,7 @@ export default function LivreurRecapPage() {
   const deliveredAt = navState?.order?.id === commande ? (navState?.deliveredAt ?? null) : null;
   const prenom = (currentUserName() ?? '').split(' ')[0];
 
-  // Rechargement de la page (plus d'état de navigation) → commande relue dans l'historique réel.
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     if (!commande || (order && refreshTick === 0)) return;
     const fetchKey = `${commande}:${reloadKey}:${refreshTick}`;
@@ -58,6 +54,7 @@ export default function LivreurRecapPage() {
     ? new Date(deliveredAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
     : '—';
 
+  // Retourne le rendu JSX du composant.
   return (
     <LivreurLayout>
       <div className="flex flex-col items-center p-xl">
@@ -75,7 +72,6 @@ export default function LivreurRecapPage() {
             )
           ) : (
             <>
-              {/* Success Header */}
               <header className="mb-xl text-center">
                 <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#10B981]/30 bg-success-light shadow-sm">
                   <MIcon name="check_circle" className="text-[38px] text-[#10B981]" />
@@ -87,9 +83,7 @@ export default function LivreurRecapPage() {
               </header>
 
               <div className="lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start lg:gap-lg">
-                {/* Main Summary Card */}
                 <section className="mb-6 overflow-hidden rounded-[14px] border-[0.5px] border-border-default bg-bg-card shadow-sm lg:mb-0">
-                  {/* Section 1: Montants réels */}
                   <div className="border-b border-border-default bg-bg-card p-6 text-center">
                     <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx("Frais de livraison")}</p>
                     <h2 className="flex flex-wrap items-center justify-center gap-2 text-[32px] font-bold text-text-main">
@@ -108,7 +102,6 @@ export default function LivreurRecapPage() {
                       </div>
                     </div>
                   </div>
-                  {/* Section 2: Course Details */}
                   <div className="grid grid-cols-1 gap-4 border-b border-border-default bg-bg-secondary p-5 sm:grid-cols-3">
                     <div className="flex flex-col">
                       <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx("Commande")}</span>
@@ -125,7 +118,6 @@ export default function LivreurRecapPage() {
                   </div>
                 </section>
 
-                {/* Order Summary Card */}
                 <section className="mb-8 rounded-[14px] border-[0.5px] border-border-default bg-bg-card p-6 shadow-sm lg:mb-0">
                   <h3 className="mb-4 flex items-center gap-2 text-base font-bold text-text-main">
                     <MIcon name="shopping_basket" className="text-[20px] text-text-secondary" />
@@ -150,7 +142,6 @@ export default function LivreurRecapPage() {
             </>
           )}
 
-          {/* Actions */}
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               to="/livreur"

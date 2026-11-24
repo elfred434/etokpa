@@ -1,3 +1,4 @@
+// Formate et catégorise les entrées du journal d’audit pour l’affichage.
 import { tr, tx, uiLang } from '../i18n/tx';
 
 const NOMS: Record<string, string> = {
@@ -22,7 +23,7 @@ const EVENEMENTS: Record<string, string> = {
   DeliveryAssigned: 'Livraison assignée',
 };
 
-/** Catégorie d'une entrée d'audit (« VERBE api/chemin » ou nom d'événement). */
+// Helper categorie : réalise le traitement métier associé.
 export function categorie(log: { action?: string } | null | undefined): string {
   const a = String(log?.action ?? '');
   if (!a.includes(' ')) return a === 'OrderStatusChanged' || a === 'DeliveryAssigned' ? 'COMMANDE' : 'SYSTEM';
@@ -36,7 +37,7 @@ export function categorie(log: { action?: string } | null | undefined): string {
   return 'SYSTEM';
 }
 
-/** Titre lisible d'une entrée d'audit. */
+// Helper titre : réalise le traitement métier associé.
 export function titre(log: { action?: string } | null | undefined): string {
   const a = String(log?.action ?? '');
   if (!a.includes(' ')) return tx(EVENEMENTS[a] ?? a);
@@ -61,7 +62,7 @@ export function titre(log: { action?: string } | null | undefined): string {
   return `${action} · ${tx(nom)}${ids.length ? ` #${ids[ids.length - 1]}` : ''}`;
 }
 
-/** Détail : statut HTTP + champs envoyés (sans objets imbriqués). */
+// Helper detail : réalise le traitement métier associé.
 export function detail(log: { details?: { event?: string; status?: number; payload?: Record<string, unknown> } } | null | undefined): string {
   const d = log?.details ?? {};
   if (d.event) {
@@ -76,7 +77,7 @@ export function detail(log: { details?: { event?: string; status?: number; paylo
   return [d.status ? `HTTP ${d.status}` : null, ...champs].filter(Boolean).join(' · ') || '—';
 }
 
-/** Horodatage relatif d'un journal d'audit. */
+// Helper quand : réalise le traitement métier associé.
 export function quand(iso?: string | null, now = new Date()): string {
   if (!iso) return '—';
   const d = new Date(iso);
@@ -89,6 +90,7 @@ export function quand(iso?: string | null, now = new Date()): string {
   return d.toLocaleDateString(LOCALE_DATE[uiLang()] ?? 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+// Helper acteur : réalise le traitement métier associé.
 export function acteur(log: {
   user_id?: number;
   user?: { nom_complet?: string; prenom?: string; nom?: string; email?: string; role?: string | { nom?: string } | null } | null;

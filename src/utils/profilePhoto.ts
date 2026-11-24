@@ -1,14 +1,16 @@
+// Gère la lecture, sauvegarde locale et conversion WebP de la photo de profil.
 import { currentUserId } from '../routes/authGuard';
 import { absImageUrl } from './imageUrl';
 
 const PREFIX = 'tokpa_local_photo_';
 
+// Helper key : réalise le traitement métier associé.
 function key(): string | null {
   const id = currentUserId();
   return id ? `${PREFIX}${id}` : null;
 }
 
-/** Photo choisie sur cet appareil, quand le serveur ne peut pas la stocker. */
+// Récupère et normalise les données pour readLocalPhoto.
 export function readLocalPhoto(): string | null {
   const k = key();
   if (!k) return null;
@@ -19,6 +21,7 @@ export function readLocalPhoto(): string | null {
   }
 }
 
+// Helper writeLocalPhoto : réalise le traitement métier associé.
 export function writeLocalPhoto(dataUrl: string | null) {
   const k = key();
   if (!k) return;
@@ -26,11 +29,11 @@ export function writeLocalPhoto(dataUrl: string | null) {
     if (dataUrl) localStorage.setItem(k, dataUrl);
     else localStorage.removeItem(k);
   } catch {
-    /* quota : la prévisualisation reste dans le formulaire */
   }
   window.dispatchEvent(new Event('tokpa:auth-changed'));
 }
 
+// Supprime ou nettoie les éléments via clearLocalPhotos.
 export function clearLocalPhotos() {
   try {
     const names: string[] = [];
@@ -40,16 +43,15 @@ export function clearLocalPhotos() {
     }
     names.forEach((name) => localStorage.removeItem(name));
   } catch {
-    /* storage indisponible */
   }
 }
 
-/** Photo à afficher : choix local, sinon lien renvoyé par GET /profile. */
+// Helper displayPhoto : réalise le traitement métier associé.
 export function displayPhoto(server?: string | null): string | null {
   return readLocalPhoto() || absImageUrl(server);
 }
 
-/** Photo de la session : choix local, sinon `image_profil` enregistré. */
+// Helper sessionPhoto : réalise le traitement métier associé.
 export function sessionPhoto(): string | null {
   if (readLocalPhoto()) return readLocalPhoto();
   try {
@@ -63,9 +65,8 @@ export function sessionPhoto(): string | null {
 
 const ALLOWED_RASTER_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']);
 
-/** Réduit une image choisie pour l'afficher tout de suite, sans l'envoyer en base64 au serveur. */
+// Helper fileToPhoto : réalise le traitement métier associé.
 export function fileToPhoto(file: File): Promise<string> {
-  // Bloque explicitement SVG (scripts embarqués) et tout type non matriciel.
   if (!ALLOWED_RASTER_TYPES.has(file.type.toLowerCase())) return Promise.reject(new Error('type'));
   if (file.size > 4 * 1024 * 1024) return Promise.reject(new Error('size'));
   return new Promise((resolve, reject) => {

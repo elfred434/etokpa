@@ -1,8 +1,8 @@
+// État vide illustré avec titre, description et action optionnelle.
 import type { ReactNode } from 'react';
 import clsx from 'clsx';
 
 interface EmptyStateProps {
-  /** Icône (élément) rendue dans le cercle crème. */
   icon: ReactNode;
   title: string;
   description?: string;
@@ -10,8 +10,9 @@ interface EmptyStateProps {
   className?: string;
 }
 
-/** État vide centré (panier vide, aucun résultat…) — icône dans un cercle crème. */
+// Composant React EmptyState : prépare l’état et affiche son interface.
 export default function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
+  // Retourne le rendu JSX du composant.
   return (
     <div className={clsx('flex flex-col items-center justify-center py-xl text-center', className)}>
       <span className="mb-md flex h-[72px] w-[72px] items-center justify-center rounded-full bg-primary-lighter">

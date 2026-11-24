@@ -1,3 +1,4 @@
+// Extrait, formate en français et affiche les erreurs HTTP/validation renvoyées par Axios.
 import toast from 'react-hot-toast';
 import { tr, tx } from '../i18n/tx';
 import { backgroundRefreshActive } from '../services/refresh/refreshBus';
@@ -5,20 +6,11 @@ import { isBackgroundRefreshApiError } from '../services/refresh/refreshRequestC
 import { captureFrontendError } from '../services/errors/frontendErrorReporter';
 import { getDevelopmentErrorMessage } from './developmentErrorMessage';
 
-/**
- * Error extraction for the UI. Development may show bounded, redacted 4xx messages;
- * 5xx responses always use a generic summary. The local reporter stores metadata only.
- */
 export interface ApiErrorInfo {
-  /** HTTP status, or null if the request did not receive an HTTP response. */
   status: number | null;
-  /** Bounded message; credentials, stacks and full URLs are excluded in all modes. */
   message: string;
-  /** Laravel validation errors (422), retained for field-level feedback. */
   fieldErrors: Record<string, string[]>;
-  /** Safe local reference for support; absent for expected 4xx responses. */
   reference?: string;
-  /** Whether an absent response was caused by a timeout. */
   timeout?: boolean;
 }
 
@@ -31,6 +23,7 @@ type ApiErrorLike = {
   code?: unknown;
 };
 
+// Helper safeText : réalise le traitement métier associé.
 function safeText(value: unknown, maxLength = 240): string {
   if (typeof value !== 'string') return '';
   const text = value
@@ -56,6 +49,7 @@ function safeText(value: unknown, maxLength = 240): string {
   return technicalPatterns.some((pattern) => pattern.test(text)) ? '' : text;
 }
 
+// Helper validationErrors : réalise le traitement métier associé.
 function validationErrors(value: unknown): Record<string, string[]> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const result: Record<string, string[]> = {};
@@ -73,12 +67,14 @@ function validationErrors(value: unknown): Record<string, string[]> {
   return result;
 }
 
+// Vérifie la condition métier isTimeout.
 function isTimeout(error: ApiErrorLike): boolean {
   const code = typeof error.code === 'string' ? error.code : '';
   const message = typeof error.message === 'string' ? error.message : '';
   return code === 'ECONNABORTED' || code === 'ETIMEDOUT' || /timeout/i.test(message);
 }
 
+// Vérifie la condition métier isExpectedCancellation.
 function isExpectedCancellation(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
   const value = error as ApiErrorLike & { name?: unknown };
@@ -87,7 +83,7 @@ function isExpectedCancellation(error: unknown): boolean {
   return name === 'AbortError' || name === 'CanceledError' || code === 'ERR_CANCELED';
 }
 
-/** Extract status and safe display text from an Axios or compatible error. */
+// Transforme ou formate les données via extractApiError.
 export function extractApiError(err: unknown): ApiErrorInfo {
   const error = (err && typeof err === 'object' ? err : {}) as ApiErrorLike;
   const response = error.response;
@@ -104,7 +100,6 @@ export function extractApiError(err: unknown): ApiErrorInfo {
     const reference = captureFrontendError(err, { source: 'api', status }).reference;
     return {
       status,
-      // Ne jamais afficher le corps brut d'une erreur serveur (PHP/SQL/stack trace), même en développement.
       message: tr('Une erreur interne est survenue. Réessayez plus tard.', 'An internal error occurred. Please try again later.'),
       fieldErrors: {},
       reference,
@@ -136,7 +131,7 @@ export function extractApiError(err: unknown): ApiErrorInfo {
   return { status, message, fieldErrors };
 }
 
-/** Format for inline banners, dialogs and toasts without exposing server internals. */
+// Transforme ou formate les données via formatApiError.
 export function formatApiError(info: ApiErrorInfo): string {
   const prefix = info.status != null ? `[HTTP ${info.status}]` : tr('[Réseau]', '[Network]');
   let text = `${prefix} ${info.message}`;
@@ -155,21 +150,18 @@ export function formatApiError(info: ApiErrorInfo): string {
   return text;
 }
 
-/** Safe message for callers that need a translated API string. */
+// Helper messageApi : réalise le traitement métier associé.
 export function messageApi(err: unknown): string {
   const info = extractApiError(err);
   return formatApiError({ ...info, message: tx(info.message) });
 }
 
-/** HTTP status, or null if the request did not receive a response. */
+// Helper apiErrorStatus : réalise le traitement métier associé.
 export function apiErrorStatus(err: unknown): number | null {
   return extractApiError(err).status;
 }
 
-/**
- * Failed page load: return safe status/message text for both the alert and inline
- * ApiErrorState. 401 session expiry stays handled by the auth interceptor.
- */
+// Helper alertApiError : réalise le traitement métier associé.
 export function alertApiError(err: unknown, toastId?: string): string {
   const info = extractApiError(err);
   const text = formatApiError(info);

@@ -1,3 +1,4 @@
+// Page de saisie du code OTP à 6 chiffres avec compte à rebours et renvoi de code.
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -21,18 +22,14 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 
-
+// Transforme ou formate les données via formatTime.
 const formatTime = (s: number) =>
   `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
-/**
- * Page Vérification 2FA — Intégration API Backend Laravel + Mode Test / Démo
- */
+// Composant de la page Verification2fa : gère le chargement des données et le rendu.
 export default function Verification2faPage() {
   useLanguage();
   const navigate = useNavigate();
-  // Email de la connexion (ou de l'inscription) en cours. Aucun email de repli : avant, sans connexion
-  // en cours, la page utilisait « client@tokpa.bj », à qui « Renvoyer le code » envoyait un vrai code.
   const pendingEmail = localStorage.getItem('tokpa_pending_email');
   const deadlineRef = useRef<number>(
     pendingEmail ? getTwoFaDeadline(pendingEmail) : Date.now() + TWO_FA_TTL_SECONDS * 1000,
@@ -47,12 +44,12 @@ export default function Verification2faPage() {
   );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  // Empêche l'effet « pas d'email » de renvoyer vers /connexion après une 2FA réussie.
   const verified = useRef(false);
 
   const expired = secondsLeft <= 0;
   const blocked = attemptsLeft <= 0;
 
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     if (!pendingEmail) return;
     const syncRemaining = () => {
@@ -70,14 +67,14 @@ export default function Verification2faPage() {
     };
   }, [pendingEmail, expired]);
 
-  // Accès direct à /verification-2fa, sans login en cours. Après une 2FA réussie, l'email
-  // est effacé et setLoading relance ce rendu : ne pas écraser la destination du rôle.
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (pendingEmail || verified.current || hasSession()) return;
     toast.error(tx("Aucune connexion en cours : saisissez d’abord votre email et votre mot de passe."), { id: '2fa-no-email' });
     navigate({ to: '/connexion', replace: true });
   }, [pendingEmail, navigate]);
 
+  // Gère l’action utilisateur Submit.
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!pendingEmail || code.length < 6 || expired || blocked) return;
@@ -86,15 +83,12 @@ export default function Verification2faPage() {
     setError(null);
 
     try {
-      // Tentative d'appel API Backend POST /api/auth/verify-2fa
       const res = await authApi.verify2fa({ email: pendingEmail, code });
       verified.current = true;
-      clearTwoFaSession(); // connexion terminée : l'email et le timer en attente ne servent plus
+      clearTwoFaSession();
       toast.success(res.message || tx("Authentification réussie !"));
-      // Ouverture directe de /connexion : espace du rôle. Sinon, la page demandée avant le login.
       navigate({ href: postLoginTarget(currentRole()), replace: true });
     } catch (err: unknown) {
-      // Pas de fallback factice : sans token réel du backend, on ne « connecte » personne.
       setError(formatApiError(extractApiError(err)));
       setAttemptsLeft((a) => {
         const next = Math.max(0, a - 1);
@@ -106,13 +100,12 @@ export default function Verification2faPage() {
     }
   };
 
+  // Gère l’action utilisateur Resend.
   const handleResend = async () => {
     if (!pendingEmail) return;
     try {
       await authApi.resend2fa(pendingEmail);
       toast.success(tx("Un nouveau code OTP a été envoyé par email."));
-      // Nouveau délai et nouvelles tentatives SEULEMENT si un code est vraiment parti
-      // (avant : remis à zéro même en cas d'échec — limite atteinte, serveur arrêté…).
       deadlineRef.current = startTwoFaSession(pendingEmail);
       setSecondsLeft(TWO_FA_TTL_SECONDS);
       setAttemptsLeft(TWO_FA_MAX_ATTEMPTS);
@@ -123,8 +116,9 @@ export default function Verification2faPage() {
     }
   };
 
-  if (!pendingEmail) return null; // redirection vers /connexion en cours (effet ci-dessus)
+  if (!pendingEmail) return null;
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg-app p-4 font-body text-text-main">
       <div className="fixed right-4 top-4 z-50"><LangToggle /></div>

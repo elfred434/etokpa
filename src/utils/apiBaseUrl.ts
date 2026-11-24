@@ -1,12 +1,13 @@
+// Normalise l’URL de base de l’API et déduit l’origine serveur.
 const DEFAULT_API_BASE_URL = 'http://localhost:8000/api';
 
-/** Normalise une URL d’API Vite (supprime espaces de bord et slashs finaux). */
+// Transforme ou formate les données via normalizeApiBaseUrl.
 export function normalizeApiBaseUrl(value?: string | null): string {
   const trimmed = value?.trim();
   return (trimmed || DEFAULT_API_BASE_URL).replace(/\/+$/, '');
 }
 
-/** Origine Laravel sans le suffixe `/api` ; vide lorsque l’API est proxyfiée en same-origin. */
+// Helper apiOriginFromBase : réalise le traitement métier associé.
 export function apiOriginFromBase(value?: string | null): string {
   return normalizeApiBaseUrl(value).replace(/\/api$/i, '');
 }

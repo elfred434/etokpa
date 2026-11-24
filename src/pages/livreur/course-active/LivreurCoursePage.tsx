@@ -1,3 +1,4 @@
+// Écran de livraison active : carte, partage GPS en direct et transitions vers en_livraison / livre.
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import clsx from 'clsx';
@@ -20,19 +21,11 @@ import { tr, tx } from '../../../i18n/tx';
 import { orderLineName } from '../../../utils/orderLine';
 import LivreurDecisionButtons from '../LivreurDecisionButtons';
 
-
-/** Envoi de la position au plus toutes les 20 s (POST /livreur/position) pendant la livraison. */
 const GPS_INTERVAL_MS = 20_000;
 
 type GpsState = 'off' | 'waiting' | 'on' | 'denied' | 'unavailable';
 
-/**
- * Course active — design Stitch « course_active_tokpa_desktop » (carte 70 % + détails 30 %), données
- * réelles : GET /livreur/deliveries, PATCH /livreur/deliveries/{id}/status, POST /livreur/position.
- * Point de retrait = repère fixe « Marché Dantokpa » de la carte (conservé sur décision utilisateur).
- * Non disponibles dans l'API : nom/téléphone du client et coordonnées du point de repère (B-25).
- * L'écran de chat livreur utilise `/livreur/conversations` et `/livreur/conversations/{id}/messages`.
- */
+// Composant de la page LivreurCourse : gère le chargement des données et le rendu.
 export default function LivreurCoursePage() {
   useLanguage();
   const { commande } = useSearch({ from: '/livreur/course' });
@@ -48,6 +41,7 @@ export default function LivreurCoursePage() {
   const [, setTick] = useState(0);
   const lastSentAt = useRef(0);
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setDeliveries(null);
@@ -60,13 +54,12 @@ export default function LivreurCoursePage() {
     };
   }, [reloadKey, refreshTick]);
 
-  // Course affichée : celle demandée (?commande=), sinon celle en livraison, sinon la première assignée.
   const order: LivreurOrder | null = deliveries
     ? (commande ? deliveries.find((o) => Number(o.id) === Number(commande)) : (deliveries.find((o) => o.statut === 'en_livraison') ?? deliveries[0])) ?? null
     : null;
   const enLivraison = order?.statut === 'en_livraison';
 
-  // GPS réel partagé pendant la livraison uniquement (F-14) ; aucune position simulée.
+  // Planifie le rafraîchissement ou minuteur périodique et le nettoie au démontage.
   useEffect(() => {
     if (!order || !enLivraison) {
       setGps('off');
@@ -94,13 +87,14 @@ export default function LivreurCoursePage() {
       (e) => setGps(e.code === e.PERMISSION_DENIED ? 'denied' : 'unavailable'),
       { enableHighAccuracy: true, maximumAge: 10_000, timeout: 20_000 },
     );
-    const ticker = window.setInterval(() => setTick((t) => t + 1), 5_000); // « il y a X s »
+    const ticker = window.setInterval(() => setTick((t) => t + 1), 5_000);
     return () => {
       navigator.geolocation.clearWatch(watchId);
       window.clearInterval(ticker);
     };
   }, [order?.id, enLivraison]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Helper changeStatus : réalise le traitement métier associé.
   const changeStatus = async (statut: 'en_livraison' | 'livre') => {
     if (!order) return;
     if (statut === 'livre') {
@@ -131,7 +125,7 @@ export default function LivreurCoursePage() {
         setDeliveries((l) => (l ?? []).map((o) => (o.id === order.id ? { ...o, statut } : o)));
       }
     } catch (e) {
-      alertApiError(e, 'livreur-status'); // ex. 422 « Transition interdite. » (B-22)
+      alertApiError(e, 'livreur-status');
     } finally {
       setBusy(false);
     }
@@ -198,15 +192,14 @@ export default function LivreurCoursePage() {
     );
   }
 
+  // Retourne le rendu JSX du composant.
   return (
     <LivreurLayout>
       <div className="flex flex-col lg:h-[calc(100vh-52px)] lg:flex-row">
-        {/* LEFT COLUMN: Interactive Map (70%) */}
         <section className="relative h-[360px] overflow-hidden bg-surface-container-low lg:h-full lg:w-[70%]">
           <div className="absolute inset-0 z-0">
             <RealBeninMap riderCoords={coords} riderName={currentUserName() ?? undefined} destinationLabel={destination(order)} />
           </div>
-          {/* Floating Status Badge */}
           {badge && (
             <div className="absolute left-md top-md z-[500] max-w-[calc(100%-32px)]">
               <div className="flex items-center gap-md rounded-lg border border-border-default bg-bg-card px-lg py-md shadow-lg">
@@ -223,9 +216,7 @@ export default function LivreurCoursePage() {
           )}
         </section>
 
-        {/* RIGHT COLUMN: Delivery Details (30%) */}
         <section className="z-10 flex flex-col border-l border-border-default bg-bg-card lg:h-full lg:w-[30%]">
-          {/* Header */}
           <div className="border-b border-border-default bg-surface-container-low p-lg">
             <div className="mb-sm flex items-start justify-between">
               <div>
@@ -239,7 +230,6 @@ export default function LivreurCoursePage() {
           </div>
 
           <div className="flex-1 space-y-lg overflow-y-auto p-lg">
-            {/* Client Info Card */}
             <div className="rounded-lg border border-outline-variant bg-surface-container-low p-md">
               <div className="mb-md flex items-center gap-md">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-primary-tint text-primary shadow-sm">
@@ -291,7 +281,6 @@ export default function LivreurCoursePage() {
               </p>
             </div>
 
-            {/* Order Items */}
             <div className="space-y-md">
               <h4 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant">{tx("Contenu de la commande")}</h4>
               <div className="space-y-sm">
@@ -307,7 +296,6 @@ export default function LivreurCoursePage() {
               </div>
             </div>
 
-            {/* Payment Details */}
             <div className="border-t border-border-default pt-lg">
               <div className="flex items-center justify-between">
                 <p className="text-on-surface-variant">{tx("Montant de la commande")}</p>
@@ -320,7 +308,6 @@ export default function LivreurCoursePage() {
             </div>
           </div>
 
-          {/* Footer Actions : accepter / refuser, puis le statut réel */}
           <div className="space-y-md bg-bg-card p-lg shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
             <LivreurDecisionButtons
               orderId={order.id}

@@ -1,3 +1,4 @@
+// Barre de navigation supérieure client (recherche, panier, notifications, profil).
 import { useEffect, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
@@ -13,18 +14,13 @@ import { currentRole, currentUserName, hasSession, staffSpace, useAuthRevision }
 import UserAvatar from '../../shared/UserAvatar';
 import { tx } from '../../../i18n/tx';
 
-
 interface ClientNavbarProps {
   search?: string;
   onSearch?: (value: string) => void;
   searchPlaceholder?: string;
 }
 
-/**
- * Navbar cliente unique — copie conforme de la TopNavBar du code.html « accueil_tokpa »
- * (utilisée sur toutes les pages client : accueil, catalogue, fiche produit, panier…).
- * fixed 52px, fond #fff8f6, logo + liens, recherche pillule #fff1eb, icônes #9d4300, sélecteur de langue FR/EN.
- */
+// Composant de mise en page ClientNavbar.
 export default function ClientNavbar({ search, onSearch, searchPlaceholder }: ClientNavbarProps) {
   useLanguage();
   const cartCount = useAppSelector((s) => selectCount(s.cart.items));
@@ -38,28 +34,29 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
   const [localSearch, setLocalSearch] = useState('');
   const [menu, setMenu] = useState(false);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     setMenu(false);
   }, [pathname]);
 
   const onMarket = pathname === '/' || pathname.startsWith('/catalogue') || pathname.startsWith('/produit');
-  // La recherche ne s'affiche que sur /catalogue (elle alimente les filtres de cette page).
   const onCatalog = pathname.startsWith('/catalogue');
   const onNegociations = pathname.startsWith('/negociations');
   const onCommandes = pathname.startsWith('/commandes');
   const onPaiements = pathname.startsWith('/paiements');
   const space = hasSession() ? staffSpace(currentRole()) : null;
 
+  // Valide et transmet l’action submitSearch.
   const submitSearch = (e: FormEvent | React.KeyboardEvent) => {
     e.preventDefault();
     const q = (search ?? localSearch).trim();
     if (q) navigate({ to: '/catalogue', search: { q } });
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <header className="fixed top-0 z-50 w-full border-b border-line bg-warm">
       <div className="mx-auto flex h-[52px] w-full max-w-[1200px] items-center justify-between gap-2 px-3 sm:px-4">
-        {/* Logo + liens */}
         <div className="flex min-w-0 items-center gap-2 sm:gap-lg">
           <button
             type="button"
@@ -126,7 +123,6 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
           </nav>
         </div>
 
-        {/* Recherche (pillule) — visible uniquement sur /catalogue */}
         {onCatalog && (
           <form onSubmit={submitSearch} className="mx-8 hidden max-w-1xl flex-1 lg:block">
             <div className="relative flex items-center rounded-full border border-line bg-warm-low px-4 py-1.5">
@@ -142,12 +138,9 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
           </form>
         )}
 
-        {/* Icônes : paramètres (langue + thème), notifications, panier, espace, profil */}
         <div className="flex shrink-0 items-center gap-1 text-primary-shade sm:gap-md">
-          {/* Réglages : langue et thème ont leur page (la barre ne garde qu'un raccourci) */}
           <SettingsLink to="/parametres" />
 
-          {/* Actualisation globale : bouton + processus silencieux (30 s, onglet visible) */}
           <RefreshButton />
           <LogoutButton className="hidden md:inline-flex" />
 

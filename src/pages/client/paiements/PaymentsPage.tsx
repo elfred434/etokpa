@@ -1,3 +1,4 @@
+// Historique des paiements client et téléchargement des reçus PDF.
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import PaymentsPanel from '../../../components/payments/PaymentsPanel';
@@ -6,10 +7,11 @@ import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
-/** Paiements du compte connecté. Pas de contrôle de rôle : l'API ne renvoie que les siens. */
+// Composant de la page Payments : gère le chargement des données et le rendu.
 export default function PaymentsPage() {
   useLanguage();
   useAuthGuard();
+  // Retourne le rendu JSX du composant.
   return (
     <div className="min-h-screen bg-warm pb-24">
       <ClientNavbar />

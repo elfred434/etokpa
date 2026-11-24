@@ -1,3 +1,4 @@
+// Page de connexion par email/mot de passe avec redirection vers la vérification 2FA.
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
@@ -11,16 +12,12 @@ import { startTwoFaSession } from '../../utils/twoFaTimer';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
-
-/**
- * Page Connexion — Intégration API Backend Laravel + UI Stitch 100% fidèle
- */
+// Composant de la page Connexion : gère le chargement des données et le rendu.
 export default function ConnexionPage() {
   useLanguage();
   const navigate = useNavigate();
-  // Page demandée avant la connexion (?redirect=) : mémorisée pour y revenir après la 2FA ;
-  // arrivée sans ?redirect= → on oublie toute ancienne demande.
   const { redirect: redirectTo } = useSearch({ from: '/connexion' });
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     rememberRedirect(redirectTo);
   }, [redirectTo]);
@@ -31,13 +28,13 @@ export default function ConnexionPage() {
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
+  // Gère l’action utilisateur Submit.
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setAuthError(null);
     setLoading(true);
 
     try {
-      // API call to Laravel backend POST /api/auth/login
       const res = await authApi.login({ email, password });
       toast.success(res.message || tx("Code 2FA envoyé par email."));
       startTwoFaSession(email);
@@ -54,11 +51,11 @@ export default function ConnexionPage() {
     }
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="bg-bg-card min-h-screen font-body text-text-main">
       <div className="fixed right-4 top-4 z-50"><LangToggle /></div>
       <main className="flex flex-col md:flex-row min-h-screen">
-        {/* Left Column: Branding (Desktop) */}
         <section className="hidden md:flex md:w-[40%] bg-[#F97316] flex-col justify-between p-lg relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
           <div className="relative z-10">
@@ -90,10 +87,8 @@ export default function ConnexionPage() {
           </div>
         </section>
 
-        {/* Right Column: Login Form */}
         <section className="flex flex-1 flex-col items-center justify-center bg-bg-card p-4 sm:p-lg md:p-[48px]">
           <div className="w-full max-w-[440px]">
-            {/* Header */}
             <header className="mb-xl">
               <div className="md:hidden mb-lg">
                 <Link to="/" className="text-[28px] font-bold text-[#F97316]">
@@ -108,9 +103,7 @@ export default function ConnexionPage() {
               </p>
             </header>
 
-            {/* Form */}
             <form className="space-y-lg" onSubmit={handleSubmit}>
-              {/* Email Field */}
               <div className="space-y-xs">
                 <label className="block text-[13px] font-label text-text-secondary" htmlFor="email">
                   {tx("Adresse email")}
@@ -132,7 +125,6 @@ export default function ConnexionPage() {
                 </div>
               </div>
 
-              {/* Password Field */}
               <div className="space-y-xs">
                 <div className="flex justify-between items-center">
                   <label className="block text-[13px] font-label text-text-secondary" htmlFor="password">
@@ -181,7 +173,6 @@ export default function ConnexionPage() {
                 </div>
               </div>
 
-              {/* Remember Me */}
               <div className="flex items-center">
                 <input
                   className="w-4 h-4 text-[#F97316] border-border-default rounded focus:ring-[#F97316] cursor-pointer"
@@ -195,7 +186,6 @@ export default function ConnexionPage() {
                 </label>
               </div>
 
-              {/* Submit Button */}
               <div className="space-y-md">
                 <button
                   type="submit"
@@ -205,7 +195,6 @@ export default function ConnexionPage() {
                   {loading ? tx("Connexion en cours...") : 'Se connecter'}
                 </button>
 
-                {/* Error Message */}
                 {authError && (
                   <div className="flex items-center gap-sm bg-error-light p-sm rounded-[10px] border border-error/20">
                     <MIcon name="error" className="text-error-dark text-[20px]" />
@@ -216,7 +205,6 @@ export default function ConnexionPage() {
                 )}
               </div>
 
-              {/* Divider */}
               <div className="relative py-md">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-border-default" />
@@ -226,7 +214,6 @@ export default function ConnexionPage() {
                 </div>
               </div>
 
-              {/* 2FA Direct Button */}
               <button
                 type="button"
                 onClick={() => navigate({ to: '/verification-2fa' })}
@@ -244,7 +231,6 @@ export default function ConnexionPage() {
               </Link>
             </p>
 
-            {/* Footer Info */}
             <footer className="mt-xl flex items-center justify-center gap-xs text-text-tertiary text-[12px] font-secondary">
               <MIcon name="lock" className="text-[16px]" />
               {tx("Paiement sécurisé via FedaPay")}

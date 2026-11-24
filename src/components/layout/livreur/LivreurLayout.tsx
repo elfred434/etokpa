@@ -1,3 +1,4 @@
+// Mise en page principale de l’espace livreur (navigation, statut, profil).
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
@@ -13,7 +14,6 @@ import { tx } from '../../../i18n/tx';
 import { useGlobalRefreshTick } from '../../../hooks/useRefresh';
 import { usePreservedScroll } from '../../../hooks/usePreservedScroll';
 
-
 const NAV: { to: '/livreur' | '/livreur/course' | '/livreur/messagerie' | '/livreur/historique' | '/livreur/parametres'; icon: string; label: string; short: string; exact: boolean }[] = [
   { to: '/livreur', icon: 'dashboard', label: 'Tableau de bord', short: 'Accueil', exact: true },
   { to: '/livreur/course', icon: 'local_shipping', label: 'Livraisons en cours', short: 'En cours', exact: false },
@@ -22,11 +22,7 @@ const NAV: { to: '/livreur' | '/livreur/course' | '/livreur/messagerie' | '/livr
   { to: '/livreur/parametres', icon: 'settings', label: 'Paramètres', short: 'Paramètres', exact: false },
 ];
 
-/**
- * Espace livreur — chrome du design Stitch « tableau_de_bord_livreur_tokpa_fr » : barre latérale
- * orange « Portail Chauffeur » + barre du haut ; barre du bas sur mobile. « Passer en ligne » n'est
- * pas repris : aucune route ne permet au livreur de changer sa disponibilité (B-26) — elle est affichée.
- */
+// Composant de mise en page LivreurLayout.
 export default function LivreurLayout({ children }: { children: ReactNode }) {
   useLanguage();
   useAuthRevision();
@@ -36,11 +32,12 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
   const nom = currentUserName();
   const [disponible, setDisponible] = useState<boolean | null>(null);
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     fetchLivreurProfile(refreshTick > 0)
       .then((p) => alive && setDisponible(p.disponible))
-      .catch(() => undefined); // conserver le dernier état connu si l'API est temporairement indisponible
+      .catch(() => undefined);
     return () => {
       alive = false;
     };
@@ -49,9 +46,9 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
   const isActive = (to: string, exact: boolean) =>
     exact ? pathname === to || pathname === `${to}/` : pathname === to || pathname.startsWith(`${to}/`) || (to === '/livreur/course' && pathname.startsWith('/livreur/recapitulatif'));
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="min-h-screen bg-bg-app font-body text-text-main">
-      {/* SideNavBar (bureau) */}
       <aside ref={asideRef} className="fixed left-0 top-0 z-50 hidden h-screen w-64 flex-col overflow-y-auto bg-[#F97316] text-white shadow-xl lg:flex">
         <div className="p-6">
           <div className="mb-8">
@@ -77,7 +74,6 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
           </nav>
         </div>
         <div className="mt-auto space-y-2 border-t border-white/15 p-6">
-          {/* Bascule vers l'espace client (le livreur y a accès) */}
           <Link to="/" className="flex items-center gap-3 rounded-lg px-3 py-2 text-white/80 transition-colors hover:text-white">
             <MIcon name="storefront" className="text-[20px]" />
             <span className="text-[14px] font-medium">{tx("Espace client")}</span>
@@ -91,7 +87,6 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
       </aside>
 
       <main className="min-h-screen pb-20 lg:ml-64 lg:pb-0">
-        {/* TopAppBar */}
         <header className="sticky top-0 z-40 flex h-[52px] w-full items-center justify-between gap-2 border-b border-border-default bg-bg-card px-3 sm:px-lg">
           <span className="font-h1 text-h1 font-bold text-primary">TOKPa</span>
           <div className="flex min-w-0 items-center gap-2 sm:gap-lg">
@@ -126,7 +121,6 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      {/* Barre du bas (mobile) */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t border-border-default bg-bg-card lg:hidden">
         {NAV.map((item) => (
           <Link

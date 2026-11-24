@@ -1,11 +1,8 @@
-/**
- * Libellés du reçu, dans la langue active de l'application.
- * Centralisé ici pour que le PDF et l'interface restent cohérents.
- */
+// Fournit les libellés traduits utilisés dans les reçus PDF.
 import { tx, uiLang } from '../../i18n/tx';
 import type { ReceiptLabels } from './receiptPdf';
 
-/** Locale d'affichage des nombres et des dates, alignée sur la langue. */
+// Helper localeRecu : réalise le traitement métier associé.
 export function localeRecu(): string {
   switch (uiLang()) {
     case 'en':
@@ -21,6 +18,7 @@ export function localeRecu(): string {
   }
 }
 
+// Helper receiptLabels : réalise le traitement métier associé.
 export function receiptLabels(): ReceiptLabels {
   return {
     title: tx('Reçu de paiement'),

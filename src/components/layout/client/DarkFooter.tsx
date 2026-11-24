@@ -1,16 +1,18 @@
+// Pied de page sombre utilisé sur l’accueil et les écrans vitrine.
 import { Link } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import MIcon from '../../shared/MIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
 
-
+// Helper soon : réalise le traitement métier associé.
 const soon = (label: string) => () => toast(tr(`${label} — bientôt disponible`, `${tx(label)} — coming soon`));
 
-/** Pied de page des pages client. Pas de lien vers l'administration. */
+// Composant de mise en page DarkFooter.
 export default function DarkFooter() {
   const { isFr } = useLanguage();
 
+  // Retourne le rendu JSX du composant.
   return (
     <footer className="mt-xl mb-20 bg-on-surface py-xl text-warm lg:mb-0">
       <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-xl px-4 md:grid-cols-4">

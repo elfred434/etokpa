@@ -1,3 +1,4 @@
+// Gestion du catalogue produits admin (création, modification, suppression, image WebP).
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useDesignScript } from '../../utils/designRuntime';
@@ -20,7 +21,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { useGlobalRefreshTick } from '../../hooks/useRefresh';
 
-
+// Feuille de styles intégrée (DESIGN_CSS) injectée pour le rendu de la vue.
 const DESIGN_CSS = `
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
         .sidebar-item-active { @apply bg-secondary-container text-on-secondary-container rounded-lg font-bold; }
@@ -28,10 +29,6 @@ const DESIGN_CSS = `
         .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--color-border-default); border-radius: 10px; }
     `;
 
-/**
- * AdminCatalogPage — copie conforme statique du design Stitch (code.html).
- * Interactions : script du design exécuté via useDesignScript (comportement copié).
- */
 const PER_PAGE = 8;
 
 const CAT_COLOR_BADGE: Record<string, string> = {
@@ -42,11 +39,11 @@ const CAT_COLOR_BADGE: Record<string, string> = {
   'on-surface-variant': 'bg-surface-container-high text-on-surface-variant',
 };
 
+// Composant de la page AdminCatalog : gère le chargement des données et le rendu.
 export default function AdminCatalogPage() {
   useLanguage();
   useDesignScript(DESIGN_SCRIPT);
   const refreshTick = useGlobalRefreshTick();
-  // Tous les produits (100 par page, au plus 10 pages) : filtres et pagination portent sur le catalogue entier
   const { rows: produits, err, loading, reload } = useLiveRows(async () => {
     const acc: any[] = [];
     for (let page = 1; page <= 10; page++) {
@@ -65,11 +62,13 @@ export default function AdminCatalogPage() {
   const [dispoF, setDispoF] = useState('');
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
-  useEffect(() => setPage(1), [tab, q, catF, dispoF]); // nouveau filtre → première page
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
+  useEffect(() => setPage(1), [tab, q, catF, dispoF]);
   const [edition, setEdition] = useState<any | null>(null);
   const [detail, setDetail] = useState<{ kind: 'produit' | 'categorie'; item: any } | null>(null);
   const [refus, setRefus] = useState('');
   const [refusTitre, setRefusTitre] = useState('Suppression refusée');
+  // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {
     if (!detail) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setDetail(null); };
@@ -85,9 +84,11 @@ export default function AdminCatalogPage() {
   const [imageRemoved, setImageRemoved] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const objectUrlRef = useRef<string | null>(null);
+  // Helper revokeObjectUrl : réalise le traitement métier associé.
   const revokeObjectUrl = () => {
     if (objectUrlRef.current) { URL.revokeObjectURL(objectUrlRef.current); objectUrlRef.current = null; }
   };
+  // Helper alerteImage : réalise le traitement métier associé.
   const alerteImage = (e: unknown) => {
     const code = e instanceof ImageWebpError ? e.code : 'webp';
     const msg = code === 'format'
@@ -99,6 +100,7 @@ export default function AdminCatalogPage() {
           : tx("Impossible de convertir cette image en WebP.");
     void adminDialogs.alert(msg, { title: tx("Image non valide") });
   };
+  // Helper pickImage : réalise le traitement métier associé.
   const pickImage = async (f?: File | null) => {
     if (!f) return;
     setImageBusy(true);
@@ -114,6 +116,7 @@ export default function AdminCatalogPage() {
       setImageBusy(false);
     }
   };
+  // Supprime ou nettoie les éléments via clearImage.
   const clearImage = () => {
     const hadSelectedFile = Boolean(imageFile);
     const originalImage = absImageUrl(edition?.image_url ?? edition?.img_url);
@@ -121,8 +124,6 @@ export default function AdminCatalogPage() {
     setImageFile(null);
 
     if (hadSelectedFile) {
-      // Annule le nouveau fichier; si l'image enregistrée avait été marquée pour retrait,
-      // ne la réaffiche pas et conserve ce choix.
       setImagePreview(imageRemoved ? null : originalImage);
       return;
     }
@@ -133,6 +134,7 @@ export default function AdminCatalogPage() {
     }
     setImagePreview(originalImage);
   };
+  // Helper restoreImage : réalise le traitement métier associé.
   const restoreImage = () => {
     setImageRemoved(false);
     setImagePreview(absImageUrl(edition?.image_url ?? edition?.img_url));
@@ -141,9 +143,11 @@ export default function AdminCatalogPage() {
     () => adminApi.getCategories().then((r: any) => setCats(listOf(unwrap(r)))).catch(() => undefined),
     [],
   );
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     void loadCats();
   }, [loadCats, refreshTick]);
+  // Helper ouvrir : réalise le traitement métier associé.
   const ouvrir = (pr: any) => {
     revokeObjectUrl();
     setEdition(pr ?? {});
@@ -159,6 +163,7 @@ export default function AdminCatalogPage() {
       disponible: pr?.disponible !== false,
     });
   };
+  // Helper fermer : réalise le traitement métier associé.
   const fermer = () => {
     if (saveInFlightRef.current) return;
     revokeObjectUrl();
@@ -167,6 +172,7 @@ export default function AdminCatalogPage() {
     setImagePreview(null);
     setEdition(null);
   };
+  // Helper enregistrer : réalise le traitement métier associé.
   const enregistrer = async () => {
     if (saveInFlightRef.current || imageBusy) return;
 
@@ -201,18 +207,21 @@ export default function AdminCatalogPage() {
       reload();
     }
   };
+  // Met à jour les données ou l’état via modifierDepuisDetail.
   const modifierDepuisDetail = () => {
     if (!detail) return;
     const { kind, item } = detail;
     setDetail(null);
     if (kind === 'produit') ouvrir(item);
   };
+  // Helper produitDe : réalise le traitement métier associé.
   const produitDe = (res: any) => {
     const body = res?.data ?? res;
     if (body && typeof body === 'object' && 'nom' in body) return body;
     if (body?.data && typeof body.data === 'object' && 'nom' in body.data) return body.data;
     return null;
   };
+  // Helper ouvrirFicheProduit : réalise le traitement métier associé.
   const ouvrirFicheProduit = (pr: any) => {
     setDetail({ kind: 'produit', item: pr });
     void adminApi.getProduct(pr.id).then((res: any) => {
@@ -228,6 +237,7 @@ export default function AdminCatalogPage() {
       setRefus(messageApi(e));
     });
   };
+  // Helper supprimer : réalise le traitement métier associé.
   const supprimer = async (pr: any) => {
     const confirme = await adminDialogs.confirm(
       tr(`Supprimer le produit « ${pr.nom} » ? Cette action est irréversible.`, `Delete product “${pr.nom}”? This action cannot be undone.`),
@@ -246,6 +256,7 @@ export default function AdminCatalogPage() {
       await adminDialogs.alert(msg, { title: tx("Suppression refusée"), danger: true });
     }
   };
+  // Supprime ou nettoie les éléments via supprimerCat.
   const supprimerCat = async (c: any) => {
     const confirme = await adminDialogs.confirm(
       tr(`Supprimer la catégorie « ${c.nom} » ?`, `Delete category “${c.nom}”?`),
@@ -270,7 +281,6 @@ export default function AdminCatalogPage() {
     return hit && cok && dok;
   });
   const catsF = cats.filter((c: any) => !qMin || String(c.nom ?? '').toLowerCase().includes(qMin) || String(c.id).includes(qMin));
-  // Pagination réelle (8 lignes, comme la maquette), sur l'onglet affiché
   const tabList: any[] = tab === 'produits' ? produitsF : catsF;
   const tabNoun = tab === 'produits' ? 'produits' : tx("catégories");
   const pages = Math.max(1, Math.ceil(tabList.length / PER_PAGE));
@@ -278,6 +288,7 @@ export default function AdminCatalogPage() {
   const slicePage = (l: any[]) => l.slice((current - 1) * PER_PAGE, current * PER_PAGE);
   const pageItems = slicePage(tabList);
   const allPageSelected = pageItems.length > 0 && pageItems.every((item: any) => selectedIds.includes(Number(item.id)));
+  // Helper toggleSelectAll : réalise le traitement métier associé.
   const toggleSelectAll = () => {
     if (allPageSelected) {
       const pageSet = new Set(pageItems.map((i: any) => Number(i.id)));
@@ -286,10 +297,12 @@ export default function AdminCatalogPage() {
       setSelectedIds((prev) => [...new Set([...prev, ...pageItems.map((i: any) => Number(i.id))])]);
     }
   };
+  // Helper toggleSelectOne : réalise le traitement métier associé.
   const toggleSelectOne = (id: number) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
+  // Retourne le rendu JSX du composant.
   return (
     <AdminLayout currentPath="/admin/catalogue">
       {refus && (
@@ -573,7 +586,9 @@ export default function AdminCatalogPage() {
   );
 }
 
+// Composant React FicheLigne : prépare l’état et affiche son interface.
 function FicheLigne({ label, value }: { label: string; value: any }) {
+  // Retourne le rendu JSX du composant.
   return (
     <div className="grid grid-cols-[9rem_1fr] gap-3 border-b border-border-default/70 py-2 text-label">
       <span className="text-text-secondary">{label}</span>
@@ -582,6 +597,7 @@ function FicheLigne({ label, value }: { label: string; value: any }) {
   );
 }
 
+// Composant modale CatalogueDetailModal : gère l’ouverture, les actions et la fermeture.
 function CatalogueDetailModal({
   detail,
   cats,
@@ -601,6 +617,7 @@ function CatalogueDetailModal({
   const parent = item.parent?.nom
     ?? cats.find((c: any) => String(c.id) === String(item.parent_id))?.nom;
 
+  // Retourne le rendu JSX du composant.
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" onClick={onClose}>
       <div

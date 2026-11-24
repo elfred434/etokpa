@@ -1,45 +1,30 @@
+// Suit la position GPS du livreur (WebSocket Reverb, polling API tracking ou simulation ?simu=1) et calcule l’ETA.
 import { useState, useEffect, useRef } from 'react';
 import { DANTOKPA_COORDS, CLIENT_COORDS, RIDER_COORDS } from '../components/client/commandes/RealBeninMap';
 
-// Segment d'itinéraire réel dans Cotonou (uniquement utilisé en mode simulation ?simu=1)
 const COTONOU_PATH: [number, number][] = [
-  DANTOKPA_COORDS, // [6.3725, 2.4332]
+  DANTOKPA_COORDS,
   [6.3705, 2.4310],
   [6.3685, 2.4260],
-  RIDER_COORDS,    // [6.3670, 2.4210]
+  RIDER_COORDS,
   [6.3650, 2.4160],
   [6.3635, 2.4130],
-  CLIENT_COORDS,   // [6.3620, 2.4100]
+  CLIENT_COORDS,
 ];
 
 interface UseRiderLocationOptions {
-  orderId?: string; // si absent, le hook ne s'abonne à aucun canal (disabled)
-  enabled?: boolean; // autorise l'abonnement (défaut : true si orderId fourni)
+  orderId?: string;
+  enabled?: boolean;
   initialCoords?: [number, number];
   destinationCoords?: [number, number];
-  simulatedSpeedMs?: number; // millisecondes entre chaque micro-déplacement (simulation uniquement)
-  /**
-   * Position GPS réelle renvoyée par GET /orders/{id}/tracking (champ `position`).
-   * Priorité sur la simulation.
-   */
+  simulatedSpeedMs?: number;
   realPosition?: [number, number] | null;
-  /**
-   * Autorise la simulation de démo (?simu=1). DÉFAUT FALSE :
-   * sans données réelles, on n'invente aucune position (correspondance endpoints).
-   */
   allowSimulation?: boolean;
 }
 
-/** Origine des coordonnées : WebSocket Reverb > API tracking > simulation (opt-in) > indisponible. */
 export type RiderPositionSource = 'websocket' | 'api' | 'simulation' | 'unavailable';
 
-/**
- * Hook `useRiderLocation` — Position GPS du livreur, alignée sur les endpoints backend :
- *  1. Reverb `private tracking.{orderId}` → événement `livreur.position.updated` (temps réel)
- *  2. GET /api/orders/{id}/tracking → `position` (instantané GPS réel, via `realPosition`)
- *  3. Simulation Cotonou — SEULEMENT si `allowSimulation` (URL ?simu=1) et aucune donnée réelle
- *  Sinon : `source = 'unavailable'` et `riderCoords = null` (aucune position inventée).
- */
+// Hook React useRiderLocation : encapsule l’état et les effets associés.
 export function useRiderLocation({
   orderId,
   enabled,
@@ -55,9 +40,9 @@ export function useRiderLocation({
   const [apiPositionUsed, setApiPositionUsed] = useState(false);
   const pathIndexRef = useRef(3);
 
-  // Calcul dynamique de la distance restante (formule Haversine approximée)
+  // Helper calculateDistanceKm : réalise le traitement métier associé.
   const calculateDistanceKm = (c1: [number, number], c2: [number, number]) => {
-    const R = 6371; // Rayon de la Terre en km
+    const R = 6371;
     const dLat = ((c2[0] - c1[0]) * Math.PI) / 180;
     const dLng = ((c2[1] - c1[1]) * Math.PI) / 180;
     const a =
@@ -80,12 +65,9 @@ export function useRiderLocation({
   const hasFix = source !== 'unavailable';
 
   const distanceKm = hasFix ? calculateDistanceKm(riderCoords, destinationCoords) : null;
-  // Estimation : ~25 km/h en ville à Cotonou (uniquement avec une position)
   const estimatedMinutes = distanceKm !== null ? Math.max(1, Math.round((distanceKm / 25) * 60)) : null;
 
-  // Priorité 1 — Écoute temps réel Reverb — CANAL RÉEL DU BACKEND :
-  //   private tracking.{orderId}  →  événement `livreur.position.updated`
-  //   payload : {order_id, livreur_id, latitude, longitude, horodatage}
+  // Abonne le composant au canal temps réel Reverb et nettoie l’écoute au démontage.
   useEffect(() => {
     if (!active || !orderId) return undefined;
     if (typeof window !== 'undefined' && (window as unknown as { Echo?: unknown }).Echo) {
@@ -103,7 +85,6 @@ export function useRiderLocation({
           try {
             channel.stopListening('livreur.position.updated');
           } catch {
-            /* noop */
           }
         };
       } catch {
@@ -113,14 +94,14 @@ export function useRiderLocation({
     return undefined;
   }, [orderId, active]);
 
-  // Priorité 2 — Position réelle de l'API (GET /orders/{id}/tracking → position)
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     if (!active || isWebSocketActive || !realPosition) return;
     setRiderCoords(realPosition);
     setApiPositionUsed(true);
   }, [active, isWebSocketActive, realPosition]);
 
-  // Priorité 3 — Simulation Cotonou (opt-in ?simu=1, uniquement sans données réelles)
+  // Planifie le rafraîchissement ou minuteur périodique et le nettoie au démontage.
   useEffect(() => {
     if (!active || isWebSocketActive || apiPositionUsed || !allowSimulation) return;
 
@@ -134,7 +115,6 @@ export function useRiderLocation({
   }, [active, isWebSocketActive, apiPositionUsed, allowSimulation, simulatedSpeedMs]);
 
   return {
-    /** null = aucune position fiable (n'invente rien) */
     riderCoords: (hasFix ? riderCoords : null) as [number, number] | null,
     estimatedMinutes,
     isWebSocketActive,

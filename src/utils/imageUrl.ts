@@ -1,13 +1,8 @@
-/**
- * Résout une image produit renvoyée par l'API :
- * - URL absolue (Cloudinary) → telle quelle ;
- * - chemin relatif `/storage/uploads/…` → origine API si elle est absolue,
- *   ou même origine si `/api` est proxyfié par Vite (voir vite.config.js).
- * `null`/vide ou schéma dangereux (`javascript:`, `data:image/svg+xml`, etc.) → null.
- */
+// Résout les URLs d’images relatives (/storage/...) vers l’origine API.
 import { apiOriginFromBase } from './apiBaseUrl';
 import { sanitizeImageUrl } from './safeUrl';
 
+// Transforme ou formate les données via resolveImageUrl.
 export function resolveImageUrl(
   u?: string | null,
   apiBaseUrl?: string | null,
@@ -19,6 +14,7 @@ export function resolveImageUrl(
   return `${apiOrigin}${safe.startsWith('/') ? '' : '/'}${safe}`;
 }
 
+// Helper absImageUrl : réalise le traitement métier associé.
 export function absImageUrl(u?: string | null): string | null {
   return resolveImageUrl(u, import.meta.env.VITE_API_BASE_URL);
 }

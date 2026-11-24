@@ -1,3 +1,4 @@
+// Liste, filtrage, création et gestion des utilisateurs et rôles.
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -16,9 +17,9 @@ import { tr, tx } from '../../i18n/tx';
 import { currentUserId, currentUserZone, rememberUserZone } from '../../routes/authGuard';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// Feuille de styles intégrée (DESIGN_CSS) injectée pour le rendu de la vue.
 const DESIGN_CSS = `
     .btn-press:active {
       transform: scale(0.97);
@@ -29,18 +30,6 @@ const DESIGN_CSS = `
     }
   `;
 
-/**
- * AdminUsersPage — design Stitch (code.html) conservé à l'identique, données et actions RÉELLES :
- *  - GET /admin/users (toutes les pages, au plus 25) → tableau, compteurs, onglets, recherche,
- *    filtres (statut, zone) et pagination cohérents ;
- *  - GET /admin/zones → filtre et listes de zones ;
- *  - PUT /admin/users/{id} → statut / zone / disponibilité (fiche, « Suspendre », « Réactiver ») ;
- *  - POST /admin/users → création (mot de passe provisoire aléatoire + lien de définition envoyé
- *    par POST /auth/forgot-password) ; « Réinitialiser mot de passe » = même lien.
- * L'ancien script de la maquette simulait tout (alert « Statut mis à jour », « créé avec succès »…).
- * Étape 2 « Dossier & Conformité » (CIP, permis, véhicule, pièces) : aucun champ backend — laissée
- * telle quelle (décision utilisateur P3), non transmise.
- */
 const ROLE_UI: Record<string, { av: string; badge: string; icon: string; label: string }> = {
   client: { av: 'bg-orange-100 text-orange-800', badge: 'bg-orange-50 text-orange-800 border border-orange-200', icon: 'ti ti-user text-xs', label: 'Client' },
   livreur: { av: 'bg-emerald-100 text-emerald-800', badge: 'bg-emerald-50 text-emerald-800 border border-emerald-200', icon: 'ti ti-motorbike text-xs', label: 'Livreur' },
@@ -59,29 +48,37 @@ const PER_PAGE = 10;
 const MAX_PAGES = 25;
 
 type RoleTab = 'all' | 'client' | 'livreur' | 'manager' | 'admin';
+// Helper roleOf : réalise le traitement métier associé.
 const roleOf = (u: any): string => (typeof u?.role === 'string' ? u.role : u?.role?.nom) || 'client';
+// Helper tabOf : réalise le traitement métier associé.
 const tabOf = (role: string): RoleTab => (role === 'super_admin' || role === 'admin' ? 'admin' : (role as RoleTab));
+// Helper statutOf : réalise le traitement métier associé.
 const statutOf = (u: any): string => String(u?.statut ?? '').toLowerCase();
+// Helper zoneIdOf : réalise le traitement métier associé.
 const zoneIdOf = (u: any): number | null => {
   const id = u?.profil?.zone_id ?? u?.profil?.zone?.id ?? u?.zone?.id;
   return id != null ? Number(id) : null;
 };
+// Helper nomOf : réalise le traitement métier associé.
 const nomOf = (u: any): string => u?.nom_complet || [u?.prenom, u?.nom].filter(Boolean).join(' ') || '—';
+// Helper commandesOf : réalise le traitement métier associé.
 const commandesOf = (u: any): number | null => {
-  const n = u?.stats?.['commandes_effectuees"'] ?? u?.stats?.commandes_effectuees; // clé renvoyée avec un guillemet (UserResource)
+  const n = u?.stats?.['commandes_effectuees"'] ?? u?.stats?.commandes_effectuees;
   return n != null ? Number(n) : null;
 };
+// Helper fmt : réalise le traitement métier associé.
 const fmt = (n: number) => n.toLocaleString('fr-FR');
+// Helper randomPassword : réalise le traitement métier associé.
 const randomPassword = () => {
   const bytes = new Uint8Array(12);
   crypto.getRandomValues(bytes);
   return `Tk-${Array.from(bytes, (b) => b.toString(36).padStart(2, '0')).join('').slice(0, 16)}!9`;
 };
 
+// Composant de la page AdminUsers : gère le chargement des données et le rendu.
 export default function AdminUsersPage() {
   useLanguage();
   const { q: querySearch } = useSearch({ from: '/admin/utilisateurs' });
-  /* ---------- données réelles ---------- */
   const [users, setUsers] = useState<any[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -90,6 +87,7 @@ export default function AdminUsersPage() {
   const [zones, setZones] = useState<{ id: number; nom: string }[]>([]);
   const refreshTick = useGlobalRefreshTick();
 
+  // Charge ou synchronise les données depuis l’API au montage ou lors d’un changement de dépendance.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setLoading(true);
@@ -115,6 +113,7 @@ export default function AdminUsersPage() {
     };
   }, [reloadKey, refreshTick]);
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     adminApi
       .getZones()
@@ -122,7 +121,6 @@ export default function AdminUsersPage() {
       .catch(() => undefined);
   }, [refreshTick]);
 
-  /* ---------- compteurs réels ---------- */
   const stats = useMemo(() => {
     const c = { total: users.length, actifs: 0, client: 0, livreur: 0, livreursDispo: 0, manager: 0, admin: 0 };
     users.forEach((u) => {
@@ -139,13 +137,13 @@ export default function AdminUsersPage() {
     return c;
   }, [users]);
 
-  /* ---------- filtres + pagination (côté écran, sur tous les comptes chargés) ---------- */
   const [search, setSearch] = useState(querySearch ?? '');
   const [roleTab, setRoleTab] = useState<RoleTab>('all');
   const [statusF, setStatusF] = useState('all');
   const [zoneF, setZoneF] = useState('all');
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     setSearch(querySearch ?? '');
     setPage(1);
@@ -163,10 +161,12 @@ export default function AdminUsersPage() {
   const pages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const current = Math.min(page, pages);
   const visible = filtered.slice((current - 1) * PER_PAGE, current * PER_PAGE);
+  // Helper choose : réalise le traitement métier associé.
   const choose = (fn: () => void) => {
     fn();
     setPage(1);
   };
+  // Helper resetAndReload : réalise le traitement métier associé.
   const resetAndReload = () => {
     setSearch('');
     setRoleTab('all');
@@ -176,7 +176,7 @@ export default function AdminUsersPage() {
     setReloadKey((k) => k + 1);
   };
 
-  /* ---------- export CSV (comptes filtrés) ---------- */
+  // Génère et déclenche l’export via exportCsv.
   const exportCsv = () => {
     const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const lines = [
@@ -195,12 +195,12 @@ export default function AdminUsersPage() {
     URL.revokeObjectURL(a.href);
   };
 
-  /* ---------- fiche utilisateur (statut / zone / disponibilité réels) ---------- */
   const [selected, setSelected] = useState<any | null>(null);
   const [editStatut, setEditStatut] = useState('actif');
   const [editZone, setEditZone] = useState('');
   const [editDispo, setEditDispo] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Helper openUser : réalise le traitement métier associé.
   const openUser = (u: any) => {
     setSelected(u);
     setEditStatut(statutOf(u) || 'actif');
@@ -211,6 +211,7 @@ export default function AdminUsersPage() {
   const ownAdmin = !!selected && (selRole === 'admin' || selRole === 'super_admin') && Number(selected.id) === currentUserId();
   const hasZone = selRole === 'manager' || selRole === 'livreur' || ownAdmin;
 
+  // Enregistre ou crée les données via saveUser.
   const saveUser = async () => {
     if (!selected) return;
     const data: Record<string, unknown> = { statut: editStatut };
@@ -234,6 +235,7 @@ export default function AdminUsersPage() {
     }
   };
 
+  // Helper toggleStatus : réalise le traitement métier associé.
   const toggleStatus = async (u: any) => {
     const suspendu = statutOf(u) === 'suspendu';
     const confirme = await adminDialogs.confirm(
@@ -261,10 +263,12 @@ export default function AdminUsersPage() {
   const [managerZone, setManagerZone] = useState('');
   const [promoting, setPromoting] = useState(false);
   const [promotingAdmin, setPromotingAdmin] = useState(false);
+  // Helper openPromote : réalise le traitement métier associé.
   const openPromote = (u: { id: number; nom?: string }, kind: 'client' | 'self') => {
     setManagerZone('');
     setManagerTarget({ id: Number(u.id), nom: u.nom || nomOf(u), kind });
   };
+  // Helper promoteToAdmin : réalise le traitement métier associé.
   const promoteToAdmin = async (u: any) => {
     const confirme = await adminDialogs.confirm(
       tr(
@@ -289,6 +293,7 @@ export default function AdminUsersPage() {
       setPromotingAdmin(false);
     }
   };
+  // Helper openSelfManager : réalise le traitement métier associé.
   const openSelfManager = () => {
     const id = currentAdminId();
     if (!id) {
@@ -300,9 +305,10 @@ export default function AdminUsersPage() {
       const raw = localStorage.getItem('tokpa_user');
       const u = raw ? JSON.parse(raw) as { nom_complet?: string; prenom?: string; nom?: string } : null;
       nom = u?.nom_complet || [u?.prenom, u?.nom].filter(Boolean).join(' ') || nom;
-    } catch { /* nom par défaut */ }
+    } catch {  }
     openPromote({ id, nom }, 'self');
   };
+  // Helper confirmPromote : réalise le traitement métier associé.
   const confirmPromote = async () => {
     if (!managerTarget) return;
     if (!managerZone) {
@@ -327,6 +333,7 @@ export default function AdminUsersPage() {
     }
   };
 
+  // Helper resetPassword : réalise le traitement métier associé.
   const resetPassword = async (u: any) => {
     if (!u?.email) {
       toast.error(tx("Ce compte n'a pas d'adresse email."));
@@ -340,7 +347,6 @@ export default function AdminUsersPage() {
     }
   };
 
-  /* ---------- création d'un utilisateur (POST /admin/users) ---------- */
   const [addOpen, setAddOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [newName, setNewName] = useState('');
@@ -350,6 +356,7 @@ export default function AdminUsersPage() {
   const [newPhone, setNewPhone] = useState('');
   const [uploadLabel, setUploadLabel] = useState('Cliquez pour importer les documents ou glissez-les ici');
   const [creating, setCreating] = useState(false);
+  // Helper openAdd : réalise le traitement métier associé.
   const openAdd = () => {
     setStep(1);
     setNewName('');
@@ -362,6 +369,7 @@ export default function AdminUsersPage() {
   };
   const needsZone = newRole === 'livreur' || newRole === 'manager';
 
+  // Helper validateStep1 : réalise le traitement métier associé.
   const validateStep1 = (): string | null => {
     const parts = newName.trim().split(/\s+/).filter(Boolean);
     if (parts.length < 2) return tx("Indiquez le prénom et le nom (ex : Sègla Hounkpati).");
@@ -371,6 +379,7 @@ export default function AdminUsersPage() {
     return null;
   };
 
+  // Enregistre ou crée les données via createUser.
   const createUser = async (e?: FormEvent) => {
     e?.preventDefault();
     const problem = validateStep1();
@@ -387,8 +396,8 @@ export default function AdminUsersPage() {
         prenom,
         nom: rest.join(' '),
         email,
-        telephone: `229${newPhone.replace(/\D/g, '')}`, // même format que l'inscription
-        password: randomPassword(), // provisoire : l'utilisateur définit le sien via le lien envoyé
+        telephone: `229${newPhone.replace(/\D/g, '')}`,
+        password: randomPassword(),
         role: newRole,
         ...(needsZone && newZone ? { zone_id: Number(newZone) } : {}),
       });
@@ -414,6 +423,7 @@ export default function AdminUsersPage() {
     }
   };
 
+  // Gère l’action utilisateur Step1Submit.
   const onStep1Submit = () => {
     const problem = validateStep1();
     if (problem) {
@@ -428,6 +438,7 @@ export default function AdminUsersPage() {
   const selUi = ROLE_UI[selRole] ?? ROLE_UI.client;
   const pageNumbers = Array.from({ length: pages }, (_, i) => i + 1).filter((n) => n === 1 || n === pages || Math.abs(n - current) <= 1);
 
+  // Retourne le rendu JSX du composant.
   return (
     <AdminLayout currentPath="/admin/utilisateurs">
       {err && (
@@ -498,7 +509,6 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        {/* Statistiques réelles (comptes chargés) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-bg-card p-4 rounded-[14px] border border-gray-200 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-orange-50 text-primary flex items-center justify-center text-xl shrink-0">
@@ -828,7 +838,6 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* Fiche utilisateur — valeurs réelles ; statut / zone / disponibilité modifiables (PUT /admin/users/{id}) */}
       <div
         className={`fixed inset-0 bg-black/50 z-50 ${selected ? 'active' : 'hidden'} items-center justify-center p-4 backdrop-blur-xs`}
         id="userModal"
@@ -984,7 +993,6 @@ export default function AdminUsersPage() {
         )}
       </div>
 
-      {/* Ajout d'un utilisateur — POST /admin/users */}
       <div
         className={`fixed inset-0 bg-black/50 z-50 ${addOpen ? 'active' : 'hidden'} items-center justify-center p-4 backdrop-blur-xs overflow-y-auto`}
         id="addUserModal"
@@ -1145,7 +1153,6 @@ export default function AdminUsersPage() {
               </div>
             </div>
 
-            {/* Étape 2 « Dossier & Conformité » — aucun champ côté backend : laissée telle quelle (P3), non transmise. */}
             <div className={`${step === 2 ? '' : 'hidden'} space-y-4 p-4 text-xs sm:p-6`} id="step2Container">
               <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-800 flex items-center justify-center shrink-0 text-base mt-0.5">

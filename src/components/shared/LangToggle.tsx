@@ -1,12 +1,14 @@
+// Sélecteur déroulant de langue (fr, en, es, de, pt).
 import { LANGUAGES, useLanguage } from '../../context/LanguageContext';
 import MIcon from './MIcon';
 
-/** Sélecteur de langue : cycle fr → en → es → de → pt, même comportement que la barre cliente. */
+// Composant React LangToggle : prépare l’état et affiche son interface.
 export default function LangToggle({ className = '' }: { className?: string }) {
   const { language, toggleLanguage } = useLanguage();
   const index = LANGUAGES.findIndex((l) => l.code === language);
   const current = LANGUAGES[index] ?? LANGUAGES[0];
   const next = LANGUAGES[(index + 1) % LANGUAGES.length];
+  // Retourne le rendu JSX du composant.
   return (
     <button
       type="button"

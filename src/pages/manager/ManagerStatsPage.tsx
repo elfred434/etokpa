@@ -1,3 +1,4 @@
+// Statistiques opérationnelles de la zone (volumes, revenus, délais) selon la période.
 import { useEffect, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
 import MIcon from '../../components/shared/MIcon';
@@ -11,7 +12,6 @@ import { currentUserZone, isAdminRole } from '../../routes/authGuard';
 import { formatManagerZoneLabel } from '../../utils/managerAssignment';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
 
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 const PERIODES = [
@@ -20,6 +20,7 @@ const PERIODES = [
   { label: 'Ce Mois', param: 'mois' as const },
 ];
 
+// Composant de la page ManagerStats : gère le chargement des données et le rendu.
 export default function ManagerStatsPage() {
   useLanguage();
   const [periode, setPeriode] = useState<'jour' | 'semaine' | 'mois'>('jour');
@@ -28,6 +29,7 @@ export default function ManagerStatsPage() {
   const [loading, setLoading] = useState(true);
   const refreshTick = useGlobalRefreshTick();
 
+  // Exécute l’effet de bord React lors du montage ou de la mise à jour des dépendances.
   useEffect(() => {
     let alive = true;
     if (!silentRefreshActive()) setLoading(true);
@@ -49,6 +51,7 @@ export default function ManagerStatsPage() {
     { icon: 'delivery_dining', label: tx("Commandes livrées"), value: stats?.livrees ?? '—', currency: false },
   ];
 
+  // Retourne le rendu JSX du composant.
   return (
     <ManagerLayout currentPath="/manager/statistiques">
       <div className="space-y-6">

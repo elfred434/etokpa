@@ -1,54 +1,52 @@
+// Appels API réservés au livreur (courses, acceptation/refus, statuts, GPS, historique, chat).
 import { apiClient } from './client';
 import type { ConversationItem, MessageItem } from './chat';
 
+// Regroupe les appels API du module livreur.
 export const livreurApi = {
-  // GET /api/livreur/deliveries -> courses assignees au livreur
+  // Appelle GET /livreur/deliveries via le client API.
   getDeliveries: async () => {
     const response = await apiClient.get('/livreur/deliveries');
     return response.data;
   },
 
-  // PATCH /api/livreur/deliveries/{order}/accept
-  // Corps vide. Réponse { message: "Course acceptée.", data: commande }.
-  // Le statut ne change pas : la course reste assignée à ce livreur.
+  // Appelle PATCH /livreur/deliveries/${orderId}/accept via le client API.
   acceptDelivery: async (orderId: number) => {
     const response = await apiClient.patch(`/livreur/deliveries/${orderId}/accept`);
     return response.data as { message?: string; data?: { id?: number; statut?: string; livreur_id?: number | null } };
   },
 
-  // PATCH /api/livreur/deliveries/{order}/refuse
-  // Corps vide. Le backend met livreur_id à null.
-  // Réponse { message: "Course refusée, remise en file." }.
+  // Appelle PATCH /livreur/deliveries/${orderId}/refuse via le client API.
   refuseDelivery: async (orderId: number) => {
     const response = await apiClient.patch(`/livreur/deliveries/${orderId}/refuse`);
     return response.data as { message?: string };
   },
 
-  // POST /api/livreur/position -> transmission GPS
+  // Appelle POST /livreur/position via le client API.
   updatePosition: async (data: { latitude: number; longitude: number; order_id?: number }) => {
     const response = await apiClient.post('/livreur/position', data);
     return response.data;
   },
 
-  // PATCH /api/livreur/deliveries/{order}/status -> statut de livraison (en_livraison | livre)
+  // Appelle PATCH /livreur/deliveries/${orderId}/status via le client API.
   updateStatus: async (orderId: number, statut: 'en_livraison' | 'livre') => {
     const response = await apiClient.patch(`/livreur/deliveries/${orderId}/status`, { statut });
     return response.data;
   },
 
-  // GET /api/livreur/history -> historique
+  // Appelle GET /livreur/history via le client API.
   getHistory: async (page = 1) => {
     const response = await apiClient.get('/livreur/history', { params: { page } });
     return response.data;
   },
 
-  // GET /api/livreur/conversations -> conversations du livreur
+  // Appelle GET /livreur/conversations via le client API.
   getConversations: async () => {
     const response = await apiClient.get<{ data: ConversationItem[] }>('/livreur/conversations');
     return response.data;
   },
 
-  // GET /api/livreur/conversations/{id}/messages -> messages d'une conversation
+  // Appelle GET /livreur/conversations/${conversationId}/messages via le client API.
   getMessages: async (conversationId: number | string, page = 1) => {
     const response = await apiClient.get(`/livreur/conversations/${conversationId}/messages`, {
       params: { page },
@@ -56,7 +54,7 @@ export const livreurApi = {
     return response.data;
   },
 
-  // POST /api/livreur/conversations/{id}/messages -> envoyer un message
+  // Appelle POST /livreur/conversations/${conversationId}/messages via le client API.
   sendMessage: async (conversationId: number | string, contenu: string) => {
     const response = await apiClient.post<{ data: MessageItem }>(
       `/livreur/conversations/${conversationId}/messages`,

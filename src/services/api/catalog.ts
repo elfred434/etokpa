@@ -1,3 +1,4 @@
+// Appels API publics du catalogue : produits, catégories, packs et zones.
 import { apiClient } from './client';
 
 export interface CatalogParams {
@@ -17,7 +18,6 @@ export interface ApiProduct {
   prix_minimum: number;
   devise: string;
   img_url?: string;
-  /** Champ réel de ProductResource (l'API renvoie image_url, pas img_url). */
   image_url?: string | null;
   stock?: number | null;
   disponible: boolean;
@@ -28,7 +28,6 @@ export interface ApiProduct {
   };
 }
 
-/** Catégorie — GET /api/categories : racines (parent_id null) triées par nom, avec `children`. */
 export interface ApiCategory {
   id: number;
   nom: string;
@@ -36,18 +35,11 @@ export interface ApiCategory {
   description?: string | null;
   parent_id?: number | null;
   children?: ApiCategory[];
-  /** Champs ajoutés sur `categories` côté backend (migration add_some_champs_to_categorie). */
   icone?: string | null;
   couleur?: string | null;
   en_accueil?: boolean | null;
 }
 
-/** Produit inclus dans un pack — quantité dans `pivot.qte` (table produit_pack). */
-/**
- * Produit inclus dans un pack (GET /bundles).
- * `Pack::products()` est un belongsToMany sans restriction de colonnes : le backend
- * renvoie donc des modèles `Product` complets, pas seulement id/nom/prix.
- */
 export interface ApiBundleItem {
   id: number;
   nom: string;
@@ -62,7 +54,6 @@ export interface ApiBundleItem {
   pivot?: { qte?: number | string };
 }
 
-/** Pack — modèle `Pack` brut (GET /bundles : disponibles + `products` ; admin : + `produits`). */
 export interface ApiBundle {
   id: number;
   nom: string;
@@ -75,7 +66,6 @@ export interface ApiBundle {
   produits?: ApiBundleItem[];
 }
 
-/** Zone de livraison — exactement `ZoneResource` (GET /zones). */
 export interface ApiZone {
   id: number;
   nom: string;
@@ -95,32 +85,33 @@ export interface ApiZone {
   }>;
 }
 
+// Regroupe les appels API du module catalog.
 export const catalogApi = {
-  // GET /api/products -> catalogue paginé avec filtres
+  // Appelle GET /products via le client API.
   getProducts: async (params?: CatalogParams) => {
     const response = await apiClient.get('/products', { params });
     return response.data;
   },
 
-  // GET /api/products/{id} -> détail d'un produit
+  // Appelle GET /products/${id} via le client API.
   getProduct: async (id: number | string) => {
     const response = await apiClient.get(`/products/${id}`);
     return response.data;
   },
 
-  // GET /api/categories -> liste des catégories
+  // Appelle GET /categories via le client API.
   getCategories: async () => {
     const response = await apiClient.get('/categories');
     return response.data;
   },
 
-  // GET /api/bundles -> packs de produits
+  // Appelle GET /bundles via le client API.
   getBundles: async () => {
     const response = await apiClient.get('/bundles');
     return response.data;
   },
 
-  // GET /api/zones -> zones de livraison
+  // Appelle GET /zones via le client API.
   getZones: async () => {
     const response = await apiClient.get('/zones');
     return response.data;
