@@ -19,7 +19,7 @@ const DESIGN_CSS = `
             vertical-align: middle;
         }
         .active-nav-item {
-            background-color: #f97316; /* Primary container simulation */
+            background-color: #f97316; /* Couleur d'accentuation principale */
             color: white;
         }
         .glass-panel {
@@ -29,7 +29,7 @@ const DESIGN_CSS = `
         }
     `;
 
-// Composant React CAT_ICON : prépare l’état et affiche son interface.
+// Helper CAT_ICON : retourne l’icône Material correspondant au nom de la catégorie.
 const CAT_ICON = (nom: string): string =>
   /épic|epic|sauce|assais/i.test(nom) ? 'liquor'
     : /bois|jus|eau|sod/i.test(nom) ? 'local_drink'

@@ -61,7 +61,7 @@ export default function AdminDashboardPage() {
   const { rows: commandes, err, loading } = useLiveRows(() => adminApi.getOrders({ page: 1 }));
   const refreshTick = useGlobalRefreshTick();
   const [dash, setDash] = useState<any>(null);
-  // Composant React SC : prépare l’état et affiche son interface.
+  // Helper SC : retourne les classes CSS du badge selon le statut de commande.
   const SC = (s: string) => (s || '').includes('attente') ? 'bg-amber-light text-amber-text'
     : (s || '').includes('annul') || (s || '').includes('litige') ? 'bg-error-container text-error'
     : (s || '').includes('term') || (s || '').includes('livr') ? 'bg-success-light text-success'

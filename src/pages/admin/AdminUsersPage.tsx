@@ -24,7 +24,7 @@ const DESIGN_CSS = `
     .btn-press:active {
       transform: scale(0.97);
     }
-    /* Modal transitions */
+    /* Transitions d'ouverture des modales */
     #userModal.active, #addUserModal.active, #managerModal.active {
       display: flex !important;
     }
