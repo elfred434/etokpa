@@ -12,7 +12,7 @@ import { adminDialogs } from '../../components/shared/AdminActionDialogs';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 
-// Feuille de styles intégrée (DESIGN_CSS) injectée pour le rendu de la vue.
+// Styles CSS locaux injectés dans la page.
 const DESIGN_CSS = `
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;

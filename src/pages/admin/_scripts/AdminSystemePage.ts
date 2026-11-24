@@ -1,2 +1,2 @@
-// Script d’initialisation hérité rattaché à AdminSystemePage.
+// Identifiant de configuration des actions interactives de AdminSystemePage.
 export default 'admin-systeme';

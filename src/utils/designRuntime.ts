@@ -1,4 +1,4 @@
-// Runtime des actions interactives héritées pour les écrans super-administrateur.
+// Gestionnaire centralisé des actions interactives et modales des écrans d’administration.
 import { useEffect } from 'react';
 import { captureFrontendError } from '../services/errors/frontendErrorReporter';
 import { tx } from '../i18n/tx';
@@ -27,7 +27,7 @@ const EVENT_FOR: Record<string, string> = {
   'data-onmouseenter': 'mouseenter',
 };
 
-// Feuille de styles intégrée (MODAL_CSS) injectée pour le rendu de la vue.
+// Styles CSS appliqués aux modales et à leurs barres de défilement.
 const MODAL_CSS = `
 .design-modal-scroll { scrollbar-width: thin; scrollbar-color: rgba(60,45,38,0.35) transparent; }
 .design-modal-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -36,7 +36,7 @@ const MODAL_CSS = `
 `;
 
 let cssInjected = false;
-// Helper injectModalCss : réalise le traitement métier associé.
+// Injecte la feuille de styles des modales dans le document si absente.
 function injectModalCss() {
   if (cssInjected || typeof document === 'undefined') return;
   cssInjected = true;
@@ -125,7 +125,7 @@ const WEBHOOK_PAYLOADS: Record<string, string> = {
 
 let currentInspectedId = 'evt_983172';
 
-// Met à jour les données ou l’état via setButtonIconAndLabel.
+// Met à jour l’icône et le libellé d’un bouton après une action.
 function setButtonIconAndLabel(btn: Element, iconName: string, labelText: string, iconColorClass = '') {
   btn.textContent = '';
   const icon = document.createElement('span');
@@ -136,7 +136,7 @@ function setButtonIconAndLabel(btn: Element, iconName: string, labelText: string
   btn.append(icon, label);
 }
 
-// Helper showBddToast : réalise le traitement métier associé.
+// Affiche un toast de confirmation temporaire sur l’écran base de données.
 function showBddToast(title: string, body: string) {
   const toast = document.getElementById('toast-banner');
   const toastTitle = document.getElementById('toast-title');
@@ -155,7 +155,7 @@ function showBddToast(title: string, body: string) {
   }, 4000);
 }
 
-// Helper showApiToast : réalise le traitement métier associé.
+// Affiche un toast de confirmation temporaire sur l’écran clés API.
 function showApiToast(message: string, isError = false) {
   const toast = document.getElementById('toast');
   const toastMsg = document.getElementById('toast-msg');
@@ -170,7 +170,7 @@ function showApiToast(message: string, isError = false) {
   setTimeout(() => toast.classList.add('hidden'), 2800);
 }
 
-// Helper closeBddActionModal : réalise le traitement métier associé.
+// Ferme la modale de confirmation d’opération système.
 function closeBddActionModal() {
   const modal = document.getElementById('cli-modal');
   const modalContainer = document.getElementById('modal-container');
@@ -655,7 +655,7 @@ const HANDLERS: Record<string, HandlerFn> = {
   },
 };
 
-// Transforme ou formate les données via parseSafeArgs.
+// Extrait et valide les arguments passés à un appel d’action déclaratif.
 function parseSafeArgs(rawArgs: string, el: Element, event: Event): unknown[] {
   const args: unknown[] = [];
   let i = 0;
@@ -700,7 +700,7 @@ function parseSafeArgs(rawArgs: string, el: Element, event: Event): unknown[] {
   return args;
 }
 
-// Helper invokeSafeCall : réalise le traitement métier associé.
+// Exécute un gestionnaire autorisé à partir de son expression et de l’élément cible.
 function invokeSafeCall(code: string, el: Element, event: Event): void {
   const trimmed = code.trim();
   if (!trimmed) return;
@@ -724,7 +724,7 @@ function invokeSafeCall(code: string, el: Element, event: Event): void {
   fn(args, el, event);
 }
 
-// Helper closeViaDesign : réalise le traitement métier associé.
+// Ferme une modale active et réactive le défilement de la page.
 function closeViaDesign(root: HTMLElement) {
   const candidates = [root, ...Array.from(root.querySelectorAll<HTMLElement>('[data-onclick]'))];
   const closer = candidates.find((el) => /close|toggle|dismiss|hide|ferm/i.test(el.getAttribute('data-onclick') ?? ''));
@@ -740,7 +740,7 @@ function closeViaDesign(root: HTMLElement) {
   root.style.setProperty('display', 'none');
 }
 
-// Helper enhanceModals : réalise le traitement métier associé.
+// Ajoute la fermeture au clic extérieur et la barre de défilement sur les modales.
 function enhanceModals(): Array<() => void> {
   injectModalCss();
   const offs: Array<() => void> = [];
@@ -762,7 +762,7 @@ function enhanceModals(): Array<() => void> {
   return offs;
 }
 
-// Helper setupPresetListeners : réalise le traitement métier associé.
+// Enregistre les écouteurs spécifiques à la vue admin active.
 function setupPresetListeners(preset: string): Array<() => void> {
   const offs: Array<() => void> = [];
 
@@ -908,7 +908,7 @@ function setupPresetListeners(preset: string): Array<() => void> {
   return offs;
 }
 
-// Helper invokeDesign : réalise le traitement métier associé.
+// Déclenche le gestionnaire d’action associé à un élément interactif.
 export function invokeDesign(code: string, el: Element, event: Event): void {
   try {
     invokeSafeCall(code, el, event);
@@ -917,7 +917,7 @@ export function invokeDesign(code: string, el: Element, event: Event): void {
   }
 }
 
-// Hook React useDesignScript : encapsule l’état et les effets associés.
+// Hook React attachant les écouteurs d’actions et de modales de l’écran actif.
 export function useDesignScript(presetOrScript: string) {
   // Enregistre les écouteurs d’événements navigateur et les nettoie au démontage.
   useEffect(() => {

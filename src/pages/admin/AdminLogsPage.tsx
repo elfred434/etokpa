@@ -15,7 +15,7 @@ import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefres
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// Feuille de styles intégrée (DESIGN_CSS) injectée pour le rendu de la vue.
+// Styles CSS locaux injectés dans la page.
 const DESIGN_CSS = `
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
         .timeline-line { width: 2px; background-color: var(--color-border-default); left: 16px; top: 0; bottom: 0; }

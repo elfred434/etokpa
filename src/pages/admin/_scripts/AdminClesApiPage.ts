@@ -1,2 +1,2 @@
-// Script d’initialisation hérité rattaché à AdminClesApiPage.
+// Identifiant de configuration des actions interactives de AdminClesApiPage.
 export default 'admin-cles-api';

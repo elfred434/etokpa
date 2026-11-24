@@ -6,7 +6,7 @@ import MIcon from '../../components/shared/MIcon';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
-// Feuille de styles intégrée (DESIGN_CSS) injectée pour le rendu de la vue.
+// Styles CSS locaux injectés dans la page.
 const DESIGN_CSS = `@layer base{html,body{margin:0;padding:0;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}`;
 
 // Composant de la page AdminSecurite : gère le chargement des données et le rendu.

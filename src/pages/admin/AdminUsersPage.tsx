@@ -19,7 +19,7 @@ import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefres
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// Feuille de styles intégrée (DESIGN_CSS) injectée pour le rendu de la vue.
+// Styles CSS locaux injectés dans la page.
 const DESIGN_CSS = `
     .btn-press:active {
       transform: scale(0.97);

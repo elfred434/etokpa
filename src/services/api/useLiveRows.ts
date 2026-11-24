@@ -70,7 +70,7 @@ export const zoneNom = (z: unknown): string =>
 export const escArg = (s: unknown): string =>
   String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
-// Helper fireDesign : réalise le traitement métier associé.
+// Déclenche l’action interactive associée à l’élément cliqué.
 export function fireDesign(e: MouseEvent<HTMLElement>): void {
   const el = e.currentTarget;
   const code = el.getAttribute('data-onclick') || '';

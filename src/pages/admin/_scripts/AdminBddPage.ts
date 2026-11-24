@@ -1,2 +1,2 @@
-// Script d’initialisation hérité rattaché à AdminBddPage.
+// Identifiant de configuration des actions interactives de AdminBddPage.
 export default 'admin-bdd';

@@ -1,2 +1,2 @@
-// Script d’initialisation hérité rattaché à AdminParametresPage.
+// Identifiant de configuration des actions interactives de AdminParametresPage.
 export default 'admin-parametres';

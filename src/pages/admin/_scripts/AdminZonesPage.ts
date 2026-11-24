@@ -1,2 +1,2 @@
-// Script d’initialisation hérité rattaché à AdminZonesPage.
+// Identifiant de configuration des actions interactives de AdminZonesPage.
 export default '';

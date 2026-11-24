@@ -1,2 +1,2 @@
-// Script d’initialisation hérité rattaché à AdminCatalogPage.
+// Identifiant de configuration des actions interactives de AdminCatalogPage.
 export default '';

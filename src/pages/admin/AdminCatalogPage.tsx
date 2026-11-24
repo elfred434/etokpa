@@ -21,7 +21,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 import { useGlobalRefreshTick } from '../../hooks/useRefresh';
 
-// Feuille de styles intégrée (DESIGN_CSS) injectée pour le rendu de la vue.
+// Styles CSS locaux injectés dans la page.
 const DESIGN_CSS = `
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
         .sidebar-item-active { @apply bg-secondary-container text-on-secondary-container rounded-lg font-bold; }
