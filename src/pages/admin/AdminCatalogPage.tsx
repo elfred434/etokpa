@@ -58,6 +58,8 @@ export default function AdminCatalogPage() {
   });
   const [cats, setCats] = useState<any[]>([]);
   const [tab, setTab] = useState<'produits' | 'categories'>('produits');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [q, setQ] = useState('');
   const [catF, setCatF] = useState('');
   const [dispoF, setDispoF] = useState('');
@@ -274,6 +276,19 @@ export default function AdminCatalogPage() {
   const pages = Math.max(1, Math.ceil(tabList.length / PER_PAGE));
   const current = Math.min(page, pages);
   const slicePage = (l: any[]) => l.slice((current - 1) * PER_PAGE, current * PER_PAGE);
+  const pageItems = slicePage(tabList);
+  const allPageSelected = pageItems.length > 0 && pageItems.every((item: any) => selectedIds.includes(Number(item.id)));
+  const toggleSelectAll = () => {
+    if (allPageSelected) {
+      const pageSet = new Set(pageItems.map((i: any) => Number(i.id)));
+      setSelectedIds((prev) => prev.filter((id) => !pageSet.has(id)));
+    } else {
+      setSelectedIds((prev) => [...new Set([...prev, ...pageItems.map((i: any) => Number(i.id))])]);
+    }
+  };
+  const toggleSelectOne = (id: number) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
 
   return (
     <AdminLayout currentPath="/admin/catalogue">
@@ -343,10 +358,66 @@ export default function AdminCatalogPage() {
                 {cats.map((c: any) => (
                   <option key={c.id} value={String(c.id)}>{c.nom}</option>
                 ))}
-              </select> <select className="px-md py-2 text-label bg-bg-card border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" value={dispoF} onChange={(e) => setDispoF(e.target.value)}> <option value="">{tx("Disponibilité")}</option> <option value="stock">{tx("En stock")}</option> <option value="rupture">{tx("Rupture")}</option> </select> <div className="flex border border-border-default rounded-lg overflow-hidden"> <button className="p-2 bg-bg-secondary text-primary"><MIcon name="format_list_bulleted" /></button> <button className="p-2 hover:bg-bg-secondary text-text-tertiary"><MIcon name="grid_view" /></button> </div> </div>  <div className="bg-bg-card rounded-lg shadow-sm border border-border-default overflow-hidden"> <div className="overflow-x-auto"> <table className="w-full text-left border-collapse" data-mobile-detail="native">
+              </select> <select className="px-md py-2 text-label bg-bg-card border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" value={dispoF} onChange={(e) => setDispoF(e.target.value)}> <option value="">{tx("Disponibilité")}</option> <option value="stock">{tx("En stock")}</option> <option value="rupture">{tx("Rupture")}</option> </select> <div className="flex border border-border-default rounded-lg overflow-hidden"> <button type="button" aria-label={tx("Vue liste")} aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')} className={`p-2 transition-colors ${viewMode === 'list' ? 'bg-bg-secondary text-primary' : 'hover:bg-bg-secondary text-text-tertiary'}`}><MIcon name="format_list_bulleted" /></button> <button type="button" aria-label={tx("Vue grille")} aria-pressed={viewMode === 'grid'} onClick={() => setViewMode('grid')} className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-bg-secondary text-primary' : 'hover:bg-bg-secondary text-text-tertiary'}`}><MIcon name="grid_view" /></button> </div> </div>
+          {selectedIds.length > 0 && (
+            <div className="flex items-center justify-between rounded-lg border border-primary-light bg-primary-tint px-4 py-2 text-label">
+              <span className="font-semibold text-primary-dark">{tr(`${selectedIds.length} élément(s) sélectionné(s)`, `${selectedIds.length} item(s) selected`)}</span>
+              <button type="button" onClick={() => setSelectedIds([])} className="font-semibold text-primary hover:underline">{tx("Tout désélectionner")}</button>
+            </div>
+          )}
+          <div className="bg-bg-card rounded-lg shadow-sm border border-border-default overflow-hidden">
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4">
+              {tab === 'produits' && slicePage(produitsF).map((pr: any) => (
+                <div key={pr.id} tabIndex={0} onClick={() => ouvrirFicheProduit(pr)} onKeyDown={(e) => { if (e.key === 'Enter') ouvrirFicheProduit(pr); }} className="cursor-pointer rounded-xl border border-border-default bg-bg-app p-4 transition-all hover:border-primary-light hover:shadow-sm flex flex-col justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <ImageWithFallback
+                      src={absImageUrl(pr.image_url ?? pr.img_url)}
+                      alt=""
+                      className="h-14 w-14 shrink-0 rounded-lg bg-bg-secondary object-cover"
+                      fallback={<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 text-primary"><MIcon name="inventory_2" className="text-[24px]" /></div>}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-body font-semibold text-on-surface">{pr.nom}</p>
+                      <p className="truncate text-micro text-text-secondary">{pr.categorie?.nom ?? '—'}</p>
+                      <p className="mt-1 font-price text-primary">{fmtFcfa(pr.prix)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border-default pt-2" onClick={(e) => e.stopPropagation()}>
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${isProductAvailable(pr) ? 'bg-success-light text-success-dark' : 'bg-bg-secondary text-text-secondary'}`}>
+                      {isProductAvailable(pr) ? tx("Disponible") : tx("Rupture")}
+                    </span>
+                    <div className="flex items-center gap-3 text-label">
+                      <button type="button" className="font-semibold text-primary hover:underline" onClick={() => ouvrir(pr)}>{tx("Modifier")}</button>
+                      <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimer(pr)}>{tx("Supprimer")}</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {tab === 'categories' && slicePage(catsF).map((c: any) => (
+                <div key={c.id} tabIndex={0} onClick={() => setDetail({ kind: 'categorie', item: c })} onKeyDown={(e) => { if (e.key === 'Enter') setDetail({ kind: 'categorie', item: c }); }} className="cursor-pointer rounded-xl border border-border-default bg-bg-app p-4 transition-all hover:border-primary-light hover:shadow-sm flex flex-col justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-12 h-12 shrink-0 rounded-lg flex items-center justify-center ${CAT_COLOR_BADGE[String(c.couleur ?? '')] ?? 'bg-gradient-to-br from-amber-100 to-amber-200 text-amber-text'}`}><MIcon name={c.icone || 'category'} className="text-[22px]" /></div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-body font-semibold text-on-surface">{c.nom}</p>
+                      <p className="line-clamp-2 text-micro text-text-secondary">{c.description ?? '—'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-3 border-t border-border-default pt-2 text-label" onClick={(e) => e.stopPropagation()}>
+                    <Link to="/admin/categories" className="font-semibold text-primary hover:underline">{tx("Éditer")}</Link>
+                    <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimerCat(c)}>{tx("Supprimer")}</button>
+                  </div>
+                </div>
+              ))}
+              {!loading && ((tab === 'produits' && produitsF.length === 0) || (tab === 'categories' && catsF.length === 0)) && (
+                <p className="col-span-full py-6 text-center text-text-secondary">{tx("Aucun résultat pour ces filtres.")}</p>
+              )}
+            </div>
+          ) : (
+          <div className="overflow-x-auto"> <table className="w-full text-left border-collapse" data-mobile-detail="native">
 <thead>
 <tr className="bg-bg-secondary border-b border-border-default">
-<th className="py-md px-lg w-10"> <input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /> </th>
+<th className="py-md px-lg w-10"> <input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" checked={allPageSelected} onChange={toggleSelectAll} aria-label={tx("Tout sélectionner")} /> </th>
 <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Produit")}</th>
 <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Catégorie")}</th>
 <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Prix")}</th>
@@ -360,7 +431,7 @@ export default function AdminCatalogPage() {
                 )}
                 {tab === 'produits' && slicePage(produitsF).map((pr: any) => (
                   <tr key={pr.id} tabIndex={0} title={tx("Voir le détail")} className="cursor-pointer hover:bg-bg-secondary/50 transition-colors" onClick={() => ouvrirFicheProduit(pr)} onKeyDown={(e) => { if (e.key === 'Enter') ouvrirFicheProduit(pr); }}>
-                    <td className="py-4 px-lg" onClick={(e) => e.stopPropagation()}><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /></td>
+                    <td className="py-4 px-lg" onClick={(e) => e.stopPropagation()}><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" checked={selectedIds.includes(Number(pr.id))} onChange={() => toggleSelectOne(Number(pr.id))} aria-label={tr(`Sélectionner ${pr.nom}`, `Select ${pr.nom}`)} /></td>
                     <td className="py-4 px-md"> <div className="flex items-center gap-3"> <ImageWithFallback
                       src={absImageUrl(pr.image_url ?? pr.img_url)}
                       alt=""
@@ -375,7 +446,7 @@ export default function AdminCatalogPage() {
                 ))}
                 {tab === 'categories' && slicePage(catsF).map((c: any) => (
                   <tr key={c.id} tabIndex={0} title={tx("Voir le détail")} className="cursor-pointer hover:bg-bg-secondary/50 transition-colors" onClick={() => setDetail({ kind: 'categorie', item: c })} onKeyDown={(e) => { if (e.key === 'Enter') setDetail({ kind: 'categorie', item: c }); }}>
-                    <td className="py-4 px-lg" onClick={(e) => e.stopPropagation()}><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /></td>
+                    <td className="py-4 px-lg" onClick={(e) => e.stopPropagation()}><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" checked={selectedIds.includes(Number(c.id))} onChange={() => toggleSelectOne(Number(c.id))} aria-label={tr(`Sélectionner ${c.nom}`, `Select ${c.nom}`)} /></td>
                     <td className="py-4 px-md"> <div className="flex items-center gap-3"> <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${CAT_COLOR_BADGE[String(c.couleur ?? '')] ?? 'bg-gradient-to-br from-amber-100 to-amber-200 text-amber-text'}`}><MIcon name={c.icone || 'category'} className="text-[20px]" /></div> <span className="font-body font-semibold">{c.nom}</span> </div> </td>
                     <td className="py-4 px-md text-text-secondary">{c.description ?? '—'}</td>
                     <td className="py-4 px-md font-price text-primary">—</td>
@@ -389,6 +460,7 @@ export default function AdminCatalogPage() {
               </tbody>
 </table>
 </div>
+          )}
 <div className="py-md px-lg flex flex-wrap items-center justify-between gap-2 border-t border-border-default bg-bg-secondary/30"> <span className="text-label text-text-secondary">{tabList.length === 0 ? `Aucun résultat` : `Affichage de ${(current - 1) * PER_PAGE + 1} à ${Math.min(current * PER_PAGE, tabList.length)} sur ${tabList.length} ${tabNoun}`}</span> <div className="flex items-center gap-2"> <button type="button" disabled={current <= 1} onClick={() => setPage(current - 1)} className="w-8 h-8 flex items-center justify-center rounded border border-border-default bg-bg-card text-text-tertiary hover:bg-bg-secondary disabled:opacity-40"><MIcon name="chevron_left" className="text-[18px]" /></button> {Array.from({ length: pages }, (_, i) => i + 1).filter((n) => n === 1 || n === pages || Math.abs(n - current) <= 1).map((n) => (<button key={n} type="button" onClick={() => setPage(n)} className={n === current ? 'w-8 h-8 flex items-center justify-center rounded bg-primary-container text-white font-bold' : 'w-8 h-8 flex items-center justify-center rounded border border-border-default bg-bg-card hover:bg-bg-secondary'}>{n}</button>))} <button type="button" disabled={current >= pages} onClick={() => setPage(current + 1)} className="w-8 h-8 flex items-center justify-center rounded border border-border-default bg-bg-card text-text-tertiary hover:bg-bg-secondary disabled:opacity-40"><MIcon name="chevron_right" className="text-[18px]" /></button> </div> </div> </div> </div>
       {detail && (
         <CatalogueDetailModal

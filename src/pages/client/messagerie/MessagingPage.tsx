@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import clsx from 'clsx';
+import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import MIcon from '../../../components/shared/MIcon';
@@ -85,6 +86,8 @@ export default function MessagingPage() {
   const [activeOrder, setActiveOrder] = useState<ActiveOrderInfo | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [inputText, setInputText] = useState('');
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const appliedQueryOrderRef = useRef<number | undefined>(undefined);
 
   const currentUserId = (() => {
@@ -332,12 +335,14 @@ export default function MessagingPage() {
           {/* Header */}
           <div className="p-md flex justify-between items-center">
             <h2 className="font-h2 text-h2 text-text-main font-bold">{isFr ? 'Messages' : 'Messages'}</h2>
-            <button
-              type="button"
+            <Link
+              to="/commandes"
+              aria-label={isFr ? tx("Voir mes commandes") : 'View my orders'}
+              title={isFr ? tx("Ouvrir une discussion depuis une commande") : 'Open chat from an order'}
               className="text-primary-container hover:bg-primary-tint p-sm rounded-lg transition-all active:scale-[0.97] cursor-pointer"
             >
               <MIcon name="edit_square" />
-            </button>
+            </Link>
           </div>
 
           {/* Conversation Items */}
@@ -525,21 +530,58 @@ export default function MessagingPage() {
           </div>
 
           {/* Input Area */}
-          <footer className="flex items-center gap-2 border-t border-border-default bg-bg-card p-3 sm:gap-md sm:px-lg">
-            <button type="button" className="text-text-tertiary hover:text-text-secondary transition-colors cursor-pointer">
+          <footer className="relative flex items-center gap-2 border-t border-border-default bg-bg-card p-3 sm:gap-md sm:px-lg">
+            {emojiOpen && (
+              <div className="absolute bottom-full right-14 mb-2 flex items-center gap-1 rounded-xl border border-border-default bg-bg-card p-2 shadow-lg z-20">
+                {['👋', '👍', '🙏', '✅', '📍', '🚚', '📦', '😊'].map((em) => (
+                  <button
+                    key={em}
+                    type="button"
+                    onClick={() => {
+                      setInputText((prev) => `${prev}${em}`);
+                      setEmojiOpen(false);
+                      inputRef.current?.focus();
+                    }}
+                    className="rounded-lg p-1.5 text-lg hover:bg-bg-secondary cursor-pointer"
+                  >
+                    {em}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              disabled={!activeConvId}
+              aria-label={isFr ? tx("Insérer la référence de commande") : 'Insert order reference'}
+              title={isFr ? tx("Insérer la référence de commande") : 'Insert order reference'}
+              onClick={() => {
+                if (activeConvOrderId) {
+                  setInputText((prev) => (prev ? `${prev} #TOK-${activeConvOrderId}` : `Commande #TOK-${activeConvOrderId} : `));
+                  inputRef.current?.focus();
+                } else {
+                  toast(isFr ? tx("Seuls les messages texte sont pris en charge.") : 'Only text messages are supported.');
+                }
+              }}
+              className="text-text-tertiary hover:text-text-secondary transition-colors cursor-pointer disabled:opacity-40"
+            >
               <MIcon name="attach_file" />
             </button>
             <form onSubmit={handleSendMessage} className="flex min-w-0 flex-1 items-center rounded-full bg-bg-app px-3 sm:px-md">
               <input
+                ref={inputRef}
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
+                disabled={!activeConvId}
                 placeholder={isFr ? tx("Écrire un message...") : 'Type a message...'}
-                className="bg-transparent border-none focus:ring-0 text-body py-[10px] w-full text-sm outline-none"
+                className="bg-transparent border-none focus:ring-0 text-body py-[10px] w-full text-sm outline-none disabled:opacity-60"
               />
               <button
                 type="button"
-                className="text-text-tertiary hover:text-primary-container transition-colors ml-sm cursor-pointer"
+                disabled={!activeConvId}
+                aria-label={isFr ? tx("Ajouter un emoji") : 'Add emoji'}
+                onClick={() => setEmojiOpen((o) => !o)}
+                className="text-text-tertiary hover:text-primary-container transition-colors ml-sm cursor-pointer disabled:opacity-40"
               >
                 <MIcon name="mood" />
               </button>
@@ -548,6 +590,7 @@ export default function MessagingPage() {
               type="button"
               onClick={() => handleSendMessage()}
               disabled={!activeConvId}
+              aria-label={isFr ? tx("Envoyer le message") : 'Send message'}
               className="w-10 h-10 bg-primary-container text-white rounded-full flex items-center justify-center shadow-lg hover:bg-primary-hover active:scale-95 transition-all cursor-pointer disabled:opacity-40"
             >
               <MIcon name="send" style={{ fontVariationSettings: "'FILL' 1" }} />

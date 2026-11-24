@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
+import toast from 'react-hot-toast';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import { adminApi } from '../../services/api';
 import { useLiveRows } from '../../services/api/useLiveRows';
@@ -11,11 +12,16 @@ import { tr, tx } from '../../i18n/tx';
 import { lookupProductName } from '../../utils/lookupProductName';
 import { orderLineGivenName, orderLineName, orderLineProductId } from '../../utils/orderLine';
 import { silentRefreshActive, useGlobalRefreshTick } from '../../hooks/useRefresh';
+import { buildReceiptData } from '../../services/receipts/receiptData';
+import { downloadReceiptPdf } from '../../services/receipts/receiptPdf';
+import { localeRecu, receiptLabels } from '../../services/receipts/receiptLabels';
 
 
 /** Activité récente — données statiques du design Stitch (copie conforme). */
 interface Activity {
   id: string;
+  orderId: number;
+  rawOrder: any;
   action: string;
   detail: string;
   status: string;
@@ -57,6 +63,8 @@ const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate(
  */
 export default function AdminDashboardPage() {
   useLanguage();
+  const navigate = useNavigate();
+  const [supportOpen, setSupportOpen] = useState(false);
   const { rows: commandes, err, loading } = useLiveRows(() => adminApi.getOrders({ page: 1 }));
   const refreshTick = useGlobalRefreshTick();
   const [dash, setDash] = useState<any>(null);
@@ -76,6 +84,8 @@ export default function AdminDashboardPage() {
   const orders = commandes.map((r: any) => r?.data ?? r);
   const activities: Activity[] = orders.slice(0, 6).map((o: any) => ({
     id: `CMD-${o.id}`,
+    orderId: Number(o.id),
+    rawOrder: o,
     action: tx("Commande"),
     detail: `Commande #${o.id} — ${o.statut ?? '—'}`,
     status: o.statut ?? '—',
@@ -509,6 +519,7 @@ export default function AdminDashboardPage() {
               </p>
               <button
                 type="button"
+                onClick={() => setSupportOpen(true)}
                 className="bg-bg-card text-primary px-4 py-2 rounded-lg font-bold text-label transition-transform active:scale-95 cursor-pointer"
               >
                 Support Direct
@@ -648,6 +659,21 @@ export default function AdminDashboardPage() {
             <div className="px-6 py-4 bg-bg-secondary border-t border-border-default flex items-center justify-between gap-3 shrink-0">
               <button
                 type="button"
+                onClick={() => {
+                  const o = selected.rawOrder ?? {};
+                  const pay = o.payment ?? {
+                    id: selected.orderId,
+                    order_id: selected.orderId,
+                    montant: o.montant_total,
+                    methode: o.payment?.methode ?? 'fedapay',
+                    statut: o.statut,
+                    created_at: o.created_at,
+                    client: o.client,
+                  };
+                  const receipt = buildReceiptData(pay, o);
+                  downloadReceiptPdf(receipt, receiptLabels(), localeRecu());
+                  toast.success(tx("Reçu PDF téléchargé."));
+                }}
                 className="px-3 py-2 text-label font-medium text-text-secondary hover:bg-border-default/40 rounded-lg transition-colors flex items-center gap-1.5 border border-border-default bg-bg-card cursor-pointer"
               >
                 <MIcon name="download" className="text-base" />
@@ -663,12 +689,52 @@ export default function AdminDashboardPage() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => {
+                    const orderId = selected.orderId;
+                    setSelected(null);
+                    void navigate({ to: '/admin/commandes', search: { q: String(orderId) } });
+                  }}
                   className="px-4 py-2 text-label font-bold text-white bg-primary-container hover:bg-primary-hover rounded-lg transition-transform active:scale-95 flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <MIcon name="open_in_new" className="text-base" />
                   <span>{selected.cta}</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {supportOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setSupportOpen(false)}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-2xl border border-border-default w-full max-w-[440px] p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-h2 text-h2 text-on-surface">{tx("Support Direct TOKPa")}</h3>
+              <button type="button" onClick={() => setSupportOpen(false)} aria-label={tx("Fermer")} className="text-text-tertiary hover:text-on-surface">
+                <MIcon name="close" />
+              </button>
+            </div>
+            <p className="text-label text-text-secondary">
+              {tx("Assistance opérationnelle 24/7 pour les administrateurs et superviseurs de zone.")}
+            </p>
+            <div className="space-y-2 rounded-lg border border-border-default bg-bg-app p-3 text-label">
+              <p><span className="font-semibold">{tx("Téléphone urgence :")}</span> +229 21 31 45 80</p>
+              <p><span className="font-semibold">{tx("Email technique :")}</span> support@tokpa.bj</p>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2 pt-2">
+              <Link to="/admin/logs" onClick={() => setSupportOpen(false)} className="px-3 py-2 rounded-lg border border-border-default text-label font-semibold hover:bg-bg-app">
+                {tx("Journaux d'audit")}
+              </Link>
+              <button type="button" onClick={() => setSupportOpen(false)} className="px-4 py-2 rounded-lg bg-primary-container text-white text-label font-bold hover:bg-primary-hover">
+                {tx("Fermer")}
+              </button>
             </div>
           </div>
         </div>

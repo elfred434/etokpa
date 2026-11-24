@@ -8,6 +8,7 @@ import {
   DialogFrame,
 } from '../../shared/DialogFrame';
 import ManagerSidebar from './ManagerSidebar';
+import AdminNotificationBell from '../admin/AdminNotificationBell';
 import RefreshButton from '../../shared/RefreshButton';
 import SettingsLink from '../../shared/SettingsLink';
 import LogoutButton from '../../shared/LogoutButton';
@@ -102,12 +103,13 @@ export default function ManagerLayout({ children, currentPath }: Props) {
           <RefreshButton withLabel />
             <SettingsLink to="/manager/parametres" />
           <LogoutButton className="lg:hidden" />
-          <button
-            type="button"
-            className="hidden rounded-lg p-2 text-text-secondary hover:bg-bg-secondary hover:text-on-surface sm:block"
-          >
-            <MIcon name="notifications" className="text-[18px]" />
-          </button>
+          <div className="hidden sm:block">
+            <AdminNotificationBell
+              className="rounded-lg p-2 text-text-secondary hover:bg-bg-secondary hover:text-on-surface cursor-pointer"
+              icon={<MIcon name="notifications" className="text-[18px]" />}
+              dotClassName="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full"
+            />
+          </div>
           <Link
             to="/profil"
             aria-label={tx("Ouvrir le profil")}

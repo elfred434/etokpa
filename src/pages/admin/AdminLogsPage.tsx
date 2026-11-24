@@ -63,6 +63,7 @@ export default function AdminLogsPage() {
   const [roleFilter, setRoleFilter] = useState('');
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState<10 | 25 | 50>(25);
   const refreshTick = useGlobalRefreshTick();
 
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function AdminLogsPage() {
     return () => {
       alive = false;
     };
-  }, [page, applied, refreshTick]);
+  }, [page, perPage, applied, refreshTick]);
 
   const appliquer = () => {
     setApplied({ ...(search.trim() ? { action: search.trim() } : {}), ...(from ? { from } : {}) });
@@ -100,7 +101,18 @@ export default function AdminLogsPage() {
     Number(Boolean(type)) +
     Number(Boolean(roleFilter)) +
     Number(Boolean(from));
-  const visibles = type ? logs.filter((l) => categorie(l) === type) : logs;
+  const filteredLogs = logs.filter((l) => {
+    if (type && categorie(l) !== type) return false;
+    if (roleFilter) {
+      const who = acteur(l).sous.toLowerCase();
+      if (roleFilter === 'admin' && !who.includes('admin')) return false;
+      if (roleFilter === 'vendeur' && !who.includes('manager') && !who.includes('vendeur')) return false;
+      if (roleFilter === 'client' && !who.includes('client')) return false;
+      if (roleFilter === 'livreur' && !who.includes('livreur')) return false;
+    }
+    return true;
+  });
+  const visibles = filteredLogs.slice(0, perPage);
 
   const chargerLogsPourExport = async () => {
     const acc: any[] = [];
@@ -396,8 +408,24 @@ export default function AdminLogsPage() {
       <footer className="mt-xl pt-lg border-t border-border-default flex flex-col md:flex-row justify-between items-center gap-md">
         <p className="text-secondary text-text-secondary">
           {tr(`Page ${meta.page} sur ${meta.last}`, `Page ${meta.page} of ${meta.last}`)}
-          {type ? tx(" (type filtré sur la page affichée)") : ''} · {tx("Afficher")} <button className="font-bold text-primary hover:underline">10</button> /{' '}
-          <button className="hover:text-primary">25</button> / <button className="hover:text-primary">50</button> {tx("par page")}
+          {type ? tx(" (type filtré sur la page affichée)") : ''} · {tx("Afficher")}{' '}
+          {([10, 25, 50] as const).map((sz, i) => (
+            <span key={sz}>
+              {i > 0 && ' / '}
+              <button
+                type="button"
+                aria-pressed={perPage === sz}
+                onClick={() => {
+                  setPerPage(sz);
+                  setPage(1);
+                }}
+                className={perPage === sz ? 'font-bold text-primary underline cursor-pointer' : 'hover:text-primary cursor-pointer'}
+              >
+                {sz}
+              </button>
+            </span>
+          ))}{' '}
+          {tx("par page")}
         </p>
         <div className="flex gap-2">
           <button

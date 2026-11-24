@@ -770,7 +770,7 @@ export default function AdminZonesPage() {
 
       {/* Modale « Nouvelle zone » : la zone = la délimitation de ses points */}
       {modal === 'zone' && (
-        <div className="fixed inset-0 z-[1200] bg-black/40 flex items-center justify-center p-4 pointer-events-none">
+        <div className="fixed inset-0 z-[1200] bg-black/40 flex items-center justify-center p-4 pointer-events-none" role="dialog" aria-modal="true" aria-label={tx("Nouvelle zone")}>
           <div className="bg-bg-card rounded-[14px] shadow-xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto design-modal-scroll p-4 sm:p-lg pointer-events-auto" onClick={(e) => e.stopPropagation()}>
             <div className="mb-lg flex items-start justify-between gap-3">
               <h3 className="min-w-0 break-words font-h2 text-h2 text-on-surface">{tx("Nouvelle zone")}</h3>
@@ -838,7 +838,7 @@ export default function AdminZonesPage() {
 
       {/* Modale « Nouveau / Modifier le point de repère » (intérieur ou à la limite) */}
       {modal === 'lm' && (
-        <div className={`fixed inset-0 z-[1200] flex justify-center bg-black/40 p-4 pointer-events-none ${jeu ? 'items-end' : 'items-center'}`}>
+        <div className={`fixed inset-0 z-[1200] flex justify-center bg-black/40 p-4 pointer-events-none ${jeu ? 'items-end' : 'items-center'}`} role="dialog" aria-modal="true" aria-label={lmEditId !== null ? tx("Modifier le point de repère") : tx("Nouveau point de repère")}>
           <div className={`pointer-events-auto w-full max-w-[480px] overflow-y-auto rounded-[14px] bg-bg-card p-4 shadow-xl design-modal-scroll sm:p-lg ${jeu ? 'max-h-[48vh]' : 'max-h-[90vh]'}`} onClick={(e) => e.stopPropagation()}>
             <div className="mb-lg flex items-start justify-between gap-3">
               <h3 className="min-w-0 break-words font-h2 text-h2 text-on-surface">{lmEditId !== null ? tx("Modifier le point de repère") : tx("Nouveau point de repère")}</h3>

@@ -492,6 +492,170 @@ const HANDLERS: Record<string, HandlerFn> = {
         modal?.classList.remove('flex');
       });
   },
+  setSysWindow: ([_win], el) => {
+    const group = el.parentElement;
+    group?.querySelectorAll('button').forEach((b) => {
+      b.className = 'px-3 py-1.5 rounded text-micro font-micro font-bold uppercase transition-all text-text-secondary hover:text-text-main hover:bg-bg-secondary';
+    });
+    el.className = 'px-3 py-1.5 rounded text-micro font-micro font-bold uppercase transition-all bg-primary-container text-on-primary shadow-sm';
+  },
+  restartPods: () => {
+    void adminDialogs
+      .confirm("Redémarrer gracieusement les pods applicatifs (rolling restart sans coupure) ?", { title: 'Restart Pods', confirmLabel: 'Redémarrer' })
+      .then((ok) => {
+        if (ok) void adminDialogs.alert("Rolling restart lancé sur le cluster Kubernetes (0 pod interrompu).", { title: 'Cluster à jour' });
+      });
+  },
+  filterTerminal: ([level], el) => {
+    const group = el.parentElement;
+    group?.querySelectorAll('button').forEach((b) => {
+      b.className = 'px-2 py-1 rounded text-text-tertiary hover:text-white';
+    });
+    el.className = 'px-2 py-1 rounded bg-[#1F2937] text-white font-bold';
+    const lvl = String(level ?? 'ALL').toUpperCase();
+    const terminal = document.getElementById('terminalContent');
+    if (!terminal) return;
+    Array.from(terminal.children).forEach((child) => {
+      const node = child as HTMLElement;
+      if (lvl === 'ALL' || node.textContent?.includes(`[${lvl}]`) || node.textContent?.includes('root@tokpa-ctl-prod')) {
+        node.style.display = '';
+      } else {
+        node.style.display = 'none';
+      }
+    });
+  },
+  execTerminal: () => {
+    const input = document.getElementById('terminalCmdInput') as HTMLInputElement | null;
+    const cmd = input?.value?.trim() ?? '';
+    if (!cmd) {
+      input?.focus();
+      return;
+    }
+    const terminal = document.getElementById('terminalContent');
+    if (terminal) {
+      const row = document.createElement('div');
+      row.className = 'text-white font-bold';
+      row.textContent = `[CMD EXEC] ${cmd}`;
+      terminal.appendChild(row);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+    if (input) input.value = '';
+  },
+
+  // AdminSecuritePage
+  exportSecuriteAudit: () => {
+    const payload = {
+      exported_at: new Date().toISOString(),
+      environment: 'Cluster-West-Africa-1',
+      records: Array.from(document.querySelectorAll('#secAuditList > div')).map((d) => d.textContent?.replace(/\s+/g, ' ').trim()),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tokpa-audit-trail-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+  addSecuriteSecret: () => {
+    void adminDialogs
+      .prompt("Nom de la nouvelle variable d'environnement (ex: REDIS_TLS_CERT) :", '', { title: 'Ajouter Variable / Secret', confirmLabel: 'Chiffrer & Ajouter' })
+      .then((keyName) => {
+        if (!keyName?.trim()) return;
+        const tbody = document.getElementById('secVaultBody');
+        if (tbody) {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-surface-container-lowest/50 transition-colors';
+          tr.dataset.vaultCat = 'db';
+          const td1 = document.createElement('td');
+          td1.className = 'py-md px-md font-mono font-bold text-text-main';
+          td1.textContent = keyName.trim().toUpperCase();
+          const td2 = document.createElement('td');
+          td2.className = 'py-md px-md font-mono text-label text-text-secondary';
+          td2.textContent = 'kms_enc_••••••••••••••••••••••••';
+          const td3 = document.createElement('td');
+          td3.className = 'py-md px-md';
+          td3.textContent = 'PROD';
+          const td4 = document.createElement('td');
+          td4.className = 'py-md px-md text-text-secondary';
+          td4.textContent = 'À l’instant (Vault KMS)';
+          const td5 = document.createElement('td');
+          td5.className = 'py-md px-md text-right text-success font-bold';
+          td5.textContent = 'Scellée';
+          tr.append(td1, td2, td3, td4, td5);
+          tbody.appendChild(tr);
+        }
+      });
+  },
+  switchVaultTab: ([cat], el) => {
+    const group = el.parentElement;
+    group?.querySelectorAll('button').forEach((b) => {
+      b.className = 'px-md py-2 rounded-lg text-text-secondary hover:text-text-main hover:bg-bg-card font-label text-label transition-colors flex items-center gap-xs';
+    });
+    el.className = 'px-md py-2 rounded-lg bg-primary-container text-on-primary font-label text-label shadow-sm flex items-center gap-xs';
+    const wanted = String(cat ?? 'all');
+    document.querySelectorAll<HTMLElement>('#secVaultBody tr').forEach((tr) => {
+      const c = tr.dataset.vaultCat ?? 'all';
+      tr.style.display = wanted === 'all' || c === wanted || wanted === 'db' && !tr.dataset.vaultCat ? '' : 'none';
+    });
+  },
+  viewSecretHistory: ([name]) => {
+    void adminDialogs.alert(`Historique KMS pour ${String(name)} :\n• v4 (Actuelle) — chiffrée AES-256-GCM\n• v3 — rotation précédente il y a 30 jours`, { title: 'Historique des versions' });
+  },
+  editSecretVar: ([name]) => {
+    void adminDialogs
+      .prompt(`Nouvelle valeur chiffrée pour ${String(name)} :`, '', { title: 'Modifier la variable Vault', confirmLabel: 'Appliquer' })
+      .then((val) => {
+        if (val !== null && val.trim()) {
+          void adminDialogs.alert(`Variable ${String(name)} mise à jour et synchronisée sur Kube Secret.`, { title: 'Secret mis à jour' });
+        }
+      });
+  },
+  addWhitelistIp: () => {
+    void adminDialogs
+      .prompt('Adresse IP ou CIDR à autoriser (ex: 197.234.10.5/32) :', '', { title: 'Ajouter IP à la liste blanche', confirmLabel: 'Autoriser' })
+      .then((cidr) => {
+        if (!cidr?.trim()) return;
+        const list = document.getElementById('secIpList');
+        if (list) {
+          const item = document.createElement('div');
+          item.className = 'flex items-center justify-between p-md rounded-xl bg-bg-secondary';
+          const left = document.createElement('div');
+          left.className = 'flex flex-col';
+          const lbl = document.createElement('span');
+          lbl.className = 'font-label text-label font-bold text-text-main';
+          lbl.textContent = 'Règle ajoutée';
+          const mono = document.createElement('span');
+          mono.className = 'font-mono text-label text-text-secondary';
+          mono.textContent = cidr.trim();
+          left.append(lbl, mono);
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'text-text-secondary hover:text-error p-1';
+          delBtn.textContent = '✕';
+          delBtn.onclick = () => item.remove();
+          item.append(left, delBtn);
+          list.appendChild(item);
+        }
+      });
+  },
+  removeWhitelistIp: (_args, el) => {
+    const row = el.closest('.rounded-xl');
+    if (row) row.remove();
+  },
+  inviteDev: () => {
+    void adminDialogs
+      .prompt('Email professionnel @tokpa.bj du développeur à inviter :', '', { title: 'Inviter Développeur', confirmLabel: 'Envoyer invitation' })
+      .then((email) => {
+        if (email?.trim()) void adminDialogs.alert(`Invitation SSH/RBAC envoyée à ${email.trim()}.`, { title: 'Invitation envoyée' });
+      });
+  },
+  auditDevPerms: ([who]) => {
+    void adminDialogs.alert(`Permissions RBAC vérifiées pour ${String(who)} :\n• 2FA matériel actif\n• Clé SSH Ed25519 valide\n• Moindre privilège conforme.`, { title: 'Audit RBAC' });
+  },
+  viewRawAudit: ([sha]) => {
+    void adminDialogs.alert(`Empreinte RFC 3161 : ${String(sha)}\nSignature KMS : valide\nStatut : scellé et immuable.`, { title: 'Enregistrement brut scellé' });
+  },
 };
 
 function parseSafeArgs(rawArgs: string, el: Element, event: Event): unknown[] {
@@ -620,18 +784,41 @@ function setupPresetListeners(preset: string): Array<() => void> {
 
   if (preset === 'admin-parametres') {
     const saveBtn = document.getElementById('saveChangesBtn');
+    const resetBtn = document.getElementById('resetDefaultsBtn');
     const toastEl = document.getElementById('saveToast');
-    if (saveBtn && toastEl) {
-      const onSave = () => {
-        toastEl.classList.remove('translate-y-24', 'opacity-0');
-        toastEl.classList.add('translate-y-0', 'opacity-100');
-        setTimeout(() => {
-          toastEl.classList.remove('translate-y-0', 'opacity-100');
-          toastEl.classList.add('translate-y-24', 'opacity-0');
-        }, 3500);
+    const showParamToast = () => {
+      if (!toastEl) return;
+      toastEl.classList.remove('translate-y-24', 'opacity-0');
+      toastEl.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toastEl.classList.remove('translate-y-0', 'opacity-100');
+        toastEl.classList.add('translate-y-24', 'opacity-0');
+      }, 3500);
+    };
+    if (saveBtn) {
+      saveBtn.addEventListener('click', showParamToast);
+      offs.push(() => saveBtn.removeEventListener('click', showParamToast));
+    }
+    if (resetBtn) {
+      const onReset = () => {
+        document.querySelectorAll<HTMLInputElement>('.tab-content input:not([readonly])').forEach((inp) => {
+          if (inp.type === 'checkbox' || inp.type === 'radio') inp.checked = inp.defaultChecked;
+          else inp.value = inp.defaultValue;
+        });
+        document.querySelectorAll<HTMLTextAreaElement>('.tab-content textarea').forEach((ta) => {
+          ta.value = ta.defaultValue;
+        });
+        document.querySelectorAll<HTMLSelectElement>('.tab-content select').forEach((sel) => {
+          Array.from(sel.options).forEach((opt) => {
+            opt.selected = opt.defaultSelected;
+          });
+        });
+        const marketToggleEl = document.getElementById('marketStatusToggle') as HTMLInputElement | null;
+        if (marketToggleEl) marketToggleEl.dispatchEvent(new Event('change'));
+        showParamToast();
       };
-      saveBtn.addEventListener('click', onSave);
-      offs.push(() => saveBtn.removeEventListener('click', onSave));
+      resetBtn.addEventListener('click', onReset);
+      offs.push(() => resetBtn.removeEventListener('click', onReset));
     }
 
     const marketToggle = document.getElementById('marketStatusToggle');
@@ -668,7 +855,18 @@ function setupPresetListeners(preset: string): Array<() => void> {
     }
 
     const streamPauseBtn = document.getElementById('streamPauseBtn');
+    const refreshToggleBtn = document.getElementById('refreshToggleBtn');
     let isPaused = false;
+    let refreshPaused = false;
+    if (refreshToggleBtn) {
+      const onRefreshToggle = () => {
+        refreshPaused = !refreshPaused;
+        const label = refreshToggleBtn.querySelector('strong');
+        if (label) label.textContent = refreshPaused ? 'Pause' : '5s';
+      };
+      refreshToggleBtn.addEventListener('click', onRefreshToggle);
+      offs.push(() => refreshToggleBtn.removeEventListener('click', onRefreshToggle));
+    }
     if (streamPauseBtn) {
       const onPause = () => {
         isPaused = !isPaused;
@@ -686,7 +884,7 @@ function setupPresetListeners(preset: string): Array<() => void> {
     ];
     let logIdx = 0;
     const intervalId = setInterval(() => {
-      if (isPaused || !terminal) return;
+      if (isPaused || refreshPaused || !terminal) return;
       const item = mockLogs[logIdx % mockLogs.length]!;
       logIdx += 1;
       const now = `${new Date().toTimeString().split(' ')[0]}.${Math.floor(Math.random() * 900 + 100)}`;

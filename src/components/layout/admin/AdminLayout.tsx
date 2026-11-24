@@ -48,6 +48,7 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
   const userName = currentUserName();
   const navigate = useNavigate();
   const [navOpen, setNavOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const goToGlobalSearch = (scope: 'orders' | 'users') => {
@@ -154,12 +155,44 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
             icon={<MIcon name="notifications" />}
             dotClassName="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"
           />
-          <button
-            type="button"
-            className="hidden cursor-pointer rounded-full p-2 text-text-secondary transition-all hover:bg-bg-app active:scale-[0.97] sm:block"
-          >
-            <MIcon name="help" />
-          </button>
+          <div className="relative hidden sm:block">
+            <button
+              type="button"
+              aria-label={tx("Aide & support")}
+              aria-expanded={helpOpen}
+              onClick={() => setHelpOpen((o) => !o)}
+              className="cursor-pointer rounded-full p-2 text-text-secondary transition-all hover:bg-bg-app active:scale-[0.97]"
+            >
+              <MIcon name="help" />
+            </button>
+            {helpOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setHelpOpen(false)} aria-hidden="true" />
+                <div role="dialog" aria-label={tx("Centre d'aide Admin")} className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-border-default bg-bg-card p-4 shadow-xl">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="font-label text-label font-bold text-on-surface">{tx("Centre d'aide Admin")}</span>
+                    <button type="button" onClick={() => setHelpOpen(false)} aria-label={tx("Fermer")} className="text-text-tertiary hover:text-on-surface">
+                      <MIcon name="close" className="text-[18px]" />
+                    </button>
+                  </div>
+                  <p className="mb-3 text-micro text-text-secondary">
+                    {tx("Support technique : +229 21 31 45 80 • support@tokpa.bj")}
+                  </p>
+                  <div className="flex flex-col gap-1.5 text-label">
+                    <Link to="/admin/logs" onClick={() => setHelpOpen(false)} className="rounded-lg px-2.5 py-1.5 hover:bg-bg-app text-on-surface">
+                      {tx("Consulter les journaux d'audit")}
+                    </Link>
+                    <Link to="/admin/systeme" onClick={() => setHelpOpen(false)} className="rounded-lg px-2.5 py-1.5 hover:bg-bg-app text-on-surface">
+                      {tx("État système & santé")}
+                    </Link>
+                    <Link to="/admin/parametres" onClick={() => setHelpOpen(false)} className="rounded-lg px-2.5 py-1.5 hover:bg-bg-app text-on-surface">
+                      {tx("Paramètres de la plateforme")}
+                    </Link>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
           <div className="mx-1 hidden h-8 w-[1px] bg-border-default sm:mx-2 sm:block" />
           <Link
             to="/profil"
