@@ -342,10 +342,10 @@ export default function OrdersListPage() {
 
   // Retourne le rendu JSX du composant.
   return (
-    <div className="bg-bg-app font-body text-on-surface antialiased min-h-screen flex flex-col">
+    <div className="bg-bg-app font-body text-on-surface antialiased min-h-screen overflow-x-clip flex flex-col">
       <ClientNavbar />
 
-      <main className="flex-grow px-4 py-xl pb-[80px] pt-[52px] sm:px-lg lg:pb-0">
+      <main className="min-w-0 max-w-full flex-grow overflow-x-clip px-4 py-xl pb-[80px] pt-[52px] sm:px-lg lg:pb-0">
         <div className="mx-auto w-full max-w-[1200px]">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-lg">
             <h1 className="font-h1 text-h1 text-on-surface">{isFr ? tx("Mes commandes") : 'My orders'}</h1>

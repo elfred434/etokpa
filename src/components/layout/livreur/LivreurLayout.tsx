@@ -48,7 +48,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
 
   // Retourne le rendu JSX du composant.
   return (
-    <div className="min-h-screen bg-bg-app font-body text-text-main">
+    <div className="min-h-screen overflow-x-clip bg-bg-app font-body text-text-main">
       <aside ref={asideRef} className="fixed left-0 top-0 z-50 hidden h-screen w-64 flex-col overflow-y-auto bg-[#F97316] text-white shadow-xl lg:flex">
         <div className="p-6">
           <div className="mb-8">
@@ -86,7 +86,7 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="min-h-screen pb-20 lg:ml-64 lg:pb-0">
+      <main className="min-h-screen min-w-0 max-w-full overflow-x-clip pb-20 lg:ml-64 lg:pb-0">
         <header className="sticky top-0 z-40 flex h-[52px] w-full items-center justify-between gap-2 border-b border-border-default bg-bg-card px-3 sm:px-lg">
           <span className="font-h1 text-h1 font-bold text-primary">TOKPa</span>
           <div className="flex min-w-0 items-center gap-2 sm:gap-lg">
@@ -127,12 +127,12 @@ export default function LivreurLayout({ children }: { children: ReactNode }) {
             key={item.to}
             to={item.to}
             className={clsx(
-              'flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium',
+              'flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-2 text-[11px] font-medium',
               isActive(item.to, item.exact) ? 'text-[#F97316]' : 'text-text-secondary',
             )}
           >
             <MIcon name={item.icon} className="text-[22px]" />
-            {tx(item.short)}
+            <span className="max-w-full truncate">{tx(item.short)}</span>
           </Link>
         ))}
       </nav>

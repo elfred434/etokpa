@@ -291,7 +291,7 @@ export default function AdminValidationsPage() {
         </div>
       </header>
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-4 pb-4 lg:flex-row lg:gap-6 lg:px-8 lg:pb-8">
-        <div className="flex-1 bg-bg-card rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+        <div className="flex-1 min-w-0 bg-bg-card rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
           <div className="overflow-x-auto flex-1 custom-scrollbar">
             <table className="w-full text-left border-collapse" data-mobile-detail="native">
               <thead className="sticky top-0 bg-gray-50 z-10 border-b border-gray-200">

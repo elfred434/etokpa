@@ -74,7 +74,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
 
   // Retourne le rendu JSX du composant.
   return (
-    <div className="min-h-screen bg-bg-card text-on-surface">
+    <div className="min-h-screen overflow-x-clip bg-bg-card text-on-surface">
       {navOpen && (
         <button
           type="button"
@@ -125,7 +125,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
           </Link>
         </div>
       </header>
-      <main id="manager-main" className="ml-0 space-y-lg px-4 pb-4 pt-[calc(52px+16px)] lg:ml-64 lg:px-lg lg:pb-lg lg:pt-[calc(52px+24px)]">{children}</main>
+      <main id="manager-main" className="ml-0 min-w-0 max-w-full overflow-x-clip space-y-lg px-4 pb-4 pt-[calc(52px+16px)] lg:ml-64 lg:px-lg lg:pb-lg lg:pt-[calc(52px+24px)]">{children}</main>
       <MobileTableBridge rootId="manager-main" />
       {admin && open && (
         <DialogFrame

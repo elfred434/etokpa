@@ -195,8 +195,8 @@ export default function LivreurCoursePage() {
   // Retourne le rendu JSX du composant.
   return (
     <LivreurLayout>
-      <div className="flex flex-col lg:h-[calc(100vh-52px)] lg:flex-row">
-        <section className="relative h-[360px] overflow-hidden bg-surface-container-low lg:h-full lg:w-[70%]">
+      <div className="flex min-w-0 flex-col lg:h-[calc(100vh-52px)] lg:flex-row">
+        <section className="relative h-[360px] min-w-0 overflow-hidden bg-surface-container-low lg:h-full lg:w-[70%]">
           <div className="absolute inset-0 z-0">
             <RealBeninMap riderCoords={coords} riderName={currentUserName() ?? undefined} destinationLabel={destination(order)} />
           </div>
@@ -216,9 +216,9 @@ export default function LivreurCoursePage() {
           )}
         </section>
 
-        <section className="z-10 flex flex-col border-l border-border-default bg-bg-card lg:h-full lg:w-[30%]">
+        <section className="z-10 flex min-w-0 flex-col border-l border-border-default bg-bg-card lg:h-full lg:w-[30%]">
           <div className="border-b border-border-default bg-surface-container-low p-lg">
-            <div className="mb-sm flex items-start justify-between">
+            <div className="mb-sm flex flex-wrap items-start justify-between gap-2">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">{tx("Référence commande")}</p>
                 <h3 className="font-h2 text-h2 font-black text-on-surface">{tokRef(order.id)}</h3>

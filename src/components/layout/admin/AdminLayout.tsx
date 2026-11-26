@@ -23,17 +23,19 @@ interface AdminLayoutProps {
 function responsiveMain(mainClassName?: string) {
   const base = mainClassName ?? 'ml-64 pt-[52px] min-h-screen p-lg space-y-lg';
   const hasLargePadding = /(^|\s)p-lg(?=\s|$)/.test(base);
-  return base
-    .replace(/(^|\s)ml-64(?=\s|$)/g, '$1ml-0 lg:ml-64')
-    .replace(/(^|\s)pt-\[52px\](?=\s|$)/g, hasLargePadding ? '' : '$1pt-[52px]')
-    .replace(
-      /(^|\s)p-lg(?=\s|$)/g,
-      '$1px-4 pb-4 pt-[calc(52px+16px)] lg:px-lg lg:pb-lg lg:pt-[calc(52px+24px)]',
-    )
-    .replace(/(^|\s)h-screen(?=\s|$)/g, '$1min-h-screen lg:h-screen')
-    .replace(/(^|\s)overflow-hidden(?=\s|$)/g, '$1overflow-x-auto lg:overflow-hidden')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return (
+    base
+      .replace(/(^|\s)ml-64(?=\s|$)/g, '$1ml-0 lg:ml-64')
+      .replace(/(^|\s)pt-\[52px\](?=\s|$)/g, hasLargePadding ? '' : '$1pt-[52px]')
+      .replace(
+        /(^|\s)p-lg(?=\s|$)/g,
+        '$1px-4 pb-4 pt-[calc(52px+16px)] lg:px-lg lg:pb-lg lg:pt-[calc(52px+24px)]',
+      )
+      .replace(/(^|\s)h-screen(?=\s|$)/g, '$1min-h-screen lg:h-screen')
+      .replace(/(^|\s)overflow-hidden(?=\s|$)/g, '$1overflow-x-clip lg:overflow-hidden')
+      .replace(/\s+/g, ' ')
+      .trim() + ' min-w-0 max-w-full overflow-x-clip'
+  );
 }
 
 // Composant de mise en page AdminLayout.
@@ -64,7 +66,7 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
   };
   // Retourne le rendu JSX du composant.
   return (
-    <div className="bg-bg-app text-on-surface font-body min-h-screen">
+    <div className="bg-bg-app text-on-surface font-body min-h-screen overflow-x-clip">
       {navOpen && (
         <button
           type="button"
@@ -142,7 +144,7 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
             )}
           </div>
         </div>
-        <div className="ml-auto flex items-center gap-1 sm:gap-md">
+        <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-md">
           <RefreshButton withLabel />
           <SettingsLink to="/admin/parametres" />
           <LogoutButton className="lg:hidden" />
@@ -164,7 +166,7 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
             {helpOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setHelpOpen(false)} aria-hidden="true" />
-                <div role="dialog" aria-label={tx("Centre d'aide Admin")} className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-border-default bg-bg-card p-4 shadow-xl">
+                <div role="dialog" aria-label={tx("Centre d'aide Admin")} className="absolute right-0 top-full z-50 mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-xl border border-border-default bg-bg-card p-4 shadow-xl">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="font-label text-label font-bold text-on-surface">{tx("Centre d'aide Admin")}</span>
                     <button type="button" onClick={() => setHelpOpen(false)} aria-label={tx("Fermer")} className="text-text-tertiary hover:text-on-surface">

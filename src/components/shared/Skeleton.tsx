@@ -304,6 +304,7 @@ export function OrdersTableSkeleton({
       aria-label={label}
       className="bg-bg-card rounded-lg border border-border-default overflow-hidden"
     >
+      <div className="overflow-x-auto max-w-full">
       <table className="w-full text-left text-body">
         <thead>
           <tr className="border-b border-border-default bg-bg-secondary">
@@ -330,6 +331,7 @@ export function OrdersTableSkeleton({
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
@@ -408,7 +410,7 @@ export function NotificationsListSkeleton({
       <section className="flex-1 bg-bg-app p-4 sm:p-6 md:p-8 min-w-0">
         <div className="max-w-4xl mx-auto space-y-4">
           <div className="space-y-2 mb-6">
-            <SkeletonBlock className="h-7 w-64" />
+            <SkeletonBlock className="h-7 w-64 max-w-full" />
             <SkeletonBlock className="h-4 w-48" />
           </div>
           <NotificationRowsSkeleton count={count} label={label} />
@@ -488,9 +490,9 @@ export function MessagingShellSkeleton({
           </div>
         </div>
         <div className="flex-1 p-lg space-y-4">
-          <SkeletonBlock className="h-12 w-64 rounded-2xl" />
-          <SkeletonBlock className="ml-auto h-12 w-56 rounded-2xl" />
-          <SkeletonBlock className="h-14 w-72 rounded-2xl" />
+          <SkeletonBlock className="h-12 w-64 max-w-full rounded-2xl" />
+          <SkeletonBlock className="ml-auto h-12 w-56 max-w-full rounded-2xl" />
+          <SkeletonBlock className="h-14 w-72 max-w-full rounded-2xl" />
         </div>
         <div className="border-t border-border-default bg-bg-card p-md flex gap-3">
           <SkeletonBlock className="h-10 flex-1 rounded-full" />
@@ -666,7 +668,7 @@ export function LivreurRecapSkeleton({
     <div role="status" aria-live="polite" aria-busy="true" aria-label={label} className="space-y-xl">
       <div className="flex flex-col items-center gap-3">
         <SkeletonBlock className="h-16 w-16 rounded-full" />
-        <SkeletonBlock className="h-7 w-64" />
+        <SkeletonBlock className="h-7 w-64 max-w-full" />
         <SkeletonBlock className="h-4 w-48" />
       </div>
       <div className="lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-lg space-y-6 lg:space-y-0">
@@ -785,7 +787,7 @@ export function TrackingSkeleton({
         <SkeletonBlock className="h-6 w-32 rounded-full" />
         <SkeletonBlock className="h-5 w-3/4" />
       </div>
-      <div className="grid grid-cols-4 gap-2 py-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-2">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="flex flex-col items-center gap-2">
             <SkeletonBlock className="h-8 w-8 rounded-full" />

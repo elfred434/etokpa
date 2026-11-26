@@ -55,7 +55,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
 
   // Retourne le rendu JSX du composant.
   return (
-    <header className="fixed top-0 z-50 w-full border-b border-line bg-warm">
+    <header className="fixed top-0 z-50 w-full overflow-x-clip border-b border-line bg-warm">
       <div className="mx-auto flex h-[52px] w-full max-w-[1200px] items-center justify-between gap-2 px-3 sm:px-4">
         <div className="flex min-w-0 items-center gap-2 sm:gap-lg">
           <button

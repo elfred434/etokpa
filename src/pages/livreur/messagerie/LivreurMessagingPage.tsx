@@ -304,7 +304,7 @@ export default function LivreurMessagingPage() {
                     <div className="space-y-3 p-2" aria-busy="true" aria-label={tx('Chargement des messages…')}>
                       <SkeletonBlock className="h-10 w-56 rounded-2xl" />
                       <SkeletonBlock className="ml-auto h-10 w-48 rounded-2xl" />
-                      <SkeletonBlock className="h-12 w-64 rounded-2xl" />
+                      <SkeletonBlock className="h-12 w-64 max-w-full rounded-2xl" />
                     </div>
                   ) : messages.length === 0 ? (
                     <div className="m-auto max-w-sm text-center text-text-secondary">

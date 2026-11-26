@@ -110,7 +110,7 @@ export default function ProfileHeader() {
           }
         >
           <form id="profile-header-edit-form" onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="label">{isFr ? tx("Prénom") : 'First Name'}</label>
                 <input
@@ -155,7 +155,7 @@ export default function ProfileHeader() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="label">{isFr ? tx("Ville") : 'City'}</label>
                 <input

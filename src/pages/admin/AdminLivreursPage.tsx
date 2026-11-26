@@ -293,7 +293,7 @@ export default function AdminLivreursPage() {
         </div>
       )}
       <style>{DESIGN_CSS}</style>
-      <div className="flex-1 bg-bg-card rounded-lg border border-border-default overflow-hidden flex flex-col">
+      <div className="flex-1 min-w-0 bg-bg-card rounded-lg border border-border-default overflow-hidden flex flex-col">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse" data-mobile-detail="native">
             <thead className="bg-bg-secondary border-b border-border-default">

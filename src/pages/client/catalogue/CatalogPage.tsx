@@ -346,7 +346,7 @@ export default function CatalogPage() {
 
   // Retourne le rendu JSX du composant.
   return (
-    <div className="min-h-screen bg-page pt-[52px] font-body text-on-surface">
+    <div className="min-h-screen overflow-x-clip bg-page pt-[52px] font-body text-on-surface">
       <ClientNavbar
         search={search}
         onSearch={(v) => {
@@ -355,7 +355,7 @@ export default function CatalogPage() {
         }}
       />
 
-      <main className="mx-auto flex w-full max-w-[1200px] gap-4 px-4 pt-lg pb-[80px] lg:pb-lg">
+      <main className="mx-auto flex w-full min-w-0 max-w-[1200px] gap-4 px-4 pt-lg pb-[80px] lg:pb-lg">
         <aside className="hidden w-[260px] flex-shrink-0 space-y-md md:block">
           <div className="rounded-xl border-[0.5px] border-line bg-bg-card p-md shadow-sm">
             <h3 className="mb-md font-h3 text-h3">{tx("Catégories")}</h3>

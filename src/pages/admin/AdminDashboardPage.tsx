@@ -343,9 +343,9 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg">
-        <div className="lg:col-span-2 bg-bg-card p-lg rounded-lg border border-border-default">
-          <div className="flex justify-between items-center mb-xl">
-            <div>
+        <div className="min-w-0 lg:col-span-2 bg-bg-card p-4 sm:p-lg rounded-lg border border-border-default">
+          <div className="flex flex-wrap justify-between items-center gap-3 mb-xl">
+            <div className="min-w-0">
               <h3 className="font-h2 text-h2 text-on-surface">{tx("Croissance des ventes")}</h3>
               <p className="font-secondary text-label text-text-secondary">
                 {tx("Performances journalières du réseau (commandes non annulées)")}{capped ? tx(" — calculé sur les 500 dernières commandes") : ''}
@@ -358,14 +358,14 @@ export default function AdminDashboardPage() {
                 const v = Number(e.target.value);
                 setRange(v === 1 ? 1 : v === 30 ? 30 : 7);
               }}
-              className="bg-bg-app border-none text-label rounded-lg px-md py-sm font-secondary"
+              className="w-full sm:w-auto bg-bg-app border-none text-label rounded-lg px-md py-sm font-secondary"
             >
               <option value={1}>{tx("Aujourd'hui")}</option>
               <option value={7}>{tx("7 derniers jours")}</option>
               <option value={30}>{tx("30 derniers jours")}</option>
             </select>
           </div>
-          <div className="h-[280px] w-full flex items-end justify-between gap-2 px-4 relative overflow-hidden">
+          <div className="h-[280px] w-full flex items-end justify-between gap-1 sm:gap-2 px-1 sm:px-4 relative overflow-hidden">
             {chartErr ? (
               <p className="m-auto max-w-[420px] text-center font-secondary text-label text-error">{tr(`Ventes indisponibles : ${chartErr}`, `Sales unavailable: ${chartErr}`)}</p>
             ) : !series ? (

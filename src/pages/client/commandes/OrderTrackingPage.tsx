@@ -485,7 +485,7 @@ export default function OrderTrackingPage() {
             </div>
           ) : !showOrderContent ? null : (
             <>
-              <div className="flex justify-between items-center mb-md">
+              <div className="flex flex-wrap justify-between items-center gap-2 mb-md">
                 <span className="font-label text-label text-text-secondary">
                   {isFr ? tx("Commande") : 'Order'} #{selectedId}
                 </span>

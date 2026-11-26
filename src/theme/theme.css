@@ -137,6 +137,8 @@
   html {
     font-family: var(--font-sans);
     overflow-x: hidden;
+    overflow-x: clip;
+    max-width: 100%;
     scrollbar-width: thin;
     scrollbar-color: var(--color-primary) var(--color-page);
   }
@@ -146,7 +148,8 @@
     font-size: var(--text-body);
     line-height: 1.5;
     overflow-x: hidden;
-    max-width: 100vw;
+    overflow-x: clip;
+    max-width: 100%;
   }
 
   ::-webkit-scrollbar {
@@ -536,21 +539,48 @@
 
 @layer base {
   @media (max-width: 1023px) {
-    img, video, canvas {
+    #root {
       max-width: 100%;
+      overflow-x: clip;
+    }
+    main {
+      min-width: 0;
+      max-width: 100%;
+      overflow-x: clip;
+    }
+    main .grid > * {
+      min-width: 0;
+    }
+    main :where(.flex) > :not(.shrink-0) {
+      min-width: 0;
+    }
+    img, video, canvas, svg {
+      max-width: 100%;
+    }
+    img, video, canvas {
       height: auto;
     }
     p, h1, h2, h3, h4, li, td, th, label, figcaption {
       overflow-wrap: break-word;
+    }
+    main :where(pre, code, .font-mono) {
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+    main :where(input, select, textarea) {
+      max-width: 100%;
+      min-width: 0;
     }
     main :where(div):has(> table) {
       max-width: 100%;
       overflow-x: auto !important;
     }
     main .flex.justify-between.items-end,
-    main .flex.items-end.justify-between {
+    main .flex.items-end.justify-between,
+    main .flex.justify-between.items-center,
+    main .flex.items-center.justify-between {
       flex-wrap: wrap;
-      gap: 0.75rem;
+      gap: 0.5rem;
     }
   }
 
@@ -564,9 +594,14 @@
     }
     main table:has(.tokpa-mobile-hide) th,
     main table:has(.tokpa-mobile-hide) td {
-      padding-left: 0.75rem !important;
-      padding-right: 0.75rem !important;
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
       overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    main table:has(.tokpa-mobile-hide) td :where(.flex, .inline-flex) {
+      flex-wrap: wrap;
+      max-width: 100%;
     }
     main tbody tr {
       cursor: pointer;

@@ -664,7 +664,7 @@ export default function AdminUsersPage() {
               <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
                 <span className="shrink-0 text-xs font-medium text-gray-400">{tx("Statut :")}</span>
                 <select
-                  className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-bg-card px-2.5 py-1.5 text-xs text-gray-700 focus:border-primary focus:outline-none sm:flex-none"
+                  className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-bg-card px-2.5 py-1.5 text-xs text-gray-700 focus:border-primary focus:outline-none sm:flex-none max-w-full"
                   id="statusFilter"
                   value={statusF}
                   onChange={(e) => choose(() => setStatusF(e.target.value))}
@@ -678,7 +678,7 @@ export default function AdminUsersPage() {
               <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
                 <span className="shrink-0 text-xs font-medium text-gray-400">{tx("Zone :")}</span>
                 <select
-                  className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-bg-card px-2.5 py-1.5 text-xs text-gray-700 focus:border-primary focus:outline-none sm:flex-none"
+                  className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-bg-card px-2.5 py-1.5 text-xs text-gray-700 focus:border-primary focus:outline-none sm:flex-none max-w-full"
                   id="zoneFilter"
                   value={zoneF}
                   onChange={(e) => choose(() => setZoneF(e.target.value))}

@@ -221,7 +221,7 @@ export default function HomePage() {
 
         {!catsNeedLogin && (
         <section className="mb-lg sm:mb-xl">
-          <div className="mb-md sm:mb-lg flex items-end justify-between">
+          <div className="mb-md sm:mb-lg flex flex-wrap items-end justify-between gap-2">
             <h2 className="font-h1 text-lg sm:text-h1 text-on-surface">{t('home.exploreCategories')}</h2>
             <Link to="/catalogue" className="flex items-center gap-1 text-xs sm:text-sm font-bold text-primary-shade hover:underline">
               {t('common.seeAll')} <MIcon name="chevron_right" className="text-[18px]" />
